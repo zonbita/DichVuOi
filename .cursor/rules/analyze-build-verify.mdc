@@ -1,0 +1,22 @@
+---
+description: >-
+  Bắt buộc vòng Analyze → Build → Verify khi làm chức năng DichVuOi.
+  Kích hoạt khi user yêu cầu tính năng, phân tích rồi làm, hoặc check chức năng.
+alwaysApply: false
+---
+
+# Analyze → Build → Verify
+
+Khi làm feature / cải tiến dashboard / sửa luồng booking-partner: **đọc và tuân thủ** skill dự án:
+
+`.cursor/skills/analyze-build-verify/SKILL.md`
+
+Tóm tắt:
+
+1. **Analyze** — hiện trạng, khoảng trống, phạm vi, kế hoạch (chưa code lớn)
+2. **Build** — implement tối thiểu theo kế hoạch
+3. **Verify** — `npm run build -w @dichvuoi/web` và/hoặc `@dichvuoi/api`; nêu checklist hành vi
+
+Sau khi Verify pass, tự động sang hạng mục ưu tiên kế tiếp — **tối đa 3 vòng** mỗi lượt gọi.
+
+Không kết thúc task khi chưa qua Verify (trừ khi user chỉ yêu cầu phân tích).

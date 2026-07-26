@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  PARTNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+/** Escrow mock: giữ tiền trên sàn đến khi hoàn thành / hoàn hủy. */
+enum PaymentStatus {
+  UNPAID
+  HELD
+  RELEASED
+  REFUNDED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  passwordHash   String
+  fullName       String
+  phone          String?
+  role           Role            @default(CUSTOMER)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  partnerProfile  PartnerProfile?
+  customerBookings Booking[]     @relation("CustomerBookings")
+  partnerBookings  Booking[]     @relation("PartnerBookings")
+  bookingMessages  BookingMessage[]
+  reviewsGiven     Review[]      @relation("ReviewsGiven")
+  reviewsReceived  Review[]      @relation("ReviewsReceived")
+}
+
+model PartnerProfile {
+  id          String           @id @default(cuid())
+  userId      String           @unique
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline    String?
+  bio         String?
+  city        String?          @default("Hồ Chí Minh")
+  /** Quận / khu vực phục vụ — chuỗi phân tách bằng dấu phẩy. */
+  districts   String?
+  ratingAvg   Float            @default(0)
+  ratingCount Int              @default(0)
+  /** Cấp độ người làm (1–100). Chỉ áp dụng khi có hồ sơ Partner. */
+  level       Int              @default(1)
+  isVerified  Boolean          @default(false)
+  /** Ảnh đại diện người làm (URL). */
+  avatarUrl   String?
+  /** Gallery portfolio — JSON array URL ảnh (3–6), vd. ["https://..."]. */
+  galleryJson String?
+  /** Tag kỹ năng / nghề — JSON array string, vd. ["điện lạnh","điều hòa"]. */
+  skillsJson  String?
+  /** Đang nhận việc hay tạm nghỉ. */
+  acceptingJobs Boolean        @default(true)
+  /** Cách làm việc: "onsite", "online", hoặc "onsite,online". */
+  workModes   String?          @default("onsite")
+  /** Thời gian phản hồi ước tính (phút). */
+  responseMinutes Int          @default(30)
+  offerings   PartnerService[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model PartnerService {
+  id               String         @id @default(cuid())
+  partnerProfileId String
+  partnerProfile   PartnerProfile @relation(fields: [partnerProfileId], references: [id], onDelete: Cascade)
+  serviceId        String
+  service          Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  price            Int?
+  headline         String?
+  experienceYears  Int            @default(0)
+  /** Bao gồm gì khi thuê (văn bản ngắn). */
+  includes         String?
+  /** Không bao gồm gì. */
+  excludes         String?
+  /** Ghi chú phạm vi: «Nội thành HN», «Online Zalo/Discord». */
+  coverageNote     String?
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([partnerProfileId, serviceId])
+  @@index([serviceId])
+}
+
+model ServiceGroup {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  icon        String?
+  sortOrder   Int        @default(0)
+  isFeatured  Boolean    @default(false)
+  /** Nhóm có ít nhất một nghề có thể làm online (metadata tổng quát). */
+  supportsOnline Boolean @default(false)
+  categories  Category[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Category {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  description String?
+  groupId     String
+  group       ServiceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  services    Service[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([groupId])
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  /** Giá mặc định khi tạo đơn / fallback chào giá partner. */
+  basePrice   Int
+  /** Giá tham khảo thị trường — cận dưới (₫). */
+  priceMin    Int       @default(0)
+  /** Giá tham khảo thị trường — cận trên (₫). */
+  priceMax    Int       @default(0)
+  unit        String    @default("giờ")
+  durationMin Int       @default(60)
+  /** Nghề có thể được thực hiện hoàn toàn online. */
+  supportsOnline Boolean @default(false)
+  isActive    Boolean   @default(true)
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  bookings    Booking[]
+  partners    PartnerService[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([categoryId])
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation("CustomerBookings", fields: [userId], references: [id], onDelete: Cascade)
+  partnerId     String?
+  partner       User?         @relation("PartnerBookings", fields: [partnerId], references: [id], onDelete: SetNull)
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  address       String
+  scheduledAt   DateTime
+  note          String?
+  status        BookingStatus @default(PENDING)
+  totalPrice    Int
+  customerName   String
+  customerPhone String
+  /** Escrow mock — thanh toán giữ trên sàn. */
+  paymentStatus PaymentStatus @default(UNPAID)
+  /** Hoa hồng sàn % (vd. 15). */
+  commissionBps Int           @default(1500)
+  commissionAmount Int        @default(0)
+  partnerPayout    Int        @default(0)
+  paidAt        DateTime?
+  releasedAt    DateTime?
+  refundedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  messages      BookingMessage[]
+  reviews       Review[]
+
+  @@index([userId])
+  @@index([partnerId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([scheduledAt])
+}
+
+/** Chat theo đơn — kênh liên hệ chính thức (chống bỏ sàn). Body bị lọc SĐT/Zalo/email. */
+model BookingMessage {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  /** true nếu hệ thống đã ẩn PII trong body. */
+  redacted  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
+  @@index([senderId])
+}
+
+/** Đánh giá hai chiều sau COMPLETED (mỗi bên 1 lần / đơn). */
+model Review {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  fromUserId String
+  fromUser   User     @relation("ReviewsGiven", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("ReviewsReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@unique([bookingId, fromUserId])
+  @@index([toUserId])
+  @@index([bookingId])
+}

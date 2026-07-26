@@ -1,0 +1,555 @@
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Role } from '@prisma/client';
+import {
+  parseDistricts,
+  parseGallery,
+  parseSkills,
+  parseWorkModes,
+  serializeDistricts,
+  serializeGallery,
+  serializeSkills,
+  serializeWorkModes,
+} from '../../common/partner-profile-fields';
+import { hoursWorkedByServiceIds } from '../../common/partner-work-hours';
+import {
+  computePartnerLevel,
+  PARTNER_LEVEL_FORMULA,
+} from '../../common/partner-level';
+import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
+import { portraitAvatarUrl } from '../../common/portrait-avatar';
+import { PrismaService } from '../../database/prisma/prisma.service';
+import {
+  EnablePartnerDto,
+  SyncPartnerOfferingsDto,
+  UpdatePartnerProfileDto,
+} from './dto/update-partner-profile.dto';
+
+const userPublicSelect = {
+  id: true,
+  fullName: true,
+  role: true,
+} as const;
+
+const userPrivateSelect = {
+  id: true,
+  email: true,
+  fullName: true,
+  phone: true,
+  role: true,
+} as const;
+
+const offeringInclude = {
+  service: {
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      unit: true,
+      basePrice: true,
+      isActive: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          group: { select: { id: true, name: true, slug: true } },
+        },
+      },
+    },
+  },
+} as const;
+
+@Injectable()
+export class PartnersService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private shapePublic(
+    profile: {
+      id: string;
+      userId: string;
+      headline: string | null;
+      bio: string | null;
+      city: string | null;
+      districts: string | null;
+      ratingAvg: number;
+      ratingCount: number;
+      level: number;
+      isVerified: boolean;
+      avatarUrl: string | null;
+      galleryJson?: string | null;
+      skillsJson: string | null;
+      acceptingJobs: boolean;
+      workModes: string | null;
+      responseMinutes: number;
+      user: { id: string; fullName: string };
+      offerings?: Array<{
+        id: string;
+        price: number | null;
+        headline: string | null;
+        experienceYears: number;
+        includes: string | null;
+        excludes: string | null;
+        coverageNote: string | null;
+        service: {
+          id: string;
+          slug: string;
+          name: string;
+          unit: string;
+          basePrice: number;
+          category?: {
+            id: string;
+            name: string;
+            slug: string;
+            group: { id: string; name: string; slug: string };
+          };
+        };
+      }>;
+    },
+    completedJobs: number,
+    reviews: Array<{
+      id: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+      fromUser: { id: string; fullName: string };
+      booking: {
+        service: {
+          name: string;
+          slug: string;
+          category?: {
+            id: string;
+            name: string;
+            slug: string;
+            group: { id: string; name: string; slug: string };
+          } | null;
+        };
+      };
+    }> = [],
+    hoursByServiceId: Map<string, number> = new Map(),
+  ) {
+    const reviewedBySlug = new Map<
+      string,
+      { ratings: number[]; service: (typeof reviews)[0]['booking']['service'] }
+    >();
+    for (const r of reviews) {
+      const slug = r.booking.service.slug;
+      const entry = reviewedBySlug.get(slug) ?? {
+        ratings: [],
+        service: r.booking.service,
+      };
+      entry.ratings.push(r.rating);
+      reviewedBySlug.set(slug, entry);
+    }
+
+    /** Tất cả dịch vụ đang nhận; ưu tiên nghề đã có đánh giá. */
+    const offerings = (profile.offerings ?? [])
+      .map((o) => {
+        const stats = reviewedBySlug.get(o.service.slug);
+        const ratingCount = stats?.ratings.length ?? 0;
+        const ratingAvg =
+          ratingCount > 0
+            ? Math.round(
+                (stats!.ratings.reduce((s, n) => s + n, 0) / ratingCount) * 10,
+              ) / 10
+            : 0;
+        return {
+          id: o.id,
+          price: o.price ?? o.service.basePrice,
+          headline: o.headline,
+          experienceYears: o.experienceYears,
+          hoursWorked: hoursByServiceId.get(o.service.id) ?? 0,
+          includes: o.includes,
+          excludes: o.excludes,
+          coverageNote: o.coverageNote,
+          ratingAvg,
+          ratingCount,
+          service: {
+            id: o.service.id,
+            slug: o.service.slug,
+            name: o.service.name,
+            unit: o.service.unit,
+            basePrice: o.service.basePrice,
+            category: o.service.category
+              ? {
+                  id: o.service.category.id,
+                  name: o.service.category.name,
+                  slug: o.service.category.slug,
+                  group: o.service.category.group,
+                }
+              : null,
+          },
+        };
+      })
+      .sort((a, b) => b.ratingCount - a.ratingCount || b.ratingAvg - a.ratingAvg);
+
+    return {
+      id: profile.id,
+      userId: profile.userId,
+      fullName: profile.user.fullName,
+      headline: profile.headline,
+      bio: profile.bio,
+      city: profile.city,
+      districts: parseDistricts(profile.districts),
+      skills: parseSkills(profile.skillsJson),
+      acceptingJobs: profile.acceptingJobs,
+      workModes: parseWorkModes(profile.workModes),
+      responseMinutes: profile.responseMinutes,
+      ratingAvg: profile.ratingAvg,
+      ratingCount: profile.ratingCount,
+      level: profile.level,
+      isVerified: profile.isVerified,
+      avatarUrl: profile.avatarUrl,
+      gallery: parseGallery(profile.galleryJson),
+      completedJobs,
+      offerings,
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        fromName: r.fromUser.fullName,
+        serviceName: r.booking.service.name,
+        serviceSlug: r.booking.service.slug,
+        groupSlug: r.booking.service.category?.group.slug ?? null,
+        groupName: r.booking.service.category?.group.name ?? null,
+      })),
+    };
+  }
+
+  async getPublicProfile(userId: string) {
+    const profile = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+      include: {
+        user: { select: userPublicSelect },
+        offerings: {
+          where: { isActive: true },
+          include: {
+            service: {
+              select: {
+                id: true,
+                slug: true,
+                name: true,
+                unit: true,
+                basePrice: true,
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    group: {
+                      select: { id: true, name: true, slug: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          take: 40,
+        },
+      },
+    });
+    if (!profile) throw new NotFoundException('Không tìm thấy hồ sơ người làm');
+
+    const [completedJobs, reviews, hoursByServiceId] = await Promise.all([
+      this.prisma.booking.count({
+        where: { partnerId: userId, status: 'COMPLETED' },
+      }),
+      this.prisma.review.findMany({
+        where: { toUserId: userId },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        include: {
+          fromUser: { select: { id: true, fullName: true } },
+          booking: {
+            select: {
+              service: {
+                select: {
+                  name: true,
+                  slug: true,
+                  category: {
+                    select: {
+                      id: true,
+                      name: true,
+                      slug: true,
+                      group: {
+                        select: { id: true, name: true, slug: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      hoursWorkedByServiceIds(
+        this.prisma,
+        userId,
+        profile.offerings.map((o) => o.serviceId),
+      ),
+    ]);
+
+    return this.shapePublic(profile, completedJobs, reviews, hoursByServiceId);
+  }
+
+  async getMine(userId: string) {
+    const profile = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+      include: {
+        user: { select: userPrivateSelect },
+        offerings: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'asc' },
+          include: offeringInclude,
+        },
+      },
+    });
+    if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
+
+    const hoursByServiceId = await hoursWorkedByServiceIds(
+      this.prisma,
+      userId,
+      profile.offerings.map((o) => o.serviceId),
+    );
+
+    return {
+      ...profile,
+      skills: parseSkills(profile.skillsJson),
+      gallery: parseGallery(profile.galleryJson),
+      districtsList: parseDistricts(profile.districts),
+      workModesList: parseWorkModes(profile.workModes),
+      serviceIds: profile.offerings.map((o) => o.serviceId),
+      offerings: profile.offerings.map((o) => ({
+        ...o,
+        hoursWorked: hoursByServiceId.get(o.serviceId) ?? 0,
+      })),
+    };
+  }
+
+  /** Dual-role: user đang thuê bật thêm vai người làm trên cùng account. */
+  async enableOffering(userId: string, dto: EnablePartnerDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { partnerProfile: true },
+    });
+    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+    if (user.partnerProfile) {
+      throw new ConflictException('Bạn đã bật nhận việc rồi');
+    }
+
+    const role = user.role === Role.ADMIN ? Role.ADMIN : Role.PARTNER;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+
+    const profile = await this.prisma.partnerProfile.create({
+      data: {
+        userId,
+        headline: dto.headline?.trim() || 'Freelancer trên Dịch Vụ Ơi',
+        bio: dto.bio?.trim() || '',
+        city: dto.city?.trim() || 'Hồ Chí Minh',
+        districts: serializeDistricts(dto.districts),
+        skillsJson: serializeSkills(dto.skills),
+        workModes: serializeWorkModes(dto.workModes),
+        acceptingJobs: dto.acceptingJobs ?? true,
+        responseMinutes: dto.responseMinutes ?? 30,
+        level: 1,
+        avatarUrl: portraitAvatarUrl(userId),
+      },
+      include: { user: { select: userPrivateSelect } },
+    });
+
+    if (dto.serviceIds?.length) {
+      await this.syncOfferingsForProfile(profile.id, dto.serviceIds);
+    }
+
+    return this.getMine(userId);
+  }
+
+  async updateMine(userId: string, dto: UpdatePartnerProfileDto) {
+    await this.getMine(userId);
+    await this.prisma.partnerProfile.update({
+      where: { userId },
+      data: {
+        headline: dto.headline,
+        bio: dto.bio,
+        city: dto.city,
+        ...(dto.districts !== undefined
+          ? { districts: serializeDistricts(dto.districts) }
+          : {}),
+        ...(dto.skills !== undefined
+          ? { skillsJson: serializeSkills(dto.skills) }
+          : {}),
+        ...(dto.workModes !== undefined
+          ? { workModes: serializeWorkModes(dto.workModes) }
+          : {}),
+        ...(dto.acceptingJobs !== undefined
+          ? { acceptingJobs: dto.acceptingJobs }
+          : {}),
+        ...(dto.responseMinutes !== undefined
+          ? { responseMinutes: dto.responseMinutes }
+          : {}),
+        ...(dto.avatarUrl !== undefined
+          ? {
+              avatarUrl: dto.avatarUrl.trim()
+                ? dto.avatarUrl.trim().slice(0, 500)
+                : null,
+            }
+          : {}),
+        ...(dto.gallery !== undefined
+          ? { galleryJson: serializeGallery(dto.gallery) }
+          : {}),
+      },
+    });
+    return this.getMine(userId);
+  }
+
+  /** Gắn / gỡ nhiều nghề (Service) trên hồ sơ — UX kiểu tags. */
+  async syncOfferings(userId: string, dto: SyncPartnerOfferingsDto) {
+    const profile = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
+    await this.syncOfferingsForProfile(profile.id, dto.serviceIds ?? []);
+    await recalculatePartnerLevel(this.prisma, userId);
+    return this.getMine(userId);
+  }
+
+  /** Công thức + điểm chi tiết cấp hiện tại (cho dashboard đối tác). */
+  async getLevelBreakdown(userId: string) {
+    const profile = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        level: true,
+        ratingAvg: true,
+        ratingCount: true,
+        isVerified: true,
+        offerings: {
+          where: { isActive: true },
+          select: {
+            serviceId: true,
+            service: { select: { id: true, name: true, slug: true } },
+          },
+        },
+      },
+    });
+    if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
+
+    const [completedJobs, hoursByService] = await Promise.all([
+      this.prisma.booking.count({
+        where: { partnerId: userId, status: 'COMPLETED' },
+      }),
+      hoursWorkedByServiceIds(
+        this.prisma,
+        userId,
+        profile.offerings.map((o) => o.serviceId),
+      ),
+    ]);
+
+    const breakdown = computePartnerLevel({
+      hoursByService,
+      completedJobs,
+      ratingAvg: profile.ratingAvg,
+      ratingCount: profile.ratingCount,
+      isVerified: profile.isVerified,
+      activeOfferings: profile.offerings.length,
+    });
+
+    const serviceName = new Map(
+      profile.offerings.map((o) => [o.serviceId, o.service]),
+    );
+
+    return {
+      storedLevel: profile.level,
+      formula: PARTNER_LEVEL_FORMULA,
+      ...breakdown,
+      hoursByServicePoints: breakdown.hoursByServicePoints.map((row) => ({
+        ...row,
+        serviceName: serviceName.get(row.serviceId)?.name ?? null,
+        serviceSlug: serviceName.get(row.serviceId)?.slug ?? null,
+      })),
+      inputs: {
+        completedJobs,
+        ratingAvg: profile.ratingAvg,
+        ratingCount: profile.ratingCount,
+        isVerified: profile.isVerified,
+        activeOfferings: profile.offerings.length,
+      },
+    };
+  }
+
+  private async syncOfferingsForProfile(
+    partnerProfileId: string,
+    serviceIds: string[],
+  ) {
+    const uniqueIds = [...new Set(serviceIds.map((id) => id.trim()).filter(Boolean))];
+
+    if (uniqueIds.length > 40) {
+      throw new BadRequestException('Tối đa 40 nghề trên một hồ sơ');
+    }
+
+    const services = uniqueIds.length
+      ? await this.prisma.service.findMany({
+          where: { id: { in: uniqueIds }, isActive: true },
+          select: { id: true, name: true, basePrice: true },
+        })
+      : [];
+
+    if (services.length !== uniqueIds.length) {
+      throw new BadRequestException('Có nghề không hợp lệ hoặc đã tắt');
+    }
+
+    const existing = await this.prisma.partnerService.findMany({
+      where: { partnerProfileId },
+    });
+    const byServiceId = new Map(existing.map((row) => [row.serviceId, row]));
+
+    // Gỡ tag → tắt offering (giữ giá/headline nếu gắn lại sau).
+    if (uniqueIds.length === 0) {
+      await this.prisma.partnerService.updateMany({
+        where: { partnerProfileId, isActive: true },
+        data: { isActive: false },
+      });
+    } else {
+      await this.prisma.partnerService.updateMany({
+        where: {
+          partnerProfileId,
+          serviceId: { notIn: uniqueIds },
+          isActive: true,
+        },
+        data: { isActive: false },
+      });
+    }
+
+    for (const service of services) {
+      const row = byServiceId.get(service.id);
+      if (row) {
+        if (!row.isActive) {
+          await this.prisma.partnerService.update({
+            where: { id: row.id },
+            data: { isActive: true },
+          });
+        }
+      } else {
+        await this.prisma.partnerService.create({
+          data: {
+            partnerProfileId,
+            serviceId: service.id,
+            price: service.basePrice,
+            headline: service.name,
+            experienceYears: 0,
+            isActive: true,
+          },
+        });
+      }
+    }
+  }
+}
