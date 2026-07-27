@@ -5,11 +5,15 @@ import {
   parseWorkModes,
 } from '../../common/partner-profile-fields';
 import { minutesToWorkHours } from '../../common/partner-work-hours';
+import { ReputationService } from '../../common/reputation.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reputation: ReputationService,
+  ) {}
 
   private readonly onlineServiceWhere = {
     isActive: true,
@@ -196,7 +200,7 @@ export class CatalogService {
     });
 
     const partnerUserIds = offerings.map((o) => o.partnerProfile.user.id);
-    const [completedCounts, completedForService] = await Promise.all([
+    const [completedCounts, completedForService, reputationByPartner] = await Promise.all([
       Promise.all(
         partnerUserIds.map((partnerId) =>
           this.prisma.booking.count({
@@ -215,6 +219,7 @@ export class CatalogService {
           service: { select: { durationMin: true } },
         },
       }),
+      this.reputation.getSnapshotsBatch(partnerUserIds),
     ]);
 
     const minutesByPartner = new Map<string, number>();
@@ -256,6 +261,7 @@ export class CatalogService {
           level: offering.partnerProfile.level,
           avatarUrl: offering.partnerProfile.avatarUrl,
           completedJobs: completedCounts[index] ?? 0,
+          reputation: reputationByPartner.get(partnerUserId) ?? null,
         },
       };
     });

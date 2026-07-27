@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CustomerBookingCard } from '../components/customer/customer-booking-card';
+import { BookingComplaintForm } from '../components/booking/booking-complaint-form';
 import { useAuth } from '../features/auth/auth-context';
 import { useCustomerRealtime } from '../hooks/use-customer-realtime';
 import { api } from '../services/api';
@@ -70,7 +71,7 @@ export function CustomerBookingDetailPage() {
           <p className="mt-1 text-xs text-[var(--color-muted)]">Mã: {booking.id}</p>
         </div>
         <Link to="/don-cua-toi/khieu-nai" className="text-sm font-semibold text-[var(--color-muted)]">
-          Khiếu nại
+          Hướng dẫn khiếu nại
         </Link>
       </div>
 
@@ -83,6 +84,8 @@ export function CustomerBookingDetailPage() {
         onPay={() => payMutation.mutate()}
         onCancel={() => cancelMutation.mutate()}
       />
+
+      <BookingComplaintForm bookingId={booking.id} partnerId={booking.partnerId} />
     </div>
   );
 }

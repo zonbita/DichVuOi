@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -35,6 +36,40 @@ export class PartnersController {
   @Get('public/:userId')
   getPublic(@Param('userId') userId: string) {
     return this.partnersService.getPublicProfile(userId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('favorites/ids')
+  listFavoriteIds(@CurrentUser() user: AuthUser) {
+    return this.partnersService.listFavoriteIds(user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('favorites')
+  listFavorites(@CurrentUser() user: AuthUser) {
+    return this.partnersService.listFavorites(user.id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('favorites/:partnerUserId')
+  addFavorite(
+    @CurrentUser() user: AuthUser,
+    @Param('partnerUserId') partnerUserId: string,
+  ) {
+    return this.partnersService.addFavorite(user.id, partnerUserId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete('favorites/:partnerUserId')
+  removeFavorite(
+    @CurrentUser() user: AuthUser,
+    @Param('partnerUserId') partnerUserId: string,
+  ) {
+    return this.partnersService.removeFavorite(user.id, partnerUserId);
   }
 
   /** Dual-role: bật nhận việc trên cùng account → trả session mới (JWT cập nhật role). */

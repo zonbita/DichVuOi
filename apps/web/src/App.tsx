@@ -4,6 +4,7 @@ import { UserDashboardLayout } from './components/layout/user-dashboard-layout';
 import { AdminBookingDetailPage } from './pages/admin/admin-booking-detail-page';
 import { AdminBookingsPage } from './pages/admin/admin-bookings-page';
 import { AdminCatalogPage } from './pages/admin/admin-catalog-page';
+import { AdminComplaintsPage } from './pages/admin/admin-complaints-page';
 import { AdminFlaggedPage } from './pages/admin/admin-flagged-page';
 import { AdminLayout } from './pages/admin/admin-layout';
 import { AdminOverviewPage } from './pages/admin/admin-overview-page';
@@ -15,6 +16,7 @@ import { CompanyInfoPage } from './pages/company-info-page';
 import { CustomerBookingDetailPage } from './pages/customer-booking-detail-page';
 import { GroupDetailPage } from './pages/group-detail-page';
 import { GroupsPage } from './pages/groups-page';
+import { HireServicePage } from './pages/hire-service-page';
 import { HomePage } from './pages/home-page';
 import { LoginPage } from './pages/login-page';
 import { MyBookingsPage } from './pages/my-bookings-page';
@@ -63,7 +65,7 @@ export default function App() {
           <Route element={<UserDashboardLayout />}>
             <Route path="/don-cua-toi" element={<MyBookingsPage />} />
             <Route path="/don-cua-toi/don/:id" element={<CustomerBookingDetailPage />} />
-            <Route path="/don-cua-toi/thue" element={<GroupsPage />} />
+            <Route path="/don-cua-toi/thue" element={<HireServicePage />} />
             <Route path="/don-cua-toi/tro-giup" element={<HelpCenterPage />} />
             <Route path="/don-cua-toi/khieu-nai" element={<ComplaintPage />} />
             <Route path="/doi-tac" element={<PartnerDashboardPage />} />
@@ -80,6 +82,7 @@ export default function App() {
             <Route path="bookings" element={<AdminBookingsPage />} />
             <Route path="bookings/:id" element={<AdminBookingDetailPage />} />
             <Route path="reviews" element={<AdminReviewsPage />} />
+            <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="flagged" element={<AdminFlaggedPage />} />
             <Route path="catalog" element={<AdminCatalogPage />} />
           </Route>

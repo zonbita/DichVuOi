@@ -39,6 +39,11 @@ export class BookingsController {
     return this.bookingsService.listMineAsCustomer(user.id);
   }
 
+  @Get('rebook-hints')
+  rebookHints(@CurrentUser() user: AuthUser) {
+    return this.bookingsService.getRebookHints(user.id);
+  }
+
   @UseGuards(RolesGuard)
   @Roles(Role.PARTNER, Role.ADMIN)
   @Get('partner/mine')

@@ -7,11 +7,16 @@ import { GroupTile } from '../components/common/group-card';
 import { ScrollRail } from '../components/common/scroll-rail';
 import { ServiceCard } from '../components/common/service-card';
 import { HeroSection } from '../components/home/hero-section';
+import { FamiliarPartnersSection, RebookSection } from '../components/home/retention-sections';
 import { Icon } from '../components/ui/icon';
 import type { IconName } from '../components/ui/icon';
 import { PaymentPartnerBadges } from '../components/ui/payment-partner-badges';
+import { useAuth } from '../features/auth/auth-context';
 import { api } from '../services/api';
-import { groupColor } from '../utils/catalog-colors';
+import {
+  rankFeaturedServices,
+  signalsFromRebookHints,
+} from '../utils/personalize-services';
 
 const trustPoints: Array<{ icon: IconName; value: string; label: string }> = [
   { icon: 'users', value: '10.000+', label: 'Thợ chuyên nghiệp' },
@@ -49,7 +54,7 @@ function CountdownBadge() {
         {parts.map((part) => (
           <span
             key={part.label}
-            className="flex min-w-[44px] flex-col items-center bg-[var(--color-ink)] px-2.5 py-1.5 leading-none text-white"
+            className="flex min-w-[44px] flex-col items-center rounded-md bg-[var(--color-navy)] px-2.5 py-1.5 leading-none text-white"
           >
             <span className="text-base font-extrabold tabular-nums tracking-wide">
               {String(part.value).padStart(2, '0')}
@@ -74,8 +79,8 @@ function SectionHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 border border-[var(--color-line)] bg-white px-4 py-3.5 shadow-[0_1px_0_rgba(18,32,46,0.04)] sm:px-5 sm:py-4">
-      <h2 className="text-xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-2xl">
+    <div className="section-header-bar mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5 sm:px-5 sm:py-4">
+      <h2 className="text-xl font-bold tracking-tight text-[var(--color-navy)] sm:text-2xl">
         {title}
       </h2>
       {children}
@@ -90,7 +95,7 @@ function ViewAllLink({ to = '/nhom' }: { to?: string }) {
   return (
     <Link
       to={to}
-      className="group flex items-center gap-1 text-[15px] font-bold text-[var(--color-brand-deep)] transition hover:text-[var(--color-brand)]"
+      className="group flex items-center gap-1 text-[15px] font-semibold text-[var(--color-brand)] transition hover:text-[var(--color-navy)]"
     >
       Xem tất cả
       <Icon
@@ -101,18 +106,8 @@ function ViewAllLink({ to = '/nhom' }: { to?: string }) {
   );
 }
 
-function shuffleList<T>(items: T[]): T[] {
-  const arr = [...items];
-  for (let i = arr.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const tmp = arr[i];
-    arr[i] = arr[j]!;
-    arr[j] = tmp!;
-  }
-  return arr;
-}
-
 export function HomePage() {
+  const { user } = useAuth();
   const groupsQuery = useQuery({
     queryKey: ['groups', 'all'],
     queryFn: () => api.getGroups(false),
@@ -120,6 +115,12 @@ export function HomePage() {
   const servicesQuery = useQuery({
     queryKey: ['services'],
     queryFn: () => api.getServices(),
+  });
+  const rebookQuery = useQuery({
+    queryKey: ['rebook-hints'],
+    queryFn: api.getRebookHints,
+    enabled: Boolean(user),
+    staleTime: 60_000,
   });
 
   const [activeTab, setActiveTab] = useState('all');
@@ -138,19 +139,19 @@ export function HomePage() {
   );
 
   const featuredServices = useMemo(() => {
-    const pool =
-      activeTab === 'all'
-        ? services
-        : services.filter((service) => service.category.group.slug === activeTab);
     const limit = activeTab === 'all' ? 8 : 16;
-    return shuffleList(pool).slice(0, limit);
-  }, [services, activeTab]);
+    const signals = signalsFromRebookHints(rebookQuery.data ?? []);
+    return rankFeaturedServices(services, activeTab, signals, limit);
+  }, [services, activeTab, rebookQuery.data]);
 
   const apiDown = groupsQuery.isError || servicesQuery.isError;
 
   return (
     <div className="pb-4">
       <HeroSection />
+
+      <RebookSection />
+      <FamiliarPartnersSection />
 
       {apiDown && (
         <div className="page-shell mt-4">
@@ -189,7 +190,7 @@ export function HomePage() {
           {groupsQuery.isLoading ? (
             <p className="text-base text-[var(--color-muted)]">Đang tải ngành nghề...</p>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
               {groups.map((group) => (
                 <GroupTile key={group.id} group={group} />
               ))}
@@ -207,29 +208,17 @@ export function HomePage() {
 
           <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-0.5">
             {tabs.map((tab) => {
-              const color =
-                tab.slug === 'all'
-                  ? groupColor('nha-cua')
-                  : groupColor(tab.slug);
               const active = activeTab === tab.slug;
               return (
                 <button
                   key={tab.slug}
                   type="button"
                   onClick={() => setActiveTab(tab.slug)}
-                  className="shrink-0 whitespace-nowrap px-4 py-2 text-[14px] font-bold transition"
-                  style={
+                  className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[14px] font-semibold transition ${
                     active
-                      ? {
-                          backgroundColor: color.main,
-                          color: '#fff',
-                          boxShadow: `0 2px 8px ${color.main}40`,
-                        }
-                      : {
-                          backgroundColor: color.soft,
-                          color: color.ink,
-                        }
-                  }
+                      ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-navy)] shadow-sm'
+                      : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-brand)]/40 hover:text-[var(--color-ink)]'
+                  }`}
                 >
                   {tab.name}
                 </button>
@@ -250,14 +239,16 @@ export function HomePage() {
 
       <section className="page-shell mt-10">
         <div className="section-container">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 bg-white px-6 py-5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 rounded-[14px] border border-[var(--color-line)] bg-white px-6 py-5 shadow-[var(--shadow-card)]">
             {trustPoints.map((point) => (
               <div key={point.label} className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]">
+                <span className="icon-tile h-11 w-11">
                   <Icon name={point.icon} className="h-5 w-5" />
                 </span>
                 <span className="leading-snug">
-                  <span className="block text-base font-extrabold">{point.value}</span>
+                  <span className="block text-base font-bold text-[var(--color-navy)]">
+                    {point.value}
+                  </span>
                   <span className="block text-sm text-[var(--color-muted)]">{point.label}</span>
                 </span>
               </div>

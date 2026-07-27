@@ -10,7 +10,7 @@ import {
   MegaPanel,
 } from '../home/catalog-menu-shared';
 
-export function HeaderGroupsMenu() {
+export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
   const treeQuery = useQuery({
     queryKey: ['groups', 'tree'],
     queryFn: api.getGroupsTree,
@@ -70,6 +70,14 @@ export function HeaderGroupsMenu() {
     setOpen(false);
   }
 
+  const triggerClass = open
+    ? onDark
+      ? 'bg-white/15 text-white'
+      : 'bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
+    : onDark
+      ? 'text-white/90 hover:bg-white/10'
+      : 'text-[var(--color-ink)] hover:bg-[var(--color-brand-soft)]';
+
   return (
     <div ref={rootRef} className="relative shrink-0">
       <button
@@ -78,34 +86,31 @@ export function HeaderGroupsMenu() {
         aria-controls={open ? menuId : undefined}
         aria-haspopup="true"
         onClick={() => setOpen((value) => !value)}
-        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[15px] font-bold transition sm:gap-2 sm:px-3 ${
-          open
-            ? 'bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
-            : 'text-[var(--color-ink)] hover:bg-[var(--color-brand-soft)]'
-        }`}
+        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[15px] font-bold transition sm:gap-2 sm:px-3 ${triggerClass}`}
       >
         <Icon name="menu" className="h-5 w-5 text-[var(--color-brand)]" />
         <span className="hidden whitespace-nowrap sm:inline">NHÓM DỊCH VỤ</span>
         <Icon
           name="chevronDown"
-          className={`h-4 w-4 text-[var(--color-muted)] transition ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 transition ${open ? 'rotate-180' : ''} ${
+            onDark ? 'text-white/60' : 'text-[var(--color-muted)]'
+          }`}
         />
       </button>
 
-      {/* Desktop / tablet: bảng mega như trang chủ */}
       {open && !isNarrow ? (
         <div
           id={menuId}
           role="menu"
-          className="absolute top-[calc(100%+8px)] left-0 z-[9990] flex overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl"
+          className="absolute top-[calc(100%+8px)] left-0 z-[9990] flex overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-[var(--shadow-hover)]"
           onMouseLeave={() => setActiveSlug(groups[0]?.slug ?? null)}
           onClick={(event) => {
             if ((event.target as HTMLElement).closest('a')) close();
           }}
         >
           <div className="w-[240px] shrink-0 border-r border-[var(--color-line)] bg-white">
-            <p className="flex items-center gap-2.5 px-3 py-3 text-base font-bold">
-              <Icon name="menu" className="h-5 w-5" />
+            <p className="flex items-center gap-2.5 px-3 py-3 text-base font-bold text-[var(--color-navy)]">
+              <Icon name="menu" className="h-5 w-5 text-[var(--color-brand)]" />
               NHÓM DỊCH VỤ
             </p>
             <ul className="max-h-[min(70vh,560px)] overflow-y-auto pb-2">
@@ -126,7 +131,7 @@ export function HeaderGroupsMenu() {
                 <Link
                   to="/nhom"
                   onClick={close}
-                  className="flex items-center justify-between px-3 py-2.5 text-[15px] font-bold text-[var(--color-brand-deep)] hover:bg-[var(--color-brand-soft)]"
+                  className="flex items-center justify-between px-3 py-2.5 text-[15px] font-semibold text-[var(--color-brand)] hover:bg-[var(--color-brand-soft)]"
                 >
                   Xem tất cả danh mục
                   <Icon name="chevronRight" className="h-4 w-4" />
@@ -141,7 +146,6 @@ export function HeaderGroupsMenu() {
         </div>
       ) : null}
 
-      {/* Mobile: drawer giống trang chủ */}
       {open && isNarrow
         ? createPortal(
             <CatalogMobileDrawer

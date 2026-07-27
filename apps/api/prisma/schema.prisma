@@ -44,6 +44,26 @@ model User {
   bookingMessages  BookingMessage[]
   reviewsGiven     Review[]      @relation("ReviewsGiven")
   reviewsReceived  Review[]      @relation("ReviewsReceived")
+  favoritePartners PartnerFavorite[] @relation("CustomerFavorites")
+  favoritedBy      PartnerFavorite[] @relation("PartnerFavoritedBy")
+  complaintsFiled  Complaint[]       @relation("ComplaintsFiled")
+  complaintsAgainst Complaint[]      @relation("ComplaintsAgainst")
+  complaintsResolved Complaint[]     @relation("ComplaintsResolved")
+  reputationPeriods PartnerReputationPeriod[]
+}
+
+/** Khách lưu người làm quen — hỗ trợ thuê lại / cá nhân hóa trang chủ. */
+model PartnerFavorite {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation("CustomerFavorites", fields: [userId], references: [id], onDelete: Cascade)
+  partnerUserId  String
+  partnerUser    User     @relation("PartnerFavoritedBy", fields: [partnerUserId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, partnerUserId])
+  @@index([userId, createdAt])
+  @@index([partnerUserId])
 }
 
 model PartnerProfile {
@@ -166,6 +186,8 @@ model Booking {
   address       String
   scheduledAt   DateTime
   note          String?
+  budgetMin     Int?
+  budgetMax     Int?
   status        BookingStatus @default(PENDING)
   totalPrice    Int
   customerName   String
@@ -183,6 +205,7 @@ model Booking {
   updatedAt     DateTime      @updatedAt
   messages      BookingMessage[]
   reviews       Review[]
+  complaints    Complaint[]
 
   @@index([userId])
   @@index([partnerId])
@@ -224,4 +247,69 @@ model Review {
   @@unique([bookingId, fromUserId])
   @@index([toUserId])
   @@index([bookingId])
+}
+
+/** Khiếu nại theo đơn — trừ điểm uy tín khi Admin xác minh đúng. */
+enum ComplaintStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+model Complaint {
+  id               String          @id @default(cuid())
+  bookingId        String
+  booking          Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reporterUserId   String
+  reporter         User            @relation("ComplaintsFiled", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  partnerUserId    String
+  partner          User            @relation("ComplaintsAgainst", fields: [partnerUserId], references: [id], onDelete: Cascade)
+  category         String
+  description      String
+  status           ComplaintStatus @default(SUBMITTED)
+  /** Điểm trừ uy tín khi status = VERIFIED. */
+  deductionPoints  Int?
+  adminNote        String?
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  resolvedBy       User?           @relation("ComplaintsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  ledgerEntries    ReputationLedgerEntry[]
+
+  @@index([partnerUserId, status])
+  @@index([reporterUserId])
+  @@index([bookingId])
+  @@index([status, createdAt])
+}
+
+/** Chu kỳ uy tín theo năm kể từ ngày tạo tài khoản partner (mặc định 1000 điểm/chu kỳ). */
+model PartnerReputationPeriod {
+  id              String   @id @default(cuid())
+  partnerUserId   String
+  partnerUser     User     @relation(fields: [partnerUserId], references: [id], onDelete: Cascade)
+  /** 0 = năm đầu từ createdAt, 1 = năm thứ hai, … */
+  periodIndex     Int
+  startingPoints  Int      @default(1000)
+  currentPoints   Int      @default(1000)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  ledgerEntries   ReputationLedgerEntry[]
+
+  @@unique([partnerUserId, periodIndex])
+  @@index([partnerUserId])
+}
+
+model ReputationLedgerEntry {
+  id          String                  @id @default(cuid())
+  periodId    String
+  period      PartnerReputationPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  delta       Int
+  reason      String
+  complaintId String?
+  complaint   Complaint?              @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+  createdAt   DateTime                @default(now())
+
+  @@index([periodId, createdAt])
 }

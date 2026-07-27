@@ -1,10 +1,27 @@
 import { Link } from 'react-router-dom';
 import type { ServiceGroupTree } from '../../types/catalog';
+import { GroupCatalogIcon } from '../catalog/group-catalog-icon';
 import { groupColor } from '../../utils/catalog-colors';
-import { groupIcon } from '../../utils/catalog-display';
 import { Icon } from '../ui/icon';
 
-export function MegaPanel({ group }: { group: ServiceGroupTree }) {
+export type CatalogServicePick = {
+  id: string;
+  slug: string;
+  name: string;
+  categoryName: string;
+  groupSlug: string;
+  groupName: string;
+};
+
+export function MegaPanel({
+  group,
+  onServiceSelect,
+  selectedServiceSlug,
+}: {
+  group: ServiceGroupTree;
+  onServiceSelect?: (pick: CatalogServicePick) => void;
+  selectedServiceSlug?: string | null;
+}) {
   const categories = group.categories ?? [];
   const color = groupColor(group.slug);
 
@@ -36,18 +53,41 @@ export function MegaPanel({ group }: { group: ServiceGroupTree }) {
         <div className="grid flex-1 grid-cols-2 gap-x-8 gap-y-5 xl:grid-cols-3">
           {categories.map((category) => (
             <div key={category.id}>
-              <p className="mb-2 text-[15px] font-extrabold text-[var(--color-brand-deep)]">
+              <p className="mb-2 text-[15px] font-extrabold" style={{ color: color.ink }}>
                 {category.name}
               </p>
               <ul className="space-y-1.5">
                 {category.services.map((service) => (
                   <li key={service.id}>
-                    <Link
-                      to={`/dich-vu/${service.slug}`}
-                      className="group/item block text-[15px] text-[var(--color-ink)]/85 transition hover:text-[var(--color-brand-deep)]"
-                    >
-                      <span className="leading-snug group-hover/item:underline">{service.name}</span>
-                    </Link>
+                    {onServiceSelect ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onServiceSelect({
+                            id: service.id,
+                            slug: service.slug,
+                            name: service.name,
+                            categoryName: category.name,
+                            groupSlug: group.slug,
+                            groupName: group.name,
+                          })
+                        }
+                        className={`group/item block w-full text-left text-[15px] transition hover:text-[var(--color-brand-deep)] ${
+                          selectedServiceSlug === service.slug
+                            ? 'font-semibold text-[var(--color-brand-deep)]'
+                            : 'text-[var(--color-ink)]/85'
+                        }`}
+                      >
+                        <span className="leading-snug group-hover/item:underline">{service.name}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        to={`/dich-vu/${service.slug}`}
+                        className="group/item block text-[15px] text-[var(--color-ink)]/85 transition hover:text-[var(--color-brand-deep)]"
+                      >
+                        <span className="leading-snug group-hover/item:underline">{service.name}</span>
+                      </Link>
+                    )}
                   </li>
                 ))}
                 {category.services.length === 0 ? (
@@ -71,7 +111,7 @@ export function GroupListItem({
 }: {
   group: ServiceGroupTree;
   active: boolean;
-  onEnter?: () => void;
+  onEnter?: (anchor: HTMLElement) => void;
   onClick?: () => void;
   showChevron?: boolean;
 }) {
@@ -80,23 +120,50 @@ export function GroupListItem({
   return (
     <Link
       to={`/nhom/${group.slug}`}
-      onMouseEnter={onEnter}
-      onFocus={onEnter}
+      onMouseEnter={(event) => onEnter?.(event.currentTarget)}
+      onFocus={(event) => onEnter?.(event.currentTarget)}
       onClick={onClick}
-      className="relative flex items-center gap-2.5 px-3 py-2.5 text-[15px] font-semibold transition"
-      style={{
-        backgroundColor: active ? color.soft : undefined,
-        color: active ? color.ink : undefined,
-        boxShadow: active ? `inset 3px 0 0 ${color.main}` : undefined,
-      }}
+      className={`relative mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-[14.5px] font-medium transition-[background,color] duration-[180ms] ease-in-out ${
+        active
+          ? 'font-semibold'
+          : 'text-[var(--color-muted)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]'
+      }`}
+      style={
+        active
+          ? { backgroundColor: color.soft, color: color.ink }
+          : { color: 'var(--color-muted)' }
+      }
     >
-      <Icon
-        name={groupIcon(group.icon)}
-        className="h-[18px] w-[18px] shrink-0"
-        style={{ color: color.main }}
+      {active ? (
+        <span
+          aria-hidden
+          className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
+          style={{ backgroundColor: color.main }}
+        />
+      ) : null}
+      <GroupCatalogIcon
+        slug={group.slug}
+        icon={group.icon}
+        className="h-[20px] w-[20px] shrink-0"
+        active={active}
+        tint={color.main}
       />
-      <span className="min-w-0 flex-1 truncate">{group.name}</span>
-      {showChevron ? <Icon name="chevronRight" className="h-4 w-4 shrink-0 opacity-70" /> : null}
+      <span
+        className="min-w-0 flex-1 truncate"
+        style={{ color: active ? color.ink : undefined }}
+      >
+        {group.name}
+      </span>
+      {showChevron ? (
+        <Icon
+          name="chevronRight"
+          className="h-4 w-4 shrink-0"
+          style={{
+            color: active ? color.main : 'var(--color-muted)',
+            opacity: active ? 1 : 0.55,
+          }}
+        />
+      ) : null}
     </Link>
   );
 }
@@ -106,11 +173,17 @@ export function CatalogMobileDrawer({
   expanded,
   onExpandedChange,
   onClose,
+  pickerMode = false,
+  onServiceSelect,
+  selectedServiceSlug,
 }: {
   groups: ServiceGroupTree[];
   expanded: string | null;
   onExpandedChange: (slug: string | null) => void;
   onClose: () => void;
+  pickerMode?: boolean;
+  onServiceSelect?: (pick: CatalogServicePick) => void;
+  selectedServiceSlug?: string | null;
 }) {
   return (
     <div className="fixed inset-0 z-[9990]">
@@ -137,18 +210,35 @@ export function CatalogMobileDrawer({
             return (
               <div key={group.id} className="border-b border-[var(--color-line)]">
                 <div className="flex items-stretch">
-                  <Link
-                    to={`/nhom/${group.slug}`}
-                    onClick={onClose}
-                    className="flex min-w-0 flex-1 items-center gap-2.5 px-4 py-3.5 text-[15px] font-bold"
-                  >
-                    <Icon
-                      name={groupIcon(group.icon)}
-                      className="h-5 w-5 shrink-0"
-                      style={{ color: groupColor(group.slug).main }}
-                    />
-                    <span className="truncate">{group.name}</span>
-                  </Link>
+                  {pickerMode ? (
+                    <button
+                      type="button"
+                      onClick={() => onExpandedChange(isExpanded ? null : group.slug)}
+                      className="flex min-w-0 flex-1 items-center gap-2.5 px-4 py-3.5 text-left text-[15px] font-bold"
+                    >
+                      <GroupCatalogIcon
+                        slug={group.slug}
+                        icon={group.icon}
+                        className="h-5 w-5 shrink-0"
+                        tint={groupColor(group.slug).main}
+                      />
+                      <span className="truncate">{group.name}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      to={`/nhom/${group.slug}`}
+                      onClick={onClose}
+                      className="flex min-w-0 flex-1 items-center gap-2.5 px-4 py-3.5 text-[15px] font-bold"
+                    >
+                      <GroupCatalogIcon
+                        slug={group.slug}
+                        icon={group.icon}
+                        className="h-5 w-5 shrink-0"
+                        tint={groupColor(group.slug).main}
+                      />
+                      <span className="truncate">{group.name}</span>
+                    </Link>
+                  )}
                   <button
                     type="button"
                     aria-expanded={isExpanded}
@@ -172,40 +262,68 @@ export function CatalogMobileDrawer({
                         <ul className="mt-1.5 space-y-1">
                           {category.services.map((service) => (
                             <li key={service.id}>
-                              <Link
-                                to={`/dich-vu/${service.slug}`}
-                                onClick={onClose}
-                                className="block py-1.5 text-[15px] text-[var(--color-ink)]/85"
-                              >
-                                {service.name}
-                              </Link>
+                              {pickerMode && onServiceSelect ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onServiceSelect({
+                                      id: service.id,
+                                      slug: service.slug,
+                                      name: service.name,
+                                      categoryName: category.name,
+                                      groupSlug: group.slug,
+                                      groupName: group.name,
+                                    });
+                                    onClose();
+                                  }}
+                                  className={`block w-full py-1.5 text-left text-[15px] ${
+                                    selectedServiceSlug === service.slug
+                                      ? 'font-semibold text-[var(--color-brand-deep)]'
+                                      : 'text-[var(--color-ink)]/85'
+                                  }`}
+                                >
+                                  {service.name}
+                                </button>
+                              ) : (
+                                <Link
+                                  to={`/dich-vu/${service.slug}`}
+                                  onClick={onClose}
+                                  className="block py-1.5 text-[15px] text-[var(--color-ink)]/85"
+                                >
+                                  {service.name}
+                                </Link>
+                              )}
                             </li>
                           ))}
                         </ul>
                       </div>
                     ))}
-                    <Link
-                      to={`/nhom/${group.slug}`}
-                      onClick={onClose}
-                      className="mt-3 inline-block text-sm font-bold text-[var(--color-brand-deep)]"
-                    >
-                      Xem nhóm ›
-                    </Link>
+                    {!pickerMode ? (
+                      <Link
+                        to={`/nhom/${group.slug}`}
+                        onClick={onClose}
+                        className="mt-3 inline-block text-sm font-bold text-[var(--color-brand-deep)]"
+                      >
+                        Xem nhóm ›
+                      </Link>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
             );
           })}
         </div>
-        <div className="border-t border-[var(--color-line)] p-3">
-          <Link
-            to="/nhom"
-            onClick={onClose}
-            className="flex w-full items-center justify-center bg-[var(--color-brand)] px-4 py-3 text-[15px] font-bold text-white"
-          >
-            Tất cả danh mục
-          </Link>
-        </div>
+        {!pickerMode ? (
+          <div className="border-t border-[var(--color-line)] p-3">
+            <Link
+              to="/nhom"
+              onClick={onClose}
+              className="flex w-full items-center justify-center bg-[var(--color-brand)] px-4 py-3 text-[15px] font-bold text-white"
+            >
+              Tất cả danh mục
+            </Link>
+          </div>
+        ) : null}
       </div>
     </div>
   );

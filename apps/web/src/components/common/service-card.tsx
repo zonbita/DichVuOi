@@ -13,14 +13,13 @@ export function ServiceCard({ service }: { service: Service }) {
   return (
     <Link
       to={`/dich-vu/${service.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-      style={{ border: `1px solid ${color.soft}`, borderTop: `3px solid ${color.soft}` }}
+      className="group flex flex-col overflow-hidden border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-hover)]"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-canvas)]">
         <img
           src={image}
           alt={service.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          className="catalog-photo h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
         />
       </div>

@@ -42,3 +42,8 @@ const FALLBACK: GroupColor = { main: '#0f9d8a', soft: '#e6f6f3', ink: '#0a7a6b' 
 export function groupColor(slug: string | null | undefined): GroupColor {
   return GROUP_COLORS[slug ?? ''] ?? FALLBACK;
 }
+
+/** Màu chip/tab nghề — luôn theo nhóm catalog của service (README: soft + ink). */
+export function offeringColor(groupSlug: string | null | undefined): GroupColor {
+  return groupColor(groupSlug);
+}

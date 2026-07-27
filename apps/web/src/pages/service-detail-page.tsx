@@ -3,11 +3,19 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { LevelBadge, LevelBadgeGold, VerificationBadge } from '../components/ui/partner-badges';
-import { PriceRangeSlider, PRICE_SLIDER_MAX, PRICE_SLIDER_MIN } from '../components/ui/price-range-slider';
-import { ReferencePrice } from '../components/common/reference-price';
+import { useForm, Controller } from 'react-hook-form';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { AvatarLevelOverlay, LevelBadge, VerificationBadge } from '../components/ui/partner-badges';
+import { AddressMapPicker } from '../components/booking/address-map-picker';
+import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
+import { CatalogOverlayHero } from '../components/catalog/group-detail-hero';
+import {
+  ProviderFilterPanel,
+  PRICE_SLIDER_MAX,
+  PRICE_SLIDER_MIN,
+  type ProviderSortKey,
+} from '../components/catalog/provider-filter-panel';
+import { ServiceHeroPricePanel } from '../components/catalog/service-hero-price-panel';
 import {
   createBookingSchema,
   type CreateBookingFormValues,
@@ -18,8 +26,6 @@ import type { ServiceProvider } from '../types/catalog';
 import { groupColor } from '../utils/catalog-colors';
 import { serviceImage } from '../utils/catalog-images';
 import { fuzzyMatch } from '../utils/search';
-
-type SortKey = 'rating' | 'price-asc' | 'price-desc' | 'name' | 'experience';
 
 const TOOLTIP_W = 320;
 const TOOLTIP_OFFSET = 14;
@@ -135,7 +141,9 @@ function ProviderTile({
         className="absolute -top-11 left-1/2 -translate-x-1/2"
         aria-label={`Xem hồ sơ ${partner.fullName}`}
       >
-        <PartnerAvatar name={partner.fullName} src={partner.avatarUrl} size="xl" round />
+        <AvatarLevelOverlay level={partner.level}>
+          <PartnerAvatar name={partner.fullName} src={partner.avatarUrl} size="xl" round />
+        </AvatarLevelOverlay>
       </Link>
 
       <Link
@@ -152,14 +160,16 @@ function ProviderTile({
         <p className="mt-0.5 line-clamp-1 min-h-[1rem] text-sm font-semibold text-[var(--color-brand-deep)]">
           {trade || '\u00A0'}
         </p>
-        <div className="mt-2.5 min-h-[2rem]">
-          <LevelBadgeGold level={partner.level} />
-        </div>
+        {partner.reputation ? (
+          <div className="mt-2 w-full max-w-[200px]">
+            <ReputationProgressBar reputation={partner.reputation} variant="compact" />
+          </div>
+        ) : null}
         <div className="mt-3 inline-flex flex-col items-center leading-tight">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
             Giá chào
           </span>
-          <p className="text-xl font-extrabold text-[#a11d33]">
+          <p className="text-xl font-extrabold text-[var(--color-sale)]">
             {formatPrice(provider.price)}
             <span className="text-sm font-semibold text-[var(--color-muted)]">/{unit}</span>
           </p>
@@ -197,7 +207,7 @@ function ProviderTile({
           className={`mt-auto w-full rounded-2xl px-2 py-3 text-[15px] font-bold text-white transition ${
             selected
               ? 'bg-[var(--color-brand)]'
-              : 'bg-[var(--color-ink)] hover:bg-[#1a2c40]'
+              : 'bg-[var(--color-navy)] hover:bg-[var(--color-navy-deep)]'
           }`}
         >
           {selected ? 'Đã chọn' : 'Thuê'}
@@ -205,7 +215,7 @@ function ProviderTile({
       ) : (
         <Link
           to={`/nguoi/${partner.userId}`}
-          className="mt-auto w-full rounded-2xl bg-[var(--color-ink)] px-2 py-3 text-center text-[15px] font-bold text-white transition hover:bg-[#1a2c40]"
+          className="mt-auto w-full rounded-2xl bg-[var(--color-navy)] px-2 py-3 text-center text-[15px] font-bold text-white transition hover:bg-[var(--color-navy-deep)]"
         >
           Xem hồ sơ
         </Link>
@@ -303,6 +313,8 @@ function ProviderTile({
 
 export function ServiceDetailPage() {
   const { slug = '' } = useParams();
+  const [searchParams] = useSearchParams();
+  const preselectPartnerId = searchParams.get('partner')?.trim() || '';
   const navigate = useNavigate();
   const { user, loading: authLoading, mode } = useAuth();
   const [selectedProvider, setSelectedProvider] = useState<ServiceProvider | null>(null);
@@ -313,7 +325,7 @@ export function ServiceDetailPage() {
   const [priceMin, setPriceMin] = useState(PRICE_SLIDER_MIN);
   const [priceMax, setPriceMax] = useState(PRICE_SLIDER_MAX);
   const [expMin, setExpMin] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('rating');
+  const [sortKey, setSortKey] = useState<ProviderSortKey>('rating');
 
   /** Form thuê chỉ dành cho mode Khách thuê (không hiện khi đang Người làm). */
   const isHireMode = !user || mode === 'hire';
@@ -336,6 +348,7 @@ export function ServiceDetailPage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<CreateBookingFormValues>({
     resolver: zodResolver(createBookingSchema),
@@ -358,6 +371,17 @@ export function ServiceDetailPage() {
       customerEmail: current.customerEmail || user.email,
     }));
   }, [user, reset]);
+
+  useEffect(() => {
+    if (!preselectPartnerId || !providersQuery.data?.length) return;
+    const match = providersQuery.data.find(
+      (p) => p.partner.userId === preselectPartnerId,
+    );
+    if (match) {
+      setSelectedProvider(match);
+      setShowBookingForm(true);
+    }
+  }, [preselectPartnerId, providersQuery.data]);
 
   const bookingMutation = useMutation({
     mutationFn: api.createBooking,
@@ -452,7 +476,6 @@ export function ServiceDetailPage() {
   const service = serviceQuery.data;
   const image = serviceImage(service);
   const color = groupColor(service.category.group.slug);
-  const providers = providersQuery.data ?? [];
 
   return (
     <div className="animate-fade-up space-y-10">
@@ -460,52 +483,30 @@ export function ServiceDetailPage() {
         className={`grid gap-8 ${showHirePanel ? 'lg:grid-cols-[1.2fr_0.8fr]' : 'lg:grid-cols-1'}`}
       >
         <section>
-          <div
-            className="relative h-[400px] overflow-hidden shadow-sm ring-1 ring-black/5"
-            style={{ borderTop: `4px solid ${color.main}` }}
-          >
-            <img
-              src={image}
-              alt={service.name}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/10"
-              aria-hidden
-            />
-            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
-              <Link
-                to={`/nhom/${service.category.group.slug}`}
-                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide backdrop-blur-sm sm:text-sm"
-                style={{ backgroundColor: `${color.soft}ee`, color: color.ink }}
-              >
-                ← {service.category.group.name}
-              </Link>
-              <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-white drop-shadow-md sm:text-4xl lg:text-5xl">
-                {service.name}
-              </h1>
-            </div>
-          </div>
-          <div className="surface-card mt-6 p-5">
-            <ReferencePrice
-              basePrice={service.basePrice}
-              min={service.priceMin}
-              max={service.priceMax}
-              unit={service.unit}
-            />
-            <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-              Thời lượng khoảng {service.durationMin} phút · khoảng giá thị trường, giá chào từng
-              người làm có thể khác
-            </p>
-          </div>
+          <CatalogOverlayHero
+            image={image}
+            imageAlt={service.name}
+            backTo={`/nhom/${service.category.group.slug}`}
+            backLabel={`← ${service.category.group.name}`}
+            title={service.name}
+            subtitle={service.description ?? undefined}
+            color={color}
+            tall
+            onlineBadgePlacement="inline"
+            aside={
+              <ServiceHeroPricePanel
+                basePrice={service.basePrice}
+                min={service.priceMin}
+                max={service.priceMax}
+                unit={service.unit}
+                durationMin={service.durationMin}
+              />
+            }
+          />
           {!isHireMode ? (
             <p className="mt-4 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-[15px] text-[var(--color-brand-deep)]">
               Bạn đang ở mode <strong>Người làm</strong> — form thuê ẩn. Chuyển sang{' '}
               <strong>Khách thuê</strong> trên menu tài khoản để thuê dịch vụ.
-            </p>
-          ) : !selectedProvider ? (
-            <p className="mt-4 text-[15px] text-[var(--color-muted)]">
-              Chọn một <strong>người làm</strong> bên dưới để hiện form thuê.
             </p>
           ) : null}
         </section>
@@ -513,7 +514,10 @@ export function ServiceDetailPage() {
         {showHirePanel ? (
           <aside className="surface-card flex flex-col justify-center gap-4 p-5 sm:p-6">
             <h2 className="text-xl font-extrabold">Thuê dịch vụ này</h2>
-            <p className="rounded-xl bg-[var(--color-brand-soft)] px-3 py-2 text-[15px]">
+            <p
+              className="rounded-xl px-3 py-2 text-[15px]"
+              style={{ backgroundColor: color.soft, color: color.ink }}
+            >
               Đã chọn: <strong>{selectedProvider!.partner.fullName}</strong> · Giá chào{' '}
               {formatPrice(selectedProvider!.price)}/{service.unit}
             </p>
@@ -533,7 +537,8 @@ export function ServiceDetailPage() {
                 setSelectedProvider(null);
                 setShowBookingForm(false);
               }}
-              className="text-sm font-semibold text-[var(--color-brand-deep)]"
+              className="text-sm font-semibold hover:underline"
+              style={{ color: color.ink }}
             >
               Bỏ chọn người làm
             </button>
@@ -555,7 +560,10 @@ export function ServiceDetailPage() {
           </div>
 
           {selectedProvider ? (
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3">
+            <div
+              className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3"
+              style={{ backgroundColor: color.soft, color: color.ink }}
+            >
               <p className="text-[15px]">
                 Đang thuê: <strong>{selectedProvider.partner.fullName}</strong> · Giá chào{' '}
                 {formatPrice(selectedProvider.price)}/{service.unit}
@@ -615,14 +623,19 @@ export function ServiceDetailPage() {
                 ) : null}
               </div>
               <div className="sm:col-span-2">
-                <input
-                  {...register('address')}
-                  placeholder="Địa chỉ thực hiện"
-                  className="field-input"
+                <Controller
+                  name="address"
+                  control={control}
+                  render={({ field }) => (
+                    <AddressMapPicker
+                      id="service-booking-address"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={errors.address?.message}
+                    />
+                  )}
                 />
-                {errors.address ? (
-                  <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
-                ) : null}
               </div>
               <div className="sm:col-span-2">
                 <textarea
@@ -652,83 +665,30 @@ export function ServiceDetailPage() {
       ) : null}
 
       <section>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-2xl font-extrabold tracking-tight">Người làm dịch vụ này</h2>
-          <span className="rounded-full bg-white px-3 py-1 text-sm text-[var(--color-muted)] shadow-sm ring-1 ring-black/5">
-            {filteredProviders.length}/{providers.length} người · hover để xem đủ thông tin
-          </span>
-        </div>
-
-        <div className="surface-card mt-4 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <label className="block text-sm xl:col-span-2">
-            <span className="mb-1 block font-semibold">Tên / chuyên môn</span>
-            <input
-              value={nameQuery}
-              onChange={(e) => setNameQuery(e.target.value)}
-              placeholder="Tìm theo tên..."
-              className="field-input"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-semibold">Khu vực</span>
-            <input
-              value={cityQuery}
-              onChange={(e) => setCityQuery(e.target.value)}
-              placeholder="TP / tỉnh"
-              className="field-input"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-semibold">KN tối thiểu (năm)</span>
-            <input
-              value={expMin}
-              onChange={(e) => setExpMin(e.target.value)}
-              type="number"
-              min={0}
-              placeholder="Năm KN"
-              className="field-input"
-            />
-          </label>
-          <PriceRangeSlider
-            className="sm:col-span-2 lg:col-span-3 xl:col-span-3"
-            min={priceMin}
-            max={priceMax}
-            onChange={({ min, max }) => {
-              setPriceMin(min);
-              setPriceMax(max);
-            }}
-          />
-          <label className="block text-sm sm:col-span-2 lg:col-span-2 xl:col-span-2">
-            <span className="mb-1 block font-semibold">Sắp xếp</span>
-            <select
-              value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as SortKey)}
-              className="field-input"
-            >
-              <option value="rating">Rating cao</option>
-              <option value="price-asc">Giá tham khảo thấp → cao</option>
-              <option value="price-desc">Giá tham khảo cao → thấp</option>
-              <option value="name">Tên A–Z</option>
-              <option value="experience">Kinh nghiệm nhiều</option>
-            </select>
-          </label>
-          <div className="flex items-end sm:col-span-2 lg:col-span-1 xl:col-span-1">
-            <button
-              type="button"
-              onClick={() => {
-                setNameQuery('');
-                setCityQuery('');
-                setPriceMin(PRICE_SLIDER_MIN);
-                setPriceMax(PRICE_SLIDER_MAX);
-                setExpMin('');
-                setSortKey('rating');
-              }}
-              className="w-full rounded-xl border border-[var(--color-line)] px-3 py-2.5 text-[15px] font-semibold transition hover:bg-[var(--color-brand-soft)]"
-            >
-              Xóa lọc
-            </button>
-          </div>
-        </div>
+        <ProviderFilterPanel
+          nameQuery={nameQuery}
+          onNameQueryChange={setNameQuery}
+          cityQuery={cityQuery}
+          onCityQueryChange={setCityQuery}
+          expMin={expMin}
+          onExpMinChange={setExpMin}
+          sortKey={sortKey}
+          onSortKeyChange={setSortKey}
+          priceMin={priceMin}
+          priceMax={priceMax}
+          onPriceRangeChange={({ min, max }) => {
+            setPriceMin(min);
+            setPriceMax(max);
+          }}
+          onClear={() => {
+            setNameQuery('');
+            setCityQuery('');
+            setPriceMin(PRICE_SLIDER_MIN);
+            setPriceMax(PRICE_SLIDER_MAX);
+            setExpMin('');
+            setSortKey('rating');
+          }}
+        />
 
         {providersQuery.isLoading ? (
           <p className="mt-4 text-[var(--color-muted)]">Đang tải danh sách...</p>

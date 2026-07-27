@@ -107,7 +107,7 @@ export function SiteFooter() {
     <footer className="mt-12">
       <div className="page-shell">
         <div className="chrome-container">
-          <div className="grid gap-6 bg-[linear-gradient(120deg,var(--color-brand-deep),var(--color-brand))] px-6 py-7 text-white lg:grid-cols-[auto_1fr] lg:items-center">
+          <div className="grid gap-6 rounded-[14px] bg-[var(--color-navy)] px-6 py-7 text-white lg:grid-cols-[auto_1fr] lg:items-center">
             <div className="flex items-center gap-4">
               <Icon name="headset" className="h-10 w-10 shrink-0" />
               <div>
@@ -141,7 +141,7 @@ export function SiteFooter() {
                 <ul className="mt-3 space-y-2.5 text-[15px] text-[var(--color-muted)]">
                   {column.links.map((link) => (
                     <li key={link.label}>
-                      <Link to={link.to} className="hover:text-[var(--color-brand-deep)]">
+                      <Link to={link.to} className="hover:text-[var(--color-brand)]">
                         {link.label}
                       </Link>
                     </li>

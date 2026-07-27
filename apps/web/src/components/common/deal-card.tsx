@@ -20,12 +20,9 @@ export function DealCard({ service }: { service: Service }) {
         <img
           src={image}
           alt={service.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          className="catalog-photo h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        <span className="absolute left-0 top-0 bg-[var(--color-sale)] px-2.5 py-1.5 text-sm font-bold text-white">
-          -{stats.discount}%
-        </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
@@ -46,7 +43,7 @@ export function DealCard({ service }: { service: Service }) {
 
         <div className="mt-auto flex items-center justify-between pt-2">
           <span className="flex items-center gap-1 text-sm text-[var(--color-muted)]">
-            <StarIcon className="h-4 w-4 text-amber-400" />
+            <StarIcon className="h-4 w-4" tone="gold" />
             <strong className="font-bold text-[var(--color-ink)]">{stats.rating}</strong>
             <span>({stats.reviews})</span>
           </span>

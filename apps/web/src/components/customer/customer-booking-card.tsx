@@ -88,7 +88,13 @@ export function CustomerBookingCard({
           </p>
           {booking.partner ? (
             <p className="mt-2 text-sm">
-              Người làm: <strong>{booking.partner.fullName}</strong>
+              Người làm:{' '}
+              <Link
+                to={`/nguoi/${booking.partner.id}`}
+                className="font-bold hover:text-[var(--color-brand-deep)]"
+              >
+                {booking.partner.fullName}
+              </Link>
               <span className="text-[var(--color-muted)]">
                 {' '}
                 (không hiện SĐT — chat trong đơn)
@@ -140,6 +146,14 @@ export function CustomerBookingCard({
           ) : null}
           {payError ? (
             <p className="mt-1 text-xs text-red-600">{payError}</p>
+          ) : null}
+          {booking.status === 'COMPLETED' && booking.partnerId ? (
+            <Link
+              to={`/dich-vu/${booking.service.slug}?partner=${booking.partnerId}`}
+              className="btn-primary mt-3 block px-4 py-2 text-center text-sm"
+            >
+              Thuê lại
+            </Link>
           ) : null}
           <Link
             to="/don-cua-toi/khieu-nai"

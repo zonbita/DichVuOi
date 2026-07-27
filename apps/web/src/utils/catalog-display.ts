@@ -67,7 +67,6 @@ function hash(seed: string) {
 export function displayStats(seed: string) {
   const value = hash(seed);
   return {
-    discount: [10, 15, 20, 25][value % 4],
     rating: (4.6 + ((value % 4) * 0.1)).toFixed(1),
     reviews: 320 + (value % 1800),
   };

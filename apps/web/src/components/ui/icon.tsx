@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { useId } from 'react';
 
 const shapes = {
   home: (
@@ -202,6 +203,11 @@ const shapes = {
       <path d="m5 12.5 4.6 4.6L19 7.5" />
     </>
   ),
+  minus: (
+    <>
+      <path d="M5 12h14" />
+    </>
+  ),
   chevronLeft: (
     <>
       <path d="m14.5 5.5-7 6.5 7 6.5" />
@@ -215,6 +221,14 @@ const shapes = {
   chevronDown: (
     <>
       <path d="m5.5 9 6.5 6.5L18.5 9" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" />
+      <path d="M8 7v12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V7" />
     </>
   ),
   menu: (
@@ -264,6 +278,20 @@ const shapes = {
       <path d="m15.5 8.5-6.8 6.8a2.6 2.6 0 0 0 3.7 3.7l7.2-7.2a4.2 4.2 0 0 0-5.9-5.9l-7.4 7.4a1.8 1.8 0 0 0 2.5 2.5l6.2-6.2" />
     </>
   ),
+  grid: (
+    <>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.2" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="1.2" />
+    </>
+  ),
+  laptop: (
+    <>
+      <rect x="4" y="6" width="16" height="10.5" rx="1.5" />
+      <path d="M2.5 19.5h19" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof shapes;
@@ -284,7 +312,7 @@ export function Icon({
       viewBox="0 0 24 24"
       fill={filled ? 'currentColor' : 'none'}
       stroke="currentColor"
-      strokeWidth={1.6}
+      strokeWidth={1.9}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
@@ -296,10 +324,49 @@ export function Icon({
   );
 }
 
-export function StarIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
+export function StarIcon({
+  className = 'h-3.5 w-3.5',
+  style,
+  tone = 'gold',
+}: {
+  className?: string;
+  style?: CSSProperties;
+  tone?: 'gold' | 'muted';
+}) {
+  const gradientId = useId().replace(/:/g, '');
+  const starPath = 'm12 3.6 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z';
+
+  if (tone === 'muted') {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="var(--color-line)"
+        className={className}
+        style={style}
+        aria-hidden="true"
+      >
+        <path d={starPath} />
+      </svg>
+    );
+  }
+
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="m12 3.6 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
+    <svg
+      viewBox="0 0 24 24"
+      className={`star-icon-gold ${className}`}
+      style={style}
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fff8dc" />
+          <stop offset="28%" stopColor="#ffd76a" />
+          <stop offset="55%" stopColor="#f0b429" />
+          <stop offset="82%" stopColor="#c8940a" />
+          <stop offset="100%" stopColor="#9a7209" />
+        </linearGradient>
+      </defs>
+      <path fill={`url(#${gradientId})`} d={starPath} />
     </svg>
   );
 }

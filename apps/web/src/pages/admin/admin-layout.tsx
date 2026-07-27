@@ -12,7 +12,7 @@ type NavItem = {
   label: string;
   icon: IconName;
   end?: boolean;
-  badge?: 'partners' | 'flagged';
+  badge?: 'partners' | 'flagged' | 'complaints';
 };
 
 const navItems: NavItem[] = [
@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
   { to: '/admin/partners', label: 'Đối tác', icon: 'briefcase', badge: 'partners' },
   { to: '/admin/users', label: 'Khách hàng', icon: 'users' },
   { to: '/admin/reviews', label: 'Đánh giá', icon: 'heart' },
-  { to: '/admin/flagged', label: 'Khiếu nại', icon: 'message', badge: 'flagged' },
+  { to: '/admin/complaints', label: 'Khiếu nại', icon: 'message', badge: 'complaints' },
 ];
 
 const soonItems: Array<{ label: string; icon: IconName }> = [
@@ -68,11 +68,17 @@ export function AdminLayout() {
 
   const pendingVerify = statsQuery.data?.partnersPendingVerify ?? 0;
   const flagged = statsQuery.data?.redactedMessages ?? 0;
+  const complaintsPending = statsQuery.data?.complaintsPending ?? 0;
 
   function badgeFor(kind?: NavItem['badge']) {
     if (kind === 'partners' && pendingVerify > 0) {
       return (
         <span className="admin-badge admin-badge-amber ml-auto">{pendingVerify}</span>
+      );
+    }
+    if (kind === 'complaints' && complaintsPending > 0) {
+      return (
+        <span className="admin-badge admin-badge-red ml-auto">{complaintsPending}</span>
       );
     }
     if (kind === 'flagged' && flagged > 0) {

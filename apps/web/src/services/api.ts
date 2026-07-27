@@ -4,8 +4,10 @@ import type {
   BookingMessage,
   BookingReview,
   CreateBookingInput,
+  FavoritePartner,
   GroupDetail,
   PartnerSchedule,
+  RebookHint,
   Service,
   ServiceGroup,
   ServiceGroupTree,
@@ -25,6 +27,7 @@ import type {
   AdminUser,
   Paginated,
 } from '../types/admin';
+import type { Complaint, ComplaintStatus } from '../types/complaint';
 import type { ChatbotReply, ChatbotStats } from '../types/chatbot';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
@@ -138,6 +141,7 @@ export const api = {
     }),
   getBooking: (id: string) => request<Booking>(`/api/bookings/${id}`),
   getMyBookings: () => request<Booking[]>('/api/bookings/mine'),
+  getRebookHints: () => request<RebookHint[]>('/api/bookings/rebook-hints'),
   getOpenBookings: () => request<Booking[]>('/api/bookings/open'),
   getPartnerBookings: () => request<Booking[]>('/api/bookings/partner/mine'),
   getPartnerSchedule: (year: number, month: number) =>
@@ -165,6 +169,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  createBookingComplaint: (
+    bookingId: string,
+    payload: { category: string; description: string },
+  ) =>
+    request<Complaint>(`/api/bookings/${bookingId}/complaints`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  listMyComplaints: () => request<Complaint[]>('/api/complaints/mine'),
 
   adminStats: () => request<AdminStats>('/api/admin/stats'),
   adminUsers: (query: AdminUserQuery = {}) =>
@@ -202,6 +215,22 @@ export const api = {
     request<Paginated<AdminFlaggedMessage>>(
       `/api/admin/messages/flagged${queryString(query)}`,
     ),
+  adminComplaints: (query: { status?: ComplaintStatus } = {}) =>
+    request<Complaint[]>(
+      `/api/admin/complaints${queryString({ status: query.status })}`,
+    ),
+  adminResolveComplaint: (
+    id: string,
+    payload: {
+      status: 'VERIFIED' | 'REJECTED' | 'UNDER_REVIEW';
+      deductionPoints?: number;
+      adminNote?: string;
+    },
+  ) =>
+    request<Complaint>(`/api/admin/complaints/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
   adminCatalog: () => request<AdminCatalogGroup[]>('/api/admin/catalog'),
   adminCategories: () =>
     request<AdminCategoryOption[]>('/api/admin/categories'),
@@ -243,6 +272,18 @@ export const api = {
   getPartnerLevel: () => request<PartnerLevelBreakdown>('/api/partners/me/level'),
   getPublicPartner: (userId: string) =>
     request<PublicPartnerProfile>(`/api/partners/public/${userId}`),
+  getFavoritePartnerIds: () => request<string[]>('/api/partners/favorites/ids'),
+  getFavoritePartners: () => request<FavoritePartner[]>('/api/partners/favorites'),
+  addFavoritePartner: (partnerUserId: string) =>
+    request<{ partnerUserId: string; saved: boolean }>(
+      `/api/partners/favorites/${partnerUserId}`,
+      { method: 'POST' },
+    ),
+  removeFavoritePartner: (partnerUserId: string) =>
+    request<{ partnerUserId: string; saved: boolean }>(
+      `/api/partners/favorites/${partnerUserId}`,
+      { method: 'DELETE' },
+    ),
   updatePartnerProfile: (payload: {
     headline?: string;
     bio?: string;

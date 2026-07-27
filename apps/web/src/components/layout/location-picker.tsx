@@ -7,7 +7,13 @@ import {
 } from '../../data/provinces';
 import { Icon } from '../ui/icon';
 
-export function LocationPicker({ className = '' }: { className?: string }) {
+export function LocationPicker({
+  className = '',
+  onDark = false,
+}: {
+  className?: string;
+  onDark?: boolean;
+}) {
   const [slug, setSlug] = useState(DEFAULT_VISIBLE);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -57,11 +63,16 @@ export function LocationPicker({ className = '' }: { className?: string }) {
         aria-expanded={open}
         aria-label="Chọn tỉnh / thành"
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-1.5 text-[15px] font-medium text-[var(--color-ink)]"
+        className={`flex items-center gap-1.5 text-[15px] font-medium ${
+          onDark ? 'text-white' : 'text-[var(--color-ink)]'
+        }`}
       >
-        <Icon name="pin" className="h-4 w-4 text-[var(--color-brand)]" />
+        <Icon name="pin" className={`h-4 w-4 ${onDark ? 'text-[var(--color-brand)]' : 'text-[var(--color-brand)]'}`} />
         <span className="max-w-[9.5rem] truncate">{selected.name}</span>
-        <Icon name="chevronDown" className="h-4 w-4 text-[var(--color-muted)]" />
+        <Icon
+          name="chevronDown"
+          className={`h-4 w-4 ${onDark ? 'text-white/60' : 'text-[var(--color-muted)]'}`}
+        />
       </button>
 
       {open ? (

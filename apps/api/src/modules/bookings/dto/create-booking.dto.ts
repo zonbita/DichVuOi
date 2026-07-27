@@ -1,8 +1,10 @@
 import {
   IsDateString,
   IsEmail,
+  IsInt,
   IsOptional,
   IsString,
+  Min,
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -45,4 +47,16 @@ export class CreateBookingDto {
   @IsOptional()
   @IsString()
   note?: string;
+
+  @ApiPropertyOptional({ example: 500000, description: 'Ngân sách tối thiểu khách mong muốn (₫)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  budgetMin?: number;
+
+  @ApiPropertyOptional({ example: 1500000, description: 'Ngân sách tối đa khách mong muốn (₫)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  budgetMax?: number;
 }

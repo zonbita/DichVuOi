@@ -22,6 +22,7 @@ export type AdminStats = {
   gmvCompleted: number;
   reviews: number;
   redactedMessages: number;
+  complaintsPending: number;
 };
 
 export type AdminUser = {

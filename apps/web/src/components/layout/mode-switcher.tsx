@@ -17,7 +17,7 @@ const modes: { id: AppMode; label: string; hint: string }[] = [
   },
 ];
 
-export function ModeSwitcher() {
+export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
   const { user, mode, setMode, logout, canOffer } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -60,10 +60,14 @@ export function ModeSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className={`group flex max-w-[14rem] items-center gap-2.5 rounded-full border bg-white py-1 pl-1 pr-2.5 text-left shadow-sm transition sm:max-w-[16rem] sm:pr-3 ${
-          open
-            ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)]'
-            : 'border-[var(--color-line)] hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-soft)]/60'
+        className={`group flex max-w-[14rem] items-center gap-2.5 rounded-full border py-1 pl-1 pr-2.5 text-left transition sm:max-w-[16rem] sm:pr-3 ${
+          onDark
+            ? open
+              ? 'border-white/30 bg-white/15'
+              : 'border-white/20 bg-white/10 hover:border-white/30 hover:bg-white/15'
+            : open
+              ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] shadow-sm'
+              : 'border-[var(--color-line)] bg-white shadow-sm hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-soft)]/60'
         }`}
       >
         <UserAvatar
@@ -74,16 +78,30 @@ export function ModeSwitcher() {
           size="md"
         />
         <span className="min-w-0 flex-1 py-0.5">
-          <span className="block truncate text-sm font-bold leading-tight tracking-tight">
+          <span
+            className={`block truncate text-sm font-bold leading-tight tracking-tight ${
+              onDark ? 'text-white' : 'text-[var(--color-ink)]'
+            }`}
+          >
             {user.fullName}
           </span>
-          <span className="mt-0.5 block truncate text-[11px] font-medium text-[var(--color-muted)]">
+          <span
+            className={`mt-0.5 block truncate text-[11px] font-medium ${
+              onDark ? 'text-white/65' : 'text-[var(--color-muted)]'
+            }`}
+          >
             {current.label}
           </span>
         </span>
         <span
-          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-canvas)] text-[var(--color-muted)] transition group-hover:bg-white ${
-            open ? 'rotate-180 bg-white text-[var(--color-brand-deep)]' : ''
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
+            onDark
+              ? open
+                ? 'rotate-180 bg-white/20 text-white'
+                : 'bg-white/10 text-white/70 group-hover:bg-white/15'
+              : open
+                ? 'rotate-180 bg-white text-[var(--color-brand-deep)]'
+                : 'bg-[var(--color-canvas)] text-[var(--color-muted)] group-hover:bg-white'
           }`}
         >
           <Icon name="chevronDown" className="h-3.5 w-3.5" />

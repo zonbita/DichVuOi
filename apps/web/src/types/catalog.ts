@@ -96,6 +96,8 @@ export type Booking = {
   customerName: string;
   customerPhone: string;
   note: string | null;
+  budgetMin?: number | null;
+  budgetMax?: number | null;
   partnerId?: string | null;
   paymentStatus?: PaymentStatus;
   commissionBps?: number;
@@ -151,6 +153,8 @@ export type CreateBookingInput = {
   scheduledAt: string;
   partnerId?: string;
   note?: string;
+  budgetMin?: number;
+  budgetMax?: number;
 };
 
 export type ServiceProvider = {
@@ -181,5 +185,47 @@ export type ServiceProvider = {
     level: number;
     avatarUrl: string | null;
     completedJobs: number;
+    reputation?: {
+      currentPoints: number;
+      startingPoints: number;
+      percent: number;
+      periodIndex: number;
+      periodStart: string;
+      periodEnd: string;
+      deductedThisPeriod: number;
+    } | null;
   };
+};
+
+/** Partner đã lưu — section «Người làm quen». */
+export type FavoritePartner = {
+  partnerUserId: string;
+  fullName: string;
+  headline: string | null;
+  avatarUrl: string | null;
+  ratingAvg: number;
+  ratingCount: number;
+  level: number;
+  isVerified: boolean;
+  acceptingJobs: boolean;
+  favoritedAt: string;
+  topOffering: {
+    serviceSlug: string;
+    serviceName: string;
+    price: number;
+    unit: string;
+  } | null;
+};
+
+/** Gợi ý thuê lại từ đơn COMPLETED. */
+export type RebookHint = {
+  partnerUserId: string;
+  partnerName: string;
+  partnerAvatarUrl: string | null;
+  serviceSlug: string;
+  serviceName: string;
+  groupSlug: string;
+  lastBookedAt: string;
+  lastPrice: number;
+  bookingCount: number;
 };

@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, PaymentStatus, Prisma } from '@prisma/client';
+import { BookingStatus, ComplaintStatus, PaymentStatus, Prisma } from '@prisma/client';
 import {
   computeEscrowSplit,
   DEFAULT_COMMISSION_BPS,
@@ -68,6 +68,7 @@ export class AdminService {
       reviews,
       redactedMessages,
       openJobs,
+      complaintsPending,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.partnerProfile.count(),
@@ -89,6 +90,11 @@ export class AdminService {
       this.prisma.bookingMessage.count({ where: { redacted: true } }),
       this.prisma.booking.count({
         where: { status: BookingStatus.PENDING, partnerId: null },
+      }),
+      this.prisma.complaint.count({
+        where: {
+          status: { in: [ComplaintStatus.SUBMITTED, ComplaintStatus.UNDER_REVIEW] },
+        },
       }),
     ]);
 
@@ -120,6 +126,7 @@ export class AdminService {
       gmvCompleted: gmvAgg._sum.totalPrice ?? 0,
       reviews,
       redactedMessages,
+      complaintsPending,
     };
   }
 

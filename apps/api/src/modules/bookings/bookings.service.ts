@@ -124,6 +124,15 @@ export class BookingsService {
       ? redactContactLeak(dto.note)
       : { text: undefined as string | undefined, redacted: false };
 
+    let budgetMin: number | undefined;
+    let budgetMax: number | undefined;
+    if (dto.budgetMin != null || dto.budgetMax != null) {
+      const lo = dto.budgetMin ?? dto.budgetMax ?? 0;
+      const hi = dto.budgetMax ?? dto.budgetMin ?? lo;
+      budgetMin = Math.min(lo, hi);
+      budgetMax = Math.max(lo, hi);
+    }
+
     const split = computeEscrowSplit(totalPrice);
 
     const booking = await this.prisma.booking.create({
@@ -135,6 +144,8 @@ export class BookingsService {
         address: dto.address,
         scheduledAt: new Date(dto.scheduledAt),
         note: noteResult.text,
+        budgetMin,
+        budgetMax,
         totalPrice,
         customerName: dto.customerName || user.fullName,
         customerPhone: dto.customerPhone || user.phone || '',
@@ -183,6 +194,77 @@ export class BookingsService {
       include: bookingInclude,
     });
     return rows.map((b) => this.shape(b, { id: userId, role: Role.CUSTOMER }));
+  }
+
+  /** Gợi ý thuê lại — gom đơn COMPLETED theo partner + dịch vụ. */
+  async getRebookHints(userId: string) {
+    const rows = await this.prisma.booking.findMany({
+      where: {
+        userId,
+        status: BookingStatus.COMPLETED,
+        partnerId: { not: null },
+      },
+      orderBy: { scheduledAt: 'desc' },
+      select: {
+        partnerId: true,
+        totalPrice: true,
+        scheduledAt: true,
+        partner: {
+          select: {
+            id: true,
+            fullName: true,
+            partnerProfile: { select: { avatarUrl: true } },
+          },
+        },
+        service: {
+          select: { slug: true, name: true, category: { select: { group: { select: { slug: true } } } } },
+        },
+      },
+    });
+
+    const byKey = new Map<
+      string,
+      {
+        partnerUserId: string;
+        partnerName: string;
+        partnerAvatarUrl: string | null;
+        serviceSlug: string;
+        serviceName: string;
+        groupSlug: string;
+        lastBookedAt: Date;
+        lastPrice: number;
+        bookingCount: number;
+      }
+    >();
+
+    for (const row of rows) {
+      if (!row.partnerId || !row.partner) continue;
+      const key = `${row.partnerId}:${row.service.slug}`;
+      const existing = byKey.get(key);
+      if (!existing) {
+        byKey.set(key, {
+          partnerUserId: row.partnerId,
+          partnerName: row.partner.fullName,
+          partnerAvatarUrl: row.partner.partnerProfile?.avatarUrl ?? null,
+          serviceSlug: row.service.slug,
+          serviceName: row.service.name,
+          groupSlug: row.service.category.group.slug,
+          lastBookedAt: row.scheduledAt,
+          lastPrice: row.totalPrice,
+          bookingCount: 1,
+        });
+      } else {
+        existing.bookingCount += 1;
+      }
+    }
+
+    return [...byKey.values()]
+      .sort((a, b) => b.lastBookedAt.getTime() - a.lastBookedAt.getTime())
+      .slice(0, 12)
+      .map((item) => ({
+        ...item,
+        lastBookedAt: item.lastBookedAt.toISOString(),
+      }));
   }
 
   async listMineAsPartner(partnerId: string) {

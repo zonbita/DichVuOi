@@ -1,55 +1,34 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { LevelBadge, VerificationBadge } from '../components/ui/partner-badges';
+import { FavoritePartnerButton } from '../components/partner/favorite-partner-button';
+import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
+import { AvatarLevelOverlay, VerificationBadge } from '../components/ui/partner-badges';
+import { StarIcon, Icon } from '../components/ui/icon';
 import { api, formatPrice, formatWorkHours } from '../services/api';
 import type { PublicPartnerProfile } from '../types/auth';
-import { groupColor } from '../utils/catalog-colors';
+import { offeringColor } from '../utils/catalog-colors';
+import { groupIcon } from '../utils/catalog-display';
 
-type MainTab = 'services' | 'reviews';
-
-function Avatar({ name, src }: { name: string; src?: string | null }) {
-  const [broken, setBroken] = useState(false);
-  if (src && !broken) {
-    return (
-      <img
-        src={src}
-        alt={name}
-        onError={() => setBroken(true)}
-        className="h-24 w-24 rounded-2xl object-cover ring-1 ring-[var(--color-brand)]/20"
-      />
-    );
-  }
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-  return (
-    <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-[var(--color-brand-soft)] text-2xl font-extrabold text-[var(--color-brand-deep)]">
-      {initials || '?'}
-    </div>
-  );
-}
+type PartnerOffering = PublicPartnerProfile['offerings'][number];
 
 function StarRow({ rating }: { rating: number }) {
   return (
     <span className="inline-flex items-center gap-0.5" aria-label={`${rating} sao`}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <span
-          key={n}
-          className={n <= rating ? 'text-[var(--color-brand)]' : 'text-[var(--color-line)]'}
-        >
-          ★
-        </span>
+        <StarIcon key={n} className="h-3.5 w-3.5" tone={n <= rating ? 'gold' : 'muted'} />
       ))}
     </span>
   );
 }
 
-function RatingBreakdown({ reviews }: { reviews: PublicPartnerProfile['reviews'] }) {
+function RatingBreakdown({
+  reviews,
+  accent,
+}: {
+  reviews: PublicPartnerProfile['reviews'];
+  accent?: string;
+}) {
   const counts = [5, 4, 3, 2, 1].map((star) => ({
     star,
     count: reviews.filter((r) => r.rating === star).length,
@@ -60,11 +39,14 @@ function RatingBreakdown({ reviews }: { reviews: PublicPartnerProfile['reviews']
     <div className="space-y-1.5">
       {counts.map(({ star, count }) => (
         <div key={star} className="flex items-center gap-2 text-sm">
-          <span className="w-8 shrink-0 font-semibold text-[var(--color-muted)]">{star}★</span>
+          <span className="inline-flex w-8 shrink-0 items-center gap-0.5 font-semibold text-[var(--color-muted)]">
+            {star}
+            <StarIcon className="h-3 w-3" tone="gold" />
+          </span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-line)]">
             <div
-              className="h-full rounded-full bg-[var(--color-brand)]"
-              style={{ width: `${(count / total) * 100}%` }}
+              className="h-full rounded-full"
+              style={{ width: `${(count / total) * 100}%`, backgroundColor: accent ?? 'var(--color-brand)' }}
             />
           </div>
           <span className="w-6 text-right text-xs text-[var(--color-muted)]">{count}</span>
@@ -74,10 +56,439 @@ function RatingBreakdown({ reviews }: { reviews: PublicPartnerProfile['reviews']
   );
 }
 
+function sortOfferingsByReviews(list: PartnerOffering[]) {
+  return [...list].sort(
+    (a, b) =>
+      b.ratingCount - a.ratingCount ||
+      b.ratingAvg - a.ratingAvg ||
+      a.service.name.localeCompare(b.service.name, 'vi'),
+  );
+}
+
+function OfferingRatingInline({ offering }: { offering: PartnerOffering }) {
+  const avg = offering.ratingCount > 0 ? offering.ratingAvg.toFixed(1) : '0';
+  const count = offering.ratingCount;
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      <StarIcon className="h-3 w-3 shrink-0" tone="gold" />
+      <span>
+        {avg} ({count})
+      </span>
+    </span>
+  );
+}
+
+function OfferingNavColumn({
+  offerings,
+  activeId,
+  onChange,
+}: {
+  offerings: PartnerOffering[];
+  activeId: string;
+  onChange: (id: string) => void;
+}) {
+  return (
+    <nav
+      className="border-b border-[var(--color-line)] lg:border-r lg:border-b-0"
+      aria-label="Nghề đang nhận"
+    >
+      <ul className="no-scrollbar flex gap-2 overflow-x-auto p-2 lg:flex-col lg:gap-1.5 lg:overflow-x-visible lg:overflow-y-auto lg:p-3 lg:max-h-[min(70vh,720px)]">
+        {offerings.map((offering) => {
+          const selected = offering.id === activeId;
+          const groupSlug = offering.service.category?.group.slug;
+          const chipColor = offeringColor(groupSlug);
+          const iconName = groupIcon(groupSlug ?? offering.service.slug);
+
+          return (
+            <li key={offering.id} className="shrink-0 lg:shrink">
+              <button
+                type="button"
+                aria-current={selected ? 'true' : undefined}
+                onClick={() => onChange(offering.id)}
+                className={`flex w-full min-w-[11rem] items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-sm transition-[color,background-color,box-shadow,border-color] duration-[180ms] ease-in-out lg:min-w-0 ${
+                  selected
+                    ? 'font-semibold shadow-sm'
+                    : 'border border-[var(--color-line)] bg-white hover:bg-[var(--color-canvas)]'
+                }`}
+                style={
+                  selected
+                    ? {
+                        backgroundColor: chipColor.soft,
+                        color: chipColor.ink,
+                        boxShadow: `inset 3px 0 0 ${chipColor.main}`,
+                      }
+                    : { color: 'var(--color-ink)' }
+                }
+              >
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
+                  style={
+                    selected
+                      ? {
+                          borderColor: `color-mix(in srgb, ${chipColor.main} 28%, transparent)`,
+                          backgroundColor: `color-mix(in srgb, ${chipColor.main} 10%, white)`,
+                          color: chipColor.main,
+                        }
+                      : {
+                          borderColor: 'var(--color-line)',
+                          backgroundColor: 'var(--color-canvas)',
+                          color: 'var(--color-muted)',
+                        }
+                  }
+                >
+                  <Icon name={iconName} className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold leading-snug">{offering.service.name}</span>
+                  <span className="mt-1 block text-[var(--color-muted)]">
+                    <OfferingRatingInline offering={offering} />
+                  </span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+function OfferingMetaLine({
+  icon,
+  children,
+}: {
+  icon: 'clock' | 'check' | 'minus' | 'pin';
+  children: ReactNode;
+}) {
+  return (
+    <p className="flex items-start gap-2 text-sm text-[var(--color-muted)]">
+      <Icon name={icon} className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+function OfferingDetailPanel({
+  offering,
+  reviews,
+  partnerUserId,
+  skills,
+}: {
+  offering: PartnerOffering;
+  reviews: PublicPartnerProfile['reviews'];
+  partnerUserId: string;
+  skills: string[];
+}) {
+  const groupSlug = offering.service.category?.group.slug;
+  const color = groupSlug ? offeringColor(groupSlug) : null;
+  const serviceReviews = reviews.filter((r) => r.serviceSlug === offering.service.slug);
+
+  return (
+    <div className="space-y-5">
+      <article className="overflow-hidden rounded-xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
+        <div className="flex flex-col lg:flex-row lg:items-stretch">
+          <div className="min-w-0 flex-1 p-4 sm:p-5">
+            {offering.service.category ? (
+              <p className="mb-1 text-xs font-semibold" style={{ color: color?.main }}>
+                {offering.service.category.group.name}
+                {' · '}
+                {offering.service.category.name}
+              </p>
+            ) : null}
+            <h2 className="text-xl font-extrabold text-[var(--color-navy)]">{offering.service.name}</h2>
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[var(--color-muted)]">
+              <StarRow rating={offering.ratingCount > 0 ? Math.round(offering.ratingAvg) : 0} />
+              <span className="font-semibold text-[var(--color-ink)]">
+                {offering.ratingCount > 0 ? offering.ratingAvg.toFixed(1) : '0'}
+              </span>
+              <span>({offering.ratingCount} sao)</span>
+            </p>
+            {skills.length ? (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {skills.map((skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-full border border-[var(--color-line)] bg-[var(--color-canvas)] px-2.5 py-0.5 text-xs font-semibold text-[var(--color-ink)]"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <div className="mt-4 space-y-2">
+              {offering.headline ? (
+                <OfferingMetaLine icon="check">{offering.headline}</OfferingMetaLine>
+              ) : null}
+              <OfferingMetaLine icon="clock">
+                {formatWorkHours(offering.hoursWorked)} làm · {offering.experienceYears} năm KN
+                {offering.coverageNote ? ` · ${offering.coverageNote}` : ''}
+              </OfferingMetaLine>
+              {offering.includes ? (
+                <OfferingMetaLine icon="check">Bao gồm: {offering.includes}</OfferingMetaLine>
+              ) : null}
+              {offering.excludes ? (
+                <OfferingMetaLine icon="minus">Không gồm: {offering.excludes}</OfferingMetaLine>
+              ) : null}
+            </div>
+          </div>
+          <div className="border-t border-[var(--color-line)] px-4 py-4 sm:px-5 lg:flex lg:w-[11.5rem] lg:shrink-0 lg:flex-col lg:justify-center lg:border-t-0 lg:border-l lg:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+              Giá chào
+            </p>
+            <p className="mt-1 text-2xl font-extrabold leading-tight text-[var(--color-sale)]">
+              {formatPrice(offering.price)}
+            </p>
+            <p className="text-sm font-semibold text-[var(--color-muted)]">/{offering.service.unit}</p>
+            <Link
+              to={`/dich-vu/${offering.service.slug}?partner=${partnerUserId}`}
+              className="btn-primary mt-4 inline-flex w-full items-center justify-center px-4 py-2.5 text-sm"
+            >
+              Thuê nghề này
+            </Link>
+          </div>
+        </div>
+      </article>
+
+      {offering.ratingCount > 0 ? (
+        <div className="flex flex-col gap-4 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-4 sm:flex-row sm:items-center">
+          <div className="text-center sm:min-w-[7rem]">
+            <p className="text-4xl font-extrabold" style={{ color: color?.ink ?? 'var(--color-brand-deep)' }}>
+              {offering.ratingAvg.toFixed(1)}
+            </p>
+            <StarRow rating={Math.round(offering.ratingAvg)} />
+            <p className="mt-1 text-xs text-[var(--color-muted)]">
+              {offering.ratingCount} đánh giá
+            </p>
+          </div>
+          <div className="min-w-0 flex-1">
+            <RatingBreakdown reviews={serviceReviews} accent={color?.main} />
+          </div>
+        </div>
+      ) : null}
+
+      <div>
+        <h3 className="flex items-center gap-2 text-base font-extrabold text-[var(--color-navy)]">
+          <Icon name="message" className="h-5 w-5 text-[var(--color-brand)]" />
+          Đánh giá từ khách
+          {serviceReviews.length ? ` (${serviceReviews.length})` : ''}
+        </h3>
+        {serviceReviews.length === 0 ? (
+          <p className="mt-2 text-sm text-[var(--color-muted)]">
+            Chưa có đánh giá công khai cho nghề này trên sàn.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {serviceReviews.map((r) => (
+              <article
+                key={r.id}
+                className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-bold">{r.fromName}</p>
+                  <StarRow rating={r.rating} />
+                </div>
+                <p className="mt-1 text-xs text-[var(--color-muted)]">
+                  {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                </p>
+                {r.comment ? (
+                  <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-ink)]">
+                    {r.comment}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+function Avatar({
+  name,
+  src,
+  variant = 'compact',
+}: {
+  name: string;
+  src?: string | null;
+  variant?: 'compact' | 'sidebar';
+}) {
+  const [broken, setBroken] = useState(false);
+  const isSidebar = variant === 'sidebar';
+
+  if (src && !broken) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        onError={() => setBroken(true)}
+        className={
+          isSidebar
+            ? 'aspect-square w-full object-cover'
+            : 'h-24 w-24 rounded-2xl object-cover ring-1 ring-[var(--color-brand)]/20'
+        }
+      />
+    );
+  }
+
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(-2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div
+      className={
+        isSidebar
+          ? 'flex aspect-square w-full items-center justify-center bg-[var(--color-brand-soft)] text-4xl font-extrabold text-[var(--color-brand-deep)]'
+          : 'flex h-24 w-24 items-center justify-center rounded-2xl bg-[var(--color-brand-soft)] text-2xl font-extrabold text-[var(--color-brand-deep)]'
+      }
+    >
+      {initials || '?'}
+    </div>
+  );
+}
+
+function ProfileSidebar({
+  data,
+  offerings,
+  onViewServices,
+}: {
+  data: PublicPartnerProfile;
+  offerings: PartnerOffering[];
+  onViewServices: () => void;
+}) {
+  const gallery = data.gallery ?? [];
+
+  return (
+    <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+      <section className="surface-card overflow-hidden">
+        <AvatarLevelOverlay level={data.level} className="block w-full">
+          <Avatar name={data.fullName} src={data.avatarUrl} variant="sidebar" />
+        </AvatarLevelOverlay>
+
+        {gallery.length > 0 ? (
+          <div className="grid grid-cols-5 gap-1 border-t border-[var(--color-line)] p-2">
+            {gallery.slice(0, 5).map((url) => (
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="block overflow-hidden rounded-md ring-1 ring-[var(--color-line)]"
+              >
+                <img
+                  src={url}
+                  alt="Portfolio"
+                  className="aspect-square w-full object-cover"
+                  loading="lazy"
+                />
+              </a>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="space-y-2 border-t border-[var(--color-line)] p-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg font-extrabold leading-tight">{data.fullName}</h1>
+                <VerificationBadge verified={data.isVerified} />
+              </div>
+            </div>
+            <FavoritePartnerButton partnerUserId={data.userId} showLabel={false} />
+          </div>
+          {data.headline ? (
+            <p className="text-sm font-semibold text-[var(--color-brand-deep)]">{data.headline}</p>
+          ) : null}
+          <p className="flex flex-wrap items-center gap-1.5 text-sm text-[var(--color-muted)]">
+            <StarRow rating={Math.round(data.ratingAvg)} />
+            <span>
+              {data.ratingAvg.toFixed(1)} ({data.ratingCount}) · {data.completedJobs} việc
+            </span>
+          </p>
+          <p className="flex items-start gap-2 text-sm">
+            {data.acceptingJobs ? (
+              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand)]">
+                <Icon name="check" className="h-2.5 w-2.5 text-white" />
+              </span>
+            ) : (
+              <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500">
+                <Icon name="clock" className="h-2.5 w-2.5 text-white" />
+              </span>
+            )}
+            <span>
+              {data.acceptingJobs ? (
+                <span className="font-semibold text-[var(--color-brand-deep)]">Đang nhận việc</span>
+              ) : (
+                <span className="font-semibold text-amber-700">Tạm nghỉ nhận việc</span>
+              )}
+              {' · '}
+              <span className="text-[var(--color-muted)]">Phản hồi ~{data.responseMinutes} phút</span>
+            </span>
+          </p>
+          <p className="flex items-start gap-2 text-sm text-[var(--color-muted)]">
+            <Icon name="pin" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              {data.city}
+              {data.districts.length ? ` · ${data.districts.join(', ')}` : ''}
+            </span>
+          </p>
+          <p className="flex items-start gap-2 text-sm text-[var(--color-muted)]">
+            <Icon name="laptop" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Hình thức:{' '}
+              {data.workModes.map((m) => (m === 'onsite' ? 'Tại chỗ' : 'Online')).join(' · ')}
+            </span>
+          </p>
+          {data.skills.length ? (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {data.skills.map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full bg-[var(--color-brand-soft)] px-2.5 py-0.5 text-xs font-bold text-[var(--color-brand-deep)]"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {data.reputation ? (
+            <div className="border-t border-[var(--color-line)] pt-3">
+              <ReputationProgressBar reputation={data.reputation} />
+            </div>
+          ) : null}
+        </div>
+
+        {offerings.length > 0 ? (
+          <div className="space-y-2 border-t border-[var(--color-line)] p-4">
+            {(() => {
+              const top = offerings[0];
+              return top ? (
+                <p className="text-center text-sm text-[var(--color-muted)]">
+                  Từ{' '}
+                  <span className="text-lg font-extrabold text-[var(--color-sale)]">
+                    {formatPrice(top.price)}
+                  </span>
+                  <span>/{top.service.unit}</span>
+                </p>
+              ) : null;
+            })()}
+            <button type="button" onClick={onViewServices} className="btn-primary w-full py-2.5 text-sm">
+              Đặt lịch ngay
+            </button>
+          </div>
+        ) : null}
+      </section>
+    </aside>
+  );
+}
+
 export function PartnerProfilePage() {
   const { userId = '' } = useParams();
-  const [mainTab, setMainTab] = useState<MainTab>('services');
-  const [groupFilter, setGroupFilter] = useState<string>('all');
+  const [activeOfferingId, setActiveOfferingId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['partner', 'public', userId],
@@ -85,23 +496,25 @@ export function PartnerProfilePage() {
     enabled: Boolean(userId),
   });
 
-  const groups = useMemo(() => {
-    if (!data) return [] as Array<{ slug: string; name: string }>;
-    const map = new Map<string, string>();
-    for (const o of data.offerings) {
-      const g = o.service.category?.group;
-      if (g) map.set(g.slug, g.name);
-    }
-    return Array.from(map.entries()).map(([slug, name]) => ({ slug, name }));
-  }, [data]);
+  const offerings = useMemo(
+    () => sortOfferingsByReviews(data?.offerings ?? []),
+    [data?.offerings],
+  );
 
-  const filteredOfferings = useMemo(() => {
-    if (!data) return [];
-    if (groupFilter === 'all') return data.offerings;
-    return data.offerings.filter(
-      (o) => o.service.category?.group.slug === groupFilter,
+  useEffect(() => {
+    if (!offerings.length) {
+      setActiveOfferingId(null);
+      return;
+    }
+    setActiveOfferingId((current) =>
+      current && offerings.some((o) => o.id === current) ? current : offerings[0].id,
     );
-  }, [data, groupFilter]);
+  }, [offerings]);
+
+  const activeOffering = useMemo(
+    () => offerings.find((o) => o.id === activeOfferingId) ?? offerings[0] ?? null,
+    [offerings, activeOfferingId],
+  );
 
   if (isLoading) return <p>Đang tải hồ sơ...</p>;
   if (isError || !data) {
@@ -117,285 +530,50 @@ export function PartnerProfilePage() {
 
   const reviews = data.reviews ?? [];
 
+  const scrollToServices = () => {
+    if (offerings[0]) setActiveOfferingId(offerings[0].id);
+    document.getElementById('partner-main')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const selectOffering = (id: string) => {
+    setActiveOfferingId(id);
+  };
+
   return (
-    <div className="w-full space-y-6">
-      <section className="surface-card p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <Avatar name={data.fullName} src={data.avatarUrl} />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-extrabold sm:text-3xl">{data.fullName}</h1>
-              <LevelBadge level={data.level} />
-              <VerificationBadge verified={data.isVerified} />
-            </div>
-            {data.headline ? (
-              <p className="mt-1 text-base font-semibold text-[var(--color-brand-deep)]">
-                {data.headline}
+    <div className="grid w-full gap-5 lg:grid-cols-[minmax(260px,300px)_1fr] lg:items-start">
+      <ProfileSidebar
+        data={data}
+        offerings={offerings}
+        onViewServices={scrollToServices}
+      />
+
+      <div id="partner-main" className="min-w-0">
+        <section className="surface-card overflow-hidden">
+          {offerings.length === 0 ? (
+            <div className="p-5 sm:p-6">
+              <p className="text-[var(--color-muted)]">
+                Partner chưa gắn dịch vụ nào đang nhận việc.
               </p>
-            ) : null}
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-[var(--color-muted)]">
-              <StarRow rating={Math.round(data.ratingAvg)} />
-              <span>
-                {data.ratingAvg.toFixed(1)} ({data.ratingCount} đánh giá) · {data.completedJobs}{' '}
-                việc hoàn thành
-              </span>
-            </p>
-            <p className="mt-2 text-sm">
-              {data.acceptingJobs ? (
-                <span className="font-semibold text-[var(--color-brand-deep)]">Đang nhận việc</span>
-              ) : (
-                <span className="font-semibold text-amber-700">Tạm nghỉ nhận việc</span>
-              )}
-              {' · '}
-              Phản hồi ~{data.responseMinutes} phút
-            </p>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
-              {data.city}
-              {data.districts.length ? ` · ${data.districts.join(', ')}` : ''}
-            </p>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
-              Hình thức:{' '}
-              {data.workModes.map((m) => (m === 'onsite' ? 'Tại chỗ' : 'Online')).join(' · ')}
-            </p>
-            {data.skills.length ? (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {data.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded-md bg-[var(--color-brand-soft)] px-2 py-0.5 text-xs font-bold text-[var(--color-brand-deep)]"
-                  >
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </div>
-        {data.bio ? (
-          <p className="mt-5 text-[15px] leading-relaxed text-[var(--color-muted)]">{data.bio}</p>
-        ) : null}
-        {data.gallery?.length ? (
-          <div className="mt-5">
-            <p className="mb-2 text-sm font-bold">Portfolio</p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {data.gallery.map((url) => (
-                <a
-                  key={url}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block overflow-hidden ring-1 ring-[var(--color-line)]"
-                >
-                  <img
-                    src={url}
-                    alt="Portfolio"
-                    className="aspect-[4/3] w-full object-cover"
-                    loading="lazy"
-                  />
-                </a>
-              ))}
             </div>
-          </div>
-        ) : null}
-        <p className="mt-4 text-xs text-[var(--color-muted)]">
-          SĐT / email không công khai. Sau khi thuê, trao đổi qua chat đơn trên Dich Vụ Ơi — không
-          liên hệ Zalo/FB ngoài sàn.
-        </p>
-      </section>
-
-      {/* Tab ngang chính */}
-      <div className="sticky top-[4.5rem] z-10 -mx-1 border-b border-[var(--color-line)] bg-[var(--color-canvas)]/95 px-1 backdrop-blur sm:top-[5.25rem]">
-        <div className="no-scrollbar flex gap-1 overflow-x-auto py-2">
-          <button
-            type="button"
-            onClick={() => setMainTab('services')}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${
-              mainTab === 'services'
-                ? 'bg-[var(--color-ink)] text-white'
-                : 'bg-white text-[var(--color-ink)] ring-1 ring-[var(--color-line)] hover:bg-[var(--color-brand-soft)]'
-            }`}
-          >
-            Ngành nghề đang nhận ({data.offerings.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setMainTab('reviews')}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${
-              mainTab === 'reviews'
-                ? 'bg-[var(--color-ink)] text-white'
-                : 'bg-white text-[var(--color-ink)] ring-1 ring-[var(--color-line)] hover:bg-[var(--color-brand-soft)]'
-            }`}
-          >
-            Đánh giá ★ {data.ratingAvg.toFixed(1)} ({reviews.length || data.ratingCount})
-          </button>
-        </div>
-      </div>
-
-      {mainTab === 'services' ? (
-        <section>
-          <p className="mb-3 text-sm text-[var(--color-muted)]">
-            Dịch vụ đang nhận việc — ưu tiên nghề đã có đánh giá trên sàn.
-          </p>
-          {groups.length > 1 ? (
-            <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setGroupFilter('all')}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${
-                  groupFilter === 'all'
-                    ? 'bg-[var(--color-brand)] text-white'
-                    : 'bg-white ring-1 ring-[var(--color-line)]'
-                }`}
-              >
-                Tất cả
-              </button>
-              {groups.map((g) => {
-                const color = groupColor(g.slug);
-                const active = groupFilter === g.slug;
-                return (
-                  <button
-                    key={g.slug}
-                    type="button"
-                    onClick={() => setGroupFilter(g.slug)}
-                    className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition"
-                    style={
-                      active
-                        ? { backgroundColor: color.main, color: '#fff' }
-                        : { backgroundColor: color.soft, color: color.ink }
-                    }
-                  >
-                    {g.name}
-                  </button>
-                );
-              })}
+          ) : activeOffering ? (
+            <div className="grid lg:grid-cols-[minmax(200px,240px)_1fr] lg:items-start">
+              <OfferingNavColumn
+                offerings={offerings}
+                activeId={activeOffering.id}
+                onChange={selectOffering}
+              />
+              <div className="p-5 sm:p-6">
+                <OfferingDetailPanel
+                  offering={activeOffering}
+                  reviews={reviews}
+                  partnerUserId={data.userId}
+                  skills={data.skills}
+                />
+              </div>
             </div>
           ) : null}
-
-          {filteredOfferings.length === 0 ? (
-            <p className="text-[var(--color-muted)]">
-              Partner chưa gắn dịch vụ nào đang nhận việc.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {filteredOfferings.map((item) => {
-                const groupSlug = item.service.category?.group.slug;
-                const color = groupSlug ? groupColor(groupSlug) : null;
-                return (
-                  <article key={item.id} className="surface-card p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        {item.service.category ? (
-                          <p className="mb-1 text-xs font-semibold" style={{ color: color?.main }}>
-                            {item.service.category.group.name}
-                            {' · '}
-                            {item.service.category.name}
-                          </p>
-                        ) : null}
-                        <Link
-                          to={`/dich-vu/${item.service.slug}`}
-                          className="text-lg font-bold hover:text-[var(--color-brand-deep)]"
-                        >
-                          {item.service.name}
-                        </Link>
-                        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--color-muted)]">
-                          {item.ratingCount > 0 ? (
-                            <>
-                              <StarRow rating={Math.round(item.ratingAvg)} />
-                              <span>
-                                {item.ratingAvg.toFixed(1)} ({item.ratingCount} đánh giá)
-                              </span>
-                            </>
-                          ) : (
-                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
-                              Chưa có đánh giá
-                            </span>
-                          )}
-                        </p>
-                        {item.headline ? (
-                          <p className="mt-0.5 text-sm text-[var(--color-muted)]">{item.headline}</p>
-                        ) : null}
-                        <p className="mt-1 text-sm text-[var(--color-muted)]">
-                          {formatWorkHours(item.hoursWorked)} làm · {item.experienceYears} năm KN
-                          {item.coverageNote ? ` · ${item.coverageNote}` : ''}
-                        </p>
-                        {item.includes ? (
-                          <p className="mt-1 text-sm text-[var(--color-muted)]">
-                            Bao gồm: {item.includes}
-                          </p>
-                        ) : null}
-                        {item.excludes ? (
-                          <p className="text-sm text-[var(--color-muted)]">
-                            Không gồm: {item.excludes}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                          Giá chào
-                        </p>
-                        <p className="text-lg font-extrabold text-[var(--color-sale)]">
-                          {formatPrice(item.price)}
-                          <span className="text-sm font-semibold text-[var(--color-muted)]">
-                            /{item.service.unit}
-                          </span>
-                        </p>
-                        <Link
-                          to={`/dich-vu/${item.service.slug}`}
-                          className="btn-primary mt-2 inline-block px-3 py-1.5 text-sm"
-                        >
-                          Thuê
-                        </Link>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          )}
         </section>
-      ) : (
-        <section className="space-y-5">
-          <div className="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-            <div className="text-center sm:min-w-[7rem]">
-              <p className="text-4xl font-extrabold text-[var(--color-brand-deep)]">
-                {data.ratingAvg.toFixed(1)}
-              </p>
-              <StarRow rating={Math.round(data.ratingAvg)} />
-              <p className="mt-1 text-xs text-[var(--color-muted)]">
-                {data.ratingCount} đánh giá
-              </p>
-            </div>
-            <div className="min-w-0 flex-1">
-              <RatingBreakdown reviews={reviews} />
-            </div>
-          </div>
-
-          {reviews.length === 0 ? (
-            <p className="text-[var(--color-muted)]">
-              Chưa có đánh giá từ khách trên sàn. Điểm ★ có thể từ dữ liệu hồ sơ.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {reviews.map((r) => (
-                <article key={r.id} className="surface-card p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-bold">{r.fromName}</p>
-                    <StarRow rating={r.rating} />
-                  </div>
-                  <p className="mt-1 text-xs text-[var(--color-muted)]">
-                    {r.serviceName} · {new Date(r.createdAt).toLocaleDateString('vi-VN')}
-                  </p>
-                  {r.comment ? (
-                    <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-ink)]">
-                      {r.comment}
-                    </p>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+      </div>
     </div>
   );
 }

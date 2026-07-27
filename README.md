@@ -105,7 +105,8 @@ Không miễn mọi trách nhiệm; giúp chứng minh sàn đã **quản lý r�
 | Đánh giá sau `COMPLETED`; badge verified admin | **Có** (verified = duyệt vận hành) |
 | Admin khóa / xử lý đơn, flagged PII, hàng đợi duyệt partner | **Có một phần** |
 | Xác minh CCCD / giấy tờ đối tác | **Roadmap** |
-| Khóa / tạm ngưng nhận việc khi khiếu nại nghiêm trọng (workflow) | **Roadmap** (hiện xử lý thủ công admin) |
+| Khóa / tạm ngưng nhận việc khi khiếu nại nghiêm trọng (workflow) | **Có một phần** — tự `acceptingJobs=false` khi uy tín &lt; 500 |
+| Module khiếu nại formal + trừ điểm uy tín năm | **Có** — `Complaint`, `PartnerReputationPeriod`, Admin `/admin/complaints` |
 | Module dispute formal + quỹ bồi thường / bảo hiểm trách nhiệm | **Roadmap** — tăng niềm tin, không bắt buộc lúc MVP |
 
 ### Nghĩa vụ vận hành sàn TMĐT dịch vụ (VN) — checklist thiết kế
@@ -193,6 +194,62 @@ Nhóm bao quát (Group)     ← điều hướng trang chủ / mega menu
 | **Tư vấn - phát triển cá nhân** | Hướng nghiệp, coach sự nghiệp, luyện phỏng vấn, tối ưu CV – LinkedIn, quản lý thời gian, dinh dưỡng, tham vấn tâm lý (có chứng chỉ), thiền chánh niệm | Online 100% — **compliance**: không thay tư vấn y tế |
 | **Giải trí** | Hát live / karaoke đồng hành, ảo thuật online, DJ mix, MC tiệc online, RPG / board game, cờ vua–cờ tướng, quiz đêm, kể chuyện, xem phim đồng hành, trò chuyện theo chủ đề, gợi ý playlist | Online 100% — tách khỏi eSports; **không** nội dung người lớn / cày thuê |
 
+## Hệ thống giao diện (UI)
+
+Giao diện công khai theo hướng **sàn dịch vụ đáng tin cậy**: navy / teal / gold trên nền canvas sáng, card bo tròn, shadow nhẹ. Token nằm tại `apps/web/src/index.css` (`:root`).
+
+### Màu hệ thống (chrome UI)
+
+| Token CSS | Hex | Vai trò |
+|-----------|-----|---------|
+| `--color-navy` | `#073B5C` | Header full-bleed, tiêu đề section, chữ đậm trên nền sáng |
+| `--color-navy-deep` | `#052D47` | Hover header / nút navy, nền badge cấp partner |
+| `--color-brand` | `#009C95` | CTA chính (`.btn-primary`), link accent, viền tab active |
+| `--color-brand-soft` | `#E8F7F5` | Nền chip marquee, tab active, `.icon-tile` (trust strip) |
+| `--color-gold` | `#D9A441` | Badge cấp ★, viền nút «Đơn thuê» trên header navy |
+| `--color-ink` | `#18313F` | Body text |
+| `--color-muted` | `#6B7D87` | Phụ đề, label phụ |
+| `--color-line` | `#E2E9EC` | Viền card, divider |
+| `--color-canvas` | `#F7F9FA` | Nền trang |
+| `--color-card` | `#FFFFFF` | Nền card |
+| `--color-sale` | `#B42318` | **Giá**, số tiền đơn — không đổi theo ngành |
+
+Shadow: `--shadow-card` = `0 6px 24px rgba(7,59,92,0.08)` · `--shadow-hover` khi hover card/nút.
+
+### Typography & layout
+
+- Font: **Be Vietnam Pro** (primary) + **Inter** fallback — khai báo trong `index.html` + `:root`.
+- Base 16px, `-webkit-font-smoothing: antialiased`.
+- Container công khai: **1280px** — `.page-container` / `.chrome-container` / `.section-container` (token `--container-page`).
+- Dashboard khách thuê & người làm (`UserDashboardLayout`): sidebar + nội dung, kế thừa token (admin shell dùng cùng canvas/line).
+
+### Component classes
+
+| Class | Mô tả |
+|-------|--------|
+| `.surface-card` | Card trắng, viền `--color-line`, radius `--radius-xl` (16px), shadow card |
+| `.btn-primary` | Teal → hover `--color-navy-deep` |
+| `.btn-navy` | Nút navy solid |
+| `.btn-outline-gold` | Viền gold trên nền header tối |
+| `.icon-tile` | Ô icon trust strip: nền mint + icon teal (**không** dùng cho icon catalog ngành) |
+| `.section-header-bar` | Khối tiêu đề section bo `--radius-lg` |
+| `.field-input` | Input bo `--radius-md`, focus ring teal |
+
+Radius token: `--radius-sm` 8px · `--radius-md` 12px · `--radius-lg` 14px · `--radius-xl` 16px.
+
+### Header & trang chủ
+
+- Header navy (`site-header.tsx`): logo trái · search giữa · tài khoản phải; dropdown khu vực / nhóm dịch vụ dùng prop `onDark`.
+- Hero banner + benefit cards + chip marquee dịch vụ (`service-tag-nav`) — nền/viền theo token hệ thống.
+- Tab «Dịch vụ nổi bật» trên home: active mint/teal (UI chung), **không** recolor theo ngành.
+
+### Tách màu UI vs màu ngành (icon)
+
+- **Chrome UI** (header, nút, card, tab, trust strip): luôn dùng token `:root` ở trên.
+- **Icon & accent ngành** (mega menu, thẻ dịch vụ, sidebar catalog): giữ **màu riêng từng nhóm** qua `groupColor(slug).main` — **không** đổi icon catalog sang teal thương hiệu.
+- Giá (`--color-sale`), CTA chính, trạng thái đơn: màu hệ thống, không theo ngành.
+- Thanh uy tín partner: track hồng `#e91e8c`, fill gradient vàng→cam (ngoài palette navy/teal — nhận diện riêng).
+
 ## Bảng màu ngành nghề
 
 Mỗi nhóm dịch vụ có **một màu nhận diện riêng** để phân biệt nhanh trên thẻ, menu và trang chi tiết.
@@ -223,17 +280,17 @@ Nguồn duy nhất: `apps/web/src/utils/catalog-colors.ts` — hàm `groupColor(
 | Tư vấn - phát triển cá nhân (`tu-van-phat-trien`) | `#059669` | `#dff5ec` | `#047857` |
 | Giải trí (`giai-tri`) | `#eab308` | `#fef9c3` | `#a16207` |
 
-Slug lạ / thiếu màu → fallback về màu thương hiệu `#0f9d8a`.
+Slug lạ / thiếu màu → fallback `#0f9d8a` (chỉ cho **icon/viền ngành**, khác `--color-brand` `#009C95` của UI chrome).
 
 ### Quy tắc dùng màu
 
-- `main`: viền nhấn (border-top thẻ dịch vụ, border-left thẻ nhóm), icon nhóm trong mega menu, gạch tiêu đề danh mục.
+- `main`: viền nhấn (border-top thẻ dịch vụ, border-left thẻ nhóm), **icon nhóm** trong mega menu / marquee / catalog, gạch tiêu đề danh mục.
 - `soft`: nền chip / badge (tên nhóm trên thẻ dịch vụ, link “← nhóm”, số danh mục), nền item nhóm đang chọn.
 - `ink`: màu chữ khi đặt trên nền `soft` — luôn cặp `soft` + `ink`, không dùng `main` làm chữ trên nền `soft`.
-- **Không** đổi màu giá (`--color-sale`), nút CTA chính (`.btn-primary`) hay trạng thái đơn theo ngành — các màu đó thuộc hệ thống chung.
+- **Không** đổi màu giá (`--color-sale`), nút CTA chính (`.btn-primary`) hay trạng thái đơn theo ngành — các màu đó thuộc [hệ thống giao diện](#hệ-thống-giao-diện-ui).
 - Màu ngành chỉ dùng ở tầng **Group**; Category và Service kế thừa màu của group cha, không tự định nghĩa màu riêng.
 
-Nơi đang áp dụng: `service-card.tsx`, `group-card.tsx` (`GroupCard` + `GroupTile`), `catalog-menu.tsx` (mega menu, chip mobile, drawer), `group-detail-page.tsx`, `service-detail-page.tsx`.
+Nơi đang áp dụng **màu ngành** (icon / viền / chip nghề): `service-card.tsx`, `group-card.tsx`, `catalog-menu-shared.tsx`, `catalog-menu.tsx`, `service-tag-nav.tsx` (chỉ **icon**), `group-detail-page.tsx`, `group-detail-hero.tsx`, `service-detail-page.tsx` (accent nhóm), `groups-page.tsx`, `profession-tags-input.tsx`, `partner-profile-page.tsx` (chip nghề), `hire-service-form.tsx`.
 
 ## Tỉnh / thành (khu vực)
 
@@ -306,10 +363,77 @@ Lấy cảm hứng độ sâu từ marketplace kiểu PlayerDuo, nhưng **mọi 
 `BookingMessage`: chat theo đơn (`body`, `redacted`)  
 `Review`: đánh giá hai chiều (`rating`, `comment`, unique booking+fromUser)
 
+### Retention — quan hệ & thuê lại (P0, đã có)
+
+Lấy cảm hứng từ [Player Duo](https://playerduo.net/) về **giữ chân qua quan hệ cá nhân**, không copy feed/donate/truyện tranh.
+
+| Tính năng | API / UI | Mục đích |
+|-----------|----------|----------|
+| **Lưu người làm quen** | `PartnerFavorite`; `GET/POST/DELETE /api/partners/favorites*`; nút trái tim trên `/nguoi/:userId` | Gắn bó partner, quay lại không cần tìm lại |
+| **Thuê lại nhanh** | `GET /api/bookings/rebook-hints`; section trang chủ + nút trên đơn `COMPLETED` | Một chạm → `/dich-vu/:slug?partner=:userId` |
+| **Cá nhân hóa «Đề xuất»** | `rankFeaturedServices()` — ưu tiên nhóm/dịch vụ đã thuê, bỏ shuffle ngẫu nhiên | Trang chủ relevant hơn cho khách cũ |
+| **Profile = landing thuê** | Giá từ `/giờ`, CTA «Đặt lịch ngay», deep-link `?partner=` | Giống trang idol Player Duo nhưng vẫn escrow |
+
+**Không làm (non-goals retention):** newsfeed MXH, donate, bảng xếp hạng đại gia, chat public ngoài đơn.
+
+### Uy tín partner — điểm năm & khiếu nại (P0, đã có)
+
+Tách biệt với **cấp độ merit (1–100)** — uy tín đo **tuân thủ / khiếu nại**, không phải kinh nghiệm.
+
+| Khái niệm | Giá trị / quy tắc |
+|-----------|-------------------|
+| **Điểm khởi đầu** | **1000** mỗi chu kỳ |
+| **Chu kỳ** | Một năm kể từ **ngày tạo hồ sơ partner** (`PartnerProfile.createdAt`), không theo lịch 1/1 |
+| **Reset** | Sang chu kỳ mới → tạo `PartnerReputationPeriod` mới với 1000 điểm (lazy khi đọc/ghi) |
+| **Trừ điểm** | Chỉ khi Admin đặt khiếu nại `VERIFIED` (mặc định −100; preset −50 / −100 / −200) |
+| **Sàn tự động** | Uy tín &lt; **500** → `acceptingJobs = false` (partner tạm không nhận việc mới) |
+| **UI công khai** | Thanh progress trên `/nguoi/:userId` — nền hồng, fill gradient vàng→cam = điểm còn lại |
+
+**Schema:** `Complaint`, `PartnerReputationPeriod`, `ReputationLedgerEntry`  
+**API:** `POST /api/bookings/:id/complaints` · `GET /api/complaints/mine` · `GET/PATCH /api/admin/complaints*` · `GET /api/partners/public/:userId` (kèm `reputation`)
+
+#### Behavior tree — uy tín & khiếu nại
+
+```mermaid
+flowchart TD
+  A[Partner có hồ sơ] --> B{Đọc uy tín chu kỳ hiện tại}
+  B --> C[periodIndex = số năm từ PartnerProfile.createdAt]
+  C --> D{Đã có PartnerReputationPeriod?}
+  D -->|Không| E[Tạo period: startingPoints=1000, currentPoints=1000]
+  D -->|Có| F[Dùng currentPoints hiện tại]
+  E --> G[Hiển thị progress bar trên /nguoi/:userId]
+  F --> G
+
+  H[Khách thuê trên đơn có partner] --> I[POST /bookings/:id/complaints]
+  I --> J[Complaint status=SUBMITTED]
+  J --> K[Admin /admin/complaints]
+
+  K --> L{Quyết định}
+  L -->|UNDER_REVIEW| M[Đang xử lý — chưa trừ điểm]
+  L -->|REJECTED| N[Đóng — không trừ điểm]
+  L -->|VERIFIED| O[Trừ deductionPoints khỏi currentPoints]
+  O --> P[Ghi ReputationLedgerEntry delta âm]
+  P --> Q{currentPoints < 500?}
+  Q -->|Có| R[acceptingJobs = false]
+  Q -->|Không| S[Giữ acceptingJobs]
+  R --> T[UI profile cập nhật % uy tín]
+  S --> T
+
+  U[Đến ngày kỷ niệm năm mới] --> V[periodIndex +1]
+  V --> E
+```
+
+**Luồng tóm tắt:**
+
+1. **Khách** — Đơn của tôi → Chi tiết đơn → «Gửi khiếu nại» (hoặc email/hotline trang `/khieu-nai`).
+2. **Admin** — `/admin/complaints` → Nhận xử lý → **Xác minh đúng & trừ điểm** hoặc Từ chối.
+3. **Partner** — Thanh uy tín trên profile công khai; điểm không âm (floor 0).
+4. **Khác cấp độ** — `level` (1–100) vẫn tính từ giờ làm, đánh giá, verified; **không** trộn với uy tín.
+
 ### Roadmap P1 / P2
 
-- P1: gallery portfolio 3–6 ảnh; % đúng hạn từ booking `COMPLETED`
-- P2: lịch trống (availability filter trên trang dịch vụ); intro video ngắn (ngành online); escrow thanh toán thật
+- P1: gallery portfolio 3–6 ảnh; % đúng hạn từ booking `COMPLETED`; **push/PWA nhắc lịch định kỳ**
+- P2: lịch trống (availability filter trên trang dịch vụ); intro video ngắn (ngành online); escrow thanh toán thật; đặt lịch định kỳ (dọn 2 tuần/lần, gia sư 3 buổi/tuần)
 
 ## Tìm kiếm không dấu + gần đúng
 
@@ -412,7 +536,8 @@ Layout chung (`pages/admin/admin-layout.tsx`) chặn non-ADMIN, hiện nav + bad
 | `/admin/partners` | Hàng đợi duyệt hồ sơ |
 | `/admin/users` | Khách hàng — đổi role |
 | `/admin/reviews` | Đánh giá |
-| `/admin/flagged` | Khiếu nại / tin bị lọc PII |
+| `/admin/complaints` | Hàng đợi khiếu nại đơn — xác minh & trừ uy tín |
+| `/admin/flagged` | Tin chat bị lọc PII |
 
 Bộ lọc sống trong URL (`?q=&status=&page=`), đổi filter tự reset về trang 1.
 
@@ -441,7 +566,7 @@ Mọi endpoint list trả `{ items, total, page, pageSize, pageCount }` (mặc �
 
 ### Chưa có (roadmap admin)
 
-- Module tranh chấp / khiếu nại riêng (hiện xử lý thủ công qua chi tiết đơn)
+- ~~Module tranh chấp / khiếu nại riêng~~ → **đã có** `/admin/complaints` + trừ uy tín năm
 - Hành động trên tin bị lọc (cảnh cáo / khóa chat / ban) và ẩn review giả
 - Audit log cho mọi thao tác admin; role nội bộ `SUPPORT` tách khỏi `ADMIN`
 - Biểu đồ GMV / funnel theo thời gian, export CSV
@@ -523,7 +648,8 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - **Escrow mock** (`PaymentStatus`): **bắt buộc đặt cọc** `pay` → `HELD` trước hàng chờ / nhận việc / chat / lộ địa chỉ; `RELEASED` + hoa hồng 15% khi hoàn thành; chặn `IN_PROGRESS` khi chưa `HELD`
 - **Review hai chiều** sau `COMPLETED` (cập nhật `PartnerProfile.ratingAvg`)
 - **Admin dashboard** `/admin` (nested routes) + `/api/admin/*`: tổng quan có GMV/escrow, list có **search + filter + phân trang**, hàng đợi duyệt hồ sơ partner, **chi tiết đơn** (chat đầy đủ + timeline escrow), **CRUD dịch vụ** & bật/tắt nhóm featured — xem mục [Admin](#admin)
-- Hồ sơ công khai `/nguoi/:userId` (`GET /api/partners/public/:userId`): skills, districts, workModes, acceptingJobs, responseMinutes, offerings (includes/excludes/coverageNote)
+- Hồ sơ công khai `/nguoi/:userId` (`GET /api/partners/public/:userId`): skills, districts, workModes, acceptingJobs, responseMinutes, offerings (includes/excludes/coverageNote); **lưu partner yêu thích**
+- **Retention P0:** lưu người làm quen (`PartnerFavorite`); gợi ý thuê lại (`GET /api/bookings/rebook-hints`); trang chủ section «Thuê lại nhanh» / «Người làm quen»; đề xuất dịch vụ theo lịch sử thuê (không shuffle); deep-link `?partner=` trên `/dich-vu/:slug`
 - Card dịch vụ: bỏ badge «Đã xác thực»; hiện **số người làm nghề** (`_count.partners`) thay cho «lượt đặt»
 - Trang chi tiết dịch vụ `/dich-vu/:slug`:
   - Cột trái: ảnh / mô tả / giá từ
@@ -558,12 +684,12 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - Vite, React, Tailwind CSS, React Router, TanStack Query  
 - React Hook Form và Zod  
 - Mobile-first / responsive (`sm` / `md` / `lg`)  
-- Bố cục: **header / footer / section nội dung 1600px** (`.chrome-container` / `.section-container`); nền header full-bleed
-- Dashboard **Khách thuê** (`/don-cua-toi`) và **Người làm** (`/doi-tac`): cột sidebar + nội dung giống Admin (`UserDashboardLayout`, max 1600px)
+- Bố cục công khai: **1280px** (`.chrome-container` / `.section-container` / `.page-container`); header/footer full-bleed navy — xem [Hệ thống giao diện](#hệ-thống-giao-diện-ui)
+- Dashboard **Khách thuê** (`/don-cua-toi`) và **Người làm** (`/doi-tac`): cột sidebar + nội dung giống Admin (`UserDashboardLayout`)
 - Trang chủ: chip nghề marquee nằm **dưới vùng perks** (trong `HeroSection`), không còn dưới header
-- Header: **logo trái | search 800px căn giữa | tài khoản phải**  
-- UI có **border-radius** (token `--radius-sm/md/lg/xl`, class `.surface-card` / `.field-input` / `.btn-primary`); nền soft gradient nhẹ  
-- Màu riêng cho từng ngành nghề: `utils/catalog-colors.ts` → `groupColor(slug)` (xem mục [Bảng màu ngành nghề](#bảng-màu-ngành-nghề))  
+- Header: **logo trái | search căn giữa | tài khoản phải** — nền `--color-navy`, nút «Đơn thuê» viền gold
+- UI: token navy/teal/gold trong `index.css`; class `.surface-card` / `.btn-primary` / `.icon-tile` / `.section-header-bar`
+- Icon catalog theo ngành: `utils/catalog-colors.ts` → `groupColor(slug)` — **giữ nguyên màu icon**, tách khỏi palette chrome (mục [Bảng màu ngành nghề](#bảng-màu-ngành-nghề))  
 - Triển khai: Vercel  
 
 ### Backend

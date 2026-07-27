@@ -5,17 +5,15 @@ export const PRICE_SLIDER_MAX = 100_000_000;
 export const PRICE_SLIDER_MIN = 0;
 const STEP = 100_000;
 
-/** Mốc dưới thanh — dày ở vùng giá phổ biến, thưa về sau. */
-const PRICE_TICKS = [
-  0, 1_000_000, 2_000_000, 5_000_000, 10_000_000, 20_000_000, 30_000_000,
-  40_000_000, 50_000_000, 75_000_000, 100_000_000,
-] as const;
+/** Mốc hiển thị trên thanh — khớp mockup 0 / 25tr / 50tr / 75tr / 100tr. */
+const DISPLAY_TICKS = [0, 25_000_000, 50_000_000, 75_000_000, 100_000_000] as const;
 
 type Props = {
   min: number;
   max: number;
   onChange: (next: { min: number; max: number }) => void;
   className?: string;
+  layout?: 'stacked' | 'split';
 };
 
 function clamp(value: number, lo: number, hi: number) {
@@ -34,7 +32,13 @@ function formatTick(value: number) {
   return `${tr}tr`;
 }
 
-export function PriceRangeSlider({ min, max, onChange, className = '' }: Props) {
+export function PriceRangeSlider({
+  min,
+  max,
+  onChange,
+  className = '',
+  layout = 'stacked',
+}: Props) {
   const id = useId();
   const safeMin = clamp(min, PRICE_SLIDER_MIN, PRICE_SLIDER_MAX);
   const safeMax = clamp(max, PRICE_SLIDER_MIN, PRICE_SLIDER_MAX);
@@ -62,15 +66,17 @@ export function PriceRangeSlider({ min, max, onChange, className = '' }: Props) 
     else setMax(value);
   }
 
-  return (
-    <div className={className}>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-semibold">Khoảng giá tham khảo (₫)</span>
-        <span className="text-sm font-bold text-[var(--color-sale)]">
-          {formatPrice(lo)} – {formatPrice(hi)}
-        </span>
-      </div>
+  const header = (
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <span className="text-sm font-semibold text-[var(--color-ink)]">Khoảng giá tham khảo (₫)</span>
+      <span className="text-sm font-bold text-[var(--color-sale)]">
+        {formatPrice(lo)} – {formatPrice(hi)}
+      </span>
+    </div>
+  );
 
+  const slider = (
+    <>
       <div className="price-range-wrap relative mb-1 h-8">
         <div className="price-range-track absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[var(--color-line)]" />
         <div
@@ -105,14 +111,9 @@ export function PriceRangeSlider({ min, max, onChange, className = '' }: Props) 
         />
       </div>
 
-      <div className="price-range-ticks relative mb-3 h-7" aria-hidden>
-        {PRICE_TICKS.map((tick) => {
+      <div className="price-range-ticks relative h-6" aria-hidden>
+        {DISPLAY_TICKS.map((tick) => {
           const pct = ((tick - PRICE_SLIDER_MIN) / range) * 100;
-          const isMajor =
-            tick === 0 ||
-            tick === 10_000_000 ||
-            tick === 50_000_000 ||
-            tick === 100_000_000;
           return (
             <button
               key={tick}
@@ -131,66 +132,76 @@ export function PriceRangeSlider({ min, max, onChange, className = '' }: Props) 
               }}
               title={formatPrice(tick)}
             >
-              <span
-                className={`block w-px bg-[var(--color-line)] ${
-                  isMajor ? 'h-2.5' : 'h-1.5'
-                }`}
-              />
-              <span
-                className={`mt-0.5 whitespace-nowrap text-[10px] leading-none text-[var(--color-muted)] ${
-                  isMajor || tick <= 5_000_000
-                    ? 'font-semibold'
-                    : 'hidden font-medium sm:inline'
-                }`}
-              >
+              <span className="block h-2 w-px bg-[var(--color-line)]" />
+              <span className="mt-0.5 whitespace-nowrap text-[11px] font-semibold leading-none text-[var(--color-muted)]">
                 {formatTick(tick)}
               </span>
             </button>
           );
         })}
       </div>
+    </>
+  );
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block text-sm" htmlFor={`${id}-min`}>
-          <span className="mb-1 block font-semibold text-[var(--color-muted)]">Từ</span>
-          <input
-            id={`${id}-min`}
-            type="text"
-            inputMode="numeric"
-            value={lo.toLocaleString('vi-VN')}
-            onChange={(event) => {
-              const parsed = parseMoney(event.target.value);
-              if (parsed === null) {
-                setMin(PRICE_SLIDER_MIN);
-                return;
-              }
-              setMin(parsed);
-            }}
-            className="field-input"
-          />
-        </label>
-        <label className="block text-sm" htmlFor={`${id}-max`}>
-          <span className="mb-1 block font-semibold text-[var(--color-muted)]">Đến</span>
-          <input
-            id={`${id}-max`}
-            type="text"
-            inputMode="numeric"
-            value={hi.toLocaleString('vi-VN')}
-            onChange={(event) => {
-              const parsed = parseMoney(event.target.value);
-              if (parsed === null) {
-                setMax(PRICE_SLIDER_MAX);
-                return;
-              }
-              setMax(parsed);
-            }}
-            className="field-input"
-          />
-        </label>
+  const manualInputs = (
+    <div className="grid grid-cols-2 gap-3">
+      <label className="block text-sm" htmlFor={`${id}-min`}>
+        <span className="mb-1.5 block font-semibold text-[var(--color-ink)]">Từ</span>
+        <input
+          id={`${id}-min`}
+          type="text"
+          inputMode="numeric"
+          value={lo.toLocaleString('vi-VN')}
+          onChange={(event) => {
+            const parsed = parseMoney(event.target.value);
+            if (parsed === null) {
+              setMin(PRICE_SLIDER_MIN);
+              return;
+            }
+            setMin(parsed);
+          }}
+          className="field-input"
+        />
+      </label>
+      <label className="block text-sm" htmlFor={`${id}-max`}>
+        <span className="mb-1.5 block font-semibold text-[var(--color-ink)]">Đến</span>
+        <input
+          id={`${id}-max`}
+          type="text"
+          inputMode="numeric"
+          value={hi.toLocaleString('vi-VN')}
+          onChange={(event) => {
+            const parsed = parseMoney(event.target.value);
+            if (parsed === null) {
+              setMax(PRICE_SLIDER_MAX);
+              return;
+            }
+            setMax(parsed);
+          }}
+          className="field-input"
+        />
+      </label>
+    </div>
+  );
+
+  if (layout === 'split') {
+    return (
+      <div className={`grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(220px,280px)] lg:items-center ${className}`}>
+        <div className="min-w-0">
+          {header}
+          {slider}
+        </div>
+        <div className="hidden self-stretch lg:block lg:w-px lg:bg-[var(--color-line)]" aria-hidden />
+        <div className="lg:pt-6">{manualInputs}</div>
       </div>
-      <p className="mt-1.5 text-xs text-[var(--color-muted)]">
-        Kéo thanh hoặc chạm mốc · phạm vi 0 – 100 triệu ₫
-      </p>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {header}
+      {slider}
+      <div className="mt-3">{manualInputs}</div>
     </div>
   );
 }

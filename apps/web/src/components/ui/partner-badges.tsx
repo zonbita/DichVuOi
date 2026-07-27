@@ -1,5 +1,7 @@
 /** Badge chỉ dùng cho người làm (PartnerProfile). */
 
+import type { ReactNode } from 'react';
+
 /** Trạng thái xác minh: Đã xác minh / Chưa xác minh. */
 export function VerificationBadge({
   verified,
@@ -75,25 +77,37 @@ export function LevelBadge({
 export function LevelBadgeGold({
   level,
   className = '',
+  variant = 'default',
 }: {
   level: number;
   className?: string;
+  /** Thu nhỏ để đè lên góc dưới avatar. */
+  variant?: 'default' | 'overlay';
 }) {
   const safe = Math.min(100, Math.max(1, Math.round(level) || 1));
+  const overlay = variant === 'overlay';
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-sm font-extrabold text-white shadow-[0_3px_10px_rgba(15,32,46,0.28)] ${className}`}
+      className={`inline-flex items-center rounded-full font-extrabold text-white shadow-[0_3px_10px_rgba(15,32,46,0.28)] ${
+        overlay
+          ? 'gap-0.5 px-2 py-0.5 text-[10px] leading-none'
+          : 'gap-1.5 px-3.5 py-1 text-sm'
+      } ${className}`}
       style={{
-        background: 'linear-gradient(135deg,#1a2c40,#12202e)',
-        border: '2px solid transparent',
+        background: 'linear-gradient(135deg,var(--color-navy),var(--color-navy-deep))',
+        border: overlay ? '1.5px solid transparent' : '2px solid transparent',
         backgroundImage:
-          'linear-gradient(135deg,#1a2c40,#12202e), linear-gradient(135deg,#ffd76a,#e0a300)',
+          'linear-gradient(135deg,var(--color-navy),var(--color-navy-deep)), linear-gradient(135deg,#e8c56a,var(--color-gold))',
         backgroundOrigin: 'border-box',
         backgroundClip: 'padding-box, border-box',
       }}
       title={`Cấp độ người làm: ${safe}/100`}
     >
-      <svg viewBox="0 0 16 16" className="h-4 w-4 text-amber-400" aria-hidden>
+      <svg
+        viewBox="0 0 16 16"
+        className={`shrink-0 ${overlay ? 'h-3 w-3 text-[var(--color-gold)]' : 'h-4 w-4 text-[var(--color-gold)]'}`}
+        aria-hidden
+      >
         <path
           fill="currentColor"
           d="M8 1.5 9.8 5.3l4.2.4-3.2 2.8.9 4.1L8 10.7l-3.7 2 1-4.1L2 5.7l4.2-.4L8 1.5Z"
@@ -101,5 +115,27 @@ export function LevelBadgeGold({
       </svg>
       Cấp {safe}
     </span>
+  );
+}
+
+/** Badge cấp đè lên mép dưới avatar (giữa). */
+export function AvatarLevelOverlay({
+  level,
+  children,
+  className = '',
+}: {
+  level: number;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`relative inline-block pb-2.5 ${className}`}>
+      {children}
+      <LevelBadgeGold
+        level={level}
+        variant="overlay"
+        className="absolute bottom-2.5 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 whitespace-nowrap"
+      />
+    </div>
   );
 }

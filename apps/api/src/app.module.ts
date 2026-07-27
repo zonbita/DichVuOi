@@ -7,6 +7,7 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { HealthModule } from './modules/health/health.module';
 import { PartnersModule } from './modules/partners/partners.module';
+import { ComplaintsModule } from './modules/complaints/complaints.module';
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { ChatbotModule } from './modules/chatbot/chatbot.module';
     BookingsModule,
     PartnersModule,
     AdminModule,
+    ComplaintsModule,
     ChatbotModule,
   ],
 })

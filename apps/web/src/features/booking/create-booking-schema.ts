@@ -34,3 +34,16 @@ export const createBookingSchema = z.object({
 });
 
 export type CreateBookingFormValues = z.infer<typeof createBookingSchema>;
+
+export const hireServiceSchema = createBookingSchema
+  .extend({
+    serviceSlug: z.string().min(1, 'Chọn nghề cần thuê'),
+    budgetMin: z.number().int().min(0, 'Giá tối thiểu không hợp lệ'),
+    budgetMax: z.number().int().min(0, 'Giá tối đa không hợp lệ'),
+  })
+  .refine((data) => data.budgetMin <= data.budgetMax, {
+    message: 'Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu',
+    path: ['budgetMax'],
+  });
+
+export type HireServiceFormValues = z.infer<typeof hireServiceSchema>;

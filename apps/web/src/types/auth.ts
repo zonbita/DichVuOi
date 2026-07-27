@@ -155,4 +155,13 @@ export type PublicPartnerProfile = {
     groupSlug?: string | null;
     groupName?: string | null;
   }>;
+  reputation: {
+    currentPoints: number;
+    startingPoints: number;
+    percent: number;
+    periodIndex: number;
+    periodStart: string;
+    periodEnd: string;
+    deductedThisPeriod: number;
+  };
 };

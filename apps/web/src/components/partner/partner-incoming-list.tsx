@@ -54,7 +54,9 @@ export function PartnerIncomingList({
                 </p>
               </div>
               <p className="shrink-0 text-sm font-extrabold text-[var(--color-sale)]">
-                {formatPrice(booking.totalPrice)}
+                {booking.budgetMin != null && booking.budgetMax != null
+                  ? `${formatPrice(booking.budgetMin)} – ${formatPrice(booking.budgetMax)}`
+                  : formatPrice(booking.totalPrice)}
               </p>
             </div>
             <button
