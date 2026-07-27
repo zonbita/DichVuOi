@@ -13,9 +13,12 @@ type Props = {
   currentUserId: string;
   paying?: boolean;
   cancelling?: boolean;
+  confirming?: boolean;
   payError?: string | null;
+  confirmError?: string | null;
   onPay: (id: string) => void;
   onCancel: (id: string) => void;
+  onConfirm?: (id: string, acceptIncomplete: boolean) => void;
 };
 
 function statusBadgeClass(status: string) {
@@ -26,6 +29,10 @@ function statusBadgeClass(status: string) {
       return 'bg-sky-50 text-sky-800 ring-sky-200';
     case 'IN_PROGRESS':
       return 'bg-violet-50 text-violet-800 ring-violet-200';
+    case 'AWAITING_CONFIRM':
+      return 'bg-orange-50 text-orange-800 ring-orange-200';
+    case 'DISPUTED':
+      return 'bg-rose-50 text-rose-800 ring-rose-200';
     case 'COMPLETED':
       return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
     case 'CANCELLED':
@@ -40,9 +47,12 @@ export function CustomerBookingCard({
   currentUserId,
   paying,
   cancelling,
+  confirming,
   payError,
+  confirmError,
   onPay,
   onCancel,
+  onConfirm,
 }: Props) {
   const canPay =
     booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED';
@@ -50,8 +60,14 @@ export function CustomerBookingCard({
     booking.status === 'PENDING' || booking.status === 'CONFIRMED';
   const showChat =
     Boolean(booking.partnerId) &&
-    booking.paymentStatus === 'HELD' &&
-    (booking.status === 'CONFIRMED' || booking.status === 'IN_PROGRESS');
+    (booking.paymentStatus === 'HELD' || booking.paymentStatus === 'RELEASED') &&
+    (booking.status === 'CONFIRMED' ||
+      booking.status === 'IN_PROGRESS' ||
+      booking.status === 'AWAITING_CONFIRM' ||
+      booking.status === 'DISPUTED');
+  const incompleteCount = (booking.requirements ?? []).filter(
+    (r) => !r.customerConfirmed,
+  ).length;
 
   return (
     <article className="border border-[var(--color-line)] bg-white p-4 shadow-sm sm:p-5">
@@ -123,8 +139,16 @@ export function CustomerBookingCard({
               disabled={paying}
               className="btn-primary mt-3 px-4 py-2 text-sm disabled:opacity-50"
             >
-              Đặt cọc giữ chỗ
+              Đặt cọc từ ví VNĐ
             </button>
+          ) : null}
+          {booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED' ? (
+            <Link
+              to="/don-cua-toi/vi"
+              className="mt-2 block text-xs font-semibold text-[var(--color-brand-deep)] hover:underline"
+            >
+              Nạp ví nếu thiếu số dư
+            </Link>
           ) : null}
           {booking.paymentStatus === 'RELEASED' ? (
             <p className="mt-2 text-xs text-[var(--color-muted)]">
@@ -133,6 +157,30 @@ export function CustomerBookingCard({
           ) : null}
           {booking.paymentStatus === 'REFUNDED' ? (
             <p className="mt-2 text-xs text-emerald-700">Đã hoàn cọc</p>
+          ) : null}
+          {booking.status === 'AWAITING_CONFIRM' && onConfirm ? (
+            <div className="mt-3 space-y-1.5">
+              <button
+                type="button"
+                onClick={() => onConfirm(booking.id, incompleteCount > 0)}
+                disabled={confirming}
+                className="btn-primary w-full px-4 py-2 text-sm disabled:opacity-50"
+              >
+                {incompleteCount > 0
+                  ? 'Đồng ý hoàn thành (chấp nhận thiếu)'
+                  : 'Đồng ý hoàn thành'}
+              </button>
+              {incompleteCount > 0 ? (
+                <p className="text-[11px] text-amber-800">
+                  Còn {incompleteCount} mục chưa tích — nên kiểm checklist trước.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {booking.disputeResultNote ? (
+            <p className="mt-2 max-w-[14rem] text-left text-xs text-[var(--color-muted)]">
+              KQ tranh chấp: {booking.disputeResultNote}
+            </p>
           ) : null}
           {canCancel ? (
             <button
@@ -145,7 +193,23 @@ export function CustomerBookingCard({
             </button>
           ) : null}
           {payError ? (
-            <p className="mt-1 text-xs text-red-600">{payError}</p>
+            <p className="mt-1 max-w-[14rem] text-left text-xs text-red-600">
+              {payError}
+              {payError.includes('Số dư') ? (
+                <>
+                  {' '}
+                  <Link
+                    to="/don-cua-toi/vi"
+                    className="font-semibold underline"
+                  >
+                    Nạp ví
+                  </Link>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          {confirmError ? (
+            <p className="mt-1 text-xs text-red-600">{confirmError}</p>
           ) : null}
           {booking.status === 'COMPLETED' && booking.partnerId ? (
             <Link

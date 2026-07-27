@@ -481,7 +481,9 @@ export function PartnerDashboardPage() {
           statusVariables={statusMutation.variables ?? null}
           statusError={statusMutation.isError ? (statusMutation.error as Error) : null}
           onStart={(id) => statusMutation.mutate({ id, status: 'IN_PROGRESS' })}
-          onComplete={(id) => statusMutation.mutate({ id, status: 'COMPLETED' })}
+          onComplete={(id) =>
+            statusMutation.mutate({ id, status: 'AWAITING_CONFIRM' })
+          }
         />
       )}
 

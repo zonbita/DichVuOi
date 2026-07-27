@@ -23,6 +23,7 @@ export class AuthService {
     fullName: string;
     phone: string | null;
     role: Role;
+    walletBalance?: number;
     partnerProfile?: unknown;
   }) {
     return {
@@ -31,6 +32,7 @@ export class AuthService {
       fullName: user.fullName,
       phone: user.phone,
       role: user.role,
+      walletBalance: user.walletBalance ?? 0,
       partnerProfile: user.partnerProfile ?? null,
     };
   }

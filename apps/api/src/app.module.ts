@@ -9,6 +9,7 @@ import { HealthModule } from './modules/health/health.module';
 import { PartnersModule } from './modules/partners/partners.module';
 import { ComplaintsModule } from './modules/complaints/complaints.module';
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
+import { FinanceModule } from './modules/finance/finance.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ChatbotModule } from './modules/chatbot/chatbot.module';
     PartnersModule,
     AdminModule,
     ComplaintsModule,
+    FinanceModule,
     ChatbotModule,
   ],
 })

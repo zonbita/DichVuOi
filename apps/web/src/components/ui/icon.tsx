@@ -292,6 +292,19 @@ const shapes = {
       <path d="M2.5 19.5h19" />
     </>
   ),
+  wallet: (
+    <>
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <circle cx="16.5" cy="14.5" r="1.2" />
+    </>
+  ),
+  receipt: (
+    <>
+      <path d="M6 3.5h12v17l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2-2 1.2z" />
+      <path d="M9 8h6M9 11.5h6M9 15h4" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof shapes;

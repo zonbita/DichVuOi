@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ComplaintStatus } from '@prisma/client';
+import { ComplaintResolutionAction, ComplaintStatus } from '@prisma/client';
 import {
+  IsArray,
   IsEnum,
   IsIn,
   IsInt,
@@ -25,15 +26,40 @@ export class CreateComplaintDto {
   @MinLength(10)
   @MaxLength(2000)
   description!: string;
+
+  @ApiPropertyOptional({ description: 'Id mục checklist tranh chấp' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requirementIds?: string[];
+
+  @ApiProperty({ description: 'Bằng chứng: link ảnh/video/chat hoặc mô tả tham chiếu' })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(2000)
+  evidenceNote!: string;
 }
 
 export class AdminResolveComplaintDto {
   @ApiProperty({ enum: ComplaintStatus })
   @IsEnum(ComplaintStatus)
-  @IsIn([ComplaintStatus.VERIFIED, ComplaintStatus.REJECTED, ComplaintStatus.UNDER_REVIEW])
+  @IsIn([
+    ComplaintStatus.VERIFIED,
+    ComplaintStatus.REJECTED,
+    ComplaintStatus.UNDER_REVIEW,
+  ])
   status!: ComplaintStatus;
 
-  @ApiPropertyOptional({ description: 'Bắt buộc khi VERIFIED' })
+  @ApiPropertyOptional({
+    enum: ComplaintResolutionAction,
+    description:
+      'REFUND=chấp nhận khách; RELEASE=giải ngân; RETRY_*=làm lại; NONE=không đổi escrow',
+  })
+  @IsOptional()
+  @IsEnum(ComplaintResolutionAction)
+  resolutionAction?: ComplaintResolutionAction;
+
+  @ApiPropertyOptional({ description: 'Bắt buộc khi VERIFIED trừ điểm partner' })
   @IsOptional()
   @IsInt()
   @Min(1)

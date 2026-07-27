@@ -145,6 +145,8 @@ export function resolveContactPolicy(
     const active =
       status === 'CONFIRMED' ||
       status === 'IN_PROGRESS' ||
+      status === 'AWAITING_CONFIRM' ||
+      status === 'DISPUTED' ||
       status === 'COMPLETED';
     return {
       channel: 'in_app',
@@ -167,10 +169,15 @@ export function resolveContactPolicy(
   }
 
   const phoneRevealed =
-    status === 'IN_PROGRESS' || status === 'COMPLETED';
+    status === 'IN_PROGRESS' ||
+    status === 'AWAITING_CONFIRM' ||
+    status === 'DISPUTED' ||
+    status === 'COMPLETED';
   const addressRevealed =
     status === 'CONFIRMED' ||
     status === 'IN_PROGRESS' ||
+    status === 'AWAITING_CONFIRM' ||
+    status === 'DISPUTED' ||
     status === 'COMPLETED';
 
   return {

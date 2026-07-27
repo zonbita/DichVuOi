@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { BookingChecklist } from '../components/booking/booking-checklist';
+import { BookingComplaintForm } from '../components/booking/booking-complaint-form';
 import { PartnerBookingCard } from '../components/partner/partner-booking-card';
 import { useAuth } from '../features/auth/auth-context';
 import { usePartnerRealtime } from '../hooks/use-partner-realtime';
@@ -75,7 +77,17 @@ export function PartnerBookingDetailPage() {
           statusMutation.isError ? (statusMutation.error as Error).message : null
         }
         onStart={() => statusMutation.mutate('IN_PROGRESS')}
-        onComplete={() => statusMutation.mutate('COMPLETED')}
+        onComplete={() => statusMutation.mutate('AWAITING_CONFIRM')}
+      />
+
+      <BookingChecklist booking={booking} mode="partner" />
+
+      <BookingComplaintForm
+        bookingId={booking.id}
+        partnerId={booking.partnerId}
+        bookingStatus={booking.status}
+        mode="partner"
+        requirements={booking.requirements}
       />
     </div>
   );

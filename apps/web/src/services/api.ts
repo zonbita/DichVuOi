@@ -29,6 +29,7 @@ import type {
 } from '../types/admin';
 import type { Complaint, ComplaintStatus } from '../types/complaint';
 import type { ChatbotReply, ChatbotStats } from '../types/chatbot';
+import type { Invoice, WalletSummary } from '../types/finance';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -155,6 +156,27 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
+  confirmBooking: (id: string, acceptIncomplete = false) =>
+    request<Booking>(`/api/bookings/${id}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ acceptIncomplete }),
+    }),
+  updateBookingRequirement: (
+    bookingId: string,
+    requirementId: string,
+    payload: {
+      partnerDone?: boolean;
+      customerConfirmed?: boolean;
+      evidenceUrl?: string;
+    },
+  ) =>
+    request<Booking>(
+      `/api/bookings/${bookingId}/requirements/${requirementId}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      },
+    ),
   getBookingMessages: (id: string) =>
     request<BookingMessage[]>(`/api/bookings/${id}/messages`),
   postBookingMessage: (id: string, body: string) =>
@@ -164,6 +186,14 @@ export const api = {
     }),
   payBooking: (id: string) =>
     request<Booking>(`/api/bookings/${id}/pay`, { method: 'POST' }),
+  getWallet: () => request<WalletSummary>('/api/wallet'),
+  topUpWallet: (amount: number) =>
+    request<{ currency: string; balance: number }>('/api/wallet/top-up', {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    }),
+  listInvoices: () => request<Invoice[]>('/api/invoices'),
+  getInvoice: (id: string) => request<Invoice>(`/api/invoices/${id}`),
   createReview: (id: string, payload: { rating: number; comment?: string }) =>
     request<BookingReview>(`/api/bookings/${id}/reviews`, {
       method: 'POST',
@@ -171,7 +201,12 @@ export const api = {
     }),
   createBookingComplaint: (
     bookingId: string,
-    payload: { category: string; description: string },
+    payload: {
+      category: string;
+      description: string;
+      requirementIds?: string[];
+      evidenceNote: string;
+    },
   ) =>
     request<Complaint>(`/api/bookings/${bookingId}/complaints`, {
       method: 'POST',
@@ -225,6 +260,12 @@ export const api = {
       status: 'VERIFIED' | 'REJECTED' | 'UNDER_REVIEW';
       deductionPoints?: number;
       adminNote?: string;
+      resolutionAction?:
+        | 'REFUND'
+        | 'RELEASE'
+        | 'RETRY_IN_PROGRESS'
+        | 'RETRY_AWAITING'
+        | 'NONE';
     },
   ) =>
     request<Complaint>(`/api/admin/complaints/${id}`, {
@@ -337,6 +378,8 @@ export function formatBookingStatus(status: string) {
     PENDING: 'Chờ nhận việc',
     CONFIRMED: 'Đã nhận',
     IN_PROGRESS: 'Đang làm',
+    AWAITING_CONFIRM: 'Chờ xác nhận',
+    DISPUTED: 'Đang tranh chấp',
     COMPLETED: 'Hoàn thành',
     CANCELLED: 'Đã hủy',
   };

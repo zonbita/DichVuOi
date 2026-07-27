@@ -21,6 +21,10 @@ import { CreateBookingMessageDto } from './dto/create-booking-message.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { PartnerScheduleQueryDto } from './dto/partner-schedule-query.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import {
+  ConfirmBookingDto,
+  UpdateRequirementDto,
+} from './dto/update-requirement.dto';
 
 @ApiTags('bookings')
 @ApiBearerAuth()
@@ -103,6 +107,30 @@ export class BookingsController {
   @Post(':id/pay')
   payEscrow(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.bookingsService.payEscrow(id, user);
+  }
+
+  @Post(':id/confirm')
+  confirmCompletion(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: ConfirmBookingDto,
+  ) {
+    return this.bookingsService.confirmCompletion(id, user, dto);
+  }
+
+  @Patch(':id/requirements/:requirementId')
+  updateRequirement(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('requirementId') requirementId: string,
+    @Body() dto: UpdateRequirementDto,
+  ) {
+    return this.bookingsService.updateRequirement(
+      id,
+      requirementId,
+      user,
+      dto,
+    );
   }
 
   @Get(':id')

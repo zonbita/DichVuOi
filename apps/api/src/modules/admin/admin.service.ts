@@ -13,6 +13,7 @@ import { defaultMarketRangeFromBase } from '../../common/market-price';
 import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
 import { slugify } from '../../common/slug';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { FinanceService } from '../finance/finance.service';
 import {
   AdminBookingQueryDto,
   AdminCreateServiceDto,
@@ -53,7 +54,10 @@ function paginated<T>(items: T[], total: number, page: Page) {
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly finance: FinanceService,
+  ) {}
 
   async stats() {
     const [
@@ -362,6 +366,17 @@ export class AdminService {
           include: {
             fromUser: { select: { id: true, fullName: true } },
             toUser: { select: { id: true, fullName: true } },
+          },
+        },
+        requirements: {
+          orderBy: { sortOrder: 'asc' },
+        },
+        complaints: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            reporter: { select: { id: true, fullName: true } },
+            against: { select: { id: true, fullName: true } },
+            resolvedBy: { select: { id: true, fullName: true } },
           },
         },
       },

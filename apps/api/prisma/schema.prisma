@@ -17,8 +17,33 @@ enum BookingStatus {
   PENDING
   CONFIRMED
   IN_PROGRESS
+  /** Người làm báo xong — chờ khách xác nhận / hết hạn / khiếu nại. Escrow vẫn HELD. */
+  AWAITING_CONFIRM
+  /** Có khiếu nại đang mở — ban kiểm duyệt quyết. Escrow vẫn HELD. */
+  DISPUTED
   COMPLETED
   CANCELLED
+}
+
+/** Nguồn mục yêu cầu trên đơn. */
+enum RequirementSource {
+  SERVICE_INCLUDES
+  CUSTOMER_NOTE
+  MANUAL
+}
+
+/** Kết quả xử lý khiếu nại — ảnh hưởng escrow / trạng thái đơn. */
+enum ComplaintResolutionAction {
+  /** Chấp nhận phía khách → hoàn cọc. */
+  REFUND
+  /** Chấp nhận phía người làm / từ chối khiếu nại khách → giải ngân + hoàn thành. */
+  RELEASE
+  /** Hòa / làm lại → quay IN_PROGRESS. */
+  RETRY_IN_PROGRESS
+  /** Hòa → quay chờ xác nhận. */
+  RETRY_AWAITING
+  /** Chỉ ghi nhận / đang xử lý — không đổi escrow. */
+  NONE
 }
 
 /** Escrow mock: giữ tiền trên sàn đến khi hoàn thành / hoàn hủy. */
@@ -29,6 +54,20 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum WalletTransactionType {
+  TOP_UP
+  ESCROW_HOLD
+  ESCROW_REFUND
+  PARTNER_PAYOUT
+  ADMIN_ADJUSTMENT
+}
+
+enum InvoiceStatus {
+  PAID
+  SETTLED
+  REFUNDED
+}
+
 model User {
   id             String          @id @default(cuid())
   email          String          @unique
@@ -36,6 +75,8 @@ model User {
   fullName       String
   phone          String?
   role           Role            @default(CUSTOMER)
+  /** Số dư ví nội bộ, đơn vị VNĐ (số nguyên). */
+  walletBalance  Int             @default(0)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   partnerProfile  PartnerProfile?
@@ -48,8 +89,12 @@ model User {
   favoritedBy      PartnerFavorite[] @relation("PartnerFavoritedBy")
   complaintsFiled  Complaint[]       @relation("ComplaintsFiled")
   complaintsAgainst Complaint[]      @relation("ComplaintsAgainst")
+  complaintsTarget  Complaint[]      @relation("ComplaintsTarget")
   complaintsResolved Complaint[]     @relation("ComplaintsResolved")
   reputationPeriods PartnerReputationPeriod[]
+  walletTransactions WalletTransaction[]
+  customerInvoices Invoice[]         @relation("CustomerInvoices")
+  partnerInvoices Invoice[]          @relation("PartnerInvoices")
 }
 
 /** Khách lưu người làm quen — hỗ trợ thuê lại / cá nhân hóa trang chủ. */
@@ -201,11 +246,18 @@ model Booking {
   paidAt        DateTime?
   releasedAt    DateTime?
   refundedAt    DateTime?
+  /** Hết hạn cửa sổ chờ xác nhận (auto hoàn thành nếu không khiếu nại) — mock/cron sau. */
+  confirmDeadlineAt DateTime?
+  /** Ghi chú kết quả tranh chấp công khai cho 2 bên. */
+  disputeResultNote String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   messages      BookingMessage[]
   reviews       Review[]
   complaints    Complaint[]
+  requirements  BookingRequirement[]
+  walletTransactions WalletTransaction[]
+  invoice       Invoice?
 
   @@index([userId])
   @@index([partnerId])
@@ -213,6 +265,73 @@ model Booking {
   @@index([status])
   @@index([paymentStatus])
   @@index([scheduledAt])
+}
+
+/** Sổ cái ví VNĐ — amount dương là tiền vào, âm là tiền ra. */
+model WalletTransaction {
+  id           String                @id @default(cuid())
+  userId       String
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId    String?
+  booking      Booking?              @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  type         WalletTransactionType
+  amount       Int
+  balanceAfter Int
+  description  String
+  /** Khóa idempotency, vd. hold:<bookingId>, refund:<bookingId>. */
+  reference    String                @unique
+  createdAt    DateTime              @default(now())
+
+  @@index([userId, createdAt])
+  @@index([bookingId])
+}
+
+/** Hóa đơn VNĐ chụp lại thông tin tại thời điểm đặt cọc. */
+model Invoice {
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  bookingId        String        @unique
+  booking          Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customerId       String
+  customer         User          @relation("CustomerInvoices", fields: [customerId], references: [id], onDelete: Cascade)
+  partnerId        String?
+  partner          User?         @relation("PartnerInvoices", fields: [partnerId], references: [id], onDelete: SetNull)
+  customerName     String
+  serviceName      String
+  subtotal         Int
+  commissionAmount Int           @default(0)
+  partnerPayout    Int           @default(0)
+  currency         String        @default("VND")
+  status           InvoiceStatus @default(PAID)
+  issuedAt         DateTime      @default(now())
+  settledAt        DateTime?
+  refundedAt       DateTime?
+  updatedAt        DateTime      @updatedAt
+
+  @@index([customerId, issuedAt])
+  @@index([partnerId, issuedAt])
+  @@index([status])
+}
+
+/** Mục yêu cầu (checklist) trên đơn — tick khách = xác nhận bàn giao. */
+model BookingRequirement {
+  id                 String            @id @default(cuid())
+  bookingId          String
+  booking            Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  content            String
+  sortOrder          Int               @default(0)
+  source             RequirementSource @default(SERVICE_INCLUDES)
+  /** Người làm đánh dấu «tôi đã làm» (gợi ý, không tính bàn giao). */
+  partnerDone        Boolean           @default(false)
+  partnerDoneAt      DateTime?
+  /** Khách tích «đã nhận / đã xong» — xác nhận bàn giao. */
+  customerConfirmed  Boolean           @default(false)
+  customerConfirmedAt DateTime?
+  evidenceUrl        String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([bookingId, sortOrder])
 }
 
 /** Chat theo đơn — kênh liên hệ chính thức (chống bỏ sàn). Body bị lọc SĐT/Zalo/email. */
@@ -263,14 +382,23 @@ model Complaint {
   booking          Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   reporterUserId   String
   reporter         User            @relation("ComplaintsFiled", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  /** Partner của đơn (uy tín / tra cứu). */
   partnerUserId    String
   partner          User            @relation("ComplaintsAgainst", fields: [partnerUserId], references: [id], onDelete: Cascade)
+  /** Bên bị khiếu nại (khách hoặc người làm). */
+  againstUserId    String?
+  against          User?           @relation("ComplaintsTarget", fields: [againstUserId], references: [id], onDelete: SetNull)
   category         String
   description      String
+  /** JSON string[] id mục checklist gắn khiếu nại. */
+  requirementIdsJson String?
+  /** Ghi chú / link bằng chứng (ảnh, video, chat). */
+  evidenceNote     String?
   status           ComplaintStatus @default(SUBMITTED)
-  /** Điểm trừ uy tín khi status = VERIFIED. */
+  /** Điểm trừ uy tín partner khi VERIFIED (chấp nhận phía khách). */
   deductionPoints  Int?
   adminNote        String?
+  resolutionAction ComplaintResolutionAction?
   resolvedAt       DateTime?
   resolvedByUserId String?
   resolvedBy       User?           @relation("ComplaintsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
@@ -280,6 +408,7 @@ model Complaint {
 
   @@index([partnerUserId, status])
   @@index([reporterUserId])
+  @@index([againstUserId])
   @@index([bookingId])
   @@index([status, createdAt])
 }

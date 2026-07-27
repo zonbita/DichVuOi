@@ -111,7 +111,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
       {open ? (
         <div
           role="listbox"
-          className="absolute right-0 z-[9990] mt-2 w-[280px] overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl"
+          className="absolute right-0 z-[9990] mt-2 w-[280px] overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-2xl"
         >
           <div className="flex items-center gap-3 border-b border-[var(--color-line)] bg-[var(--color-canvas)] px-3.5 py-3">
             <UserAvatar

@@ -300,13 +300,17 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: 'demo@dichvuoi.vn' },
-    update: {},
+    update: {
+      passwordHash,
+      walletBalance: 5_000_000,
+    },
     create: {
       email: 'demo@dichvuoi.vn',
       passwordHash,
       fullName: 'Khách Demo',
       phone: '0900000000',
       role: Role.CUSTOMER,
+      walletBalance: 5_000_000,
     },
   });
 
@@ -336,6 +340,7 @@ async function main() {
   }[] = [];
 
   for (const p of seedPartners) {
+    const startingWallet = p.email === 'partner@dichvuoi.vn' ? 1_000_000 : 0;
     const user = await prisma.user.upsert({
       where: { email: p.email },
       update: {
@@ -343,6 +348,9 @@ async function main() {
         fullName: p.fullName,
         phone: p.phone,
         role: Role.PARTNER,
+        ...(p.email === 'partner@dichvuoi.vn'
+          ? { walletBalance: startingWallet }
+          : {}),
       },
       create: {
         email: p.email,
@@ -350,6 +358,7 @@ async function main() {
         fullName: p.fullName,
         phone: p.phone,
         role: Role.PARTNER,
+        walletBalance: startingWallet,
       },
     });
 

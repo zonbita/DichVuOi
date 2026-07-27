@@ -11,16 +11,20 @@ import {
   shapeBookingForViewer,
   type ContactViewerRole,
 } from '../../common/contact-privacy';
-import {
-  computeEscrowSplit,
-  DEFAULT_COMMISSION_BPS,
-} from '../../common/escrow';
+import { buildRequirementSeeds } from '../../common/booking-requirements';
+import { computeEscrowSplit } from '../../common/escrow';
 import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { FinanceService } from '../finance/finance.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateBookingMessageDto } from './dto/create-booking-message.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { ConfirmBookingDto } from './dto/update-requirement.dto';
+import { UpdateRequirementDto } from './dto/update-requirement.dto';
 import { PartnerRealtimeService } from './partner-realtime.service';
+
+/** Cửa sổ chờ xác nhận mặc định (giờ) sau khi người làm báo xong. */
+const CONFIRM_WINDOW_HOURS = 48;
 
 const bookingInclude = {
   service: {
@@ -46,6 +50,9 @@ const bookingInclude = {
       createdAt: true,
     },
   },
+  requirements: {
+    orderBy: { sortOrder: 'asc' as const },
+  },
 } as const;
 
 type Viewer = { id: string; role: string };
@@ -55,6 +62,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly realtime: PartnerRealtimeService,
+    private readonly finance: FinanceService,
   ) {}
 
   private viewerRole(
@@ -79,6 +87,103 @@ export class BookingsService {
       booking,
       this.viewerRole(booking, viewer, mode),
     );
+  }
+
+  private async emitBookingUpdate(
+    booking: Parameters<typeof shapeBookingForViewer>[0] & {
+      userId: string;
+      partnerId: string | null;
+    },
+    viewer?: Viewer,
+  ) {
+    if (booking.partnerId) {
+      this.realtime.emitPartnerBooking(
+        booking.partnerId,
+        'booking:updated',
+        this.shape(booking, {
+          id: booking.partnerId,
+          role: Role.PARTNER,
+        }),
+      );
+    }
+    this.realtime.emitCustomerBooking(
+      booking.userId,
+      this.shape(booking, { id: booking.userId, role: Role.CUSTOMER }),
+    );
+    return viewer ? this.shape(booking, viewer) : this.shape(booking, undefined);
+  }
+
+  /** Seed checklist từ includes gói + ghi chú khách (một lần khi đã có partner). */
+  private async seedRequirementsIfEmpty(bookingId: string) {
+    const existing = await this.prisma.bookingRequirement.count({
+      where: { bookingId },
+    });
+    if (existing > 0) return;
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: {
+        note: true,
+        serviceId: true,
+        partnerId: true,
+      },
+    });
+    if (!booking?.partnerId) return;
+
+    const offering = await this.prisma.partnerService.findFirst({
+      where: {
+        serviceId: booking.serviceId,
+        isActive: true,
+        partnerProfile: { userId: booking.partnerId },
+      },
+      select: { includes: true },
+    });
+
+    const seeds = buildRequirementSeeds({
+      includes: offering?.includes,
+      customerNote: booking.note,
+    });
+    if (seeds.length === 0) return;
+
+    await this.prisma.bookingRequirement.createMany({
+      data: seeds.map((item) => ({
+        bookingId,
+        content: item.content,
+        source: item.source,
+        sortOrder: item.sortOrder,
+      })),
+    });
+  }
+
+  /**
+   * Tự hoàn thành các đơn hết cửa sổ xác nhận khi được truy cập.
+   * Điều kiện update bảo đảm không giải ngân nếu đơn vừa chuyển DISPUTED.
+   */
+  private async settleExpiredConfirmations(bookingId?: string) {
+    const expired = await this.prisma.booking.findMany({
+      where: {
+        ...(bookingId ? { id: bookingId } : {}),
+        status: BookingStatus.AWAITING_CONFIRM,
+        paymentStatus: PaymentStatus.HELD,
+        confirmDeadlineAt: { lte: new Date() },
+      },
+      select: {
+        id: true,
+        partnerId: true,
+        totalPrice: true,
+        commissionBps: true,
+      },
+    });
+
+    for (const booking of expired) {
+      const released = await this.finance.releaseBooking(booking.id, {
+        expectedStatus: BookingStatus.AWAITING_CONFIRM,
+        status: BookingStatus.COMPLETED,
+      });
+      if (released && booking.partnerId) {
+        await recalculatePartnerLevel(this.prisma, booking.partnerId);
+      }
+    }
   }
 
   async create(dto: CreateBookingDto, customerId?: string) {
@@ -157,7 +262,18 @@ export class BookingsService {
       include: bookingInclude,
     });
 
-    const shaped = this.shape(booking, { id: user.id, role: user.role });
+    if (partnerId) {
+      await this.seedRequirementsIfEmpty(booking.id);
+    }
+
+    const fresh = partnerId
+      ? await this.prisma.booking.findUniqueOrThrow({
+          where: { id: booking.id },
+          include: bookingInclude,
+        })
+      : booking;
+
+    const shaped = this.shape(fresh, { id: user.id, role: user.role });
     if (partnerId) {
       this.realtime.emitPartnerBooking(partnerId, 'booking:assigned', shaped);
     }
@@ -166,6 +282,7 @@ export class BookingsService {
   }
 
   async findOne(id: string, viewer?: Viewer) {
+    await this.settleExpiredConfirmations(id);
     const booking = await this.prisma.booking.findUnique({
       where: { id },
       include: bookingInclude,
@@ -188,6 +305,7 @@ export class BookingsService {
   }
 
   async listMineAsCustomer(userId: string) {
+    await this.settleExpiredConfirmations();
     const rows = await this.prisma.booking.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -268,6 +386,7 @@ export class BookingsService {
   }
 
   async listMineAsPartner(partnerId: string) {
+    await this.settleExpiredConfirmations();
     const rows = await this.prisma.booking.findMany({
       where: { partnerId },
       orderBy: { createdAt: 'desc' },
@@ -357,12 +476,18 @@ export class BookingsService {
       include: bookingInclude,
     });
 
-    const shaped = this.shape(updated, { id: partnerId, role: Role.PARTNER });
+    await this.seedRequirementsIfEmpty(id);
+    const withReqs = await this.prisma.booking.findUniqueOrThrow({
+      where: { id },
+      include: bookingInclude,
+    });
+
+    const shaped = this.shape(withReqs, { id: partnerId, role: Role.PARTNER });
     this.realtime.emitOpenRemoved(id);
     this.realtime.emitPartnerBooking(partnerId, 'booking:assigned', shaped);
     this.realtime.emitCustomerBooking(
-      updated.userId,
-      this.shape(updated, { id: updated.userId, role: Role.CUSTOMER }),
+      withReqs.userId,
+      this.shape(withReqs, { id: withReqs.userId, role: Role.CUSTOMER }),
     );
     return shaped;
   }
@@ -375,19 +500,9 @@ export class BookingsService {
     if (viewer.role !== Role.ADMIN && booking.userId !== viewer.id) {
       throw new ForbiddenException('Chỉ khách thuê đặt cọc đơn này');
     }
-    if (booking.status === BookingStatus.CANCELLED) {
-      throw new BadRequestException('Đơn đã hủy');
-    }
-    if (booking.paymentStatus !== PaymentStatus.UNPAID) {
-      throw new BadRequestException('Đơn đã đặt cọc hoặc đã xử lý');
-    }
-
-    const updated = await this.prisma.booking.update({
+    await this.finance.holdBooking(id, booking.userId);
+    const updated = await this.prisma.booking.findUniqueOrThrow({
       where: { id },
-      data: {
-        paymentStatus: PaymentStatus.HELD,
-        paidAt: new Date(),
-      },
       include: bookingInclude,
     });
 
@@ -413,7 +528,12 @@ export class BookingsService {
     return shaped;
   }
 
-  async updateStatus(id: string, status: BookingStatus, viewer: Viewer) {
+  async updateStatus(
+    id: string,
+    status: BookingStatus,
+    viewer: Viewer,
+    acceptIncomplete = false,
+  ) {
     const raw = await this.prisma.booking.findUnique({
       where: { id },
       include: bookingInclude,
@@ -435,7 +555,18 @@ export class BookingsService {
         BookingStatus.CANCELLED,
       ],
       [BookingStatus.IN_PROGRESS]: [
+        BookingStatus.AWAITING_CONFIRM,
+        BookingStatus.CANCELLED,
+      ],
+      [BookingStatus.AWAITING_CONFIRM]: [
         BookingStatus.COMPLETED,
+        BookingStatus.DISPUTED,
+        BookingStatus.CANCELLED,
+      ],
+      [BookingStatus.DISPUTED]: [
+        BookingStatus.COMPLETED,
+        BookingStatus.IN_PROGRESS,
+        BookingStatus.AWAITING_CONFIRM,
         BookingStatus.CANCELLED,
       ],
       [BookingStatus.COMPLETED]: [],
@@ -456,6 +587,52 @@ export class BookingsService {
       ) {
         throw new ForbiddenException();
       }
+      // Sau khi đang làm / chờ xác nhận / tranh chấp — chỉ admin hủy (escrow phức tạp).
+      if (
+        viewer.role !== Role.ADMIN &&
+        (raw.status === BookingStatus.IN_PROGRESS ||
+          raw.status === BookingStatus.AWAITING_CONFIRM ||
+          raw.status === BookingStatus.DISPUTED)
+      ) {
+        throw new ForbiddenException(
+          'Không tự hủy ở giai đoạn này — dùng khiếu nại hoặc liên hệ ban kiểm duyệt',
+        );
+      }
+    } else if (status === BookingStatus.AWAITING_CONFIRM) {
+      // Người làm báo «đã xong việc»
+      if (viewer.role !== Role.ADMIN && raw.partnerId !== viewer.id) {
+        throw new ForbiddenException('Chỉ người nhận việc báo đã xong việc');
+      }
+    } else if (status === BookingStatus.COMPLETED) {
+      if (viewer.role === Role.ADMIN) {
+        // admin ok
+      } else if (
+        raw.userId === viewer.id &&
+        raw.status === BookingStatus.AWAITING_CONFIRM
+      ) {
+        // khách đồng ý hoàn thành
+      } else if (raw.partnerId === viewer.id) {
+        throw new ForbiddenException(
+          'Người làm báo xong → chờ xác nhận. Khách hoặc ban kiểm duyệt mới hoàn thành.',
+        );
+      } else {
+        throw new ForbiddenException('Chỉ khách thuê xác nhận hoàn thành');
+      }
+      if (
+        viewer.role !== Role.ADMIN &&
+        raw.requirements.some((requirement) => !requirement.customerConfirmed) &&
+        !acceptIncomplete
+      ) {
+        throw new BadRequestException(
+          'Còn mục checklist chưa được khách xác nhận. Dùng thao tác đồng ý hoàn thành nếu chấp nhận thiếu.',
+        );
+      }
+    } else if (status === BookingStatus.DISPUTED) {
+      if (viewer.role !== Role.ADMIN) {
+        throw new ForbiddenException(
+          'Trạng thái tranh chấp chỉ qua gửi khiếu nại hoặc admin',
+        );
+      }
     } else if (viewer.role !== Role.ADMIN && raw.partnerId !== viewer.id) {
       throw new ForbiddenException('Chỉ người nhận việc cập nhật tiến độ');
     }
@@ -470,43 +647,53 @@ export class BookingsService {
 
     const data: {
       status: BookingStatus;
-      paymentStatus?: PaymentStatus;
-      commissionAmount?: number;
-      partnerPayout?: number;
-      releasedAt?: Date;
-      refundedAt?: Date;
+      confirmDeadlineAt?: Date | null;
+      disputeResultNote?: string | null;
     } = { status };
+    let settledByFinance = false;
+
+    if (status === BookingStatus.AWAITING_CONFIRM) {
+      data.confirmDeadlineAt = new Date(
+        Date.now() + CONFIRM_WINDOW_HOURS * 60 * 60 * 1000,
+      );
+    }
 
     if (status === BookingStatus.COMPLETED) {
       if (raw.paymentStatus === PaymentStatus.HELD) {
-        const split = computeEscrowSplit(
-          raw.totalPrice,
-          raw.commissionBps || DEFAULT_COMMISSION_BPS,
-        );
-        data.paymentStatus = PaymentStatus.RELEASED;
-        data.commissionAmount = split.commissionAmount;
-        data.partnerPayout = split.partnerPayout;
-        data.releasedAt = new Date();
+        await this.finance.releaseBooking(id, {
+          status: BookingStatus.COMPLETED,
+        });
+        settledByFinance = true;
       } else if (raw.paymentStatus === PaymentStatus.UNPAID) {
         throw new BadRequestException(
           'Không hoàn thành khi chưa thanh toán escrow',
         );
+      } else if (raw.paymentStatus !== PaymentStatus.RELEASED) {
+        throw new BadRequestException('Escrow đã hoàn — không thể hoàn thành');
       }
+      data.confirmDeadlineAt = null;
     }
 
     if (
       status === BookingStatus.CANCELLED &&
       raw.paymentStatus === PaymentStatus.HELD
     ) {
-      data.paymentStatus = PaymentStatus.REFUNDED;
-      data.refundedAt = new Date();
+      await this.finance.refundBooking(id, {
+        status: BookingStatus.CANCELLED,
+      });
+      settledByFinance = true;
     }
 
-    const updated = await this.prisma.booking.update({
-      where: { id },
-      data,
-      include: bookingInclude,
-    });
+    const updated = settledByFinance
+      ? await this.prisma.booking.findUniqueOrThrow({
+          where: { id },
+          include: bookingInclude,
+        })
+      : await this.prisma.booking.update({
+          where: { id },
+          data,
+          include: bookingInclude,
+        });
 
     if (status === BookingStatus.COMPLETED && updated.partnerId) {
       await recalculatePartnerLevel(this.prisma, updated.partnerId);
@@ -539,6 +726,126 @@ export class BookingsService {
     );
 
     return shaped;
+  }
+
+  /** Khách đồng ý hoàn thành từ AWAITING_CONFIRM (cảnh báo nếu checklist chưa đủ). */
+  async confirmCompletion(
+    id: string,
+    viewer: Viewer,
+    dto: ConfirmBookingDto = {},
+  ) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: bookingInclude,
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+
+    if (viewer.role !== Role.ADMIN && booking.userId !== viewer.id) {
+      throw new ForbiddenException('Chỉ khách thuê xác nhận hoàn thành');
+    }
+    if (booking.status !== BookingStatus.AWAITING_CONFIRM) {
+      throw new BadRequestException('Đơn không ở trạng thái chờ xác nhận');
+    }
+
+    const incomplete = booking.requirements.filter((r) => !r.customerConfirmed);
+    if (incomplete.length > 0 && !dto.acceptIncomplete) {
+      throw new BadRequestException(
+        `Còn ${incomplete.length} mục chưa tích xác nhận. Tích hết hoặc gửi acceptIncomplete=true nếu chấp nhận thiếu.`,
+      );
+    }
+
+    return this.updateStatus(
+      id,
+      BookingStatus.COMPLETED,
+      viewer,
+      dto.acceptIncomplete === true,
+    );
+  }
+
+  async updateRequirement(
+    bookingId: string,
+    requirementId: string,
+    viewer: Viewer,
+    dto: UpdateRequirementDto,
+  ) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        userId: true,
+        partnerId: true,
+        status: true,
+      },
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+    this.assertBookingParty(booking, viewer);
+
+    const req = await this.prisma.bookingRequirement.findFirst({
+      where: { id: requirementId, bookingId },
+    });
+    if (!req) throw new NotFoundException('Không tìm thấy mục yêu cầu');
+
+    const tickable =
+      booking.status === BookingStatus.IN_PROGRESS ||
+      booking.status === BookingStatus.AWAITING_CONFIRM ||
+      booking.status === BookingStatus.DISPUTED ||
+      booking.status === BookingStatus.CONFIRMED;
+
+    if (!tickable && viewer.role !== Role.ADMIN) {
+      throw new BadRequestException(
+        'Không cập nhật checklist khi đơn đã đóng',
+      );
+    }
+
+    const data: {
+      partnerDone?: boolean;
+      partnerDoneAt?: Date | null;
+      customerConfirmed?: boolean;
+      customerConfirmedAt?: Date | null;
+      evidenceUrl?: string | null;
+    } = {};
+
+    if (dto.partnerDone !== undefined) {
+      if (
+        viewer.role !== Role.ADMIN &&
+        booking.partnerId !== viewer.id
+      ) {
+        throw new ForbiddenException(
+          'Chỉ người làm đánh dấu «đã làm»',
+        );
+      }
+      data.partnerDone = dto.partnerDone;
+      data.partnerDoneAt = dto.partnerDone ? new Date() : null;
+    }
+
+    if (dto.customerConfirmed !== undefined) {
+      if (viewer.role !== Role.ADMIN && booking.userId !== viewer.id) {
+        throw new ForbiddenException(
+          'Chỉ khách thuê tích xác nhận bàn giao',
+        );
+      }
+      data.customerConfirmed = dto.customerConfirmed;
+      data.customerConfirmedAt = dto.customerConfirmed ? new Date() : null;
+    }
+
+    if (dto.evidenceUrl !== undefined) {
+      data.evidenceUrl = dto.evidenceUrl.trim() || null;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Không có trường nào để cập nhật');
+    }
+
+    await this.prisma.bookingRequirement.update({
+      where: { id: requirementId },
+      data,
+    });
+
+    const updated = await this.prisma.booking.findUniqueOrThrow({
+      where: { id: bookingId },
+      include: bookingInclude,
+    });
+    return this.emitBookingUpdate(updated, viewer);
   }
 
   private assertBookingParty(

@@ -77,6 +77,18 @@ export type ContactPolicy = {
 
 export type PaymentStatus = 'UNPAID' | 'HELD' | 'RELEASED' | 'REFUNDED';
 
+export type BookingRequirement = {
+  id: string;
+  content: string;
+  sortOrder: number;
+  source: 'SERVICE_INCLUDES' | 'CUSTOMER_NOTE' | 'MANUAL';
+  partnerDone: boolean;
+  partnerDoneAt: string | null;
+  customerConfirmed: boolean;
+  customerConfirmedAt: string | null;
+  evidenceUrl: string | null;
+};
+
 export type BookingReview = {
   id: string;
   fromUserId: string;
@@ -106,10 +118,13 @@ export type Booking = {
   paidAt?: string | null;
   releasedAt?: string | null;
   refundedAt?: string | null;
+  confirmDeadlineAt?: string | null;
+  disputeResultNote?: string | null;
   customerPhoneMasked?: boolean;
   addressMasked?: boolean;
   contactPolicy?: ContactPolicy;
   reviews?: BookingReview[];
+  requirements?: BookingRequirement[];
   service: Service;
   partner?: {
     id: string;

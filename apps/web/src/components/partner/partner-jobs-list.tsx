@@ -27,6 +27,8 @@ function matchesTab(b: Booking, tab: TabId, userId: string) {
       return (
         b.status === 'CONFIRMED' ||
         b.status === 'IN_PROGRESS' ||
+        b.status === 'AWAITING_CONFIRM' ||
+        b.status === 'DISPUTED' ||
         (b.status === 'PENDING' && Boolean(b.partnerId))
       );
     case 'done':

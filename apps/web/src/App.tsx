@@ -18,6 +18,7 @@ import { GroupDetailPage } from './pages/group-detail-page';
 import { GroupsPage } from './pages/groups-page';
 import { HireServicePage } from './pages/hire-service-page';
 import { HomePage } from './pages/home-page';
+import { InvoiceDetailPage, InvoicesPage } from './pages/invoices-page';
 import { LoginPage } from './pages/login-page';
 import { MyBookingsPage } from './pages/my-bookings-page';
 import { PartnerBookingDetailPage } from './pages/partner-booking-detail-page';
@@ -25,6 +26,7 @@ import { PartnerDashboardPage } from './pages/partner-dashboard-page';
 import { PartnerProfilePage } from './pages/partner-profile-page';
 import { RegisterPage } from './pages/register-page';
 import { ServiceDetailPage } from './pages/service-detail-page';
+import { WalletPage } from './pages/wallet-page';
 import {
   AboutPage,
   BookingGuidePage,
@@ -66,11 +68,26 @@ export default function App() {
             <Route path="/don-cua-toi" element={<MyBookingsPage />} />
             <Route path="/don-cua-toi/don/:id" element={<CustomerBookingDetailPage />} />
             <Route path="/don-cua-toi/thue" element={<HireServicePage />} />
+            <Route path="/don-cua-toi/vi" element={<WalletPage basePath="/don-cua-toi" />} />
+            <Route
+              path="/don-cua-toi/hoa-don"
+              element={<InvoicesPage basePath="/don-cua-toi" />}
+            />
+            <Route
+              path="/don-cua-toi/hoa-don/:id"
+              element={<InvoiceDetailPage basePath="/don-cua-toi" />}
+            />
             <Route path="/don-cua-toi/tro-giup" element={<HelpCenterPage />} />
             <Route path="/don-cua-toi/khieu-nai" element={<ComplaintPage />} />
             <Route path="/doi-tac" element={<PartnerDashboardPage />} />
             <Route path="/doi-tac/viec" element={<PartnerDashboardPage />} />
             <Route path="/doi-tac/viec/:id" element={<PartnerBookingDetailPage />} />
+            <Route path="/doi-tac/vi" element={<WalletPage basePath="/doi-tac" />} />
+            <Route path="/doi-tac/hoa-don" element={<InvoicesPage basePath="/doi-tac" />} />
+            <Route
+              path="/doi-tac/hoa-don/:id"
+              element={<InvoiceDetailPage basePath="/doi-tac" />}
+            />
             <Route path="/doi-tac/ho-so" element={<PartnerDashboardPage />} />
             <Route path="/doi-tac/cap-do" element={<PartnerDashboardPage />} />
             <Route path="/doi-tac/quy-trinh" element={<PartnerProcessPage />} />

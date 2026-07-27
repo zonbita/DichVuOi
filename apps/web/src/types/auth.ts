@@ -89,6 +89,8 @@ export type AuthUser = {
   fullName: string;
   phone: string | null;
   role: UserRole;
+  /** Số dư ví nội bộ (VNĐ). */
+  walletBalance?: number;
   partnerProfile: PartnerProfile | null;
 };
 

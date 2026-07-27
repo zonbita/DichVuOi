@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import type { Booking } from '../../types/catalog';
 import { Icon } from '../ui/icon';
 import type { IconName } from '../ui/icon';
+import { formatPrice } from '../../services/api';
 
 type NavItem = {
   to: string;
@@ -18,6 +19,8 @@ type NavItem = {
 const hireNav: NavItem[] = [
   { to: '/don-cua-toi', label: 'Đơn thuê', icon: 'calendar', end: true, badge: 'hireAction' },
   { to: '/don-cua-toi/thue', label: 'Thuê dịch vụ', icon: 'sparkles' },
+  { to: '/don-cua-toi/vi', label: 'Ví VNĐ', icon: 'wallet' },
+  { to: '/don-cua-toi/hoa-don', label: 'Hóa đơn', icon: 'receipt' },
   { to: '/don-cua-toi/tro-giup', label: 'Trợ giúp', icon: 'headset' },
   { to: '/don-cua-toi/khieu-nai', label: 'Khiếu nại', icon: 'message' },
 ];
@@ -25,6 +28,8 @@ const hireNav: NavItem[] = [
 const offerNav: NavItem[] = [
   { to: '/doi-tac', label: 'Tổng quan', icon: 'home', end: true, badge: 'openJobs' },
   { to: '/doi-tac/viec', label: 'Việc của tôi', icon: 'briefcase', badge: 'partnerAction' },
+  { to: '/doi-tac/vi', label: 'Ví VNĐ', icon: 'wallet' },
+  { to: '/doi-tac/hoa-don', label: 'Hóa đơn', icon: 'receipt' },
   { to: '/doi-tac/ho-so', label: 'Hồ sơ', icon: 'user' },
   { to: '/doi-tac/cap-do', label: 'Cấp độ', icon: 'chart' },
   { to: '/doi-tac/quy-trinh', label: 'Quy trình', icon: 'shield' },
@@ -141,6 +146,11 @@ export function UserDashboardLayout() {
         <p className="mt-0.5 truncate text-xs text-[var(--color-muted)]">
           {user?.fullName ?? 'Tài khoản'}
         </p>
+        {user ? (
+          <p className="mt-2 text-xs font-semibold text-[var(--color-brand-deep)]">
+            Ví: {formatPrice(user.walletBalance ?? 0)}
+          </p>
+        ) : null}
       </div>
 
       <nav className="flex-1 space-y-0.5 pb-3">

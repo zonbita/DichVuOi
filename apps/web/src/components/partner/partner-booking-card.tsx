@@ -25,6 +25,10 @@ function statusBadgeClass(status: string) {
       return 'bg-sky-50 text-sky-800 ring-sky-200';
     case 'IN_PROGRESS':
       return 'bg-violet-50 text-violet-800 ring-violet-200';
+    case 'AWAITING_CONFIRM':
+      return 'bg-orange-50 text-orange-800 ring-orange-200';
+    case 'DISPUTED':
+      return 'bg-rose-50 text-rose-800 ring-rose-200';
     case 'COMPLETED':
       return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
     case 'CANCELLED':
@@ -43,7 +47,10 @@ export function PartnerBookingCard({
   statusError,
 }: Props) {
   const showChat =
-    (booking.status === 'CONFIRMED' || booking.status === 'IN_PROGRESS') &&
+    (booking.status === 'CONFIRMED' ||
+      booking.status === 'IN_PROGRESS' ||
+      booking.status === 'AWAITING_CONFIRM' ||
+      booking.status === 'DISPUTED') &&
     (booking.paymentStatus === 'HELD' || booking.paymentStatus === 'RELEASED');
 
   const payoutHint =
@@ -79,7 +86,10 @@ export function PartnerBookingCard({
             {new Date(booking.scheduledAt).toLocaleString('vi-VN')}
           </p>
 
-          {booking.status === 'CONFIRMED' || booking.status === 'IN_PROGRESS' ? (
+          {booking.status === 'CONFIRMED' ||
+          booking.status === 'IN_PROGRESS' ||
+          booking.status === 'AWAITING_CONFIRM' ||
+          booking.status === 'DISPUTED' ? (
             <div className="mt-3">
               {showChat ? (
                 <BookingChat bookingId={booking.id} />
@@ -89,6 +99,12 @@ export function PartnerBookingCard({
                 </p>
               )}
             </div>
+          ) : null}
+
+          {booking.disputeResultNote ? (
+            <p className="mt-2 text-xs text-[var(--color-muted)]">
+              KQ tranh chấp: {booking.disputeResultNote}
+            </p>
           ) : null}
 
           {booking.status === 'COMPLETED' ? (
@@ -126,8 +142,18 @@ export function PartnerBookingCard({
               onClick={() => onComplete(booking.id)}
               className="mt-3 bg-[var(--color-ink)] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
             >
-              Hoàn thành
+              Báo đã xong việc
             </button>
+          ) : null}
+          {booking.status === 'AWAITING_CONFIRM' ? (
+            <p className="mt-3 max-w-[12rem] text-xs text-orange-800">
+              Đang chờ khách xác nhận / hết hạn cửa sổ. Escrow vẫn giữ.
+            </p>
+          ) : null}
+          {booking.status === 'DISPUTED' ? (
+            <p className="mt-3 max-w-[12rem] text-xs text-rose-800">
+              Đang tranh chấp — ban kiểm duyệt xử lý.
+            </p>
           ) : null}
           {statusError ? (
             <p className="mt-1 max-w-[12rem] text-xs text-red-600">{statusError}</p>

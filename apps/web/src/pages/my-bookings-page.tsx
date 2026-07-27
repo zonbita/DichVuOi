@@ -21,7 +21,9 @@ function isActive(b: Booking) {
   return (
     b.status === 'PENDING' ||
     b.status === 'CONFIRMED' ||
-    b.status === 'IN_PROGRESS'
+    b.status === 'IN_PROGRESS' ||
+    b.status === 'AWAITING_CONFIRM' ||
+    b.status === 'DISPUTED'
   );
 }
 
@@ -38,6 +40,9 @@ function matchesTab(b: Booking, tab: TabId, userId: string) {
       if (b.status === 'PENDING' && b.paymentStatus === 'HELD' && !b.partnerId) {
         return true; // chờ nhận — khách theo dõi
       }
+      if (b.status === 'AWAITING_CONFIRM' || b.status === 'DISPUTED') {
+        return true;
+      }
       return false;
     case 'active':
       return isActive(b);
@@ -51,7 +56,7 @@ function matchesTab(b: Booking, tab: TabId, userId: string) {
 }
 
 export function MyBookingsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshMe } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>('action');
 
@@ -107,12 +112,21 @@ export function MyBookingsPage() {
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => api.updateBookingStatus(id, 'CANCELLED'),
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      await refreshMe();
+    },
   });
 
   const payMutation = useMutation({
     mutationFn: (id: string) => api.payBooking(id),
-    onSuccess: invalidate,
+    onSuccess: async () => {
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      await refreshMe();
+    },
   });
 
   if (loading) return <p>Đang tải...</p>;
@@ -133,8 +147,12 @@ export function MyBookingsPage() {
             </span>
           </div>
           <p className="mt-2 max-w-2xl text-[15px] text-[var(--color-muted)]">
-            Xin chào {user.fullName} — <strong className="text-[var(--color-ink)]">bắt buộc đặt cọc</strong>{' '}
-            trước khi đơn vào hàng chờ / chat. Cập nhật realtime khi đối tác nhận việc.
+            Xin chào {user.fullName} — ví{' '}
+            <Link to="/don-cua-toi/vi" className="font-bold text-[var(--color-brand-deep)]">
+              {formatPrice(user.walletBalance ?? 0)}
+            </Link>
+            . <strong className="text-[var(--color-ink)]">Đặt cọc từ ví VNĐ</strong> trước khi
+            đơn vào hàng chờ / chat.
           </p>
         </div>
         <Link to="/nhom" className="btn-primary px-4 py-2.5 text-sm">

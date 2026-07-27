@@ -1,14 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { CustomerBookingCard } from '../components/customer/customer-booking-card';
+import { BookingChecklist } from '../components/booking/booking-checklist';
 import { BookingComplaintForm } from '../components/booking/booking-complaint-form';
+import { CustomerBookingCard } from '../components/customer/customer-booking-card';
 import { useAuth } from '../features/auth/auth-context';
 import { useCustomerRealtime } from '../hooks/use-customer-realtime';
 import { api } from '../services/api';
 
 export function CustomerBookingDetailPage() {
   const { id = '' } = useParams();
-  const { user, loading } = useAuth();
+  const { user, loading, refreshMe } = useAuth();
   const queryClient = useQueryClient();
 
   useCustomerRealtime(Boolean(user), user?.id);
@@ -31,6 +32,18 @@ export function CustomerBookingDetailPage() {
 
   const payMutation = useMutation({
     mutationFn: () => api.payBooking(id),
+    onSuccess: async (booking) => {
+      queryClient.setQueryData(['booking', id], booking);
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      await refreshMe();
+    },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (acceptIncomplete: boolean) =>
+      api.confirmBooking(id, acceptIncomplete),
     onSuccess: (booking) => {
       queryClient.setQueryData(['booking', id], booking);
       invalidate();
@@ -80,12 +93,27 @@ export function CustomerBookingDetailPage() {
         currentUserId={user.id}
         paying={payMutation.isPending}
         cancelling={cancelMutation.isPending}
+        confirming={confirmMutation.isPending}
         payError={payMutation.isError ? (payMutation.error as Error).message : null}
+        confirmError={
+          confirmMutation.isError ? (confirmMutation.error as Error).message : null
+        }
         onPay={() => payMutation.mutate()}
         onCancel={() => cancelMutation.mutate()}
+        onConfirm={(_bookingId, acceptIncomplete) =>
+          confirmMutation.mutate(acceptIncomplete)
+        }
       />
 
-      <BookingComplaintForm bookingId={booking.id} partnerId={booking.partnerId} />
+      <BookingChecklist booking={booking} mode="customer" />
+
+      <BookingComplaintForm
+        bookingId={booking.id}
+        partnerId={booking.partnerId}
+        bookingStatus={booking.status}
+        mode="customer"
+        requirements={booking.requirements}
+      />
     </div>
   );
 }
