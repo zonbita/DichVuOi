@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, type Socket } from 'socket.io-client';
-import { toast } from 'sonner';
+import { toast } from '../lib/notify';
 import { formatBookingStatus } from '../services/api';
 import type { Booking, BookingMessage } from '../types/catalog';
 

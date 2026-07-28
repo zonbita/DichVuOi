@@ -5,11 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  ApplicationStatus,
   BookingStatus,
   ComplaintResolutionAction,
   ComplaintStatus,
   PaymentStatus,
-} from '@prisma/client';
+  Prisma,
+} from '../../database/prisma/client';
 import {
   REPUTATION_DEDUCTION_PRESETS,
 } from '../../common/partner-reputation';
@@ -27,6 +29,7 @@ const complaintInclude = {
       customerName: true,
       status: true,
       paymentStatus: true,
+      partnerId: true,
       service: { select: { name: true, slug: true } },
       requirements: {
         orderBy: { sortOrder: 'asc' as const },
@@ -331,11 +334,15 @@ export class ComplaintsService {
           status: BookingStatus.CANCELLED,
           disputeResultNote: publicNote,
         });
+        // Hoàn cọc ứng tuyển (không tịch thu khi khách thắng khiếu nại).
+        await this.refundHeldApplyDepositsInTransaction(tx, booking.id);
       } else if (action === ComplaintResolutionAction.RELEASE) {
         await this.finance.releaseBookingInTransaction(tx, booking.id, {
           status: BookingStatus.COMPLETED,
           disputeResultNote: publicNote,
         });
+        // Giống hoàn thành thường: trả lại cọc 10% sau khi giải ngân.
+        await this.refundHeldApplyDepositsInTransaction(tx, booking.id);
       } else if (action === ComplaintResolutionAction.RETRY_IN_PROGRESS) {
         await tx.booking.update({
           where: { id: booking.id },
@@ -393,5 +400,38 @@ export class ComplaintsService {
         status: { in: [ComplaintStatus.SUBMITTED, ComplaintStatus.UNDER_REVIEW] },
       },
     });
+  }
+
+  /** Hoàn mọi cọc ứng tuyển đang HELD trên đơn (idempotent qua FinanceService). */
+  private async refundHeldApplyDepositsInTransaction(
+    tx: Prisma.TransactionClient,
+    bookingId: string,
+  ) {
+    const apps = await tx.bookingApplication.findMany({
+      where: {
+        bookingId,
+        depositStatus: PaymentStatus.HELD,
+      },
+    });
+    for (const app of apps) {
+      await this.finance.refundApplyDepositInTransaction(
+        tx,
+        bookingId,
+        app.partnerId,
+        app.id,
+        app.depositAmount,
+      );
+      await tx.bookingApplication.update({
+        where: { id: app.id },
+        data: {
+          depositStatus: PaymentStatus.REFUNDED,
+          status:
+            app.status === ApplicationStatus.SELECTED ||
+            app.status === ApplicationStatus.APPLIED
+              ? ApplicationStatus.REFUNDED
+              : ApplicationStatus.REJECTED,
+        },
+      });
+    }
   }
 }

@@ -1,8 +1,8 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Toaster } from 'sonner';
 import App from './App';
+import { RxNotifyToaster } from './components/ui/rx-notify-toaster';
 import { AuthProvider } from './features/auth/auth-context';
 import { createAppQueryClient } from './lib/query-client';
 import './index.css';
@@ -14,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <App />
-        <Toaster position="top-right" richColors closeButton />
+        <RxNotifyToaster position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

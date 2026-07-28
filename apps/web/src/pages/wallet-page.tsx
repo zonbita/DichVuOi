@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/auth-context';
+import { toast } from '../lib/notify';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import {
   TOP_UP_PRESETS,
@@ -32,6 +33,14 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
     onSuccess: (data) => {
       setIntent(data);
       paidHandledRef.current = null;
+      toast.info('Đã tạo mã VietQR', {
+        description: `Quét QR để nạp ${formatPrice(data.amount)}`,
+      });
+    },
+    onError: (err) => {
+      toast.error('Không tạo được mã QR', {
+        description: (err as Error).message,
+      });
     },
   });
 
@@ -53,6 +62,11 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
       if (intent) {
         await statusQuery.refetch();
       }
+    },
+    onError: (err) => {
+      toast.error('Xác nhận nạp thất bại', {
+        description: (err as Error).message,
+      });
     },
   });
 
@@ -81,6 +95,10 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
     if (!intent || activeStatus?.status !== 'PAID') return;
     if (paidHandledRef.current === intent.intentId) return;
     paidHandledRef.current = intent.intentId;
+    toast.success('Nạp tiền thành công', {
+      description: `+${formatPrice(intent.amount)} đã vào ví`,
+      confetti: true,
+    });
     void Promise.all([
       queryClient.invalidateQueries({ queryKey: ['wallet'] }),
       refreshMe(),
