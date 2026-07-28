@@ -1,16 +1,22 @@
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '../../features/auth/auth-context';
+import { usePartnerPresence } from '../../hooks/use-partner-presence';
 import { ChatbotPopup } from '../chatbot/chatbot-popup';
 import { SiteFooter } from './site-footer';
 import { SiteHeader } from './site-header';
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const { canOffer } = useAuth();
+  usePartnerPresence(canOffer);
   const isHome = pathname === '/';
   // Admin dùng shell riêng (sidebar) — không bọc header/footer marketplace.
   const isAdmin = pathname.startsWith('/admin');
   // Dashboard khách thuê / người làm: cột sidebar full-bleed dưới header.
   const isUserDash =
+    pathname.startsWith('/don-cua-toi') || pathname.startsWith('/doi-tac');
+  const hideFooter =
     pathname.startsWith('/don-cua-toi') || pathname.startsWith('/doi-tac');
 
   if (isAdmin) {
@@ -22,7 +28,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <SiteHeader />
       <main
         className={
-          isHome || isUserDash ? 'flex-1' : 'page-shell flex-1 py-6'
+          isHome || isUserDash
+            ? 'flex min-h-0 flex-1 flex-col'
+            : 'page-shell flex-1 py-6'
         }
       >
         {isHome || isUserDash ? (
@@ -31,7 +39,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div className="section-container">{children}</div>
         )}
       </main>
-      <SiteFooter />
+      {!hideFooter ? <SiteFooter /> : null}
       <ChatbotPopup />
     </div>
   );

@@ -11,6 +11,12 @@ import {
 } from 'class-validator';
 
 export class EnablePartnerDto {
+  @ApiPropertyOptional({ example: '0901234567' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
   @ApiPropertyOptional({ example: 'Thợ điện nước Quận 1' })
   @IsOptional()
   @IsString()
@@ -68,6 +74,12 @@ export class EnablePartnerDto {
 }
 
 export class UpdatePartnerProfileDto {
+  @ApiPropertyOptional({ example: '0901234567' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

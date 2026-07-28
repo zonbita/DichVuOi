@@ -1,12 +1,14 @@
 import type { AuthResponse, AuthUser, PartnerLevelBreakdown, PartnerProfile, PublicPartnerProfile } from '../types/auth';
 import type {
   Booking,
+  BookingApplication,
   BookingMessage,
   BookingReview,
   CreateBookingInput,
   FavoritePartner,
   GroupDetail,
   PartnerSchedule,
+  PartnerSearchHit,
   RebookHint,
   Service,
   ServiceGroup,
@@ -29,7 +31,12 @@ import type {
 } from '../types/admin';
 import type { Complaint, ComplaintStatus } from '../types/complaint';
 import type { ChatbotReply, ChatbotStats } from '../types/chatbot';
-import type { Invoice, WalletSummary } from '../types/finance';
+import type {
+  Invoice,
+  VietQrTopUpIntent,
+  VietQrTopUpStatus,
+  WalletSummary,
+} from '../types/finance';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 
@@ -150,7 +157,27 @@ export const api = {
       `/api/bookings/partner/schedule${queryString({ year, month })}`,
     ),
   acceptBooking: (id: string) =>
-    request<Booking>(`/api/bookings/${id}/accept`, { method: 'POST' }),
+    request<{
+      booking: Booking;
+      application?: BookingApplication;
+      depositAmount: number;
+    }>(`/api/bookings/${id}/accept`, { method: 'POST' }),
+  applyBooking: (id: string, note?: string) =>
+    request<{
+      booking: Booking;
+      application?: BookingApplication;
+      depositAmount: number;
+    }>(`/api/bookings/${id}/apply`, {
+      method: 'POST',
+      body: JSON.stringify(note ? { note } : {}),
+    }),
+  getBookingApplications: (id: string) =>
+    request<BookingApplication[]>(`/api/bookings/${id}/applications`),
+  selectBookingApplicant: (bookingId: string, applicationId: string) =>
+    request<Booking>(
+      `/api/bookings/${bookingId}/applications/${applicationId}/select`,
+      { method: 'POST' },
+    ),
   updateBookingStatus: (id: string, status: string) =>
     request<Booking>(`/api/bookings/${id}/status`, {
       method: 'PATCH',
@@ -192,6 +219,18 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ amount }),
     }),
+  createVietQrTopUpIntent: (amount: number) =>
+    request<VietQrTopUpIntent>('/api/wallet/top-up/vietqr/intent', {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    }),
+  getVietQrTopUpStatus: (intentId: string) =>
+    request<VietQrTopUpStatus>(`/api/wallet/top-up/vietqr/${encodeURIComponent(intentId)}`),
+  confirmVietQrTopUpMock: (intentId: string) =>
+    request<{ currency: string; balance: number; amount: number }>(
+      `/api/wallet/top-up/vietqr/${encodeURIComponent(intentId)}/mock-confirm`,
+      { method: 'POST' },
+    ),
   listInvoices: () => request<Invoice[]>('/api/invoices'),
   getInvoice: (id: string) => request<Invoice>(`/api/invoices/${id}`),
   createReview: (id: string, payload: { rating: number; comment?: string }) =>
@@ -294,6 +333,7 @@ export const api = {
     }),
 
   enableOffering: (payload?: {
+    phone?: string;
     headline?: string;
     bio?: string;
     city?: string;
@@ -313,6 +353,10 @@ export const api = {
   getPartnerLevel: () => request<PartnerLevelBreakdown>('/api/partners/me/level'),
   getPublicPartner: (userId: string) =>
     request<PublicPartnerProfile>(`/api/partners/public/${userId}`),
+  searchPartners: (q: string, limit = 24) =>
+    request<PartnerSearchHit[]>(
+      `/api/partners/search${queryString({ q, limit })}`,
+    ),
   getFavoritePartnerIds: () => request<string[]>('/api/partners/favorites/ids'),
   getFavoritePartners: () => request<FavoritePartner[]>('/api/partners/favorites'),
   addFavoritePartner: (partnerUserId: string) =>
@@ -326,6 +370,7 @@ export const api = {
       { method: 'DELETE' },
     ),
   updatePartnerProfile: (payload: {
+    phone?: string;
     headline?: string;
     bio?: string;
     city?: string;
@@ -357,12 +402,16 @@ export const api = {
     }),
 };
 
-export function formatPrice(value: number) {
+/** Số tiền theo locale vi-VN, không kèm đơn vị. */
+export function formatPriceNumber(value: number) {
   return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+/** Số tiền kèm đơn vị VNĐ, ví dụ `100.000 VNĐ`. */
+export function formatPrice(value: number) {
+  return `${formatPriceNumber(value)} VNĐ`;
 }
 
 /** Giờ làm trên sàn theo nghề (từ đơn hoàn thành). */
@@ -375,7 +424,7 @@ export function formatWorkHours(hours: number | null | undefined) {
 
 export function formatBookingStatus(status: string) {
   const map: Record<string, string> = {
-    PENDING: 'Chờ nhận việc',
+    PENDING: 'Chờ chọn người',
     CONFIRMED: 'Đã nhận',
     IN_PROGRESS: 'Đang làm',
     AWAITING_CONFIRM: 'Chờ xác nhận',

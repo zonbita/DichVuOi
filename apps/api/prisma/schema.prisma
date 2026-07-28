@@ -60,6 +60,21 @@ enum WalletTransactionType {
   ESCROW_REFUND
   PARTNER_PAYOUT
   ADMIN_ADJUSTMENT
+  /** Người làm đặt cọc 10% để ứng tuyển đơn mở. */
+  APPLY_DEPOSIT
+  /** Hoàn cọc ứng tuyển (không được chọn / hết hạn / hoàn thành). */
+  APPLY_REFUND
+  /** Tịch thu cọc ứng tuyển (no-show sau khi được chọn / bỏ SLA). */
+  APPLY_FORFEIT
+}
+
+/** Trạng thái hồ sơ ứng tuyển đơn mở. */
+enum ApplicationStatus {
+  APPLIED
+  SELECTED
+  REJECTED
+  WITHDRAWN
+  REFUNDED
 }
 
 enum InvoiceStatus {
@@ -95,6 +110,7 @@ model User {
   walletTransactions WalletTransaction[]
   customerInvoices Invoice[]         @relation("CustomerInvoices")
   partnerInvoices Invoice[]          @relation("PartnerInvoices")
+  bookingApplications BookingApplication[]
 }
 
 /** Khách lưu người làm quen — hỗ trợ thuê lại / cá nhân hóa trang chủ. */
@@ -124,6 +140,10 @@ model PartnerProfile {
   ratingCount Int              @default(0)
   /** Cấp độ người làm (1–100). Chỉ áp dụng khi có hồ sơ Partner. */
   level       Int              @default(1)
+  /** Tổng giây online tích lũy (WS connect + heartbeat). */
+  onlineSeconds Int            @default(0)
+  /** Lần cuối còn online (heartbeat / flush disconnect). */
+  lastOnlineAt DateTime?
   isVerified  Boolean          @default(false)
   /** Ảnh đại diện người làm (URL). */
   avatarUrl   String?
@@ -248,6 +268,13 @@ model Booking {
   refundedAt    DateTime?
   /** Hết hạn cửa sổ chờ xác nhận (auto hoàn thành nếu không khiếu nại) — mock/cron sau. */
   confirmDeadlineAt DateTime?
+  /** Hết hạn ghép người làm (đơn PENDING mở) — mặc định +7 ngày khi tạo. */
+  matchingDeadlineAt DateTime?
+  /**
+   * Hết hạn SLA phản hồi sau khi được chọn (CONFIRMED).
+   * Quá hạn mà chưa IN_PROGRESS → tịch thu cọc ứng tuyển + mở lại hàng chờ.
+   */
+  responseDeadlineAt DateTime?
   /** Ghi chú kết quả tranh chấp công khai cho 2 bên. */
   disputeResultNote String?
   createdAt     DateTime      @default(now())
@@ -256,6 +283,7 @@ model Booking {
   reviews       Review[]
   complaints    Complaint[]
   requirements  BookingRequirement[]
+  applications  BookingApplication[]
   walletTransactions WalletTransaction[]
   invoice       Invoice?
 
@@ -265,6 +293,29 @@ model Booking {
   @@index([status])
   @@index([paymentStatus])
   @@index([scheduledAt])
+  @@index([matchingDeadlineAt])
+  @@index([responseDeadlineAt])
+}
+
+/** Người làm ứng tuyển đơn mở — cọc 10% totalPrice để vào list chủ đơn chọn. */
+model BookingApplication {
+  id            String            @id @default(cuid())
+  bookingId     String
+  booking       Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  partnerId     String
+  partner       User              @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  /** Số tiền cọc ứng tuyển (10% totalPrice). */
+  depositAmount Int
+  /** HELD khi đang ứng tuyển / được chọn; REFUNDED khi hoàn; RELEASED nếu tịch thu (hiếm). */
+  depositStatus PaymentStatus     @default(HELD)
+  status        ApplicationStatus @default(APPLIED)
+  note          String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([bookingId, partnerId])
+  @@index([bookingId, status])
+  @@index([partnerId, createdAt])
 }
 
 /** Sổ cái ví VNĐ — amount dương là tiền vào, âm là tiền ra. */

@@ -10,11 +10,12 @@ import {
   PaymentStatus,
   Prisma,
   WalletTransactionType,
-} from '@prisma/client';
-import { randomUUID } from 'crypto';
+} from '../../database/prisma/client';
+import { createHmac, randomUUID } from 'crypto';
 import {
   computeEscrowSplit,
   DEFAULT_COMMISSION_BPS,
+  computeApplyDeposit,
 } from '../../common/escrow';
 import { PrismaService } from '../../database/prisma/prisma.service';
 
@@ -24,9 +25,30 @@ type SettlementOptions = {
   disputeResultNote?: string | null;
 };
 
+type ApplyDepositOptions = {
+  /** Override amount; default 10% of booking.totalPrice. */
+  amount?: number;
+};
+
+type VietQrIntentPayload = {
+  u: string;
+  a: number;
+  e: number;
+  n: string;
+};
+
 @Injectable()
 export class FinanceService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly vietQrBankId = process.env.VIETQR_BANK_ID ?? '970422';
+  private readonly vietQrAccountNo =
+    process.env.VIETQR_ACCOUNT_NO ?? '19002888';
+  private readonly vietQrAccountName =
+    process.env.VIETQR_ACCOUNT_NAME ?? 'DICH VU OI';
+  private readonly vietQrIntentSecret =
+    process.env.VIETQR_INTENT_SECRET ?? 'dichvuoi-dev-vietqr-secret';
+  private readonly vietQrIntentTtlMs = 15 * 60_000;
 
   async getWallet(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -77,6 +99,89 @@ export class FinanceService {
         currency: 'VND',
         balance: user.walletBalance,
       };
+    });
+  }
+
+  createVietQrIntent(userId: string, amount: number) {
+    const expiresAt = new Date(Date.now() + this.vietQrIntentTtlMs);
+    const intentId = this.signVietQrIntent({
+      u: userId,
+      a: amount,
+      e: expiresAt.getTime(),
+      n: randomUUID().slice(0, 8),
+    });
+    const transferNote = `DVO ${intentId.slice(0, 18)}`;
+    return {
+      intentId,
+      amount,
+      currency: 'VND',
+      bankId: this.vietQrBankId,
+      accountNo: this.vietQrAccountNo,
+      accountName: this.vietQrAccountName,
+      transferNote,
+      qrImageUrl: this.vietQrImageUrl(amount, transferNote),
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  async getVietQrIntentStatus(userId: string, intentId: string) {
+    const payload = this.verifyVietQrIntent(intentId);
+    if (payload.u !== userId) {
+      throw new ForbiddenException('Lệnh nạp không thuộc tài khoản hiện tại');
+    }
+    const reference = `vietqr:paid:${intentId}`;
+    const paidTx = await this.prisma.walletTransaction.findUnique({
+      where: { reference },
+      select: { id: true, createdAt: true, amount: true },
+    });
+    return {
+      intentId,
+      amount: payload.a,
+      status: paidTx ? 'PAID' : 'PENDING',
+      paidAt: paidTx?.createdAt.toISOString() ?? null,
+      expiresAt: new Date(payload.e).toISOString(),
+    };
+  }
+
+  /** Local/dev mock: xác nhận đã chuyển khoản VietQR rồi cộng ví (idempotent). */
+  async confirmVietQrIntentMock(userId: string, intentId: string) {
+    const payload = this.verifyVietQrIntent(intentId);
+    if (payload.u !== userId) {
+      throw new ForbiddenException('Lệnh nạp không thuộc tài khoản hiện tại');
+    }
+    if (payload.e < Date.now()) {
+      throw new BadRequestException('Mã VietQR đã hết hạn');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const reference = `vietqr:paid:${intentId}`;
+      const existing = await tx.walletTransaction.findUnique({
+        where: { reference },
+      });
+      if (existing) {
+        const current = await tx.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: { walletBalance: true },
+        });
+        return { currency: 'VND', balance: current.walletBalance, amount: 0 };
+      }
+
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { walletBalance: { increment: payload.a } },
+        select: { walletBalance: true },
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId,
+          type: WalletTransactionType.TOP_UP,
+          amount: payload.a,
+          balanceAfter: user.walletBalance,
+          description: 'Nạp VNĐ qua VietQR (mock xác nhận)',
+          reference,
+        },
+      });
+      return { currency: 'VND', balance: user.walletBalance, amount: payload.a };
     });
   }
 
@@ -358,11 +463,199 @@ export class FinanceService {
       return true;
   }
 
+  /** Người làm đặt cọc ứng tuyển (10% totalPrice) — debit ví. */
+  async holdApplyDeposit(
+    bookingId: string,
+    partnerId: string,
+    applicationId: string,
+    options: ApplyDepositOptions = {},
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+        include: { service: { select: { name: true } } },
+      });
+      if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+
+      const amount =
+        options.amount ?? computeApplyDeposit(booking.totalPrice);
+      if (amount <= 0) {
+        throw new BadRequestException('Số tiền cọc ứng tuyển không hợp lệ');
+      }
+
+      const reference = `apply-hold:${applicationId}`;
+      const existing = await tx.walletTransaction.findUnique({
+        where: { reference },
+      });
+      if (existing) {
+        return { amount: Math.abs(existing.amount) };
+      }
+
+      const debited = await tx.user.updateMany({
+        where: {
+          id: partnerId,
+          walletBalance: { gte: amount },
+        },
+        data: { walletBalance: { decrement: amount } },
+      });
+      if (debited.count !== 1) {
+        throw new BadRequestException(
+          `Số dư ví không đủ để đặt cọc ứng tuyển (${amount.toLocaleString('vi-VN')} VNĐ)`,
+        );
+      }
+
+      const updatedUser = await tx.user.findUniqueOrThrow({
+        where: { id: partnerId },
+        select: { walletBalance: true },
+      });
+
+      await tx.walletTransaction.create({
+        data: {
+          userId: partnerId,
+          bookingId,
+          type: WalletTransactionType.APPLY_DEPOSIT,
+          amount: -amount,
+          balanceAfter: updatedUser.walletBalance,
+          description: `Cọc ứng tuyển đơn ${booking.service.name}`,
+          reference,
+        },
+      });
+
+      return { amount };
+    });
+  }
+
+  /** Hoàn cọc ứng tuyển cho một hồ sơ (idempotent theo applicationId). */
+  async refundApplyDeposit(
+    bookingId: string,
+    partnerId: string,
+    applicationId: string,
+    amount: number,
+  ): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) =>
+      this.refundApplyDepositInTransaction(
+        tx,
+        bookingId,
+        partnerId,
+        applicationId,
+        amount,
+      ),
+    );
+  }
+
+  async refundApplyDepositInTransaction(
+    tx: Prisma.TransactionClient,
+    bookingId: string,
+    partnerId: string,
+    applicationId: string,
+    amount: number,
+  ): Promise<boolean> {
+    const reference = `apply-refund:${applicationId}`;
+    const existing = await tx.walletTransaction.findUnique({
+      where: { reference },
+    });
+    if (existing) return false;
+    if (amount <= 0) return false;
+
+    const partner = await tx.user.update({
+      where: { id: partnerId },
+      data: { walletBalance: { increment: amount } },
+      select: { walletBalance: true },
+    });
+    await tx.walletTransaction.create({
+      data: {
+        userId: partnerId,
+        bookingId,
+        type: WalletTransactionType.APPLY_REFUND,
+        amount,
+        balanceAfter: partner.walletBalance,
+        description: `Hoàn cọc ứng tuyển đơn ${bookingId}`,
+        reference,
+      },
+    });
+    return true;
+  }
+
+  /**
+   * Tịch thu cọc ứng tuyển — không hoàn ví (tiền đã debit lúc hold).
+   * Ghi sổ APPLY_FORFEIT amount=0 để audit; depositStatus → RELEASED.
+   */
+  async forfeitApplyDeposit(
+    bookingId: string,
+    partnerId: string,
+    applicationId: string,
+    amount: number,
+    reason: string,
+  ): Promise<boolean> {
+    const reference = `apply-forfeit:${applicationId}`;
+    const existing = await this.prisma.walletTransaction.findUnique({
+      where: { reference },
+    });
+    if (existing) return false;
+
+    const partner = await this.prisma.user.findUnique({
+      where: { id: partnerId },
+      select: { walletBalance: true },
+    });
+    if (!partner) throw new NotFoundException('Không tìm thấy người làm');
+
+    await this.prisma.walletTransaction.create({
+      data: {
+        userId: partnerId,
+        bookingId,
+        type: WalletTransactionType.APPLY_FORFEIT,
+        amount: 0,
+        balanceAfter: partner.walletBalance,
+        description: `Tịch thu cọc ứng tuyển ${amount.toLocaleString('vi-VN')} VNĐ — ${reason}`,
+        reference,
+      },
+    });
+    return true;
+  }
+
   private invoiceNumber(bookingId: string) {
     const date = new Date();
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `DVO-${y}${m}${d}-${bookingId.slice(-8).toUpperCase()}`;
+  }
+
+  private vietQrImageUrl(amount: number, transferNote: string) {
+    const params = new URLSearchParams({
+      amount: String(amount),
+      addInfo: transferNote,
+      accountName: this.vietQrAccountName,
+    });
+    return `https://img.vietqr.io/image/${this.vietQrBankId}-${this.vietQrAccountNo}-compact2.png?${params.toString()}`;
+  }
+
+  private signVietQrIntent(payload: VietQrIntentPayload) {
+    const json = JSON.stringify(payload);
+    const data = Buffer.from(json, 'utf8').toString('base64url');
+    const sig = createHmac('sha256', this.vietQrIntentSecret)
+      .update(data)
+      .digest('base64url');
+    return `${data}.${sig}`;
+  }
+
+  private verifyVietQrIntent(intentId: string): VietQrIntentPayload {
+    const [data, sig] = intentId.split('.');
+    if (!data || !sig) {
+      throw new BadRequestException('Mã VietQR không hợp lệ');
+    }
+    const expect = createHmac('sha256', this.vietQrIntentSecret)
+      .update(data)
+      .digest('base64url');
+    if (sig !== expect) {
+      throw new BadRequestException('Mã VietQR sai chữ ký');
+    }
+    const payload = JSON.parse(
+      Buffer.from(data, 'base64url').toString('utf8'),
+    ) as VietQrIntentPayload;
+    if (!payload?.u || !payload?.a || !payload?.e) {
+      throw new BadRequestException('Mã VietQR không hợp lệ');
+    }
+    return payload;
   }
 }

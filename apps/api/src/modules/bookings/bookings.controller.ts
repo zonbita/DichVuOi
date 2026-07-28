@@ -9,13 +9,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role } from '../../database/prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { BookingsService } from './bookings.service';
+import { ApplyBookingDto } from './dto/apply-booking.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateBookingMessageDto } from './dto/create-booking-message.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -109,6 +110,31 @@ export class BookingsController {
     return this.bookingsService.payEscrow(id, user);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN)
+  @Post(':id/apply')
+  apply(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: ApplyBookingDto,
+  ) {
+    return this.bookingsService.apply(id, user.id, dto);
+  }
+
+  @Get(':id/applications')
+  listApplications(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.bookingsService.listApplications(id, user);
+  }
+
+  @Post(':id/applications/:applicationId/select')
+  selectApplicant(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('applicationId') applicationId: string,
+  ) {
+    return this.bookingsService.selectApplicant(id, applicationId, user);
+  }
+
   @Post(':id/confirm')
   confirmCompletion(
     @CurrentUser() user: AuthUser,
@@ -142,7 +168,8 @@ export class BookingsController {
   @Roles(Role.PARTNER, Role.ADMIN)
   @Post(':id/accept')
   accept(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.bookingsService.accept(id, user.id);
+    // Legacy alias → ứng tuyển (cọc 10%); chủ đơn chọn qua select.
+    return this.bookingsService.apply(id, user.id, {});
   }
 
   @Patch(':id/status')

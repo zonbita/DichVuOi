@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { api } from '../../services/api';
+import { catalogQueries } from '../../lib/catalog-queries';
 import { groupColor } from '../../utils/catalog-colors';
 import { groupIcon } from '../../utils/catalog-display';
 import { Icon } from '../ui/icon';
@@ -24,10 +24,7 @@ export function CatalogMenu({
   onServiceSelect,
   selectedServiceSlug = null,
 }: CatalogMenuProps = {}) {
-  const treeQuery = useQuery({
-    queryKey: ['groups', 'tree'],
-    queryFn: api.getGroupsTree,
-  });
+  const treeQuery = useQuery(catalogQueries.groupsTree);
 
   const groups = treeQuery.data ?? [];
   const [activeSlug, setActiveSlug] = useState<string | null>(null);

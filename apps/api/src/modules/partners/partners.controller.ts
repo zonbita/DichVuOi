@@ -8,8 +8,9 @@ import {
   Post,
   Put,
   UseGuards,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -31,6 +32,21 @@ export class PartnersController {
     private readonly partnersService: PartnersService,
     private readonly authService: AuthService,
   ) {}
+
+  /** Tìm người làm theo tên / nghề (công khai). */
+  @Get('search')
+  @ApiQuery({ name: 'q', required: true, example: 'gia su toan' })
+  @ApiQuery({ name: 'limit', required: false, example: 24 })
+  searchPublic(
+    @Query('q') q = '',
+    @Query('limit') limit?: string,
+  ) {
+    const parsed = limit ? Number(limit) : 24;
+    return this.partnersService.searchPublic(
+      q,
+      Number.isFinite(parsed) ? parsed : 24,
+    );
+  }
 
   /** Hồ sơ công khai người làm — không trả SĐT/email. */
   @Get('public/:userId')

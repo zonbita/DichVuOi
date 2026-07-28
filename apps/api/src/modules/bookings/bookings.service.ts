@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, PaymentStatus, Role } from '@prisma/client';
+import { BookingStatus, PaymentStatus, Role, ApplicationStatus } from '../../database/prisma/client';
 import {
   isDepositHeld,
   redactContactLeak,
@@ -12,10 +12,16 @@ import {
   type ContactViewerRole,
 } from '../../common/contact-privacy';
 import { buildRequirementSeeds } from '../../common/booking-requirements';
-import { computeEscrowSplit } from '../../common/escrow';
+import {
+  computeApplyDeposit,
+  computeEscrowSplit,
+  MATCHING_WINDOW_DAYS,
+  RESPONSE_SLA_HOURS,
+} from '../../common/escrow';
 import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { FinanceService } from '../finance/finance.service';
+import { ApplyBookingDto } from './dto/apply-booking.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateBookingMessageDto } from './dto/create-booking-message.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -25,6 +31,28 @@ import { PartnerRealtimeService } from './partner-realtime.service';
 
 /** Cửa sổ chờ xác nhận mặc định (giờ) sau khi người làm báo xong. */
 const CONFIRM_WINDOW_HOURS = 48;
+
+const applicationInclude = {
+  partner: {
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      email: true,
+      partnerProfile: {
+        select: {
+          headline: true,
+          ratingAvg: true,
+          ratingCount: true,
+          level: true,
+          avatarUrl: true,
+          city: true,
+          isVerified: true,
+        },
+      },
+    },
+  },
+} as const;
 
 const bookingInclude = {
   service: {
@@ -52,6 +80,10 @@ const bookingInclude = {
   },
   requirements: {
     orderBy: { sortOrder: 'asc' as const },
+  },
+  applications: {
+    orderBy: { createdAt: 'asc' as const },
+    include: applicationInclude,
   },
 } as const;
 
@@ -83,10 +115,44 @@ export class BookingsService {
     viewer: Viewer | undefined,
     mode?: 'open_queue',
   ) {
-    return shapeBookingForViewer(
+    const shaped = shapeBookingForViewer(
       booking,
       this.viewerRole(booking, viewer, mode),
-    );
+    ) as T & {
+      applications?: Array<{ partnerId: string }>;
+      applicationCount?: number;
+    };
+
+    const apps = Array.isArray(shaped.applications)
+      ? shaped.applications
+      : undefined;
+
+    if (mode === 'open_queue') {
+      const { applications: _drop, ...rest } = shaped as T & {
+        applications?: unknown;
+      };
+      return {
+        ...rest,
+        applicationCount: apps?.length ?? 0,
+        applyDepositAmount: computeApplyDeposit(
+          Number((booking as { totalPrice?: number }).totalPrice ?? 0),
+        ),
+      };
+    }
+
+    if (
+      viewer &&
+      viewer.role === Role.PARTNER &&
+      booking.userId !== viewer.id &&
+      apps
+    ) {
+      return {
+        ...shaped,
+        applications: apps.filter((a) => a.partnerId === viewer.id),
+      };
+    }
+
+    return shaped;
   }
 
   private async emitBookingUpdate(
@@ -181,7 +247,225 @@ export class BookingsService {
         status: BookingStatus.COMPLETED,
       });
       if (released && booking.partnerId) {
+        await this.refundSelectedApplyDeposit(booking.id, booking.partnerId);
         await recalculatePartnerLevel(this.prisma, booking.partnerId);
+      }
+    }
+  }
+
+  /** Hủy đơn PENDING hết hạn ghép + hoàn cọc khách + hoàn cọc ứng tuyển. */
+  private async settleExpiredMatching(bookingId?: string) {
+    const expired = await this.prisma.booking.findMany({
+      where: {
+        ...(bookingId ? { id: bookingId } : {}),
+        status: BookingStatus.PENDING,
+        partnerId: null,
+        matchingDeadlineAt: { lte: new Date() },
+      },
+      select: { id: true, paymentStatus: true, userId: true },
+    });
+
+    for (const booking of expired) {
+      await this.refundOpenApplications(booking.id);
+      if (booking.paymentStatus === PaymentStatus.HELD) {
+        await this.finance.refundBooking(booking.id, {
+          status: BookingStatus.CANCELLED,
+          disputeResultNote: `Hết hạn ghép người làm (${MATCHING_WINDOW_DAYS} ngày) — hoàn cọc.`,
+        });
+      } else {
+        await this.prisma.booking.update({
+          where: { id: booking.id },
+          data: {
+            status: BookingStatus.CANCELLED,
+            disputeResultNote: `Hết hạn ghép người làm (${MATCHING_WINDOW_DAYS} ngày).`,
+          },
+        });
+      }
+      this.realtime.emitOpenRemoved(booking.id);
+      const fresh = await this.prisma.booking.findUnique({
+        where: { id: booking.id },
+        include: bookingInclude,
+      });
+      if (fresh) {
+        this.realtime.emitCustomerBooking(
+          fresh.userId,
+          this.shape(fresh, { id: fresh.userId, role: Role.CUSTOMER }),
+        );
+      }
+    }
+  }
+
+  private async refundOpenApplications(bookingId: string) {
+    const apps = await this.prisma.bookingApplication.findMany({
+      where: {
+        bookingId,
+        depositStatus: PaymentStatus.HELD,
+      },
+    });
+    for (const app of apps) {
+      await this.finance.refundApplyDeposit(
+        bookingId,
+        app.partnerId,
+        app.id,
+        app.depositAmount,
+      );
+      await this.prisma.bookingApplication.update({
+        where: { id: app.id },
+        data: {
+          depositStatus: PaymentStatus.REFUNDED,
+          status:
+            app.status === ApplicationStatus.SELECTED ||
+            app.status === ApplicationStatus.APPLIED
+              ? ApplicationStatus.REFUNDED
+              : ApplicationStatus.REJECTED,
+        },
+      });
+    }
+  }
+
+  private async refundSelectedApplyDeposit(
+    bookingId: string,
+    partnerId: string,
+  ) {
+    const app = await this.prisma.bookingApplication.findUnique({
+      where: {
+        bookingId_partnerId: { bookingId, partnerId },
+      },
+    });
+    if (!app || app.depositStatus !== PaymentStatus.HELD) return;
+    await this.finance.refundApplyDeposit(
+      bookingId,
+      partnerId,
+      app.id,
+      app.depositAmount,
+    );
+    await this.prisma.bookingApplication.update({
+      where: { id: app.id },
+      data: {
+        depositStatus: PaymentStatus.REFUNDED,
+        status: ApplicationStatus.REFUNDED,
+      },
+    });
+  }
+
+  private async forfeitSelectedApplyDeposit(
+    bookingId: string,
+    partnerId: string,
+    reason: string,
+  ) {
+    const app = await this.prisma.bookingApplication.findUnique({
+      where: {
+        bookingId_partnerId: { bookingId, partnerId },
+      },
+    });
+    if (!app || app.depositStatus !== PaymentStatus.HELD) return;
+    await this.finance.forfeitApplyDeposit(
+      bookingId,
+      partnerId,
+      app.id,
+      app.depositAmount,
+      reason,
+    );
+    await this.prisma.bookingApplication.update({
+      where: { id: app.id },
+      data: {
+        depositStatus: PaymentStatus.RELEASED,
+        status: ApplicationStatus.REJECTED,
+      },
+    });
+  }
+
+  /**
+   * SLA phản hồi: CONFIRMED quá responseDeadlineAt mà chưa IN_PROGRESS
+   * → tịch thu cọc ứng tuyển + gỡ partner + mở lại PENDING (nếu còn hạn ghép).
+   */
+  private async settleExpiredResponseSla(bookingId?: string) {
+    const expired = await this.prisma.booking.findMany({
+      where: {
+        ...(bookingId ? { id: bookingId } : {}),
+        status: BookingStatus.CONFIRMED,
+        partnerId: { not: null },
+        responseDeadlineAt: { lte: new Date() },
+      },
+      select: {
+        id: true,
+        partnerId: true,
+        userId: true,
+        paymentStatus: true,
+        matchingDeadlineAt: true,
+      },
+    });
+
+    for (const booking of expired) {
+      if (!booking.partnerId) continue;
+      const partnerId = booking.partnerId;
+      const reason = `Không vào làm trong ${RESPONSE_SLA_HOURS} giờ sau khi được chọn`;
+
+      await this.forfeitSelectedApplyDeposit(booking.id, partnerId, reason);
+
+      const matchingStillOpen =
+        !booking.matchingDeadlineAt ||
+        booking.matchingDeadlineAt.getTime() > Date.now();
+
+      if (matchingStillOpen && booking.paymentStatus === PaymentStatus.HELD) {
+        await this.prisma.booking.update({
+          where: { id: booking.id },
+          data: {
+            partnerId: null,
+            status: BookingStatus.PENDING,
+            responseDeadlineAt: null,
+            disputeResultNote: `${reason} — đã tịch thu cọc ứng tuyển, đơn mở lại hàng chờ.`,
+          },
+        });
+        const fresh = await this.prisma.booking.findUniqueOrThrow({
+          where: { id: booking.id },
+          include: bookingInclude,
+        });
+        this.realtime.emitOpenCreated(
+          this.shape(fresh, undefined, 'open_queue'),
+        );
+        this.realtime.emitPartnerBooking(
+          partnerId,
+          'booking:updated',
+          this.shape(fresh, { id: partnerId, role: Role.PARTNER }),
+        );
+        this.realtime.emitCustomerBooking(
+          fresh.userId,
+          this.shape(fresh, { id: fresh.userId, role: Role.CUSTOMER }),
+        );
+      } else {
+        if (booking.paymentStatus === PaymentStatus.HELD) {
+          await this.finance.refundBooking(booking.id, {
+            status: BookingStatus.CANCELLED,
+            disputeResultNote: `${reason} — hết hạn ghép, hoàn cọc khách.`,
+          });
+        } else {
+          await this.prisma.booking.update({
+            where: { id: booking.id },
+            data: {
+              status: BookingStatus.CANCELLED,
+              partnerId: null,
+              responseDeadlineAt: null,
+              disputeResultNote: reason,
+            },
+          });
+        }
+        this.realtime.emitOpenRemoved(booking.id);
+        const fresh = await this.prisma.booking.findUnique({
+          where: { id: booking.id },
+          include: bookingInclude,
+        });
+        if (fresh) {
+          this.realtime.emitPartnerBooking(
+            partnerId,
+            'booking:updated',
+            this.shape(fresh, { id: partnerId, role: Role.PARTNER }),
+          );
+          this.realtime.emitCustomerBooking(
+            fresh.userId,
+            this.shape(fresh, { id: fresh.userId, role: Role.CUSTOMER }),
+          );
+        }
       }
     }
   }
@@ -206,6 +490,7 @@ export class BookingsService {
     let partnerId: string | undefined;
     let totalPrice = service.basePrice;
     let status: BookingStatus = BookingStatus.PENDING;
+    let matchingDeadlineAt: Date | undefined;
 
     if (dto.partnerId) {
       const offering = await this.prisma.partnerService.findFirst({
@@ -223,6 +508,10 @@ export class BookingsService {
       partnerId = dto.partnerId;
       totalPrice = offering.price ?? service.basePrice;
       status = BookingStatus.CONFIRMED;
+    } else {
+      matchingDeadlineAt = new Date(
+        Date.now() + MATCHING_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+      );
     }
 
     const noteResult = dto.note
@@ -236,6 +525,10 @@ export class BookingsService {
       const hi = dto.budgetMax ?? dto.budgetMin ?? lo;
       budgetMin = Math.min(lo, hi);
       budgetMax = Math.max(lo, hi);
+      // Đơn mở: escrow theo ngân sách tối đa khách sẵn sàng trả.
+      if (!partnerId && budgetMax > 0) {
+        totalPrice = budgetMax;
+      }
     }
 
     const split = computeEscrowSplit(totalPrice);
@@ -258,22 +551,35 @@ export class BookingsService {
         commissionBps: split.commissionBps,
         commissionAmount: 0,
         partnerPayout: 0,
+        matchingDeadlineAt,
       },
       include: bookingInclude,
     });
+
+    // Bắt buộc giam cọc ngay khi tạo đơn theo totalPrice (đơn mở = budgetMax nếu có).
+    // Nếu giữ cọc thất bại (vd: thiếu số dư), rollback bằng cách xóa đơn vừa tạo.
+    try {
+      await this.finance.holdBooking(booking.id, user.id);
+    } catch (error) {
+      await this.prisma.booking.delete({
+        where: { id: booking.id },
+      });
+      throw error;
+    }
 
     if (partnerId) {
       await this.seedRequirementsIfEmpty(booking.id);
     }
 
-    const fresh = partnerId
-      ? await this.prisma.booking.findUniqueOrThrow({
-          where: { id: booking.id },
-          include: bookingInclude,
-        })
-      : booking;
+    const fresh = await this.prisma.booking.findUniqueOrThrow({
+      where: { id: booking.id },
+      include: bookingInclude,
+    });
 
     const shaped = this.shape(fresh, { id: user.id, role: user.role });
+    if (fresh.status === BookingStatus.PENDING && !fresh.partnerId) {
+      this.realtime.emitOpenCreated(this.shape(fresh, undefined, 'open_queue'));
+    }
     if (partnerId) {
       this.realtime.emitPartnerBooking(partnerId, 'booking:assigned', shaped);
     }
@@ -282,6 +588,8 @@ export class BookingsService {
   }
 
   async findOne(id: string, viewer?: Viewer) {
+    await this.settleExpiredMatching(id);
+    await this.settleExpiredResponseSla(id);
     await this.settleExpiredConfirmations(id);
     const booking = await this.prisma.booking.findUnique({
       where: { id },
@@ -305,6 +613,8 @@ export class BookingsService {
   }
 
   async listMineAsCustomer(userId: string) {
+    await this.settleExpiredMatching();
+    await this.settleExpiredResponseSla();
     await this.settleExpiredConfirmations();
     const rows = await this.prisma.booking.findMany({
       where: { userId },
@@ -386,6 +696,7 @@ export class BookingsService {
   }
 
   async listMineAsPartner(partnerId: string) {
+    await this.settleExpiredResponseSla();
     await this.settleExpiredConfirmations();
     const rows = await this.prisma.booking.findMany({
       where: { partnerId },
@@ -442,12 +753,18 @@ export class BookingsService {
   }
 
   async listOpen() {
+    await this.settleExpiredMatching();
+    await this.settleExpiredResponseSla();
     // Chỉ đơn đã đặt cọc mới vào hàng chờ — tránh nhận việc rồi bỏ sàn.
     const rows = await this.prisma.booking.findMany({
       where: {
         status: BookingStatus.PENDING,
         partnerId: null,
         paymentStatus: PaymentStatus.HELD,
+        OR: [
+          { matchingDeadlineAt: null },
+          { matchingDeadlineAt: { gt: new Date() } },
+        ],
       },
       orderBy: { scheduledAt: 'asc' },
       include: bookingInclude,
@@ -456,40 +773,223 @@ export class BookingsService {
   }
 
   async accept(id: string, partnerId: string) {
+    // Legacy: chuyển sang ứng tuyển (cọc 10%) — chủ đơn mới chọn người.
+    return this.apply(id, partnerId, {});
+  }
+
+  /** Partner ứng tuyển đơn mở — cọc 10% totalPrice từ ví. */
+  async apply(id: string, partnerId: string, dto: ApplyBookingDto = {}) {
+    await this.settleExpiredMatching(id);
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new NotFoundException('Không tìm thấy đơn');
     if (booking.status !== BookingStatus.PENDING || booking.partnerId) {
-      throw new BadRequestException('Đơn không còn mở để nhận');
+      throw new BadRequestException('Đơn không còn mở để ứng tuyển');
+    }
+    if (
+      booking.matchingDeadlineAt &&
+      booking.matchingDeadlineAt.getTime() <= Date.now()
+    ) {
+      throw new BadRequestException('Đã hết hạn ghép người làm cho đơn này');
     }
     if (!isDepositHeld(booking.paymentStatus)) {
       throw new BadRequestException(
-        'Khách chưa đặt cọc giữ chỗ — không thể nhận việc',
+        'Khách chưa đặt cọc giữ chỗ — không thể ứng tuyển',
       );
     }
 
-    const updated = await this.prisma.booking.update({
-      where: { id },
-      data: {
-        partnerId,
-        status: BookingStatus.CONFIRMED,
+    const offering = await this.prisma.partnerService.findFirst({
+      where: {
+        serviceId: booking.serviceId,
+        isActive: true,
+        partnerProfile: { userId: partnerId, acceptingJobs: true },
       },
-      include: bookingInclude,
     });
+    if (!offering) {
+      throw new BadRequestException(
+        'Bạn chưa đăng ký cung cấp dịch vụ này hoặc đang tạm nghỉ nhận việc',
+      );
+    }
 
-    await this.seedRequirementsIfEmpty(id);
-    const withReqs = await this.prisma.booking.findUniqueOrThrow({
+    const existing = await this.prisma.bookingApplication.findUnique({
+      where: {
+        bookingId_partnerId: { bookingId: id, partnerId },
+      },
+    });
+    if (
+      existing &&
+      (existing.status === ApplicationStatus.APPLIED ||
+        existing.status === ApplicationStatus.SELECTED) &&
+      existing.depositStatus === PaymentStatus.HELD
+    ) {
+      throw new BadRequestException('Bạn đã ứng tuyển đơn này');
+    }
+
+    const depositAmount = computeApplyDeposit(booking.totalPrice);
+    const noteResult = dto.note
+      ? redactContactLeak(dto.note)
+      : { text: undefined as string | undefined };
+
+    if (existing) {
+      await this.prisma.bookingApplication.delete({
+        where: { id: existing.id },
+      });
+    }
+
+    const created = await this.prisma.bookingApplication.create({
+      data: {
+        bookingId: id,
+        partnerId,
+        depositAmount,
+        depositStatus: PaymentStatus.UNPAID,
+        status: ApplicationStatus.APPLIED,
+        note: noteResult.text,
+      },
+    });
+    const applicationId = created.id;
+
+    try {
+      await this.finance.holdApplyDeposit(id, partnerId, applicationId, {
+        amount: depositAmount,
+      });
+      await this.prisma.bookingApplication.update({
+        where: { id: applicationId },
+        data: { depositStatus: PaymentStatus.HELD },
+      });
+    } catch (err) {
+      await this.prisma.bookingApplication.delete({
+        where: { id: applicationId },
+      });
+      throw err;
+    }
+
+    const fresh = await this.prisma.booking.findUniqueOrThrow({
       where: { id },
       include: bookingInclude,
     });
+    const shapedCustomer = this.shape(fresh, {
+      id: fresh.userId,
+      role: Role.CUSTOMER,
+    });
+    this.realtime.emitCustomerBooking(fresh.userId, shapedCustomer);
+    return {
+      booking: this.shape(fresh, { id: partnerId, role: Role.PARTNER }),
+      application: fresh.applications.find((a) => a.partnerId === partnerId),
+      depositAmount,
+    };
+  }
 
-    const shaped = this.shape(withReqs, { id: partnerId, role: Role.PARTNER });
-    this.realtime.emitOpenRemoved(id);
-    this.realtime.emitPartnerBooking(partnerId, 'booking:assigned', shaped);
+  /** Chủ đơn chọn 1 ứng viên → CONFIRMED, hoàn cọc các ứng viên khác. */
+  async selectApplicant(
+    bookingId: string,
+    applicationId: string,
+    viewer: Viewer,
+  ) {
+    await this.settleExpiredMatching(bookingId);
+    await this.settleExpiredResponseSla(bookingId);
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { applications: true },
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+    if (viewer.role !== Role.ADMIN && booking.userId !== viewer.id) {
+      throw new ForbiddenException('Chỉ chủ đơn chọn người làm');
+    }
+    if (booking.status !== BookingStatus.PENDING || booking.partnerId) {
+      throw new BadRequestException('Đơn đã có người làm hoặc không còn mở');
+    }
+    if (!isDepositHeld(booking.paymentStatus)) {
+      throw new BadRequestException('Escrow chưa HELD');
+    }
+
+    const selected = booking.applications.find((a) => a.id === applicationId);
+    if (!selected || selected.status !== ApplicationStatus.APPLIED) {
+      throw new BadRequestException('Ứng viên không hợp lệ hoặc đã xử lý');
+    }
+    if (selected.depositStatus !== PaymentStatus.HELD) {
+      throw new BadRequestException('Cọc ứng tuyển của người này không còn giữ');
+    }
+
+    for (const app of booking.applications) {
+      if (app.id === selected.id) continue;
+      if (app.depositStatus === PaymentStatus.HELD) {
+        await this.finance.refundApplyDeposit(
+          bookingId,
+          app.partnerId,
+          app.id,
+          app.depositAmount,
+        );
+      }
+      await this.prisma.bookingApplication.update({
+        where: { id: app.id },
+        data: {
+          status: ApplicationStatus.REJECTED,
+          depositStatus:
+            app.depositStatus === PaymentStatus.HELD
+              ? PaymentStatus.REFUNDED
+              : app.depositStatus,
+        },
+      });
+    }
+
+    await this.prisma.bookingApplication.update({
+      where: { id: selected.id },
+      data: { status: ApplicationStatus.SELECTED },
+    });
+
+    const responseDeadlineAt = new Date(
+      Date.now() + RESPONSE_SLA_HOURS * 60 * 60 * 1000,
+    );
+
+    await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        partnerId: selected.partnerId,
+        status: BookingStatus.CONFIRMED,
+        responseDeadlineAt,
+        disputeResultNote: null,
+      },
+    });
+
+    await this.seedRequirementsIfEmpty(bookingId);
+    const withReqs = await this.prisma.booking.findUniqueOrThrow({
+      where: { id: bookingId },
+      include: bookingInclude,
+    });
+
+    const shaped = this.shape(withReqs, viewer);
+    this.realtime.emitOpenRemoved(bookingId);
+    this.realtime.emitPartnerBooking(
+      selected.partnerId,
+      'booking:assigned',
+      this.shape(withReqs, { id: selected.partnerId, role: Role.PARTNER }),
+    );
     this.realtime.emitCustomerBooking(
       withReqs.userId,
       this.shape(withReqs, { id: withReqs.userId, role: Role.CUSTOMER }),
     );
     return shaped;
+  }
+
+  async listApplications(bookingId: string, viewer: Viewer) {
+    await this.settleExpiredMatching(bookingId);
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: { userId: true, partnerId: true },
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+    if (
+      viewer.role !== Role.ADMIN &&
+      booking.userId !== viewer.id &&
+      booking.partnerId !== viewer.id
+    ) {
+      throw new ForbiddenException('Không xem được danh sách ứng tuyển');
+    }
+
+    return this.prisma.bookingApplication.findMany({
+      where: { bookingId },
+      orderBy: { createdAt: 'asc' },
+      include: applicationInclude,
+    });
   }
 
   /** Mock đặt cọc — giữ tiền escrow trên sàn (bắt buộc trước khi vào hàng chờ / chat). */
@@ -648,9 +1148,14 @@ export class BookingsService {
     const data: {
       status: BookingStatus;
       confirmDeadlineAt?: Date | null;
+      responseDeadlineAt?: Date | null;
       disputeResultNote?: string | null;
     } = { status };
     let settledByFinance = false;
+
+    if (status === BookingStatus.IN_PROGRESS) {
+      data.responseDeadlineAt = null;
+    }
 
     if (status === BookingStatus.AWAITING_CONFIRM) {
       data.confirmDeadlineAt = new Date(
@@ -672,6 +1177,7 @@ export class BookingsService {
         throw new BadRequestException('Escrow đã hoàn — không thể hoàn thành');
       }
       data.confirmDeadlineAt = null;
+      data.responseDeadlineAt = null;
     }
 
     if (
@@ -682,6 +1188,25 @@ export class BookingsService {
         status: BookingStatus.CANCELLED,
       });
       settledByFinance = true;
+    }
+
+    if (status === BookingStatus.CANCELLED) {
+      data.responseDeadlineAt = null;
+      // Partner hủy khi CONFIRMED (chưa vào làm) → tịch thu cọc ứng tuyển.
+      if (
+        raw.status === BookingStatus.CONFIRMED &&
+        raw.partnerId &&
+        viewer.role !== Role.ADMIN &&
+        viewer.id === raw.partnerId
+      ) {
+        await this.forfeitSelectedApplyDeposit(
+          id,
+          raw.partnerId,
+          'Người làm hủy sau khi được chọn (chưa vào làm)',
+        );
+      } else {
+        await this.refundOpenApplications(id);
+      }
     }
 
     const updated = settledByFinance
@@ -696,6 +1221,7 @@ export class BookingsService {
         });
 
     if (status === BookingStatus.COMPLETED && updated.partnerId) {
+      await this.refundSelectedApplyDeposit(id, updated.partnerId);
       await recalculatePartnerLevel(this.prisma, updated.partnerId);
     }
 

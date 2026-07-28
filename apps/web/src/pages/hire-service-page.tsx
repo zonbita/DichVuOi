@@ -3,16 +3,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { HireServiceForm } from '../components/booking/hire-service-form';
 import type { CatalogServicePick } from '../components/home/catalog-menu-shared';
-import { api } from '../services/api';
+import { catalogQueries } from '../lib/catalog-queries';
 
 export function HireServicePage() {
   const [searchParams] = useSearchParams();
   const preselectSlug = (searchParams.get('dich-vu') ?? '').trim();
 
-  const treeQuery = useQuery({
-    queryKey: ['groups', 'tree'],
-    queryFn: api.getGroupsTree,
-  });
+  const treeQuery = useQuery(catalogQueries.groupsTree);
 
   const groups = treeQuery.data ?? [];
   const [selected, setSelected] = useState<CatalogServicePick | null>(null);
@@ -50,8 +47,12 @@ export function HireServicePage() {
   }
 
   return (
-    <div className="animate-fade-up mx-auto max-w-3xl">
-      <HireServiceForm groups={groups} selected={selected} onSelectedChange={setSelected} />
+    <div className="animate-fade-up w-full min-w-0">
+      <HireServiceForm
+        groups={groups}
+        selected={selected}
+        onSelectedChange={setSelected}
+      />
     </div>
   );
 }

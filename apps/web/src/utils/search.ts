@@ -1,6 +1,7 @@
 /**
- * Tiện ích tìm kiếm không dấu + gần đúng (typo-tolerant) cho toàn FE.
- * Dùng cho ô search header, trang /nhom, dropdown tỉnh/thành...
+ * Tiện ích tìm kiếm không dấu cho toàn FE.
+ * - `phraseMatch`: đúng cụm từ (ô search header → /nhom).
+ * - `fuzzyMatch`: gần đúng (dropdown tỉnh, gắn nghề…).
  */
 
 /** Bỏ dấu tiếng Việt, hạ chữ thường: «Sửa chữa» → «sua chua», «Đà Nẵng» → «da nang». */
@@ -12,6 +13,26 @@ export function normalizeText(text: string): string {
     .replace(/Đ/g, 'D')
     .toLowerCase()
     .trim();
+}
+
+/** Chuẩn hoá khoảng trắng sau khi bỏ dấu. */
+function collapseSpaces(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Khớp đúng cụm từ (không dấu).
+ * Toàn bộ chuỗi tìm phải xuất hiện liền trong text — không typo / không gõ tắt.
+ * Dấu câu trong tên dịch vụ bị bỏ khi so (vd. «dung - xu ly» ↔ «dung xu ly»).
+ */
+export function phraseMatch(haystack: string, query: string): boolean {
+  const strip = (text: string) =>
+    collapseSpaces(
+      normalizeText(text).replace(/[^\p{L}\p{N}\s]+/gu, ' '),
+    );
+  const nq = strip(query);
+  if (!nq) return true;
+  return strip(haystack).includes(nq);
 }
 
 /** Khoảng cách Levenshtein (số phép sửa) — đo độ «gần đúng». */
@@ -52,7 +73,7 @@ function isSubsequence(haystack: string, needle: string): boolean {
 }
 
 /**
- * Khớp không dấu + gần đúng.
+ * Khớp không dấu + gần đúng (dropdown tỉnh / gắn nghề).
  * - Rỗng → khớp mọi thứ.
  * - Trùng chuỗi con (đã bỏ dấu) → khớp.
  * - Mỗi từ khoá khớp một từ trong text qua substring hoặc Levenshtein trong ngưỡng.

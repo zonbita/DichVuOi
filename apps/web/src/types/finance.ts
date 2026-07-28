@@ -3,7 +3,10 @@ export type WalletTransactionType =
   | 'ESCROW_HOLD'
   | 'ESCROW_REFUND'
   | 'PARTNER_PAYOUT'
-  | 'ADMIN_ADJUSTMENT';
+  | 'ADMIN_ADJUSTMENT'
+  | 'APPLY_DEPOSIT'
+  | 'APPLY_REFUND'
+  | 'APPLY_FORFEIT';
 
 export type InvoiceStatus = 'PAID' | 'SETTLED' | 'REFUNDED';
 
@@ -27,6 +30,26 @@ export type WalletSummary = {
   currency: 'VND' | string;
   balance: number;
   transactions: WalletTransaction[];
+};
+
+export type VietQrTopUpIntent = {
+  intentId: string;
+  amount: number;
+  currency: 'VND' | string;
+  bankId: string;
+  accountNo: string;
+  accountName: string;
+  transferNote: string;
+  qrImageUrl: string;
+  expiresAt: string;
+};
+
+export type VietQrTopUpStatus = {
+  intentId: string;
+  amount: number;
+  status: 'PENDING' | 'PAID';
+  paidAt: string | null;
+  expiresAt: string;
 };
 
 export type Invoice = {
@@ -72,6 +95,9 @@ export const WALLET_TX_LABELS: Record<WalletTransactionType, string> = {
   ESCROW_REFUND: 'Hoàn cọc',
   PARTNER_PAYOUT: 'Giải ngân',
   ADMIN_ADJUSTMENT: 'Điều chỉnh admin',
+  APPLY_DEPOSIT: 'Cọc ứng tuyển',
+  APPLY_REFUND: 'Hoàn cọc ứng tuyển',
+  APPLY_FORFEIT: 'Tịch thu cọc ứng tuyển',
 };
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
@@ -81,10 +107,13 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
 };
 
 export const TOP_UP_PRESETS = [
+  20_000,
+  50_000,
   100_000,
   200_000,
   500_000,
   1_000_000,
   2_000_000,
   5_000_000,
+  10_000_000,
 ] as const;

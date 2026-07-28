@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus } from '../../../database/prisma/client';
 import { IsEnum, IsOptional } from 'class-validator';
 
 export class UpdateBookingStatusDto {

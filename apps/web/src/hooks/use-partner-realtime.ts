@@ -10,6 +10,7 @@ const TOKEN_KEY = 'dichvuoi_token';
 /**
  * Kết nối Socket.IO namespace /partner-realtime.
  * Invalidate / cập nhật cache khi có đơn mở hoặc đơn của partner.
+ * Heartbeat presence:ping để tích giờ online (level).
  */
 export function usePartnerRealtime(enabled: boolean, currentUserId?: string) {
   const queryClient = useQueryClient();
@@ -28,6 +29,12 @@ export function usePartnerRealtime(enabled: boolean, currentUserId?: string) {
       autoConnect: true,
     });
     socketRef.current = socket;
+
+    const ping = () => {
+      if (socket.connected) socket.emit('presence:ping');
+    };
+    socket.on('connect', ping);
+    const pingTimer = window.setInterval(ping, 45_000);
 
     const invalidateOpen = () => {
       void queryClient.invalidateQueries({ queryKey: ['bookings', 'open'] });
@@ -106,6 +113,7 @@ export function usePartnerRealtime(enabled: boolean, currentUserId?: string) {
     });
 
     return () => {
+      window.clearInterval(pingTimer);
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;

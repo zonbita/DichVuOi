@@ -3,7 +3,7 @@ import { computePartnerLevel, PARTNER_LEVEL_FORMULA } from './partner-level';
 describe('computePartnerLevel', () => {
   it('starts near level 1 with no activity', () => {
     const result = computePartnerLevel({
-      hoursByService: {},
+      onlineHours: 0,
       completedJobs: 0,
       ratingAvg: 0,
       ratingCount: 0,
@@ -15,26 +15,22 @@ describe('computePartnerLevel', () => {
     expect(result.totalPoints).toBe(0);
   });
 
-  it('gives hours points per profession with caps', () => {
+  it('gives hours points from online time with cap', () => {
     const result = computePartnerLevel({
-      hoursByService: {
-        'svc-a': 40,
-        'svc-b': 200, // capped at 120h → 30 pts
-      },
+      onlineHours: 200, // capped at 180h → 45 pts
       completedJobs: 0,
       ratingAvg: 0,
       ratingCount: 0,
       isVerified: false,
       activeOfferings: 0,
     });
-    // 40*0.25=10 + 120*0.25=30 = 40
-    expect(result.hoursPoints).toBe(40);
-    expect(result.hoursByServicePoints).toHaveLength(2);
+    expect(result.hoursPoints).toBe(45);
+    expect(result.onlineHours).toBe(200);
   });
 
   it('adds jobs, rating, verified and diversity', () => {
     const result = computePartnerLevel({
-      hoursByService: { s1: 20 },
+      onlineHours: 20,
       completedJobs: 40,
       ratingAvg: 5,
       ratingCount: 10,
@@ -53,7 +49,7 @@ describe('computePartnerLevel', () => {
 
   it('ignores rating points until enough reviews', () => {
     const result = computePartnerLevel({
-      hoursByService: {},
+      onlineHours: 0,
       completedJobs: 0,
       ratingAvg: 5,
       ratingCount: 2,
@@ -62,5 +58,6 @@ describe('computePartnerLevel', () => {
     });
     expect(result.ratingPoints).toBe(0);
     expect(PARTNER_LEVEL_FORMULA.rating.minReviews).toBe(3);
+    expect(PARTNER_LEVEL_FORMULA.online.totalCap).toBe(45);
   });
 });

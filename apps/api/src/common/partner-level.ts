@@ -2,15 +2,13 @@
  * Công thức cấp (level) người làm — thang 1–100.
  *
  * level = clamp(1, 100, round(
- *   hoursPoints + jobsPoints + ratingPoints + reviewCountPoints
+ *   onlineHoursPoints + jobsPoints + ratingPoints + reviewCountPoints
  *   + verifiedBonus + diversityBonus
  * ))
  *
- * --- Điểm giờ theo nghề (hoursPoints, tối đa 45) ---
- * Mỗi nghề (service) đã làm trên sàn:
- *   points_i = min(hours_i, 120) × 0.25   → tối đa 30 điểm / nghề
- * Tổng hoursPoints = min(Σ points_i, 45)
- * → Làm nhiều giờ ở nhiều nghề được thưởng, nhưng có trần để không “cày” vô hạn.
+ * --- Điểm giờ online (onlineHoursPoints / hoursPoints, tối đa 45) ---
+ * onlineHours = onlineSeconds / 3600 (tích lũy từ Socket.IO presence)
+ * points = min(onlineHours, 180) × 0.25   → tối đa 45
  *
  * --- Điểm khác ---
  * jobsPoints        = min(completedJobs, 80) × 0.25     → tối đa 20
@@ -25,8 +23,8 @@
  */
 
 export type PartnerLevelInput = {
-  /** Giờ làm theo từng serviceId (đơn COMPLETED). */
-  hoursByService: Map<string, number> | Record<string, number>;
+  /** Tổng giờ online tích lũy (presence). */
+  onlineHours: number;
   completedJobs: number;
   ratingAvg: number;
   ratingCount: number;
@@ -37,19 +35,19 @@ export type PartnerLevelInput = {
 export type PartnerLevelBreakdown = {
   level: number;
   totalPoints: number;
+  /** Điểm từ giờ online (alias lịch sử: hoursPoints). */
   hoursPoints: number;
+  onlineHours: number;
   jobsPoints: number;
   ratingPoints: number;
   reviewCountPoints: number;
   verifiedBonus: number;
   diversityBonus: number;
-  /** Chi tiết điểm giờ từng nghề (serviceId → điểm). */
-  hoursByServicePoints: Array<{ serviceId: string; hours: number; points: number }>;
 };
 
-const HOURS_PER_SERVICE_CAP = 120;
-const HOURS_POINT_PER_HOUR = 0.25;
-const HOURS_POINTS_TOTAL_CAP = 45;
+const ONLINE_HOURS_CAP = 180;
+const ONLINE_POINT_PER_HOUR = 0.25;
+const ONLINE_POINTS_TOTAL_CAP = 45;
 
 const JOBS_CAP = 80;
 const JOBS_POINT_EACH = 0.25;
@@ -73,31 +71,11 @@ function round1(n: number) {
   return Math.round(n * 10) / 10;
 }
 
-function asHoursMap(
-  input: Map<string, number> | Record<string, number>,
-): Map<string, number> {
-  if (input instanceof Map) return input;
-  return new Map(Object.entries(input));
-}
-
 export function computePartnerLevel(input: PartnerLevelInput): PartnerLevelBreakdown {
-  const hoursMap = asHoursMap(input.hoursByService);
-  const hoursByServicePoints: PartnerLevelBreakdown['hoursByServicePoints'] = [];
-
-  let hoursRaw = 0;
-  for (const [serviceId, hours] of hoursMap) {
-    const h = Math.max(0, hours);
-    const points = Math.min(h, HOURS_PER_SERVICE_CAP) * HOURS_POINT_PER_HOUR;
-    hoursByServicePoints.push({
-      serviceId,
-      hours: round1(h),
-      points: round1(points),
-    });
-    hoursRaw += points;
-  }
-  hoursByServicePoints.sort((a, b) => b.points - a.points);
-
-  const hoursPoints = round1(Math.min(hoursRaw, HOURS_POINTS_TOTAL_CAP));
+  const onlineHours = Math.max(0, input.onlineHours);
+  const hoursPoints = round1(
+    Math.min(Math.min(onlineHours, ONLINE_HOURS_CAP) * ONLINE_POINT_PER_HOUR, ONLINE_POINTS_TOTAL_CAP),
+  );
   const jobsPoints = round1(
     Math.min(Math.max(0, input.completedJobs), JOBS_CAP) * JOBS_POINT_EACH,
   );
@@ -129,21 +107,27 @@ export function computePartnerLevel(input: PartnerLevelInput): PartnerLevelBreak
     level,
     totalPoints,
     hoursPoints,
+    onlineHours: round1(onlineHours),
     jobsPoints,
     ratingPoints,
     reviewCountPoints,
     verifiedBonus,
     diversityBonus,
-    hoursByServicePoints,
   };
 }
 
 /** Hằng số công thức — dùng cho docs / FE giải thích. */
 export const PARTNER_LEVEL_FORMULA = {
+  online: {
+    perHour: ONLINE_POINT_PER_HOUR,
+    hoursCap: ONLINE_HOURS_CAP,
+    totalCap: ONLINE_POINTS_TOTAL_CAP,
+  },
+  /** @deprecated alias — FE cũ; dùng `online`. */
   hours: {
-    perHour: HOURS_POINT_PER_HOUR,
-    perServiceHoursCap: HOURS_PER_SERVICE_CAP,
-    totalCap: HOURS_POINTS_TOTAL_CAP,
+    perHour: ONLINE_POINT_PER_HOUR,
+    perServiceHoursCap: ONLINE_HOURS_CAP,
+    totalCap: ONLINE_POINTS_TOTAL_CAP,
   },
   jobs: { perJob: JOBS_POINT_EACH, cap: JOBS_CAP },
   rating: { minReviews: RATING_MIN_REVIEWS, maxPoints: RATING_POINTS_MAX },

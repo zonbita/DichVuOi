@@ -1,5 +1,5 @@
 /**
- * Khoảng giá tham khảo thị trường (₫) — đồng bộ logic với API `market-price.ts`.
+ * Khoảng giá tham khảo thị trường (VNĐ) — đồng bộ logic với API `market-price.ts`.
  */
 export function marketPriceRange(input: {
   basePrice: number;
@@ -27,8 +27,12 @@ export function formatMarketPriceRange(
     priceMax?: number | null;
   },
   formatPrice: (n: number) => string,
+  formatPriceNumber?: (n: number) => string,
 ): string {
   const { min, max } = marketPriceRange(input);
   if (min === max) return formatPrice(min);
+  if (formatPriceNumber) {
+    return `${formatPriceNumber(min)} – ${formatPriceNumber(max)} VNĐ`;
+  }
   return `${formatPrice(min)} – ${formatPrice(max)}`;
 }

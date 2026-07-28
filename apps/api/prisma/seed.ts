@@ -463,7 +463,26 @@ async function main() {
     }
   }
 
+  // Dọn category gán nhầm (vd. gia-su-hoa từng nằm trong cham-soc).
+  await prisma.category.deleteMany({
+    where: { slug: 'gia-su-suc-khoe' },
+  });
+
+  // Gộp coaching theo game → chỉ giữ «Coaching game».
+  const mergedCoachingSlugs = [
+    'coaching-lien-quan',
+    'coaching-lmht',
+    'coaching-valorant',
+    'coaching-pubg',
+    'coaching-fc-online',
+  ];
+  await prisma.service.updateMany({
+    where: { slug: { in: mergedCoachingSlugs } },
+    data: { isActive: false, supportsOnline: false },
+  });
+
   const allServices = await prisma.service.findMany({
+    where: { isActive: true },
     select: {
       id: true,
       name: true,

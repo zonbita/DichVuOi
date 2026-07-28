@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { DealCard } from '../components/common/deal-card';
@@ -12,6 +12,11 @@ import { Icon } from '../components/ui/icon';
 import type { IconName } from '../components/ui/icon';
 import { PaymentPartnerBadges } from '../components/ui/payment-partner-badges';
 import { useAuth } from '../features/auth/auth-context';
+import {
+  isCatalogServingStale,
+  subscribeCatalogServingStale,
+} from '../lib/catalog-cache';
+import { catalogQueries } from '../lib/catalog-queries';
 import { api } from '../services/api';
 import {
   rankFeaturedServices,
@@ -21,7 +26,6 @@ import {
 const trustPoints: Array<{ icon: IconName; value: string; label: string }> = [
   { icon: 'users', value: '10.000+', label: 'Thợ chuyên nghiệp' },
   { icon: 'check', value: '98%', label: 'Khách hàng hài lòng' },
-  { icon: 'shield', value: 'Bảo hiểm', label: 'An tâm khi đặt' },
   { icon: 'headset', value: 'Hỗ trợ 24/7', label: 'Tư vấn tận tình' },
 ];
 
@@ -108,14 +112,8 @@ function ViewAllLink({ to = '/nhom' }: { to?: string }) {
 
 export function HomePage() {
   const { user } = useAuth();
-  const groupsQuery = useQuery({
-    queryKey: ['groups', 'all'],
-    queryFn: () => api.getGroups(false),
-  });
-  const servicesQuery = useQuery({
-    queryKey: ['services'],
-    queryFn: () => api.getServices(),
-  });
+  const groupsQuery = useQuery(catalogQueries.groupsAll);
+  const servicesQuery = useQuery(catalogQueries.services);
   const rebookQuery = useQuery({
     queryKey: ['rebook-hints'],
     queryFn: api.getRebookHints,
@@ -144,7 +142,13 @@ export function HomePage() {
     return rankFeaturedServices(services, activeTab, signals, limit);
   }, [services, activeTab, rebookQuery.data]);
 
+  const servingStale = useSyncExternalStore(
+    subscribeCatalogServingStale,
+    isCatalogServingStale,
+    () => false,
+  );
   const apiDown = groupsQuery.isError || servicesQuery.isError;
+  const hasCatalog = groups.length > 0 || services.length > 0;
 
   return (
     <div className="pb-4">
@@ -153,12 +157,21 @@ export function HomePage() {
       <RebookSection />
       <FamiliarPartnersSection />
 
-      {apiDown && (
+      {(apiDown || servingStale) && (
         <div className="page-shell mt-4">
           <div className="section-container">
-            <p className=" border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Chưa kết nối được API. Chạy <code className="font-semibold">npm run dev:api</code> để
-              hiển thị dữ liệu dịch vụ.
+            <p className="border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {hasCatalog && !apiDown ? (
+                <>
+                  Đang hiển thị danh mục đã lưu trên máy. Chạy{' '}
+                  <code className="font-semibold">npm run dev:api</code> để cập nhật dữ liệu mới.
+                </>
+              ) : (
+                <>
+                  Chưa kết nối được API. Chạy{' '}
+                  <code className="font-semibold">npm run dev:api</code> để hiển thị dữ liệu dịch vụ.
+                </>
+              )}
             </p>
           </div>
         </div>

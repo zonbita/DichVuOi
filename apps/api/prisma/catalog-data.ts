@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Catalog seed: Group → Category → Service (nghề cụ thể).
  * Đồng bộ tầm nhìn với README mục "Nhóm dịch vụ bao quát".
  */
@@ -48,9 +48,6 @@ const ONLINE_SERVICE_SLUGS = new Set([
   'tin-hoc-van-phong',
   'day-lap-trinh-tre',
   'coaching-game',
-  'coaching-lien-quan',
-  'coaching-lmht',
-  'coaching-valorant',
   'edit-highlight-stream',
   'day-lam-game-co-ban',
   'sua-may-cai-dat',
@@ -80,8 +77,6 @@ const ONLINE_SERVICE_SLUGS = new Set([
   'day-canva-co-ban',
   'day-ai-cho-cong-viec',
   // Game
-  'coaching-pubg',
-  'coaching-fc-online',
   'huong-dan-len-song-stream',
   'thiet-ke-overlay-stream',
   // Lập trình
@@ -343,13 +338,6 @@ export const catalogGroups: SeedGroup[] = [
           s('bao-mau-cuoi-tuan', 'Bảo mẫu cuối tuần', 'Trông trẻ buổi tối / cuối tuần', 140000, 'giờ', 180),
         ],
       },
-      {
-        slug: 'gia-su-suc-khoe',
-        name: 'Gia sư sức khỏe',
-        services: [
-          s('gia-su-hoa', 'Gia sư Hóa', 'Dạy kèm Hóa học THCS / THPT', 150000, 'giờ', 90),
-        ],
-      },
     ],
   },
   {
@@ -458,15 +446,17 @@ export const catalogGroups: SeedGroup[] = [
         slug: 'esports',
         name: 'eSports',
         services: [
-          s('coaching-game', 'Coaching game', 'Review replay, hướng dẫn leo rank (không boosting)', 120000, 'giờ', 60),
-          s('coaching-lien-quan', 'Coaching Liên Quân', 'Coaching Liên Quân Mobile 1 kèm 1', 100000, 'giờ', 60),
-          s('coaching-lmht', 'Coaching LMHT', 'Coaching League of Legends', 150000, 'giờ', 60),
-          s('coaching-valorant', 'Coaching Valorant', 'Aim, agent, VOD review', 150000, 'giờ', 60),
+          s(
+            'coaching-game',
+            'Coaching game',
+            'Coaching 1 kèm 1 / VOD review cho Liên Quân, LMHT, Valorant, PUBG, FC Online… (không boosting)',
+            120000,
+            'giờ',
+            60,
+          ),
           s('setup-pc-gaming', 'Setup / tối ưu PC gaming', 'Cài đặt, tối ưu hiệu năng máy chơi game', 300000, 'lần', 120),
           s('edit-highlight-stream', 'Edit highlight / stream', 'Cắt highlight, intro stream', 250000, 'video', 120),
           s('day-lam-game-co-ban', 'Dạy làm game cơ bản', 'Giới thiệu Unity / Godot cơ bản', 300000, 'giờ', 90),
-          s('coaching-pubg', 'Coaching PUBG Mobile', 'Kỹ năng bắn, đội hình, vòng bo', 120000, 'giờ', 60),
-          s('coaching-fc-online', 'Coaching FC Online', 'Chiến thuật, đội hình, xử lý tình huống', 120000, 'giờ', 60),
           s('huong-dan-len-song-stream', 'Hướng dẫn lên sóng stream', 'Setup OBS, kịch bản buổi stream', 250000, 'buổi', 90),
           s('thiet-ke-overlay-stream', 'Thiết kế overlay stream', 'Overlay, alert, khung camera', 300000, 'gói', 120),
         ],
@@ -524,6 +514,7 @@ export const catalogGroups: SeedGroup[] = [
         name: 'Gia sư khoa học',
         services: [
           s('gia-su-ly', 'Gia sư Lý', 'Dạy kèm Vật lý THCS / THPT', 150000, 'giờ', 90),
+          s('gia-su-hoa', 'Gia sư Hóa', 'Dạy kèm Hóa học THCS / THPT', 150000, 'giờ', 90),
         ],
       },
     ],

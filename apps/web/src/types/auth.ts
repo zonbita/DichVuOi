@@ -6,27 +6,26 @@ export type PartnerLevelBreakdown = {
   storedLevel: number;
   level: number;
   totalPoints: number;
+  /** Điểm từ giờ online. */
   hoursPoints: number;
+  onlineHours: number;
   jobsPoints: number;
   ratingPoints: number;
   reviewCountPoints: number;
   verifiedBonus: number;
   diversityBonus: number;
-  hoursByServicePoints: Array<{
-    serviceId: string;
-    hours: number;
-    points: number;
-    serviceName: string | null;
-    serviceSlug: string | null;
-  }>;
   inputs: {
     completedJobs: number;
     ratingAvg: number;
     ratingCount: number;
     isVerified: boolean;
     activeOfferings: number;
+    onlineSeconds: number;
+    onlineHours: number;
+    lastOnlineAt: string | null;
   };
   formula: {
+    online: { perHour: number; hoursCap: number; totalCap: number };
     hours: { perHour: number; perServiceHoursCap: number; totalCap: number };
     jobs: { perJob: number; cap: number };
     rating: { minReviews: number; maxPoints: number };

@@ -14,59 +14,27 @@ import { ProfessionTagsInput } from '../components/ui/profession-tags-input';
 import type { ProfessionOption } from '../components/ui/profession-tags-input';
 import { useAuth } from '../features/auth/auth-context';
 import { usePartnerRealtime } from '../hooks/use-partner-realtime';
+import { catalogQueries } from '../lib/catalog-queries';
 import { api } from '../services/api';
 import type { PartnerLevelBreakdown } from '../types/auth';
 
+const phoneRegex = /^(0|\+84)\d{8,10}$/;
+
 const profileSchema = z.object({
-  headline: z.string().max(120).optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(phoneRegex, 'Số điện thoại không hợp lệ'),
   bio: z.string().max(2000).optional(),
-  city: z.string().max(80).optional(),
   districts: z.string().max(200).optional(),
-  skillsText: z.string().max(200).optional(),
-  workModes: z.string().max(40).optional(),
-  acceptingJobs: z.boolean().optional(),
-  responseMinutes: z.coerce.number().min(5).max(1440).optional(),
-  avatarUrl: z.string().max(500).optional(),
-  galleryText: z.string().max(4000).optional(),
 });
 
 /** `z.coerce` khiến giá trị vào form (input) khác giá trị đã parse (output). */
 type ProfileInput = z.input<typeof profileSchema>;
 type ProfileValues = z.output<typeof profileSchema>;
 
-function skillsToText(skills?: string[] | null, skillsJson?: string | null) {
-  if (skills?.length) return skills.join(', ');
-  if (!skillsJson) return '';
-  try {
-    const parsed = JSON.parse(skillsJson) as unknown;
-    if (Array.isArray(parsed)) return parsed.map(String).join(', ');
-  } catch {
-    /* ignore */
-  }
-  return skillsJson;
-}
-
-function parseSkillsText(text?: string) {
-  return text
-    ?.split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function galleryToText(gallery?: string[] | null) {
-  return gallery?.length ? gallery.join('\n') : '';
-}
-
-function parseGalleryText(text?: string) {
-  return text
-    ?.split(/\n|,/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 6);
-}
-
 export function PartnerDashboardPage() {
-  const { user, loading, canOffer, applySession, setMode } = useAuth();
+  const { user, loading, canOffer, applySession, setMode, refreshMe } = useAuth();
   const queryClient = useQueryClient();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
@@ -109,10 +77,7 @@ export function PartnerDashboardPage() {
 
   usePartnerRealtime(canOffer, user?.id);
 
-  const servicesQuery = useQuery({
-    queryKey: ['services'],
-    queryFn: () => api.getServices(),
-  });
+  const servicesQuery = useQuery(catalogQueries.services);
 
   const professionOptions = useMemo<ProfessionOption[]>(
     () =>
@@ -148,49 +113,38 @@ export function PartnerDashboardPage() {
     register,
     handleSubmit,
     reset,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<ProfileInput, unknown, ProfileValues>({
     resolver: zodResolver(profileSchema),
     values: {
-      headline: profileQuery.data?.headline ?? '',
+      phone: profileQuery.data?.user?.phone ?? user?.phone ?? '',
       bio: profileQuery.data?.bio ?? '',
-      city: profileQuery.data?.city ?? '',
       districts:
         profileQuery.data?.districtsList?.join(', ') ??
         profileQuery.data?.districts ??
         '',
-      skillsText: skillsToText(
-        profileQuery.data?.skills,
-        profileQuery.data?.skillsJson,
-      ),
-      workModes: profileQuery.data?.workModes ?? 'onsite',
-      acceptingJobs: profileQuery.data?.acceptingJobs ?? true,
-      responseMinutes: profileQuery.data?.responseMinutes ?? 30,
-      avatarUrl: profileQuery.data?.avatarUrl ?? '',
-      galleryText: galleryToText(profileQuery.data?.gallery),
     },
   });
 
   const enableForm = useForm<ProfileInput, unknown, ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      headline: '',
+      phone: user?.phone ?? '',
       bio: '',
-      city: 'Hồ Chí Minh',
       districts: '',
-      skillsText: '',
-      workModes: 'onsite',
-      acceptingJobs: true,
-      responseMinutes: 30,
-      avatarUrl: '',
-      galleryText: '',
     },
   });
 
+  useEffect(() => {
+    if (canOffer || !user) return;
+    enableForm.setValue('phone', user.phone ?? '');
+  }, [canOffer, user?.phone]);
+
   const acceptMutation = useMutation({
-    mutationFn: api.acceptBooking,
+    mutationFn: (id: string) => api.applyBooking(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
     },
   });
 
@@ -206,20 +160,15 @@ export function PartnerDashboardPage() {
   const profileMutation = useMutation({
     mutationFn: async (values: ProfileValues) => {
       await api.updatePartnerProfile({
-        headline: values.headline,
+        phone: values.phone,
         bio: values.bio,
-        city: values.city,
+        city: profileQuery.data?.city ?? 'Hồ Chí Minh',
         districts: values.districts,
-        skills: parseSkillsText(values.skillsText),
-        workModes: values.workModes,
-        acceptingJobs: values.acceptingJobs,
-        responseMinutes: values.responseMinutes,
-        avatarUrl: values.avatarUrl,
-        gallery: parseGalleryText(values.galleryText) ?? [],
       });
       await api.syncPartnerOfferings(profileServiceIds);
     },
     onSuccess: async () => {
+      await refreshMe();
       await queryClient.invalidateQueries({ queryKey: ['partner', 'me'] });
       await queryClient.invalidateQueries({ queryKey: ['partner', 'me', 'level'] });
       await queryClient.invalidateQueries({ queryKey: ['services'] });
@@ -229,14 +178,10 @@ export function PartnerDashboardPage() {
   const enableMutation = useMutation({
     mutationFn: (values: ProfileValues) =>
       api.enableOffering({
-        headline: values.headline,
+        phone: values.phone,
         bio: values.bio,
-        city: values.city,
+        city: 'Hồ Chí Minh',
         districts: values.districts,
-        skills: parseSkillsText(values.skillsText),
-        workModes: values.workModes,
-        acceptingJobs: values.acceptingJobs,
-        responseMinutes: values.responseMinutes,
         serviceIds: enableServiceIds,
       }),
     onSuccess: (session) => {
@@ -264,7 +209,7 @@ export function PartnerDashboardPage() {
 
   if (!canOffer) {
     return (
-      <div className="mx-auto max-w-lg bg-white p-6 shadow-sm">
+      <div className="w-full rounded-2xl border border-[var(--color-line)] bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-extrabold">Bắt đầu nhận việc</h1>
         <p className="mt-2 text-[15px] text-[var(--color-muted)]">
           Bạn đang chuyển sang vai người làm trên cùng tài khoản. Chọn một
@@ -283,19 +228,28 @@ export function PartnerDashboardPage() {
             }
           })}
         >
-          <input
-            {...enableForm.register('headline')}
-            placeholder="Headline (vd: Thợ điện nước Quận 1)"
-            className="field-input w-full"
-          />
-          <input
-            {...enableForm.register('city')}
-            placeholder="Thành phố"
-            className="field-input w-full"
-          />
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold" htmlFor="enable-phone">
+              Số điện thoại
+            </label>
+            <input
+              id="enable-phone"
+              {...enableForm.register('phone')}
+              placeholder="0901234567"
+              className="field-input w-full"
+              inputMode="tel"
+              autoComplete="tel"
+            />
+            {enableForm.formState.errors.phone ? (
+              <p className="mt-1 text-sm text-red-600">
+                {enableForm.formState.errors.phone.message}
+              </p>
+            ) : null}
+          </div>
+
           <input
             {...enableForm.register('districts')}
-            placeholder="Quận / khu vực phục vụ (vd: Quận 1, Bình Thạnh)"
+            placeholder="Địa chỉ / khu vực phục vụ (vd: Quận 1, Bình Thạnh)"
             className="field-input w-full"
           />
 
@@ -310,33 +264,6 @@ export function PartnerDashboardPage() {
               placeholder="Gõ tên nghề để gắn tag…"
             />          </div>
 
-          <input
-            {...enableForm.register('skillsText')}
-            placeholder="Kỹ năng phụ (tuỳ chọn, cách nhau bởi dấu phẩy)"
-            className="field-input w-full"
-          />
-          <select
-            {...enableForm.register('workModes')}
-            className="field-input w-full"
-          >
-            <option value="onsite">Tại chỗ</option>
-            <option value="online">Online</option>
-            <option value="onsite,online">Tại chỗ + Online</option>
-          </select>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              {...enableForm.register('acceptingJobs')}
-              defaultChecked
-            />
-            Đang nhận việc
-          </label>
-          <input
-            type="number"
-            {...enableForm.register('responseMinutes')}
-            placeholder="Phản hồi trong (phút)"
-            className="field-input w-full"
-          />
           <textarea
             {...enableForm.register('bio')}
             rows={4}
@@ -383,7 +310,7 @@ export function PartnerDashboardPage() {
               {tab === 'jobs'
                 ? 'Việc của tôi'
                 : tab === 'profile'
-                  ? 'Hồ sơ người làm'
+                  ? 'Hồ sơ'
                   : tab === 'level'
                     ? 'Cấp độ'
                     : 'Nhận việc'}
@@ -465,8 +392,13 @@ export function PartnerDashboardPage() {
             <PartnerIncomingList
               bookings={openQuery.data ?? []}
               loading={openQuery.isLoading}
-              accepting={acceptMutation.isPending}
-              onAccept={(id) => acceptMutation.mutate(id)}
+              applying={acceptMutation.isPending}
+              applyError={
+                acceptMutation.isError
+                  ? (acceptMutation.error as Error).message
+                  : null
+              }
+              onApply={(id) => acceptMutation.mutate(id)}
             />
           </div>
         </>
@@ -497,7 +429,7 @@ export function PartnerDashboardPage() {
           <PartnerCompletenessBar profile={profileQuery.data} />
         ) : null}
       <div className="surface-card p-5">
-        <h2 className="text-xl font-extrabold">Hồ sơ người làm</h2>
+        <h2 className="text-xl font-extrabold">Hồ sơ</h2>
         <form
           className="mt-4 space-y-3"
           onSubmit={handleSubmit(async (values) => {
@@ -505,45 +437,26 @@ export function PartnerDashboardPage() {
             reset(values);
           })}
         >
-          <input
-            {...register('headline')}
-            placeholder="Headline (vd: Thợ điện nước Quận 1)"
-            className="field-input w-full"
-          />
           <div>
-            <label className="mb-1.5 block text-sm font-semibold">Ảnh đại diện (URL)</label>
+            <label className="mb-1.5 block text-sm font-semibold" htmlFor="profile-phone">
+              Số điện thoại
+            </label>
             <input
-              {...register('avatarUrl')}
-              placeholder="https://…"
+              id="profile-phone"
+              {...register('phone')}
+              placeholder="0901234567"
               className="field-input w-full"
+              inputMode="tel"
+              autoComplete="tel"
             />
-            {profileQuery.data?.avatarUrl ? (
-              <img
-                src={profileQuery.data.avatarUrl}
-                alt="Avatar"
-                className="mt-2 h-16 w-16 rounded-xl object-cover ring-1 ring-[var(--color-line)]"
-              />
+            {errors.phone ? (
+              <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
             ) : null}
           </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              Portfolio (3–6 URL ảnh, mỗi dòng một URL)
-            </label>
-            <textarea
-              {...register('galleryText')}
-              rows={4}
-              placeholder={'https://…/anh1.jpg\nhttps://…/anh2.jpg'}
-              className="field-input w-full font-mono text-sm"
-            />
-          </div>
-          <input
-            {...register('city')}
-            placeholder="Thành phố"
-            className="field-input w-full"
-          />
+
           <input
             {...register('districts')}
-            placeholder="Quận / khu vực phục vụ"
+            placeholder="Địa chỉ / khu vực phục vụ"
             className="field-input w-full"
           />
 
@@ -560,26 +473,6 @@ export function PartnerDashboardPage() {
             />
           </div>
 
-          <input
-            {...register('skillsText')}
-            placeholder="Kỹ năng phụ (tuỳ chọn, phẩy)"
-            className="field-input w-full"
-          />
-          <select {...register('workModes')} className="field-input w-full">
-            <option value="onsite">Tại chỗ</option>
-            <option value="online">Online</option>
-            <option value="onsite,online">Tại chỗ + Online</option>
-          </select>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register('acceptingJobs')} />
-            Đang nhận việc
-          </label>
-          <input
-            type="number"
-            {...register('responseMinutes')}
-            placeholder="Phản hồi trong (phút)"
-            className="field-input w-full"
-          />
           <textarea
             {...register('bio')}
             rows={4}
@@ -607,8 +500,9 @@ export function PartnerDashboardPage() {
 }
 
 function LevelBreakdownCard({ data }: { data: PartnerLevelBreakdown }) {
+  const onlineCap = data.formula.online?.totalCap ?? data.formula.hours.totalCap;
   const rows = [
-    { label: 'Giờ theo nghề', value: data.hoursPoints, hint: 'max 45' },
+    { label: 'Giờ online', value: data.hoursPoints, hint: `max ${onlineCap}` },
     { label: 'Đơn hoàn thành', value: data.jobsPoints, hint: 'max 20' },
     { label: 'Điểm ★ trung bình', value: data.ratingPoints, hint: 'max 15' },
     { label: 'Số đánh giá', value: data.reviewCountPoints, hint: 'max 5' },
@@ -622,7 +516,7 @@ function LevelBreakdownCard({ data }: { data: PartnerLevelBreakdown }) {
         <div>
           <h2 className="text-xl font-extrabold">Cấp của bạn</h2>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Công thức: giờ làm từng nghề + điểm đơn, ★, xác thực, đa dạng nghề → cấp 1–100.
+            Công thức: giờ online (Socket) + điểm đơn, ★, xác thực, đa dạng nghề → cấp 1–100.
           </p>
         </div>
         <LevelBadgeGold level={data.level} />
@@ -648,37 +542,24 @@ function LevelBreakdownCard({ data }: { data: PartnerLevelBreakdown }) {
       </div>
 
       <p className="mt-3 text-sm text-[var(--color-muted)]">
-        Tổng điểm {data.totalPoints} · {data.inputs.completedJobs} đơn hoàn thành · ★{' '}
-        {data.inputs.ratingAvg.toFixed(1)} ({data.inputs.ratingCount} đánh giá) ·{' '}
-        {data.inputs.activeOfferings} nghề đang gắn
+        Tổng điểm {data.totalPoints} · {data.inputs.onlineHours.toFixed(1)} giờ online ·{' '}
+        {data.inputs.completedJobs} đơn hoàn thành · ★ {data.inputs.ratingAvg.toFixed(1)} (
+        {data.inputs.ratingCount} đánh giá) · {data.inputs.activeOfferings} nghề đang gắn
         {data.inputs.isVerified ? ' · Đã xác minh' : ' · Chưa xác minh'}
       </p>
 
-      {data.hoursByServicePoints.length > 0 ? (
-        <div className="mt-4">
-          <p className="text-sm font-bold">Điểm giờ theo nghề</p>
-          <ul className="mt-2 space-y-1.5 text-sm">
-            {data.hoursByServicePoints.slice(0, 8).map((row) => (
-              <li
-                key={row.serviceId}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 ring-1 ring-[var(--color-line)]"
-              >
-                <span className="font-semibold">
-                  {row.serviceName ?? row.serviceId}
-                </span>
-                <span className="text-[var(--color-muted)]">
-                  {row.hours} giờ → <strong className="text-[var(--color-ink)]">{row.points}</strong> điểm
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-xs text-[var(--color-muted)]">
-            Mỗi nghề: min(giờ, 120) × 0.25 (tối đa 30/nghề). Tổng giờ nghề tối đa 45 điểm.
-          </p>
-        </div>
+      {data.inputs.onlineHours > 0 ? (
+        <p className="mt-4 text-sm text-[var(--color-muted)]">
+          Giờ online tích lũy khi bạn mở app (WS). Công thức:{' '}
+          <strong className="text-[var(--color-ink)]">
+            min(giờ, {data.formula.online?.hoursCap ?? 180}) ×{' '}
+            {data.formula.online?.perHour ?? 0.25}
+          </strong>{' '}
+          (tối đa {onlineCap} điểm).
+        </p>
       ) : (
         <p className="mt-4 text-sm text-[var(--color-muted)]">
-          Chưa có giờ làm trên sàn — hoàn thành đơn để tăng cấp theo nghề.
+          Chưa có giờ online — mở trang Người làm / giữ app mở để tích cấp theo thời gian online.
         </p>
       )}
     </section>

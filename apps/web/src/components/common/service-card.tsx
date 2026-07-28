@@ -9,6 +9,7 @@ export function ServiceCard({ service }: { service: Service }) {
   const image = serviceImage(service);
   const color = groupColor(service.category.group.slug);
   const providerCount = service._count?.partners ?? 0;
+  const groupLabel = service.category.group.name.replace(/\s*-\s*hỗ trợ$/i, '');
 
   return (
     <Link
@@ -22,15 +23,15 @@ export function ServiceCard({ service }: { service: Service }) {
           className="catalog-photo h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
         />
+        <span
+          className="absolute bottom-3 left-3 inline-flex w-fit rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wide shadow-sm"
+          style={{ backgroundColor: color.main, color: '#ffffff' }}
+        >
+          {groupLabel}
+        </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-4">
-        <span
-          className="inline-flex w-fit rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wide"
-          style={{ backgroundColor: color.soft, color: color.ink }}
-        >
-          {service.category.group.name}
-        </span>
         <h3 className="line-clamp-1 text-lg font-extrabold sm:text-xl">{service.name}</h3>
 
         <ReferencePrice

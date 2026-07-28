@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../services/api';
+import { catalogQueries } from '../../lib/catalog-queries';
 import { groupIcon } from '../../utils/catalog-display';
 import { groupColor } from '../../utils/catalog-colors';
 import { Icon } from '../ui/icon';
@@ -43,10 +43,7 @@ function ServiceTag({
 
 export function ServiceTagNav() {
   const [paused, setPaused] = useState(false);
-  const servicesQuery = useQuery({
-    queryKey: ['services'],
-    queryFn: () => api.getServices(),
-  });
+  const servicesQuery = useQuery(catalogQueries.services);
 
   const navItems = servicesQuery.data?.length
     ? servicesQuery.data.map((service) => ({

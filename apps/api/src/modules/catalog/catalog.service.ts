@@ -8,12 +8,19 @@ import { minutesToWorkHours } from '../../common/partner-work-hours';
 import { ReputationService } from '../../common/reputation.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 
+type CacheEntry = { at: number; data: unknown };
+
+/** TTL in-memory — giảm hit DB khi nhiều client đọc catalog. */
+const CATALOG_MEMORY_TTL_MS = 60_000;
+
 @Injectable()
 export class CatalogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reputation: ReputationService,
   ) {}
+
+  private readonly memoryCache = new Map<string, CacheEntry>();
 
   private readonly onlineServiceWhere = {
     isActive: true,
@@ -28,18 +35,43 @@ export class CatalogService {
     },
   } as const;
 
+  /** Xóa cache khi admin tạo/sửa dịch vụ hoặc nhóm. */
+  invalidateCache() {
+    this.memoryCache.clear();
+  }
+
+  private getCached<T>(key: string): T | undefined {
+    const hit = this.memoryCache.get(key);
+    if (!hit) return undefined;
+    if (Date.now() - hit.at > CATALOG_MEMORY_TTL_MS) {
+      this.memoryCache.delete(key);
+      return undefined;
+    }
+    return hit.data as T;
+  }
+
+  private setCached<T>(key: string, data: T): T {
+    this.memoryCache.set(key, { at: Date.now(), data });
+    return data;
+  }
+
   async findGroups(featuredOnly = false, withTree = false) {
+    const key = `groups:featured=${featuredOnly}:tree=${withTree}`;
+    const cached = this.getCached<unknown>(key);
+    if (cached !== undefined) return cached;
+
     const where = {
       ...(featuredOnly ? { isFeatured: true } : {}),
       ...this.hasOnlineServicesWhere,
     };
 
     if (!withTree) {
-      return this.prisma.serviceGroup.findMany({
+      const rows = await this.prisma.serviceGroup.findMany({
         where,
         orderBy: { sortOrder: 'asc' },
         include: { _count: { select: { categories: true } } },
       });
+      return this.setCached(key, rows);
     }
 
     const groups = await this.prisma.serviceGroup.findMany({
@@ -70,15 +102,20 @@ export class CatalogService {
       },
     });
 
-    return groups.map((group) => ({
+    const shaped = groups.map((group) => ({
       ...group,
       categories: group.categories.filter(
         (category) => category.services.length > 0,
       ),
     }));
+    return this.setCached(key, shaped);
   }
 
   async findGroupBySlug(slug: string) {
+    const key = `group:${slug}`;
+    const cached = this.getCached<unknown>(key);
+    if (cached !== undefined) return cached;
+
     const group = await this.prisma.serviceGroup.findUnique({
       where: { slug },
       include: {
@@ -114,11 +151,15 @@ export class CatalogService {
       throw new NotFoundException('Không tìm thấy nhóm dịch vụ');
     }
 
-    return { ...group, categories };
+    return this.setCached(key, { ...group, categories });
   }
 
-  findServices(groupSlug?: string) {
-    return this.prisma.service.findMany({
+  async findServices(groupSlug?: string) {
+    const key = `services:group=${groupSlug ?? ''}`;
+    const cached = this.getCached<unknown>(key);
+    if (cached !== undefined) return cached;
+
+    const rows = await this.prisma.service.findMany({
       where: {
         ...this.onlineServiceWhere,
         ...(groupSlug
@@ -142,9 +183,14 @@ export class CatalogService {
       },
       orderBy: { name: 'asc' },
     });
+    return this.setCached(key, rows);
   }
 
   async findServiceBySlug(slug: string) {
+    const key = `service:${slug}`;
+    const cached = this.getCached<unknown>(key);
+    if (cached !== undefined) return cached;
+
     const service = await this.prisma.service.findUnique({
       where: { slug },
       include: {
@@ -168,7 +214,7 @@ export class CatalogService {
       throw new NotFoundException('Không tìm thấy dịch vụ');
     }
 
-    return service;
+    return this.setCached(key, service);
   }
 
   async findServiceProviders(slug: string) {

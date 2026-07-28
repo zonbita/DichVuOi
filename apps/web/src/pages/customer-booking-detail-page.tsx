@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { BookingApplicantsList } from '../components/booking/booking-applicants-list';
 import { BookingChecklist } from '../components/booking/booking-checklist';
 import { BookingComplaintForm } from '../components/booking/booking-complaint-form';
 import { CustomerBookingCard } from '../components/customer/customer-booking-card';
@@ -50,6 +51,15 @@ export function CustomerBookingDetailPage() {
     },
   });
 
+  const selectMutation = useMutation({
+    mutationFn: (applicationId: string) =>
+      api.selectBookingApplicant(id, applicationId),
+    onSuccess: (booking) => {
+      queryClient.setQueryData(['booking', id], booking);
+      invalidate();
+    },
+  });
+
   if (loading || bookingQuery.isLoading) return <p>Đang tải đơn...</p>;
   if (!user) {
     return <Navigate to={`/dang-nhap?redirect=/don-cua-toi/don/${id}`} replace />;
@@ -69,6 +79,10 @@ export function CustomerBookingDetailPage() {
   }
 
   const booking = bookingQuery.data;
+  const showApplicants =
+    booking.status === 'PENDING' &&
+    !booking.partnerId &&
+    booking.paymentStatus === 'HELD';
 
   return (
     <div className="space-y-4 pb-6">
@@ -104,6 +118,20 @@ export function CustomerBookingDetailPage() {
           confirmMutation.mutate(acceptIncomplete)
         }
       />
+
+      {showApplicants ? (
+        <BookingApplicantsList
+          applications={booking.applications ?? []}
+          matchingDeadlineAt={booking.matchingDeadlineAt}
+          selecting={selectMutation.isPending}
+          onSelect={(applicationId) => selectMutation.mutate(applicationId)}
+        />
+      ) : null}
+      {selectMutation.isError ? (
+        <p className="text-sm text-red-600">
+          {(selectMutation.error as Error).message}
+        </p>
+      ) : null}
 
       <BookingChecklist booking={booking} mode="customer" />
 

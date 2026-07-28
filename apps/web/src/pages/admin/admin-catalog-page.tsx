@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { api, formatPrice } from '../../services/api';
+import { api, formatPrice, formatPriceNumber } from '../../services/api';
 import type { AdminService } from '../../types/admin';
 import { formatMarketPriceRange } from '../../utils/market-price';
 import {
@@ -263,7 +263,7 @@ export function AdminCatalogPage() {
 
               <div>
                 <label className="text-sm font-semibold" htmlFor="service-price">
-                  Giá đơn (₫) — khi tạo booking
+                  Giá đơn (VNĐ) — khi tạo booking
                 </label>
                 <input
                   id="service-price"
@@ -280,7 +280,7 @@ export function AdminCatalogPage() {
 
               <div>
                 <label className="text-sm font-semibold" htmlFor="service-price-min">
-                  Giá tham khảo min (₫)
+                  Giá tham khảo min (VNĐ)
                 </label>
                 <input
                   id="service-price-min"
@@ -297,7 +297,7 @@ export function AdminCatalogPage() {
 
               <div>
                 <label className="text-sm font-semibold" htmlFor="service-price-max">
-                  Giá tham khảo max (₫)
+                  Giá tham khảo max (VNĐ)
                 </label>
                 <input
                   id="service-price-max"
@@ -454,7 +454,8 @@ export function AdminCatalogPage() {
                         {service.category.group.name} › {service.category.name}
                       </td>
                       <td className="py-3 pr-3">
-                        {formatMarketPriceRange(service, formatPrice)}/{service.unit}
+                        {formatMarketPriceRange(service, formatPrice, formatPriceNumber)}/
+                        {service.unit}
                       </td>
                       <td className="py-3 pr-3">{service._count.partners}</td>
                       <td className="py-3 pr-3">{service._count.bookings}</td>

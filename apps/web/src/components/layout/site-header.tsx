@@ -44,7 +44,7 @@ function SearchBox({ className = '', onDark = false }: { className?: string; onD
 }
 
 export function SiteHeader() {
-  const { user, mode } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="sticky top-0 z-[200] bg-[var(--color-navy)] text-white shadow-[0_2px_12px_rgba(5,45,71,0.25)]">
@@ -86,29 +86,6 @@ export function SiteHeader() {
                         Admin
                       </Link>
                     ) : null}
-                    {mode === 'hire' ? (
-                      <Link
-                        to="/don-cua-toi"
-                        aria-label="Đơn thuê"
-                        className="btn-outline-gold flex items-center gap-2 px-2 py-1.5 text-[15px] sm:px-3"
-                      >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
-                          <Icon name="calendar" className="h-4 w-4 text-[var(--color-gold)]" />
-                        </span>
-                        <span className="hidden pr-1 sm:inline">Đơn thuê</span>
-                      </Link>
-                    ) : (
-                      <Link
-                        to="/doi-tac"
-                        aria-label="Nhận việc"
-                        className="flex items-center gap-2 rounded-full border border-white/20 px-2 py-1.5 text-[15px] font-semibold transition hover:bg-white/10 sm:px-3"
-                      >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
-                          <Icon name="briefcase" className="h-4 w-4 text-[var(--color-brand)]" />
-                        </span>
-                        <span className="hidden pr-1 sm:inline">Nhận việc</span>
-                      </Link>
-                    )}
                     <ModeSwitcher onDark />
                   </>
                 ) : (

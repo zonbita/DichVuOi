@@ -167,11 +167,7 @@ export function AddressMapPicker({
             </p>
           ) : null}
         </div>
-      ) : (
-        <p className="mt-2 text-xs text-[var(--color-muted)]">
-          Chưa cấu hình Google Maps API — nhập địa chỉ thủ công.
-        </p>
-      )}
+      ) : null}
 
       {error ? <p className="mt-1 text-sm text-red-600">{error}</p> : null}
     </div>

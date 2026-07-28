@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { api } from '../../services/api';
+import { catalogQueries } from '../../lib/catalog-queries';
 import { Icon } from '../ui/icon';
 import {
   CatalogMobileDrawer,
@@ -11,10 +11,7 @@ import {
 } from '../home/catalog-menu-shared';
 
 export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
-  const treeQuery = useQuery({
-    queryKey: ['groups', 'tree'],
-    queryFn: api.getGroupsTree,
-  });
+  const treeQuery = useQuery(catalogQueries.groupsTree);
 
   const groups = treeQuery.data ?? [];
   const [open, setOpen] = useState(false);

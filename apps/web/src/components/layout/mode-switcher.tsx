@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, type AppMode } from '../../features/auth/auth-context';
+import { formatPrice } from '../../services/api';
 import { Icon } from '../ui/icon';
 import { UserAvatar } from '../ui/user-avatar';
 
@@ -124,6 +125,9 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
             <div className="min-w-0">
               <p className="truncate text-[15px] font-extrabold leading-tight">{user.fullName}</p>
               <p className="mt-0.5 truncate text-xs text-[var(--color-muted)]">{user.email}</p>
+              <p className="mt-1 truncate text-xs font-semibold text-[var(--color-gold)]">
+                Ví: {formatPrice(user.walletBalance ?? 0)}
+              </p>
             </div>
           </div>
 

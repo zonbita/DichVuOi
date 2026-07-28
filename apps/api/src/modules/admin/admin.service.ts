@@ -13,6 +13,7 @@ import { defaultMarketRangeFromBase } from '../../common/market-price';
 import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
 import { slugify } from '../../common/slug';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { CatalogService } from '../catalog/catalog.service';
 import { FinanceService } from '../finance/finance.service';
 import {
   AdminBookingQueryDto,
@@ -57,6 +58,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly finance: FinanceService,
+    private readonly catalog: CatalogService,
   ) {}
 
   async stats() {
@@ -631,7 +633,7 @@ export class AdminService {
       priceMax = t;
     }
 
-    return this.prisma.service.create({
+    const created = await this.prisma.service.create({
       data: {
         slug,
         name: dto.name.trim(),
@@ -657,6 +659,8 @@ export class AdminService {
         _count: { select: { bookings: true, partners: true } },
       },
     });
+    this.catalog.invalidateCache();
+    return created;
   }
 
   async updateService(id: string, dto: AdminUpdateServiceDto) {
@@ -680,7 +684,7 @@ export class AdminService {
       }
     }
 
-    return this.prisma.service.update({
+    const updated = await this.prisma.service.update({
       where: { id },
       data: {
         ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
@@ -715,13 +719,15 @@ export class AdminService {
         _count: { select: { bookings: true, partners: true } },
       },
     });
+    this.catalog.invalidateCache();
+    return updated;
   }
 
   async updateGroup(id: string, dto: AdminUpdateGroupDto) {
     const group = await this.prisma.serviceGroup.findUnique({ where: { id } });
     if (!group) throw new NotFoundException('Không tìm thấy nhóm');
 
-    return this.prisma.serviceGroup.update({
+    const updated = await this.prisma.serviceGroup.update({
       where: { id },
       data: {
         ...(dto.isFeatured !== undefined
@@ -730,5 +736,7 @@ export class AdminService {
       },
       select: { id: true, slug: true, name: true, isFeatured: true },
     });
+    this.catalog.invalidateCache();
+    return updated;
   }
 }

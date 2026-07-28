@@ -102,6 +102,13 @@ export function CustomerBookingCard({
           <p className="text-sm text-[var(--color-muted)]">
             {new Date(booking.scheduledAt).toLocaleString('vi-VN')}
           </p>
+          {booking.status === 'CONFIRMED' && booking.responseDeadlineAt ? (
+            <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
+              Người làm phải bắt đầu trước{' '}
+              {new Date(booking.responseDeadlineAt).toLocaleString('vi-VN')} —
+              quá hạn tịch thu cọc 10% và mở lại đơn.
+            </p>
+          ) : null}
           {booking.partner ? (
             <p className="mt-2 text-sm">
               Người làm:{' '}

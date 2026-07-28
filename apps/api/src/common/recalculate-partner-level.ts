@@ -3,16 +3,12 @@ import {
   computePartnerLevel,
   type PartnerLevelBreakdown,
 } from './partner-level';
-import { hoursWorkedByServiceIds } from './partner-work-hours';
 
 /**
- * Tính lại level từ dữ liệu thật trên sàn và ghi vào PartnerProfile.level.
+ * Tính lại level từ giờ online + đơn/★… và ghi vào PartnerProfile.level.
  */
 export async function recalculatePartnerLevel(
-  prisma: Pick<
-    PrismaClient,
-    'partnerProfile' | 'booking' | 'partnerService'
-  >,
+  prisma: Pick<PrismaClient, 'partnerProfile' | 'booking' | 'partnerService'>,
   partnerUserId: string,
 ): Promise<PartnerLevelBreakdown | null> {
   const profile = await prisma.partnerProfile.findUnique({
@@ -22,22 +18,22 @@ export async function recalculatePartnerLevel(
       ratingAvg: true,
       ratingCount: true,
       isVerified: true,
+      onlineSeconds: true,
     },
   });
   if (!profile) return null;
 
-  const [completedJobs, activeOfferings, hoursByService] = await Promise.all([
+  const [completedJobs, activeOfferings] = await Promise.all([
     prisma.booking.count({
       where: { partnerId: partnerUserId, status: 'COMPLETED' },
     }),
     prisma.partnerService.count({
       where: { partnerProfileId: profile.id, isActive: true },
     }),
-    hoursWorkedByServiceIds(prisma, partnerUserId),
   ]);
 
   const breakdown = computePartnerLevel({
-    hoursByService,
+    onlineHours: profile.onlineSeconds / 3600,
     completedJobs,
     ratingAvg: profile.ratingAvg,
     ratingCount: profile.ratingCount,

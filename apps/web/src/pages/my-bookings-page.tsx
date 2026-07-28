@@ -146,16 +146,8 @@ export function MyBookingsPage() {
               Live
             </span>
           </div>
-          <p className="mt-2 max-w-2xl text-[15px] text-[var(--color-muted)]">
-            Xin chào {user.fullName} — ví{' '}
-            <Link to="/don-cua-toi/vi" className="font-bold text-[var(--color-brand-deep)]">
-              {formatPrice(user.walletBalance ?? 0)}
-            </Link>
-            . <strong className="text-[var(--color-ink)]">Đặt cọc từ ví VNĐ</strong> trước khi
-            đơn vào hàng chờ / chat.
-          </p>
         </div>
-        <Link to="/nhom" className="btn-primary px-4 py-2.5 text-sm">
+        <Link to="/don-cua-toi/thue" className="btn-primary px-4 py-2.5 text-sm">
           Thuê dịch vụ mới
         </Link>
       </header>

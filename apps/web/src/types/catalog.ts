@@ -98,6 +98,32 @@ export type BookingReview = {
   createdAt: string;
 };
 
+export type BookingApplication = {
+  id: string;
+  bookingId: string;
+  partnerId: string;
+  depositAmount: number;
+  depositStatus: PaymentStatus | string;
+  status: 'APPLIED' | 'SELECTED' | 'REJECTED' | 'WITHDRAWN' | 'REFUNDED' | string;
+  note?: string | null;
+  createdAt: string;
+  partner?: {
+    id: string;
+    fullName: string;
+    phone?: string | null;
+    email?: string;
+    partnerProfile?: {
+      headline?: string | null;
+      ratingAvg?: number;
+      ratingCount?: number;
+      level?: number;
+      avatarUrl?: string | null;
+      city?: string | null;
+      isVerified?: boolean;
+    } | null;
+  } | null;
+};
+
 export type Booking = {
   id: string;
   userId?: string;
@@ -119,12 +145,17 @@ export type Booking = {
   releasedAt?: string | null;
   refundedAt?: string | null;
   confirmDeadlineAt?: string | null;
+  matchingDeadlineAt?: string | null;
+  responseDeadlineAt?: string | null;
   disputeResultNote?: string | null;
   customerPhoneMasked?: boolean;
   addressMasked?: boolean;
   contactPolicy?: ContactPolicy;
   reviews?: BookingReview[];
   requirements?: BookingRequirement[];
+  applications?: BookingApplication[];
+  applicationCount?: number;
+  applyDepositAmount?: number;
   service: Service;
   partner?: {
     id: string;
@@ -230,6 +261,22 @@ export type FavoritePartner = {
     price: number;
     unit: string;
   } | null;
+};
+
+/** Kết quả tìm người làm theo tên / nghề (`GET /api/partners/search`). */
+export type PartnerSearchHit = {
+  userId: string;
+  fullName: string;
+  avatarUrl: string | null;
+  headline: string | null;
+  ratingAvg: number;
+  level: number;
+  isVerified: boolean;
+  serviceSlug: string | null;
+  serviceName: string | null;
+  price: number | null;
+  unit: string | null;
+  matchReason: 'name' | 'profession';
 };
 
 /** Gợi ý thuê lại từ đơn COMPLETED. */

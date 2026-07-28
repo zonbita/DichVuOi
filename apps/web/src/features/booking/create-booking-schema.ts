@@ -2,6 +2,20 @@ import { z } from 'zod';
 
 const phoneRegex = /^(0|\+84)\d{8,10}$/;
 
+/** Giá trị cho `<input type="datetime-local">` theo giờ máy local. */
+export function toDatetimeLocalValue(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Mặc định = thời điểm hiện tại (làm tròn phút; +1 phút nếu vừa trôi qua giây). */
+export function defaultScheduledAtLocal() {
+  const d = new Date();
+  d.setSeconds(0, 0);
+  if (d.getTime() < Date.now()) d.setMinutes(d.getMinutes() + 1);
+  return toDatetimeLocalValue(d);
+}
+
 export const createBookingSchema = z.object({
   customerName: z
     .string()
@@ -27,8 +41,8 @@ export const createBookingSchema = z.object({
     .refine((value) => !Number.isNaN(new Date(value).getTime()), {
       message: 'Thời gian không hợp lệ',
     })
-    .refine((value) => new Date(value).getTime() > Date.now(), {
-      message: 'Thời gian hẹn phải ở tương lai',
+    .refine((value) => new Date(value).getTime() >= Date.now() - 60_000, {
+      message: 'Thời gian hẹn không được ở quá khứ',
     }),
   note: z.string().trim().optional(),
 });

@@ -90,11 +90,11 @@ export function LocationPicker({
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Tìm tỉnh / thành..."
                 aria-label="Tìm tỉnh thành"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--color-muted)]"
+                className="min-w-0 flex-1 bg-transparent text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-muted)]"
               />
             </div>
           </div>
-          <ul className="max-h-64 overflow-y-auto py-1">
+          <ul className="max-h-64 overflow-y-auto py-1 text-[var(--color-ink)]">
             {results.length === 0 ? (
               <li className="px-3 py-3 text-sm text-[var(--color-muted)]">Không tìm thấy</li>
             ) : (
@@ -107,7 +107,7 @@ export function LocationPicker({
                       role="option"
                       aria-selected={active}
                       onClick={() => pick(province.slug)}
-                      className={`flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-[15px] transition hover:bg-[var(--color-brand-soft)] ${
+                      className={`flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-[15px] text-[var(--color-ink)] transition hover:bg-[var(--color-brand-soft)] ${
                         active ? 'bg-[var(--color-brand-soft)] font-bold text-[var(--color-brand-deep)]' : ''
                       }`}
                     >

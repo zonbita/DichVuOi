@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { formatPrice } from '../../services/api';
+import { formatPrice, formatPriceNumber } from '../../services/api';
 import type { Service } from '../../types/catalog';
 import { displayStats } from '../../utils/catalog-display';
 import { serviceImage } from '../../utils/catalog-images';
@@ -9,7 +9,7 @@ import { Icon, StarIcon } from '../ui/icon';
 export function DealCard({ service }: { service: Service }) {
   const stats = displayStats(service.id);
   const image = serviceImage(service);
-  const rangeLabel = formatMarketPriceRange(service, formatPrice);
+  const rangeLabel = formatMarketPriceRange(service, formatPrice, formatPriceNumber);
 
   return (
     <Link

@@ -38,6 +38,8 @@ type CatalogOverlayHeroProps = {
   aside?: ReactNode;
   footer?: ReactNode;
   tall?: boolean;
+  /** Thanh hero 80px — một hàng ngang (trang nghề). */
+  compact?: boolean;
 };
 
 function OnlineBadge({ color }: { color: GroupColor }) {
@@ -73,7 +75,47 @@ export function CatalogOverlayHero({
   aside,
   footer,
   tall = false,
+  compact = false,
 }: CatalogOverlayHeroProps) {
+  if (compact) {
+    return (
+      <div className="relative h-20 w-full overflow-hidden shadow-sm ring-1 ring-black/5">
+        <img
+          src={image}
+          alt={imageAlt}
+          className="catalog-photo absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/35"
+          aria-hidden
+        />
+        <div className="relative flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5">
+          <Link
+            to={backTo}
+            className="inline-flex max-w-[38%] shrink-0 items-center truncate rounded-full bg-white px-2.5 py-1 text-[11px] font-bold shadow-sm transition hover:brightness-95 sm:max-w-none sm:px-3 sm:text-xs"
+            style={{ color: color.main }}
+            title={backLabel}
+          >
+            {backLabel}
+          </Link>
+
+          <div className="min-w-0 flex-1 text-white">
+            <h1 className="truncate text-sm font-extrabold tracking-tight drop-shadow-sm sm:text-base lg:text-lg">
+              {title}
+            </h1>
+            {subtitle ? (
+              <p className="mt-0.5 hidden truncate text-[11px] text-white/80 sm:block">
+                {subtitle}
+              </p>
+            ) : null}
+          </div>
+
+          {aside ? <div className="shrink-0">{aside}</div> : null}
+        </div>
+      </div>
+    );
+  }
+
   const minH = tall ? 'min-h-[340px] sm:min-h-[380px]' : 'min-h-[280px] sm:min-h-[320px]';
 
   return (

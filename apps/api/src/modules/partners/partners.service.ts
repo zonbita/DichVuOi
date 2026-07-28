@@ -15,6 +15,7 @@ import {
   serializeSkills,
   serializeWorkModes,
 } from '../../common/partner-profile-fields';
+import { phraseMatch } from '../../common/text-match';
 import { hoursWorkedByServiceIds } from '../../common/partner-work-hours';
 import {
   computePartnerLevel,
@@ -225,6 +226,104 @@ export class PartnersService {
     };
   }
 
+  /**
+   * Tìm người làm công khai theo tên hoặc nghề (cụm từ, không dấu).
+   * Không trả SĐT/email.
+   */
+  async searchPublic(q: string, limit = 24) {
+    const keyword = q.trim();
+    if (!keyword) return [];
+
+    const take = Math.min(Math.max(limit, 1), 48);
+    const profiles = await this.prisma.partnerProfile.findMany({
+      where: { acceptingJobs: true },
+      select: {
+        userId: true,
+        headline: true,
+        bio: true,
+        skillsJson: true,
+        ratingAvg: true,
+        level: true,
+        isVerified: true,
+        avatarUrl: true,
+        user: { select: { id: true, fullName: true } },
+        offerings: {
+          where: { isActive: true },
+          select: {
+            price: true,
+            headline: true,
+            service: {
+              select: {
+                slug: true,
+                name: true,
+                unit: true,
+                basePrice: true,
+              },
+            },
+          },
+          take: 40,
+        },
+      },
+      orderBy: [{ ratingAvg: 'desc' }, { level: 'desc' }],
+      take: 300,
+    });
+
+    const hits: Array<{
+      userId: string;
+      fullName: string;
+      avatarUrl: string | null;
+      headline: string | null;
+      ratingAvg: number;
+      level: number;
+      isVerified: boolean;
+      serviceSlug: string | null;
+      serviceName: string | null;
+      price: number | null;
+      unit: string | null;
+      matchReason: 'name' | 'profession';
+    }> = [];
+
+    for (const profile of profiles) {
+      if (hits.length >= take) break;
+
+      const nameHit = phraseMatch(profile.user.fullName, keyword);
+      const professionHay = [
+        profile.headline ?? '',
+        profile.bio ?? '',
+        profile.skillsJson ?? '',
+        ...profile.offerings.map(
+          (o) => `${o.service.name} ${o.headline ?? ''}`,
+        ),
+      ].join(' ');
+      const professionHit = phraseMatch(professionHay, keyword);
+      if (!nameHit && !professionHit) continue;
+
+      const matchedOffering =
+        profile.offerings.find((o) =>
+          phraseMatch(`${o.service.name} ${o.headline ?? ''}`, keyword),
+        ) ?? profile.offerings[0] ?? null;
+
+      hits.push({
+        userId: profile.userId,
+        fullName: profile.user.fullName,
+        avatarUrl: profile.avatarUrl,
+        headline: profile.headline,
+        ratingAvg: profile.ratingAvg,
+        level: profile.level,
+        isVerified: profile.isVerified,
+        serviceSlug: matchedOffering?.service.slug ?? null,
+        serviceName: matchedOffering?.service.name ?? null,
+        price: matchedOffering
+          ? matchedOffering.price ?? matchedOffering.service.basePrice
+          : null,
+        unit: matchedOffering?.service.unit ?? null,
+        matchReason: nameHit ? 'name' : 'profession',
+      });
+    }
+
+    return hits;
+  }
+
   async getPublicProfile(userId: string) {
     const profile = await this.prisma.partnerProfile.findUnique({
       where: { userId },
@@ -350,9 +449,15 @@ export class PartnersService {
 
     const role = user.role === Role.ADMIN ? Role.ADMIN : Role.PARTNER;
 
+    const phone =
+      dto.phone !== undefined ? dto.phone.trim().slice(0, 20) || null : undefined;
+
     await this.prisma.user.update({
       where: { id: userId },
-      data: { role },
+      data: {
+        role,
+        ...(phone !== undefined ? { phone } : {}),
+      },
     });
 
     const profile = await this.prisma.partnerProfile.create({
@@ -381,6 +486,12 @@ export class PartnersService {
 
   async updateMine(userId: string, dto: UpdatePartnerProfileDto) {
     await this.getMine(userId);
+    if (dto.phone !== undefined) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { phone: dto.phone.trim().slice(0, 20) || null },
+      });
+    }
     await this.prisma.partnerProfile.update({
       where: { userId },
       data: {
@@ -438,6 +549,8 @@ export class PartnersService {
         ratingAvg: true,
         ratingCount: true,
         isVerified: true,
+        onlineSeconds: true,
+        lastOnlineAt: true,
         offerings: {
           where: { isActive: true },
           select: {
@@ -449,19 +562,12 @@ export class PartnersService {
     });
     if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
 
-    const [completedJobs, hoursByService] = await Promise.all([
-      this.prisma.booking.count({
-        where: { partnerId: userId, status: 'COMPLETED' },
-      }),
-      hoursWorkedByServiceIds(
-        this.prisma,
-        userId,
-        profile.offerings.map((o) => o.serviceId),
-      ),
-    ]);
+    const completedJobs = await this.prisma.booking.count({
+      where: { partnerId: userId, status: 'COMPLETED' },
+    });
 
     const breakdown = computePartnerLevel({
-      hoursByService,
+      onlineHours: profile.onlineSeconds / 3600,
       completedJobs,
       ratingAvg: profile.ratingAvg,
       ratingCount: profile.ratingCount,
@@ -469,25 +575,19 @@ export class PartnersService {
       activeOfferings: profile.offerings.length,
     });
 
-    const serviceName = new Map(
-      profile.offerings.map((o) => [o.serviceId, o.service]),
-    );
-
     return {
       storedLevel: profile.level,
       formula: PARTNER_LEVEL_FORMULA,
       ...breakdown,
-      hoursByServicePoints: breakdown.hoursByServicePoints.map((row) => ({
-        ...row,
-        serviceName: serviceName.get(row.serviceId)?.name ?? null,
-        serviceSlug: serviceName.get(row.serviceId)?.slug ?? null,
-      })),
       inputs: {
         completedJobs,
         ratingAvg: profile.ratingAvg,
         ratingCount: profile.ratingCount,
         isVerified: profile.isVerified,
         activeOfferings: profile.offerings.length,
+        onlineSeconds: profile.onlineSeconds,
+        onlineHours: breakdown.onlineHours,
+        lastOnlineAt: profile.lastOnlineAt,
       },
     };
   }

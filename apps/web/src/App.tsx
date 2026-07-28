@@ -68,6 +68,7 @@ export default function App() {
             <Route path="/don-cua-toi" element={<MyBookingsPage />} />
             <Route path="/don-cua-toi/don/:id" element={<CustomerBookingDetailPage />} />
             <Route path="/don-cua-toi/thue" element={<HireServicePage />} />
+            <Route path="/don-cua-toi/ho-so" element={<PartnerDashboardPage />} />
             <Route path="/don-cua-toi/vi" element={<WalletPage basePath="/don-cua-toi" />} />
             <Route
               path="/don-cua-toi/hoa-don"

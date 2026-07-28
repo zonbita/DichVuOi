@@ -100,7 +100,7 @@ export function BookingSuccessPage() {
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link
           to={`/don-cua-toi/don/${data.id}`}
-          className="inline-block bg-[var(--color-ink)] px-5 py-2.5 text-sm font-semibold text-white"
+          className="btn-navy inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold"
         >
           Xem chi tiết đơn
         </Link>

@@ -85,6 +85,13 @@ export function PartnerBookingCard({
           <p className="text-sm text-[var(--color-muted)]">
             {new Date(booking.scheduledAt).toLocaleString('vi-VN')}
           </p>
+          {booking.status === 'CONFIRMED' && booking.responseDeadlineAt ? (
+            <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
+              SLA phản hồi: vào «Bắt đầu làm» trước{' '}
+              {new Date(booking.responseDeadlineAt).toLocaleString('vi-VN')} —
+              quá hạn mất cọc ứng tuyển, đơn mở lại hàng chờ.
+            </p>
+          ) : null}
 
           {booking.status === 'CONFIRMED' ||
           booking.status === 'IN_PROGRESS' ||

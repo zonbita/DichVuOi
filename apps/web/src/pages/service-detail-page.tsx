@@ -18,6 +18,7 @@ import {
 import { ServiceHeroPricePanel } from '../components/catalog/service-hero-price-panel';
 import {
   createBookingSchema,
+  defaultScheduledAtLocal,
   type CreateBookingFormValues,
 } from '../features/booking/create-booking-schema';
 import { useAuth } from '../features/auth/auth-context';
@@ -93,12 +94,6 @@ function PartnerAvatar({
   );
 }
 
-function shortTrade(headline: string | null | undefined) {
-  if (!headline) return '';
-  const part = headline.split('·')[0]?.trim() || headline.trim();
-  return part.length > 28 ? `${part.slice(0, 26)}…` : part;
-}
-
 function ProviderTile({
   provider,
   unit,
@@ -115,7 +110,6 @@ function ProviderTile({
   const { partner } = provider;
   const [hover, setHover] = useState(false);
   const [pos, setPos] = useState({ left: 0, top: 0 });
-  const trade = shortTrade(provider.headline || partner.headline);
 
   function onMove(event: MouseEvent<HTMLElement>) {
     setPos(clampTooltipPosition(event.clientX, event.clientY));
@@ -157,9 +151,6 @@ function ProviderTile({
         <h3 className="mt-2 line-clamp-2 min-h-[2.5rem] text-lg font-extrabold leading-snug text-[var(--color-ink)]">
           {partner.fullName}
         </h3>
-        <p className="mt-0.5 line-clamp-1 min-h-[1rem] text-sm font-semibold text-[var(--color-brand-deep)]">
-          {trade || '\u00A0'}
-        </p>
         {partner.reputation ? (
           <div className="mt-2 w-full max-w-[200px]">
             <ReputationProgressBar reputation={partner.reputation} variant="compact" />
@@ -357,7 +348,7 @@ export function ServiceDetailPage() {
       customerPhone: '',
       customerEmail: '',
       address: '',
-      scheduledAt: '',
+      scheduledAt: defaultScheduledAtLocal(),
       note: '',
     },
   });
@@ -478,73 +469,71 @@ export function ServiceDetailPage() {
   const color = groupColor(service.category.group.slug);
 
   return (
-    <div className="animate-fade-up space-y-10">
-      <div
-        className={`grid gap-8 ${showHirePanel ? 'lg:grid-cols-[1.2fr_0.8fr]' : 'lg:grid-cols-1'}`}
-      >
-        <section>
-          <CatalogOverlayHero
-            image={image}
-            imageAlt={service.name}
-            backTo={`/nhom/${service.category.group.slug}`}
-            backLabel={`← ${service.category.group.name}`}
-            title={service.name}
-            subtitle={service.description ?? undefined}
-            color={color}
-            tall
-            onlineBadgePlacement="inline"
-            aside={
-              <ServiceHeroPricePanel
-                basePrice={service.basePrice}
-                min={service.priceMin}
-                max={service.priceMax}
-                unit={service.unit}
-                durationMin={service.durationMin}
-              />
-            }
-          />
-          {!isHireMode ? (
-            <p className="mt-4 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-[15px] text-[var(--color-brand-deep)]">
-              Bạn đang ở mode <strong>Người làm</strong> — form thuê ẩn. Chuyển sang{' '}
-              <strong>Khách thuê</strong> trên menu tài khoản để thuê dịch vụ.
-            </p>
-          ) : null}
-        </section>
-
-        {showHirePanel ? (
-          <aside className="surface-card flex flex-col justify-center gap-4 p-5 sm:p-6">
-            <h2 className="text-xl font-extrabold">Thuê dịch vụ này</h2>
-            <p
-              className="rounded-xl px-3 py-2 text-[15px]"
-              style={{ backgroundColor: color.soft, color: color.ink }}
-            >
-              Đã chọn: <strong>{selectedProvider!.partner.fullName}</strong> · Giá chào{' '}
-              {formatPrice(selectedProvider!.price)}/{service.unit}
-            </p>
-            <p className="text-xs text-[var(--color-muted)]">
-              Sau khi tạo đơn bạn phải <strong>đặt cọc giữ chỗ</strong> mới vào hàng chờ / mở chat.
-            </p>
-            <button
-              type="button"
-              onClick={() => openBooking(selectedProvider)}
-              className="btn-primary px-4 py-3 text-[15px]"
-            >
-              {showBookingForm ? 'Cuộn tới form thuê' : 'Hiện form thuê dịch vụ'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedProvider(null);
-                setShowBookingForm(false);
-              }}
-              className="text-sm font-semibold hover:underline"
-              style={{ color: color.ink }}
-            >
-              Bỏ chọn người làm
-            </button>
-          </aside>
-        ) : null}
+    <div className="animate-fade-up space-y-8">
+      <div className="full-bleed -mt-6">
+        <CatalogOverlayHero
+          image={image}
+          imageAlt={service.name}
+          backTo={`/nhom/${service.category.group.slug}`}
+          backLabel={`← ${service.category.group.name}`}
+          title={service.name}
+          subtitle={service.description ?? undefined}
+          color={color}
+          compact
+          showOnlineBadge={false}
+          aside={
+            <ServiceHeroPricePanel
+              basePrice={service.basePrice}
+              min={service.priceMin}
+              max={service.priceMax}
+              unit={service.unit}
+              durationMin={service.durationMin}
+              compact
+            />
+          }
+        />
       </div>
+
+      {!isHireMode ? (
+        <p className="rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-[15px] text-[var(--color-brand-deep)]">
+          Bạn đang ở mode <strong>Người làm</strong> — form thuê ẩn. Chuyển sang{' '}
+          <strong>Khách thuê</strong> trên menu tài khoản để thuê dịch vụ.
+        </p>
+      ) : null}
+
+      {showHirePanel ? (
+        <aside className="surface-card flex flex-col justify-center gap-4 p-5 sm:p-6">
+          <h2 className="text-xl font-extrabold">Thuê dịch vụ này</h2>
+          <p
+            className="rounded-xl px-3 py-2 text-[15px]"
+            style={{ backgroundColor: color.soft, color: color.ink }}
+          >
+            Đã chọn: <strong>{selectedProvider!.partner.fullName}</strong> · Giá chào{' '}
+            {formatPrice(selectedProvider!.price)}/{service.unit}
+          </p>
+          <p className="text-xs text-[var(--color-muted)]">
+            Sau khi tạo đơn bạn phải <strong>đặt cọc giữ chỗ</strong> mới vào hàng chờ / mở chat.
+          </p>
+          <button
+            type="button"
+            onClick={() => openBooking(selectedProvider)}
+            className="btn-primary px-4 py-3 text-[15px]"
+          >
+            {showBookingForm ? 'Cuộn tới form thuê' : 'Hiện form thuê dịch vụ'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedProvider(null);
+              setShowBookingForm(false);
+            }}
+            className="text-sm font-semibold hover:underline"
+            style={{ color: color.ink }}
+          >
+            Bỏ chọn người làm
+          </button>
+        </aside>
+      ) : null}
 
       {showHirePanel && showBookingForm ? (
         <section id="booking-form" className="surface-card animate-fade-in p-5 sm:p-6">

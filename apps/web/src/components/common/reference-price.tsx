@@ -1,4 +1,4 @@
-import { formatPrice } from '../../services/api';
+import { formatPrice, formatPriceNumber } from '../../services/api';
 import { marketPriceRange } from '../../utils/market-price';
 
 type Props = {
@@ -36,9 +36,10 @@ export function ReferencePrice({
         formatPrice(range.min)
       ) : (
         <>
-          {formatPrice(range.min)}
+          {formatPriceNumber(range.min)}
           <span className="mx-1 font-semibold text-[var(--color-muted)]">–</span>
-          {formatPrice(range.max)}
+          {formatPriceNumber(range.max)}
+          <span className="ml-1">VNĐ</span>
         </>
       )}
       {unit ? (
@@ -53,8 +54,20 @@ export function ReferencePrice({
         <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
           Giá tham khảo
         </span>
-        <span className="text-base font-extrabold text-[var(--color-sale)] sm:text-lg">
-          {price}
+        <span className="text-sm font-extrabold text-[var(--color-sale)]">
+          {same ? (
+            formatPrice(range.min)
+          ) : (
+            <>
+              {formatPriceNumber(range.min)}
+              <span className="mx-0.5 font-semibold text-[var(--color-muted)]">–</span>
+              {formatPriceNumber(range.max)}
+              <span className="ml-0.5">VNĐ</span>
+            </>
+          )}
+          {unit ? (
+            <span className="text-xs font-semibold text-[var(--color-muted)]">/{unit}</span>
+          ) : null}
         </span>
       </span>
     );

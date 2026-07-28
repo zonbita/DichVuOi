@@ -60,11 +60,11 @@ Cùng 1 User
 
 | Nguồn | Khi nào | Ghi chú |
 |--------|---------|---------|
-| **Đặt cọc giữ chỗ (escrow)** | **Bắt buộc** ngay sau khi khách thuê / tạo đơn | Toàn bộ `totalPrice` giữ trên sàn (`UNPAID` → `HELD`). Chưa cọc → không vào hàng chờ, không chat, không lộ địa chỉ/SĐT cho partner. |
+| **Đặt cọc giữ chỗ (escrow)** | **Bắt buộc ngay khi tạo đơn** | Backend tự giam toàn bộ `totalPrice` từ ví (`HELD`). Ví thiếu tiền → **không tạo đơn**. Chưa `HELD` → không vào hàng chờ, không chat, không lộ địa chỉ/SĐT cho partner. |
 | **Hoa hồng theo đơn** | Khi `COMPLETED` → `RELEASED` | Mặc định **15%** (`commissionBps=1500`); phần còn lại `partnerPayout`. |
 
 - Không bán SĐT / “phí xem thông tin” tách rời — lộ liên hệ gắn **đơn đã cọc**.
-- Cổng thanh toán thật (MoMo/VNPay…) là bước tiếp; local dùng `POST /api/bookings/:id/pay` (mock).
+- Cổng thanh toán thật (MoMo/VNPay…) là bước tiếp. Local: giam cọc **tự động khi tạo đơn**; `POST /api/bookings/:id/pay` chỉ còn legacy/admin.
 - Hủy khi đang `HELD` → `REFUNDED` (chính sách phí hủy chi tiết có thể siết sau).
 
 ## Mô hình pháp lý & trách nhiệm (marketplace)
@@ -73,7 +73,7 @@ Cùng 1 User
 
 | Bên | Vai trò | Trách nhiệm chính |
 |-----|---------|-------------------|
-| **Khách thuê (A)** | Khách | Đặt lịch, đặt cọc, nhận dịch vụ, đánh giá / khiếu nại theo quy trình |
+| **Khách thuê (A)** | Khách | Đặt lịch (tự giam cọc từ ví), nhận dịch vụ, đánh giá / khiếu nại theo quy trình |
 | **Người làm (B)** | **Đối tác độc lập** | Thực hiện dịch vụ; chịu trách nhiệm dân sự / hình sự nếu gây thiệt hại (ví dụ chiếm đoạt tài sản) |
 | **Sàn Dich Vụ Ơi** | Trung gian | Catalog, kết nối, escrow, chat in-app, rating, hỗ trợ khiếu nại, hợp tác cơ quan có thẩm quyền khi được yêu cầu hợp pháp |
 
@@ -100,7 +100,7 @@ Không miễn mọi trách nhiệm; giúp chứng minh sàn đã **quản lý r�
 | Biện pháp | Trạng thái |
 |-----------|------------|
 | Điều khoản / chính sách phân định trách nhiệm các bên | **Có** — trang `/dieu-khoan`, `/chinh-sach-doi-tac`, khiếu nại / hoàn tiền |
-| Escrow giữ tiền trên sàn + lịch sử đơn / thanh toán | **Có** (mock pay local; cổng thật sau) |
+| Escrow giữ tiền trên sàn + lịch sử đơn / thanh toán | **Có** (tự giam cọc từ ví khi tạo đơn; cổng thật sau) |
 | Chat in-app + lọc PII; che SĐT public | **Có** |
 | Đánh giá sau `COMPLETED`; badge verified admin | **Có** (verified = duyệt vận hành) |
 | Admin khóa / xử lý đơn, flagged PII, hàng đợi duyệt partner | **Có một phần** |
@@ -140,7 +140,7 @@ Khi đưa lên production tại Việt Nam, nên thiết kế sớm (không ph�
 `Role` kỹ thuật: `CUSTOMER` (mặc định, phía thuê) → nâng `PARTNER` khi bật nhận việc; không tạo account thứ hai.
 
 - Đã có: thuê + danh sách Người làm theo dịch vụ; nhận việc; dual-role (bật nhận việc trên cùng account — tùy chọn, không bắt buộc).
-- Hồ sơ người làm giàu thông tin (skills, districts, workModes, acceptingJobs…) + trang `/nguoi/:userId`; ẩn SĐT/email public.
+- Hồ sơ người làm (UI dashboard): **SĐT, địa chỉ, nghề, giới thiệu kỹ năng** + trang công khai `/nguoi/:userId`; ẩn SĐT/email public.
 - **Chọn nhiều nghề** trên Hồ sơ người làm: UI tags kiểu UE5 (`ProfessionTagsInput`) → đồng bộ `PartnerService` qua `PUT /api/partners/me/offerings` (`serviceIds[]`, tối đa 40). Gắn lúc bật nhận việc hoặc khi sửa hồ sơ `/doi-tac`.
 
 ## Danh mục — cấu trúc 3 tầng
@@ -156,6 +156,18 @@ Nhóm bao quát (Group)     ← điều hướng trang chủ / mega menu
 - **Combo / Package** (mua nhiều dịch vụ một đơn) là entity riêng sau này, không nhét vào Group.
 - Trang chủ hiện **tất cả nhóm ngành nghề** (`GET /api/groups`); `isFeatured` vẫn dùng để gắn nhãn hot / ưu tiên admin nếu cần.
 - Catalog công khai (trang chủ, `/nhom`, menu nhóm, chi tiết dịch vụ) **chỉ hiện nghề online** (`Service.supportsOnline=true`). Nghề offline vẫn nằm trong DB/admin để quản trị; không lộ ra marketplace.
+
+### Cache catalog (giảm tải + offline nhẹ)
+
+Catalog ít đổi — cache **hai tầng** (FE + BE). Không thay Redis production; đủ cho MVP local / traffic vừa.
+
+| Tầng | Cơ chế | TTL / hành vi |
+|------|--------|----------------|
+| **Web** | TanStack Query (`catalogQueries`) + `localStorage` key `dichvuoi_catalog_cache_v1` | Hiện bản đã lưu trước → rồi refetch API (timeout ~4s). API lỗi mà còn cache → vẫn hiện nhóm/dịch vụ + banner «đang dùng danh mục đã lưu». `staleTime` 5 phút; tắt refetch on focus/reconnect. |
+| **API** | In-memory Map trong `CatalogService` | TTL **60s** cho `GET /groups`, `/groups/:slug`, `/services`, `/services/:slug`. **Không** cache `…/partners` (thợ đổi thường). Admin tạo/sửa dịch vụ hoặc nhóm → `invalidateCache()`. |
+| **HTTP** | `CatalogHttpCacheInterceptor` | `Cache-Control: public, max-age=60, stale-while-revalidate=300` + `ETag`; `If-None-Match` khớp → **304**. |
+
+File chính: `apps/web/src/lib/catalog-cache.ts`, `catalog-queries.ts`; `apps/api/src/modules/catalog/catalog.service.ts`, `catalog-http-cache.interceptor.ts`.
 
 ### Menu điều hướng (mega menu)
 
@@ -179,7 +191,7 @@ Nhóm bao quát (Group)     ← điều hướng trang chủ / mega menu
 | **Bếp - đời sống** | Nấu ăn theo bữa, meal prep tuần, đi chợ hộ, giặt ủi, may sửa đồ, ủi đồ công sở, nấu tiệc nhỏ tại nhà, pha chế/đồ uống sự kiện | Sau MVP |
 | **Xe - vận chuyển** | Rửa xe tại nhà, đánh bóng xe, cứu hộ xe nhẹ, tài xế theo giờ, chuyển nhà nhẹ, bê đồ văn phòng, giao hàng đặc biệt, thuê xe kèm tài | Một phần sau |
 | **Học tập - ngoại ngữ** | Gia sư Toán/Lý/Hóa/Văn, IELTS, tiếng Anh giao tiếp, tiếng Trung/Nhật/Hàn, dạy nhạc (piano/guitar), dạy vẽ, tin học văn phòng, luyện thi đại học, dạy lập trình cho trẻ | Core MVP (gia sư) |
-| **Game - eSports** | Coaching Liên Quân/LMHT/Valorant, review replay, setup PC gaming, tối ưu FPS, dạy làm game cơ bản, edit stream/highlight, quản lý kênh game (không cày thuê / boosting) | MVP số — hạn chế cày thuê (ToS) |
+| **Game - eSports** | Coaching game (Lien Quân / LMHT / Valorant / PUBG / FC…), review replay, setup PC gaming, dạy làm game cơ bản, edit stream/highlight (không cày thuê / boosting) | MVP số — hạn chế cày thuê (ToS) |
 | **Lập trình - công nghệ** | Sửa máy/cài Windows, lập trình web/app nhỏ, fix bug, SEO kỹ thuật, Excel/macro, chatbot/API, WordPress, cài mạng văn phòng, hỗ trợ Google Workspace | MVP số |
 | **Thiết kế - sáng tạo nội dung** | Logo/banner, UI/UX, edit TikTok/Reels/Short, viết content, voice-over, thiết kế menu/catalogue, retouch ảnh, thiết kế slide thuyết trình | MVP số |
 | **Sự kiện - truyền thông** | Chụp/quay sự kiện, MC, livestream bán hàng, trang trí tiệc, ban nhạc acoustic, quay phóng sự ngắn, setup âm thanh ánh sáng nhỏ | Sau MVP |
@@ -237,6 +249,36 @@ Shadow: `--shadow-card` = `0 6px 24px rgba(7,59,92,0.08)` · `--shadow-hover` kh
 
 Radius token: `--radius-sm` 8px · `--radius-md` 12px · `--radius-lg` 14px · `--radius-xl` 16px.
 
+### Sidebar dashboard — icon tile (tham chiếu inventory UI)
+
+Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): icon đứng riêng trên nền tile, chữ label rõ, badge số góc phải.
+
+**Mockup tham chiếu:** `assets/dichvuoi-inventory-tile-style-reference.png` (sinh trong repo để team bám layout).
+
+| Thuộc tính | Giá trị / quy ước |
+|------------|-------------------|
+| Nền tile | `#0A0E14` – `#121820` (charcoal navy), hoặc nền trắng sidebar hiện tại + viền tile |
+| Viền tile | `1px` cyan/teal mờ `rgba(0, 156, 149, 0.25)`; active = glow `--color-brand` |
+| Bo góc | `8px` (`--radius-sm`) |
+| Icon | **Màu riêng từng mục** (không monochrome) — stroke `currentColor`, kích thước `18px` |
+| Label | Sans-serif, `600`, uppercase tùy ngữ cảnh; dashboard dùng title case tiếng Việt |
+| Badge số | Góc phải trên, nền amber `--color-gold` / `admin-badge-amber` |
+| Hover | Nền `--admin-bg` hoặc lift shadow nhẹ; icon **giữ màu** |
+
+**Màu icon sidebar khách thuê** (`user-dashboard-layout.tsx`):
+
+| Mục | Màu |
+|-----|-----|
+| Đơn thuê | `--color-brand` (teal) |
+| Thuê dịch vụ | `--color-gold` |
+| Ví VNĐ | `emerald-600` |
+| Hóa đơn | `--color-navy` |
+| Trợ giúp | `sky-600` |
+| Khiếu nại | `amber-600` |
+| Sang Nhận việc | `--color-navy` |
+
+**Không áp dụng** style inventory cho catalog ngành nghề (mega menu vẫn dùng [Bảng màu ngành nghề](#bảng-màu-ngành-nghề)).
+
 ### Header & trang chủ
 
 - Header navy (`site-header.tsx`): logo trái · search giữa · tài khoản phải; dropdown khu vực / nhóm dịch vụ dùng prop `onDark`.
@@ -290,7 +332,7 @@ Slug lạ / thiếu màu → fallback `#0f9d8a` (chỉ cho **icon/viền ngành*
 - **Không** đổi màu giá (`--color-sale`), nút CTA chính (`.btn-primary`) hay trạng thái đơn theo ngành — các màu đó thuộc [hệ thống giao diện](#hệ-thống-giao-diện-ui).
 - Màu ngành chỉ dùng ở tầng **Group**; Category và Service kế thừa màu của group cha, không tự định nghĩa màu riêng.
 
-Nơi đang áp dụng **màu ngành** (icon / viền / chip nghề): `service-card.tsx`, `group-card.tsx`, `catalog-menu-shared.tsx`, `catalog-menu.tsx`, `service-tag-nav.tsx` (chỉ **icon**), `group-detail-page.tsx`, `group-detail-hero.tsx`, `service-detail-page.tsx` (accent nhóm), `groups-page.tsx`, `profession-tags-input.tsx`, `partner-profile-page.tsx` (chip nghề), `hire-service-form.tsx`.
+Nơi đang áp dụng **màu ngành** (icon / viền / chip nghề): `service-card.tsx`, `group-card.tsx`, `catalog-menu-shared.tsx`, `catalog-menu.tsx`, `service-tag-nav.tsx` (chỉ **icon**), `group-detail-page.tsx`, `group-detail-hero.tsx`, `service-detail-page.tsx` (accent nhóm), `groups-page.tsx`, `profession-tags-input.tsx`, `partner-profile-page.tsx` (chip nghề), `hire-service-form.tsx`, `hire-service-picker.tsx` (dropdown chọn nghề — `border-left` theo nhóm).
 
 ## Tỉnh / thành (khu vực)
 
@@ -334,15 +376,16 @@ Dropdown khu vực trên ô tìm kiếm header (icon pin + tên + chevron) — c
 
 Lọc danh sách Người làm theo tỉnh (trang dịch vụ) và seed `PartnerProfile.city` nên dùng cùng tên `Province.name` trong bảng trên.
 
-## Hồ sơ khách thuê / người làm (giàu thông tin)
+## Hồ sơ khách thuê / người làm
 
-Lấy cảm hứng độ sâu từ marketplace kiểu PlayerDuo, nhưng **mọi field phục vụ quyết định thuê hoặc nhận việc** — không copy donate / newsfeed / album đời tư.
+UI dashboard hiện **tối giản 4 mục**. Trang công khai `/nguoi/:userId` vẫn hiện thông tin phục vụ quyết định thuê — không copy donate / newsfeed / album đời tư.
 
 ### Ba tầng thông tin
 
 | Tầng | Nội dung | Mục đích |
 |------|----------|----------|
-| **Ai làm** (`PartnerProfile`) | avatar, tên, headline, bio, cấp, verified, city, **districts**, **skills**, **workModes** (onsite/online), **acceptingJobs**, **responseMinutes** | Tin cậy + phạm vi phục vụ |
+| **Ai làm** (UI dashboard) | **SĐT** (từ tài khoản), **địa chỉ/khu vực** (`districts`), **nghề** (`serviceIds` / tags), **giới thiệu kỹ năng** (`bio`) | Sửa hồ sơ nhận việc |
+| **Ai làm** (public `/nguoi/:userId`) | tên, bio, cấp, verified, districts, offerings… | Tin cậy + phạm vi phục vụ |
 | **Làm gì** (`PartnerService`) | giá, headline, KN, **includes** / **excludes** / **coverageNote** theo từng dịch vụ catalog | Chọn gói thuê cụ thể |
 | **Thuê thế nào** (`Booking`) | lịch, địa chỉ (hoặc link họp), note | Hoàn tất đơn |
 
@@ -352,12 +395,12 @@ Lấy cảm hứng độ sâu từ marketplace kiểu PlayerDuo, nhưng **mọi 
 - **Lộ liên hệ theo giai đoạn đơn** (chống bỏ sàn) — xem [Chống bỏ sàn](#chống-bỏ-sàn-disintermediation): việc mở che SĐT + địa chỉ; khách **không bao giờ** thấy SĐT/email partner; partner chỉ thấy SĐT khách từ `IN_PROGRESS`; kênh chính là **chat đơn** (`BookingMessage`).
 - Trang hồ sơ công khai: `/nguoi/:userId` — CTA Thuê dẫn về `/dich-vu/:slug`.
 - **Nhấp vào thẻ Người làm** (avatar / tên / giá trên lưới trang dịch vụ) → mở trang hồ sơ `/nguoi/:userId`. Hover chỉ xem nhanh; nút **Thuê** riêng để chọn người đặt lịch (không chuyển trang).
-- Dashboard `/doi-tac` sửa đủ field P0 (kỹ năng, quận, hình thức, đang nhận việc, phút phản hồi).
+- Dashboard `/doi-tac` hiện rút gọn form hồ sơ còn 4 mục chính: **SĐT** (sửa được), **địa chỉ/khu vực phục vụ**, **nghề bạn làm** (tags), **giới thiệu kỹ năng**.
 - **Không** đưa donate, feed MXH, cày thuê/boosting trái ToS vào hồ sơ.
 
-### Schema (P0 đã có)
+### Schema (đã có)
 
-`PartnerProfile`: `districts`, `skillsJson`, `acceptingJobs`, `workModes`, `responseMinutes`  
+`PartnerProfile`: `districts`, `bio` *(UI dashboard chỉ sửa các mục này + nghề qua offerings; field schema khác có thể còn trong DB)*  
 `PartnerService`: `includes`, `excludes`, `coverageNote`  
 `Booking`: `paymentStatus`, `commissionBps`, `commissionAmount`, `partnerPayout`, `paidAt` / `releasedAt` / `refundedAt`  
 `BookingMessage`: chat theo đơn (`body`, `redacted`)  
@@ -488,34 +531,154 @@ Mỗi ngành cần có: quy trình đặt lịch, cách tính giá, tiêu chuẩ
 
 ## Booking (thuê dịch vụ)
 
-Luồng đơn khi **Khách thuê** đặt (Prisma `BookingStatus`):
+Hai trục trạng thái song song: `BookingStatus` (tiến độ đơn) × `PaymentStatus` (escrow). Logic chính: `apps/api/src/modules/bookings/bookings.service.ts`; khiếu nại: `complaints.service.ts`.
+
+### Behavior tree — hiện tại (as-is)
 
 ```text
-PENDING → CONFIRMED → IN_PROGRESS → COMPLETED
-                 ↘ CANCELLED
+CREATE (ví đủ `totalPrice` / `budgetMax`)
+├─ Thuê mở (không partner)     → PENDING + HELD + matchingDeadlineAt (+7 ngày) + open queue
+│    └─ partner.apply (cọc 10% ví) → BookingApplication APPLIED
+│         └─ customer.selectApplicant → CONFIRMED + responseDeadlineAt (+4 giờ)
+│              (+ hoàn cọc ứng viên khác; giữ cọc 10% người được chọn)
+└─ Thuê thẳng (?partner=)      → CONFIRMED + HELD
+
+CREATE (ví thiếu) → lỗi, **không lưu đơn**
+*(Internally: tạo tạm `UNPAID` rồi `holdBooking`; fail → xóa đơn. `POST /bookings/:id/pay` chỉ legacy/admin.)*
+
+Hết matchingDeadlineAt khi vẫn PENDING → CANCELLED + hoàn escrow khách + hoàn cọc ứng tuyển
+
+CONFIRMED + HELD
+├─ Partner → IN_PROGRESS                    [bắt buộc HELD; clear responseDeadlineAt]
+├─ Hết responseDeadlineAt (chưa IN_PROGRESS)
+│    → tịch thu cọc ứng tuyển (APPLY_FORFEIT)
+│    → nếu còn hạn ghép: gỡ partner, về PENDING + open queue lại
+│    → nếu hết hạn ghép: CANCELLED + hoàn escrow khách
+├─ Partner hủy khi CONFIRMED → tịch thu cọc ứng tuyển + CANCELLED + hoàn escrow khách
+└─ Customer/Admin hủy khi CONFIRMED → hoàn cọc ứng tuyển + CANCELLED + hoàn escrow
+
+IN_PROGRESS
+└─ Partner → AWAITING_CONFIRM               [confirmDeadlineAt = now+48h]
+
+AWAITING_CONFIRM (escrow vẫn HELD)
+├─ Customer confirmCompletion → COMPLETED   [release; checklist thiếu → cần acceptIncomplete]
+├─ Hết 48h (lazy settle khi đọc/list đơn) → COMPLETED + RELEASED
+├─ Gửi khiếu nại → DISPUTED
+└─ Cancel: chỉ Admin
+
+DISPUTED (escrow vẫn HELD) — admin resolve complaint
+├─ REFUND            → CANCELLED + REFUNDED (+ trừ uy tín partner nếu VERIFIED)
+├─ RELEASE           → COMPLETED + RELEASED
+├─ RETRY_IN_PROGRESS → IN_PROGRESS
+├─ RETRY_AWAITING    → AWAITING_CONFIRM (+48h mới)
+└─ NONE              → giữ status + ghi note
+
+COMPLETED / CANCELLED → terminal
+```
+
+Chuỗi rút gọn:
+
+```text
+PENDING → CONFIRMED → IN_PROGRESS → AWAITING_CONFIRM ─┬─→ COMPLETED
+                                                      └─→ DISPUTED ─┬─→ COMPLETED / CANCELLED
+                                                                    └─→ IN_PROGRESS / AWAITING_CONFIRM (retry)
+         ↘ CANCELLED (sớm: PENDING/CONFIRMED; muộn: chỉ Admin)
 ```
 
 Escrow / đặt cọc (`PaymentStatus`):
 
 ```text
-UNPAID → HELD (POST /bookings/:id/pay — bắt buộc) → RELEASED (khi COMPLETED)
-                                      ↘ REFUNDED (khi CANCELLED lúc đang HELD)
+(tạo đơn) → HELD (auto từ ví; fail → không lưu đơn)
+           → RELEASED (khi COMPLETED)
+           ↘ REFUNDED (khi CANCELLED / REFUND khiếu nại lúc đang HELD)
+*(`UNPAID` chỉ tồn tại tạm / legacy; `POST /bookings/:id/pay` giữ cho admin/luồng cũ)*
 ```
 
-**Bắt buộc đặt cọc khi thuê**
+**Ai bấm cạnh nào**
 
-1. Customer đăng nhập → tạo đơn (`PENDING` chờ nhận, hoặc thuê thẳng → `CONFIRMED`), lúc này `paymentStatus=UNPAID`.
-2. Customer **đặt cọc giữ chỗ** (mock) → `HELD`. UI: nút trên `/dat-lich/:id` và `/don-cua-toi`.
+| Transition | Actor |
+|---|---|
+| `(create)→HELD` | Hệ thống khi tạo đơn (ví đủ); legacy `POST …/pay` / Admin |
+| Partner apply (cọc 10%) | Partner `POST …/apply` (cần HELD, đơn PENDING mở) |
+| `PENDING→CONFIRMED` | Customer `select` ứng viên (hoặc Admin); legacy `accept` = apply |
+| SLA phản hồi (+4h) | Set `responseDeadlineAt` khi select; partner phải `IN_PROGRESS` trước hạn |
+| Hết SLA / partner hủy lúc CONFIRMED | Tịch thu cọc (`APPLY_FORFEIT`); mở lại PENDING nếu còn hạn ghép |
+| `CONFIRMED→IN_PROGRESS` | Partner (cần HELD; clear SLA) |
+| `IN_PROGRESS→AWAITING_CONFIRM` | Partner |
+| `AWAITING_CONFIRM→COMPLETED` | Customer `confirmCompletion` / Admin / auto 48h |
+| `→DISPUTED` | Gửi khiếu nại (không PATCH status thường) |
+| `PENDING/CONFIRMED→CANCELLED` | Customer hoặc Partner |
+| Hủy từ `IN_PROGRESS` / `AWAITING_CONFIRM` / `DISPUTED` | Chỉ Admin |
+| Resolve dispute | Admin |
+
+**Bắt buộc đặt cọc khi thuê (as-is hiện tại)**
+
+1. Customer đăng nhập → tạo đơn (`PENDING` chờ nhận, hoặc thuê thẳng → `CONFIRMED`).
+2. Backend **giam cọc ngay trong cùng bước tạo đơn** theo `totalPrice` (đơn mở lấy theo `budgetMax` nếu có):
+   - ví đủ tiền: đơn lưu với `HELD`;
+   - ví không đủ: trả lỗi và rollback, **không tạo đơn**.
 3. Chỉ đơn `HELD` mới:
    - xuất hiện trong `GET /bookings/open` (hàng chờ partner);
-   - được `accept` (nhận việc);
+   - được `accept` / `apply` (nhận việc / ứng tuyển);
    - mở chat `GET|POST /bookings/:id/messages`;
    - lộ địa chỉ cho partner (sau `CONFIRMED`) theo `contact-privacy`.
 4. Partner **chỉ `IN_PROGRESS` khi đã `HELD`**.
-5. `COMPLETED` → giải ngân: `RELEASED`, trừ hoa hồng 15% (`commissionBps=1500`).
+5. `COMPLETED` → giải ngân: `RELEASED`, trừ hoa hồng 15% (`commissionBps=1500`); recalculate cấp partner.
 6. Review hai chiều sau `COMPLETED`: `POST /api/bookings/:id/reviews` (mỗi bên 1 lần).
+7. Checklist `BookingRequirement`: seed khi có partner; khách xác nhận bàn giao; gate hoàn thành nếu còn mục chưa tích (trừ `acceptIncomplete`).
 
-Xem hồ sơ / lưới người làm trên trang dịch vụ vẫn **miễn phí** — cọc chỉ khi đã tạo đơn thuê.
+Xem hồ sơ / lưới người làm trên trang dịch vụ vẫn **miễn phí** — cọc chỉ khi tạo đơn thuê thành công (đã giam ví).
+
+### Behavior tree — mục tiêu (to-be, product note)
+
+Sơ đồ product (chưa implement đủ) — khác as-is ở chỗ **chủ chọn người** và **cọc người làm**:
+
+```text
+Đơn thuê
+  • Thông tin thuê · danh sách yêu cầu · Money Min–Max
+  • Thời gian đóng đơn (giờ→ngày) · thời hạn ví dụ 7 ngày
+        ↓
+Chủ đơn đặt cọc 100%
+        ↓
+Pending — thông báo người làm đúng nghề;
+         người làm đăng ký → hiện trong list chủ đơn;
+         chủ theo dõi trạng thái
+        ├─ Người làm đặt cọc 10% → mới vào được danh sách
+        └─ Có thể huỷ
+        ↓
+Chủ thuê chọn 1 người để làm
+  ├─ Không → chọn người khác
+  └─ Có → Đang làm (mở chat + hiện thông tin)
+        ↓
+Chủ check list việc đã làm
+        ↓
+Upload file / link / ảnh / video (dữ liệu từ người làm)
+        ↓
+Hoàn thành
+  ├─ Nếu khiếu nại → Ban quản trị kiểm tra lại
+  └─ Chủ phải đủ 100% tiền
+       ├─ Làm đủ → OK
+       └─ Làm thiếu → trừ điểm uy tín + giảm tiền đơn
+        ↓
+Thanh toán cho 2 bên + source sàn
+```
+
+**Gap as-is ↔ to-be**
+
+| Ý to-be | As-is |
+|---|---|
+| Chủ cọc 100% | Có — **tự giam khi tạo đơn**; ví thiếu → không tạo đơn (`totalPrice` / đơn mở: `budgetMax`) |
+| Pending + thông báo đúng nghề | Một phần — open queue; chưa push notify theo nghề |
+| Người làm cọc 10% vào list | **Có** — `POST /bookings/:id/apply` (`APPLY_DEPOSIT`, 10% `totalPrice`) |
+| Chủ chọn 1 trong list ứng viên | **Có** — `POST /bookings/:id/applications/:appId/select` → `CONFIRMED` |
+| Chat + lộ thông tin khi đang làm | Có — sau `HELD` + có partner; lộ dần theo status |
+| Checklist việc | Có — `BookingRequirement` |
+| Upload đa media (file/ảnh/video) | Mỏng — `evidenceUrl` từng mục |
+| Thời hạn đóng đơn 7 ngày | **Có** — `matchingDeadlineAt` (+7 ngày); lazy settle hủy + hoàn cọc |
+| SLA phản hồi sau chọn (chống bỏ việc) | **Có** — `responseDeadlineAt` (+4 giờ); quá hạn / partner hủy lúc CONFIRMED → tịch thu cọc 10%, mở lại hàng chờ |
+| Khiếu nại → admin | Có — `DISPUTED` + resolve |
+| Làm thiếu → trừ uy tín + giảm tiền đơn | Một phần — trừ uy tín khi refund khiếu nại; chưa giảm payout theo % thiếu |
+| Thanh toán 2 bên + source | Có mock — `RELEASED` + `commissionBps`; hoàn cọc ứng tuyển khi hoàn thành / khách hủy; tịch thu khi no-show SLA |
 
 ## Admin
 
@@ -582,7 +745,7 @@ Mục tiêu thực tế (Upwork, Fiverr, Airbnb, TaskRabbit): **không chặn 10
 | **Che liên hệ** | Public không SĐT/email; việc mở che SĐT + địa chỉ; khách không thấy SĐT partner | Upwork, Fiverr |
 | **Chat in-app** | `BookingMessage` — lọc SĐT, email, Zalo/FB/Telegram; **chỉ sau khi đã cọc + có partner** | Fiverr Inbox |
 | **Lộ dần** | Địa chỉ đủ sau `CONFIRMED` **và** `HELD`; SĐT khách từ `IN_PROGRESS` | Handy / logistics |
-| **Tiền qua sàn** | **Bắt buộc đặt cọc** (`HELD`) trước hàng chờ / nhận việc / chat; ToS cấm CK ngoài | Upwork Milestone |
+| **Tiền qua sàn** | **Tạo đơn = giam cọc** (`HELD`); thiếu ví → không tạo đơn; ToS cấm CK ngoài | Upwork Milestone |
 | **Giá trị ở lại** | Rating, verified, dispute, bảo hiểm đơn (sau) | Airbnb |
 | **ToS + phạt** | Cấm trao đổi liên hệ ngoài kênh; suspend khi tái phạm | Mọi sàn lớn |
 
@@ -593,7 +756,7 @@ Utility: `apps/api/src/common/contact-privacy.ts` — mọi response booking đi
 | Viewer | Điều kiện | SĐT khách | Địa chỉ | SĐT/email partner |
 |--------|-----------|-----------|---------|-------------------|
 | Open queue | `PENDING` + **`HELD`** (API chỉ trả đơn đã cọc) | Che | Che | — |
-| Partner | `CONFIRMED` nhưng `UNPAID` | Che | Che | — |
+| Partner | `CONFIRMED` nhưng chưa `HELD` (legacy) | Che | Che | — |
 | Partner | `CONFIRMED` + `HELD` | Che | Đủ | (tự xem account mình) |
 | Partner | `IN_PROGRESS` / `COMPLETED` + funded | Đủ | Đủ | — |
 | Customer | mọi | SĐT mình (đủ) | Đủ | **Không bao giờ** |
@@ -641,14 +804,16 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 
 - Monorepo `apps/web` + `apps/api`
 - Catalog 3 tầng + seed ~22 nhóm / nhiều nghề cụ thể (`prisma/catalog-data.ts`), mega menu (desktop hover / mobile drawer)
+- **Cache catalog:** FE localStorage + TanStack Query; BE in-memory TTL 60s + `Cache-Control`/`ETag`/`304` — xem [Cache catalog](#cache-catalog-giảm-tải--offline-nhẹ)
 - Auth JWT + dual-role: dropdown header chuyển **Khách thuê** / **Người làm** (cùng account)
-- Thuê dịch vụ → đơn `PENDING` hoặc thuê thẳng partner → `CONFIRMED`; `/don-cua-toi`
+- Thuê dịch vụ → tạo đơn = tự giam cọc (`PENDING`/`CONFIRMED` + `HELD`; ví thiếu → không tạo); matching mở: ứng tuyển cọc 10% + chủ chọn; `/don-cua-toi`
+- Form đăng ký thuê: UI stepper 3 bước (Chọn dịch vụ → Thông tin → Xác nhận), slider khoảng giá, React Hook Form + Zod (`features/booking/`, `hire-service-form.tsx`)
 - Danh sách Người làm theo dịch vụ (`GET /api/services/:slug/partners`) — **không trả SĐT/email**
 - **Chống bỏ sàn P0:** che liên hệ theo vai trò/trạng thái (`contact-privacy.ts`); chat đơn `BookingMessage` + lọc PII; UI chat trên đơn thuê / việc của partner
-- **Escrow mock** (`PaymentStatus`): **bắt buộc đặt cọc** `pay` → `HELD` trước hàng chờ / nhận việc / chat / lộ địa chỉ; `RELEASED` + hoa hồng 15% khi hoàn thành; chặn `IN_PROGRESS` khi chưa `HELD`
+- **Escrow mock** (`PaymentStatus`): **tạo đơn = tự giam cọc** từ ví → `HELD` (ví thiếu → không tạo đơn); `RELEASED` + hoa hồng 15% khi hoàn thành; chặn hàng chờ / nhận việc / chat / `IN_PROGRESS` khi chưa `HELD`
 - **Review hai chiều** sau `COMPLETED` (cập nhật `PartnerProfile.ratingAvg`)
 - **Admin dashboard** `/admin` (nested routes) + `/api/admin/*`: tổng quan có GMV/escrow, list có **search + filter + phân trang**, hàng đợi duyệt hồ sơ partner, **chi tiết đơn** (chat đầy đủ + timeline escrow), **CRUD dịch vụ** & bật/tắt nhóm featured — xem mục [Admin](#admin)
-- Hồ sơ công khai `/nguoi/:userId` (`GET /api/partners/public/:userId`): skills, districts, workModes, acceptingJobs, responseMinutes, offerings (includes/excludes/coverageNote); **lưu partner yêu thích**
+- Hồ sơ công khai `/nguoi/:userId` (`GET /api/partners/public/:userId`): tên, bio, cấp, verified, districts, offerings…; **lưu partner yêu thích**. Dashboard sửa hồ sơ chỉ **4 mục**: SĐT, địa chỉ, nghề, giới thiệu kỹ năng.
 - **Retention P0:** lưu người làm quen (`PartnerFavorite`); gợi ý thuê lại (`GET /api/bookings/rebook-hints`); trang chủ section «Thuê lại nhanh» / «Người làm quen»; đề xuất dịch vụ theo lịch sử thuê (không shuffle); deep-link `?partner=` trên `/dich-vu/:slug`
 - Card dịch vụ: bỏ badge «Đã xác thực»; hiện **số người làm nghề** (`_count.partners`) thay cho «lượt đặt»
 - Trang chi tiết dịch vụ `/dich-vu/:slug`:
@@ -658,9 +823,9 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
   - Avatar gán ổn định theo seed qua `portraitAvatarUrl()` (`apps/api/src/common/portrait-avatar.ts`) — dùng chung cho seed, đăng ký và bật nhận việc
   - Bộ lọc / search: tên, khu vực, **slider giá 0–100 triệu ₫** (kéo + ô nhập đồng bộ, `PriceRangeSlider`), năm KN tối thiểu, sắp xếp (rating / giá / tên / KN)
   - Chưa có lọc availability trống theo ngày trên trang dịch vụ (roadmap P2); partner đã có **lịch tháng 24×ngày** tại `/doi-tac`
-- Hồ sơ + nhận việc tại `/doi-tac` (bật lần đầu qua mode người làm; form đủ field P0)
-- **Lịch thuê partner** (`GET /api/bookings/partner/schedule?year&month`): bảng **24 giờ × mỗi ngày trong tháng**; khối hiện giờ thuê (`scheduledAt` + `Service.durationMin`); sidebar **đơn thuê realtime** (Socket.IO namespace `/partner-realtime`) — khách đặt cọc → hiện Khách thuê ngay; nhận việc → gắn lịch
-- Form thuê: **React Hook Form + Zod** (`features/booking/`)
+- Hồ sơ + nhận việc tại `/doi-tac` (bật lần đầu qua mode người làm; UI hồ sơ tối giản 4 mục: SĐT, địa chỉ, nghề, giới thiệu kỹ năng)
+- Tab `/doi-tac/viec`: danh sách lấy từ `GET /api/bookings/partner/mine` (chỉ đơn có `partnerId` là user hiện tại); mặc định mở filter **Cần xử lý**.
+- **Lịch thuê partner** (`GET /api/bookings/partner/schedule?year&month`): bảng **24 giờ × mỗi ngày trong tháng**; khối hiện giờ thuê (`scheduledAt` + `Service.durationMin`); sidebar **đơn thuê realtime** (Socket.IO namespace `/partner-realtime`) — khách tạo đơn (đã HELD) → hiện Khách thuê ngay; nhận việc → gắn lịch
 - OpenAPI/Swagger: http://localhost:3001/docs
 - Local DB: **SQLite** (không cần Docker)
 - Stack FE: Vite, React, Tailwind, React Router, TanStack Query
@@ -668,7 +833,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 ### Tiếp theo (theo roadmap)
 
 - `packages/` shared types/validation FE–BE
-- PostgreSQL production; Redis (cache, rate limit, session)
+- PostgreSQL production; Redis (rate limit, session, **cache phân tán** — bổ sung cho in-memory catalog hiện tại)
 - BullMQ workers (thông báo, matching, tác vụ nền)
 - Lịch trống / availability filter trên trang dịch vụ (khách chọn ngày còn trống)
 - Ảnh dịch vụ trên R2/S3; Partner tự đăng gói dịch vụ  
@@ -695,6 +860,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 ### Backend
 
 - NestJS, REST + OpenAPI, Prisma  
+- Catalog công khai: **in-memory TTL + HTTP ETag** (MVP); Redis / CDN khi scale  
 - PostgreSQL (prod), Redis, BullMQ  
 - WebSocket hoặc dịch vụ realtime bên ngoài  
 
@@ -759,10 +925,10 @@ src/
 ├── database/prisma/
 ├── modules/
 │   ├── auth/
-│   ├── catalog/
-│   ├── bookings/    # messages, pay escrow, reviews
+│   ├── catalog/     # groups/services + in-memory cache + HTTP ETag interceptor
+│   ├── bookings/    # messages, auto-hold escrow on create, reviews, apply/select matching
 │   ├── partners/
-│   ├── admin/       # dashboard API (stats, lists có filter/paging, catalog CRUD)
+│   ├── admin/       # dashboard API (stats, lists có filter/paging, catalog CRUD → invalidate cache)
 │   └── health/
 ├── app.module.ts
 └── main.ts
@@ -789,21 +955,21 @@ npm run dev:web    # http://localhost:5173
 
 ### Công thức cấp (level) Người làm — 1–100
 
-`level = clamp(1, 100, round(hoursPoints + jobsPoints + ratingPoints + reviewCountPoints + verifiedBonus + diversityBonus))`
+`level = clamp(1, 100, round(onlineHoursPoints + jobsPoints + ratingPoints + reviewCountPoints + verifiedBonus + diversityBonus))`
 
 | Thành phần | Cách tính | Trần |
 |------------|-----------|------|
-| **Giờ theo nghề** | Mỗi nghề: `min(giờ_COMPLETED, 120) × 0.25` (tối đa 30/nghề); cộng lại | 45 |
+| **Giờ online** | `min(onlineSeconds/3600, 180) × 0.25` — tích lũy khi còn Socket.IO (`presence:ping` + connect/disconnect, grace 30s) | 45 |
 | **Đơn hoàn thành** | `min(jobs, 80) × 0.25` | 20 |
 | **Điểm ★** | Nếu ≥ 3 đánh giá: `(ratingAvg / 5) × 15` | 15 |
 | **Số đánh giá** | `min(count, 40) × 0.125` | 5 |
 | **Đã xác thực** | `+10` khi admin verify | 10 |
 | **Đa dạng nghề** | `min(offerings_active, 8) × 0.625` | 5 |
 
-- Giờ nghề lấy từ đơn `COMPLETED` × `Service.durationMin`
-- Tự tính lại khi: hoàn thành đơn, nhận đánh giá, đổi nghề gắn, admin verify
+- Giờ online: `PartnerProfile.onlineSeconds` / `lastOnlineAt` — WS `/partner-realtime`
+- Tự tính lại level khi: flush giờ online, hoàn thành đơn, nhận đánh giá, đổi nghề gắn, admin verify
 - API chi tiết: `GET /api/partners/me/level`
-- Code: `apps/api/src/common/partner-level.ts`
+- Code: `apps/api/src/common/partner-level.ts`, `partner-presence.service.ts`
 
 ### Chatbot (FAQ + ChatGPT)
 
@@ -826,7 +992,8 @@ Bottleneck giai đoạn đầu thường là matching thủ công + CSKH, không
 
 - NestJS stateless, nhiều instance sau load balancer  
 - Connection pool PostgreSQL, index phù hợp  
-- Redis: cache, rate limit, session  
+- **Catalog:** đã có cache in-process + HTTP; khi nhiều instance → Redis/CDN shared cache (invalidate qua pub/sub hoặc TTL ngắn)  
+- Redis: rate limit, session, cache phân tán  
 - Worker riêng: thông báo, matching, tác vụ nền  
 - Tách realtime khỏi API khi kết nối lớn  
 - Load test theo RPS thực tế  

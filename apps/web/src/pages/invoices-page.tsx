@@ -66,7 +66,7 @@ export function InvoicesPage({
                     invoice.status}
                 </p>
               </div>
-              <p className="text-lg font-extrabold text-[var(--color-sale)]">
+              <p className="text-lg font-extrabold text-[var(--color-invoice)]">
                 {formatPrice(invoice.subtotal)}
               </p>
             </div>
@@ -140,7 +140,7 @@ export function InvoiceDetailPage({
                 invoice.status}
             </p>
           </div>
-          <p className="text-2xl font-extrabold text-[var(--color-sale)]">
+          <p className="text-2xl font-extrabold text-[var(--color-invoice)]">
             {formatPrice(invoice.subtotal)}
           </p>
         </div>
@@ -171,7 +171,9 @@ export function InvoiceDetailPage({
           {invoice.commissionAmount > 0 ? (
             <div>
               <dt className="font-semibold text-[var(--color-muted)]">Hoa hồng sàn</dt>
-              <dd className="mt-0.5">{formatPrice(invoice.commissionAmount)}</dd>
+              <dd className="mt-0.5 font-bold text-[var(--color-invoice)]">
+                {formatPrice(invoice.commissionAmount)}
+              </dd>
             </div>
           ) : null}
           {invoice.partnerPayout > 0 ? (
@@ -179,7 +181,9 @@ export function InvoiceDetailPage({
               <dt className="font-semibold text-[var(--color-muted)]">
                 Chi trả người làm
               </dt>
-              <dd className="mt-0.5">{formatPrice(invoice.partnerPayout)}</dd>
+              <dd className="mt-0.5 font-bold text-[var(--color-invoice)]">
+                {formatPrice(invoice.partnerPayout)}
+              </dd>
             </div>
           ) : null}
           {invoice.settledAt ? (
