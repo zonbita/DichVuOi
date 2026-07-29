@@ -52,6 +52,12 @@ describe('contact-privacy', () => {
     ).toBe(true);
   });
 
+  it('customer cancelled+refunded does not show waiting hint', () => {
+    const policy = resolveContactPolicy('CANCELLED', 'customer', 'REFUNDED');
+    expect(policy.hint).toContain('Đơn đã hủy');
+    expect(policy.hint).not.toContain('đang chờ người nhận');
+  });
+
   it('shapes open booking without raw phone', () => {
     const shaped = shapeBookingForViewer(
       {

@@ -15,7 +15,7 @@ type NavItem = {
   /** Màu icon (currentColor trên SVG). */
   iconClass: string;
   end?: boolean;
-  badge?: 'hireAction' | 'openJobs' | 'partnerAction';
+  badge?: 'hireAction' | 'openJobs' | 'partnerAction' | 'jobsHub';
 };
 
 const hireNav: NavItem[] = [
@@ -72,14 +72,13 @@ const offerNav: NavItem[] = [
     icon: 'home',
     iconClass: 'text-[var(--color-brand)]',
     end: true,
-    badge: 'openJobs',
   },
   {
     to: '/doi-tac/viec',
     label: 'Việc của tôi',
     icon: 'briefcase',
     iconClass: 'text-[var(--color-navy)]',
-    badge: 'partnerAction',
+    badge: 'jobsHub',
   },
   {
     to: '/doi-tac/vi',
@@ -198,7 +197,12 @@ export function UserDashboardLayout() {
       user && partnerMineQuery.data
         ? partnerMineQuery.data.filter((b) => partnerNeedsAction(b, user.id)).length
         : 0;
-    return { hireAction, openJobs, partnerAction };
+    return {
+      hireAction,
+      openJobs,
+      partnerAction,
+      jobsHub: openJobs + partnerAction,
+    };
   }, [hireQuery.data, openQuery.data, partnerMineQuery.data, user]);
 
   function badgeValue(kind?: NavItem['badge']) {

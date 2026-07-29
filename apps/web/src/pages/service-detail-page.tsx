@@ -131,7 +131,7 @@ function ProviderTile({
     >
       {/* Avatar tròn nổi lên trên mép card */}
       <Link
-        to={`/nguoi/${partner.userId}`}
+        to={`/user/${partner.userId}`}
         className="absolute -top-11 left-1/2 -translate-x-1/2"
         aria-label={`Xem hồ sơ ${partner.fullName}`}
       >
@@ -141,7 +141,7 @@ function ProviderTile({
       </Link>
 
       <Link
-        to={`/nguoi/${partner.userId}`}
+        to={`/user/${partner.userId}`}
         className="flex min-h-0 flex-1 flex-col items-center text-center"
         aria-label={`Xem hồ sơ ${partner.fullName}`}
       >
@@ -205,8 +205,8 @@ function ProviderTile({
         </button>
       ) : (
         <Link
-          to={`/nguoi/${partner.userId}`}
-          className="mt-auto w-full rounded-2xl bg-[var(--color-navy)] px-2 py-3 text-center text-[15px] font-bold text-white transition hover:bg-[var(--color-navy-deep)]"
+          to={`/user/${partner.userId}`}
+          className="btn-navy mt-auto w-full rounded-2xl px-2 py-3 text-center text-[15px] font-bold"
         >
           Xem hồ sơ
         </Link>
@@ -493,13 +493,6 @@ export function ServiceDetailPage() {
           }
         />
       </div>
-
-      {!isHireMode ? (
-        <p className="rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-[15px] text-[var(--color-brand-deep)]">
-          Bạn đang ở mode <strong>Người làm</strong> — form thuê ẩn. Chuyển sang{' '}
-          <strong>Khách thuê</strong> trên menu tài khoản để thuê dịch vụ.
-        </p>
-      ) : null}
 
       {showHirePanel ? (
         <aside className="surface-card flex flex-col justify-center gap-4 p-5 sm:p-6">

@@ -140,6 +140,29 @@ select {
   box-shadow: var(--shadow-card);
 }
 
+/** Glass panel — chi tiết đơn / thẻ booking (minimal). */
+.glass-card {
+  --glass-ink: #172033;
+  --glass-muted: #7c8799;
+  --glass-accent: #4977e8;
+  --glass-track: #e6ebf3;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 32px rgba(23, 32, 51, 0.06);
+  color: var(--glass-ink);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.glass-page {
+  background:
+    radial-gradient(1200px 480px at 12% -10%, rgba(73, 119, 232, 0.07), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgba(23, 32, 51, 0.04), transparent 50%),
+    #f3f6fa;
+}
+
+
 .icon-tile {
   display: flex;
   align-items: center;

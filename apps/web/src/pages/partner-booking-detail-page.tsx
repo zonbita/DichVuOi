@@ -33,6 +33,17 @@ export function PartnerBookingDetailPage() {
     },
   });
 
+  const approveSettlementMutation = useMutation({
+    mutationFn: () => api.approveBookingSettlement(id),
+    onSuccess: (booking) => {
+      queryClient.setQueryData(['booking', id], booking);
+      void queryClient.invalidateQueries({ queryKey: ['bookings', 'partner'] });
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['partner', 'me', 'level'] });
+    },
+  });
+
   if (loading || bookingQuery.isLoading) return <p>Đang tải đơn...</p>;
   if (!user) {
     return <Navigate to={`/dang-nhap?redirect=/doi-tac/viec/${id}`} replace />;
@@ -73,11 +84,18 @@ export function PartnerBookingDetailPage() {
         booking={booking}
         currentUserId={user.id}
         statusPending={statusMutation.isPending}
+        settlementPending={approveSettlementMutation.isPending}
         statusError={
           statusMutation.isError ? (statusMutation.error as Error).message : null
         }
+        settlementError={
+          approveSettlementMutation.isError
+            ? (approveSettlementMutation.error as Error).message
+            : null
+        }
         onStart={() => statusMutation.mutate('IN_PROGRESS')}
         onComplete={() => statusMutation.mutate('AWAITING_CONFIRM')}
+        onApproveSettlement={() => approveSettlementMutation.mutate()}
       />
 
       <BookingChecklist booking={booking} mode="partner" />

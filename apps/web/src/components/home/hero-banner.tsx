@@ -1,33 +1,99 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import bannerDienNuoc from '../../assets/banner-dien-nuoc.jpg';
-import bannerDonNha from '../../assets/banner-don-nha.jpg';
-import bannerGiaSu from '../../assets/banner-gia-su.jpg';
+import type { IconName } from '../ui/icon';
 import { Icon } from '../ui/icon';
 
-const banners = [
+type BannerSlide = {
+  tag: string;
+  title: string;
+  subtitle: string;
+  /** Icon nghề chủ đạo của slide. */
+  focus: IconName;
+  /** Cụm icon nghề liên quan (đang dùng trên catalog). */
+  icons: IconName[];
+  accent: string;
+};
+
+const banners: BannerSlide[] = [
   {
-    image: bannerDonNha,
     tag: 'Dịch vụ yêu thích',
     title: 'Dọn nhà sạch sâu',
     subtitle: 'Thư giãn cuối tuần, việc nhà để bọn mình lo',
+    focus: 'home',
+    icons: ['home', 'sparkles', 'utensils', 'leaf', 'paw'],
+    accent: '#009c95',
   },
   {
-    image: bannerDienNuoc,
     tag: 'Thợ giỏi — giá tốt',
     title: 'Sửa điện nước nhanh',
     subtitle: 'Thợ có mặt trong 30 phút tại nội thành',
+    focus: 'wrench',
+    icons: ['wrench', 'snowflake', 'hammer', 'truck', 'settings'],
+    accent: '#0b6e99',
   },
   {
-    image: bannerGiaSu,
     tag: 'Gia sư chất lượng',
     title: 'Gia sư IELTS 1 kèm 1',
     subtitle: 'Cam kết đầu ra, học thử miễn phí buổi đầu',
+    focus: 'graduation',
+    icons: ['graduation', 'book', 'code', 'palette', 'laptop'],
+    accent: '#007a74',
   },
 ];
 
-const BANNER_GRADIENT =
-  'linear-gradient(90deg, rgba(7,59,92,0.92) 0%, rgba(7,59,92,0.58) 48%, rgba(7,59,92,0.08) 100%)';
+/** Vị trí trang trí icon bên phải banner (desktop). */
+const ICON_LAYOUT: Array<{ top: string; left: string; size: string; opacity: number }> = [
+  { top: '8%', left: '8%', size: '3.25rem', opacity: 0.95 },
+  { top: '12%', left: '52%', size: '2.5rem', opacity: 0.75 },
+  { top: '38%', left: '28%', size: '4.5rem', opacity: 1 },
+  { top: '42%', left: '68%', size: '2.75rem', opacity: 0.8 },
+  { top: '68%', left: '12%', size: '2.35rem', opacity: 0.7 },
+  { top: '72%', left: '48%', size: '3rem', opacity: 0.88 },
+];
+
+function ProfessionArt({ slide }: { slide: BannerSlide }) {
+  const tiles = [slide.focus, ...slide.icons].slice(0, ICON_LAYOUT.length);
+
+  return (
+    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[48%] md:block lg:w-[52%]" aria-hidden>
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse 80% 70% at 55% 45%, ${slide.accent}55 0%, transparent 70%)`,
+        }}
+      />
+      {/* Soft rings */}
+      <div className="absolute left-[18%] top-[18%] h-40 w-40 rounded-full border border-white/15" />
+      <div className="absolute bottom-[12%] right-[10%] h-28 w-28 rounded-full border border-white/10" />
+      <div className="absolute right-[22%] top-[8%] h-16 w-16 rounded-full bg-white/10" />
+
+      {tiles.map((name, index) => {
+        const spot = ICON_LAYOUT[index] ?? ICON_LAYOUT[0];
+        const isFocus = index === 2;
+        return (
+          <div
+            key={`${slide.title}-${name}-${index}`}
+            className="absolute flex items-center justify-center rounded-[22%] border border-white/25 bg-white/15 text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-[6px]"
+            style={{
+              top: spot.top,
+              left: spot.left,
+              width: isFocus ? '4.75rem' : spot.size,
+              height: isFocus ? '4.75rem' : spot.size,
+              opacity: spot.opacity,
+              color: '#fff',
+            }}
+          >
+            <Icon
+              name={name}
+              className={isFocus ? 'h-9 w-9' : 'h-6 w-6'}
+              style={{ color: 'inherit' }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function HeroBanner() {
   const [active, setActive] = useState(0);
@@ -53,12 +119,22 @@ export function HeroBanner() {
               index === active ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
-            <img
-              src={banner.image}
-              alt={banner.title}
-              className="catalog-photo h-full w-full object-cover"
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(115deg, #073b5c 0%, #0a4f6e 42%, ${banner.accent} 78%, #1a6b78 100%)`,
+              }}
             />
-            <div className="absolute inset-0" style={{ background: BANNER_GRADIENT }} />
+            <div
+              className="absolute inset-0 opacity-40"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.14) 0 1px, transparent 1px), radial-gradient(circle at 80% 60%, rgba(255,255,255,0.1) 0 1px, transparent 1px)',
+                backgroundSize: '28px 28px, 36px 36px',
+              }}
+            />
+            <ProfessionArt slide={banner} />
+
             <div className="absolute inset-0 z-[1] flex flex-col justify-center gap-3 py-7 pl-14 pr-14 text-white sm:py-9 sm:pl-16 sm:pr-16 lg:pl-[4.5rem] lg:pr-[4.5rem]">
               <span className="hero-banner__tag w-fit rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-white">
                 {banner.tag}
@@ -70,7 +146,10 @@ export function HeroBanner() {
                 {banner.subtitle}
               </p>
               <div className="mt-1">
-                <Link to="/nhom" className="hero-banner__cta inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-[15px] font-bold text-white">
+                <Link
+                  to="/nhom"
+                  className="hero-banner__cta inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-[15px] font-bold text-white"
+                >
                   Đặt ngay
                   <Icon name="chevronRight" className="h-4 w-4" />
                 </Link>

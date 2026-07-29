@@ -1,4 +1,4 @@
-﻿# Dịch Vụ Ơi
+# Dịch Vụ Ơi
 
 ## Tổng quan
 
@@ -140,7 +140,7 @@ Khi đưa lên production tại Việt Nam, nên thiết kế sớm (không ph�
 `Role` kỹ thuật: `CUSTOMER` (mặc định, phía thuê) → nâng `PARTNER` khi bật nhận việc; không tạo account thứ hai.
 
 - Đã có: thuê + danh sách Người làm theo dịch vụ; nhận việc; dual-role (bật nhận việc trên cùng account — tùy chọn, không bắt buộc).
-- Hồ sơ người làm (UI dashboard): **SĐT, địa chỉ, nghề, giới thiệu kỹ năng** + trang công khai `/nguoi/:userId`; ẩn SĐT/email public.
+- Hồ sơ người làm (UI dashboard): **SĐT, địa chỉ, nghề, giới thiệu kỹ năng** + trang công khai `/user/:userId`; ẩn SĐT/email public.
 - **Chọn nhiều nghề** trên Hồ sơ người làm: UI tags kiểu UE5 (`ProfessionTagsInput`) → đồng bộ `PartnerService` qua `PUT /api/partners/me/offerings` (`serviceIds[]`, tối đa 40). Gắn lúc bật nhận việc hoặc khi sửa hồ sơ `/doi-tac`.
 
 ## Danh mục — cấu trúc 3 tầng
@@ -334,6 +334,19 @@ Slug lạ / thiếu màu → fallback `#0f9d8a` (chỉ cho **icon/viền ngành*
 
 Nơi đang áp dụng **màu ngành** (icon / viền / chip nghề): `service-card.tsx`, `group-card.tsx`, `catalog-menu-shared.tsx`, `catalog-menu.tsx`, `service-tag-nav.tsx` (chỉ **icon**), `group-detail-page.tsx`, `group-detail-hero.tsx`, `service-detail-page.tsx` (accent nhóm), `groups-page.tsx`, `profession-tags-input.tsx`, `partner-profile-page.tsx` (chip nghề), `hire-service-form.tsx`, `hire-service-picker.tsx` (dropdown chọn nghề — `border-left` theo nhóm).
 
+### Dropdown chọn nghề
+
+Quy chuẩn cho dropdown chọn nghề (ví dụ `hire-service-picker.tsx`) phải giống mẫu UI hiện tại:
+
+- Trigger là ô bo tròn kiểu `field-input`, full width, chữ canh trái, chevron bên phải.
+- Placeholder dùng đúng format: `— Chọn nghề —`.
+- Khi đã chọn nghề: trigger hiển thị `Tên nghề · Danh mục`; thêm `border-left` dày **4px** theo màu `groupColor(groupSlug).main`.
+- Panel dropdown nền trắng, bo góc lớn, có viền mảnh và `shadow-card`; chiều cao tối đa khoảng `420px` hoặc `60vh`, phần danh sách phải `overflow-y-auto`.
+- Dữ liệu hiển thị theo **nhóm ngành**; mỗi nhóm có tiêu đề riêng, chữ đậm, kèm `border-left` 4px theo màu ngành.
+- Mỗi item nghề thụt vào so với tiêu đề nhóm; layout 1 dòng: **tên nghề** đậm + `· danh mục` màu muted.
+- Hover item dùng nền `groupColor.soft`; item đang chọn giữ nền `soft` và chữ `groupColor.ink`.
+- Không đưa icon/thẻ thừa trong item nghề; điểm nhấn màu chỉ nằm ở `border-left`, nền `soft`, và màu chữ của tiêu đề / item active.
+
 ## Tỉnh / thành (khu vực)
 
 Dropdown khu vực trên ô tìm kiếm header (icon pin + tên + chevron) — chọn **một** trong **34 đơn vị hành chính cấp tỉnh** theo Nghị quyết 202/2025/QH15 (có hiệu lực từ 1/7/2025): **6 thành phố** + **28 tỉnh**.
@@ -378,14 +391,14 @@ Lọc danh sách Người làm theo tỉnh (trang dịch vụ) và seed `Partner
 
 ## Hồ sơ khách thuê / người làm
 
-UI dashboard hiện **tối giản 4 mục**. Trang công khai `/nguoi/:userId` vẫn hiện thông tin phục vụ quyết định thuê — không copy donate / newsfeed / album đời tư.
+UI dashboard hiện **tối giản 4 mục**. Trang công khai `/user/:userId` vẫn hiện thông tin phục vụ quyết định thuê — không copy donate / newsfeed / album đời tư.
 
 ### Ba tầng thông tin
 
 | Tầng | Nội dung | Mục đích |
 |------|----------|----------|
 | **Ai làm** (UI dashboard) | **SĐT** (từ tài khoản), **địa chỉ/khu vực** (`districts`), **nghề** (`serviceIds` / tags), **giới thiệu kỹ năng** (`bio`) | Sửa hồ sơ nhận việc |
-| **Ai làm** (public `/nguoi/:userId`) | tên, bio, cấp, verified, districts, offerings… | Tin cậy + phạm vi phục vụ |
+| **Ai làm** (public `/user/:userId`) | tên, bio, cấp, verified, districts, offerings… | Tin cậy + phạm vi phục vụ |
 | **Làm gì** (`PartnerService`) | giá, headline, KN, **includes** / **excludes** / **coverageNote** theo từng dịch vụ catalog | Chọn gói thuê cụ thể |
 | **Thuê thế nào** (`Booking`) | lịch, địa chỉ (hoặc link họp), note | Hoàn tất đơn |
 
@@ -393,8 +406,8 @@ UI dashboard hiện **tối giản 4 mục**. Trang công khai `/nguoi/:userId` 
 
 - **SĐT / email không công khai** trên tile, hover, `GET /api/services/:slug/partners`, `GET /api/partners/public/:userId`.
 - **Lộ liên hệ theo giai đoạn đơn** (chống bỏ sàn) — xem [Chống bỏ sàn](#chống-bỏ-sàn-disintermediation): việc mở che SĐT + địa chỉ; khách **không bao giờ** thấy SĐT/email partner; partner chỉ thấy SĐT khách từ `IN_PROGRESS`; kênh chính là **chat đơn** (`BookingMessage`).
-- Trang hồ sơ công khai: `/nguoi/:userId` — CTA Thuê dẫn về `/dich-vu/:slug`.
-- **Nhấp vào thẻ Người làm** (avatar / tên / giá trên lưới trang dịch vụ) → mở trang hồ sơ `/nguoi/:userId`. Hover chỉ xem nhanh; nút **Thuê** riêng để chọn người đặt lịch (không chuyển trang).
+- Trang hồ sơ công khai: `/user/:userId` — CTA Thuê dẫn về `/dich-vu/:slug`.
+- **Nhấp vào thẻ Người làm** (avatar / tên / giá trên lưới trang dịch vụ) → mở trang hồ sơ `/user/:userId`. Hover chỉ xem nhanh; nút **Thuê** riêng để chọn người đặt lịch (không chuyển trang).
 - Dashboard `/doi-tac` hiện rút gọn form hồ sơ còn 4 mục chính: **SĐT** (sửa được), **địa chỉ/khu vực phục vụ**, **nghề bạn làm** (tags), **giới thiệu kỹ năng**.
 - **Không** đưa donate, feed MXH, cày thuê/boosting trái ToS vào hồ sơ.
 
@@ -403,6 +416,7 @@ UI dashboard hiện **tối giản 4 mục**. Trang công khai `/nguoi/:userId` 
 `PartnerProfile`: `districts`, `bio` *(UI dashboard chỉ sửa các mục này + nghề qua offerings; field schema khác có thể còn trong DB)*  
 `PartnerService`: `includes`, `excludes`, `coverageNote`  
 `Booking`: `paymentStatus`, `commissionBps`, `commissionAmount`, `partnerPayout`, `paidAt` / `releasedAt` / `refundedAt`  
+`Booking` (nghiệm thu %): `settlementPercent`, `settlementProposedBy`, `customerSettlementApprovedAt`, `partnerSettlementApprovedAt`, `settlementResolvedAt`  
 `BookingMessage`: chat theo đơn (`body`, `redacted`)  
 `Review`: đánh giá hai chiều (`rating`, `comment`, unique booking+fromUser)
 
@@ -412,7 +426,7 @@ Lấy cảm hứng từ [Player Duo](https://playerduo.net/) về **giữ chân 
 
 | Tính năng | API / UI | Mục đích |
 |-----------|----------|----------|
-| **Lưu người làm quen** | `PartnerFavorite`; `GET/POST/DELETE /api/partners/favorites*`; nút trái tim trên `/nguoi/:userId` | Gắn bó partner, quay lại không cần tìm lại |
+| **Lưu người làm quen** | `PartnerFavorite`; `GET/POST/DELETE /api/partners/favorites*`; nút trái tim trên `/user/:userId` | Gắn bó partner, quay lại không cần tìm lại |
 | **Thuê lại nhanh** | `GET /api/bookings/rebook-hints`; section trang chủ + nút trên đơn `COMPLETED` | Một chạm → `/dich-vu/:slug?partner=:userId` |
 | **Cá nhân hóa «Đề xuất»** | `rankFeaturedServices()` — ưu tiên nhóm/dịch vụ đã thuê, bỏ shuffle ngẫu nhiên | Trang chủ relevant hơn cho khách cũ |
 | **Profile = landing thuê** | Giá từ `/giờ`, CTA «Đặt lịch ngay», deep-link `?partner=` | Giống trang idol Player Duo nhưng vẫn escrow |
@@ -430,7 +444,7 @@ Tách biệt với **cấp độ merit (1–100)** — uy tín đo **tuân thủ
 | **Reset** | Sang chu kỳ mới → tạo `PartnerReputationPeriod` mới với 1000 điểm (lazy khi đọc/ghi) |
 | **Trừ điểm** | Chỉ khi Admin đặt khiếu nại `VERIFIED` (mặc định −100; preset −50 / −100 / −200) |
 | **Sàn tự động** | Uy tín &lt; **500** → `acceptingJobs = false` (partner tạm không nhận việc mới) |
-| **UI công khai** | Thanh progress trên `/nguoi/:userId` — nền hồng, fill gradient vàng→cam = điểm còn lại |
+| **UI công khai** | Thanh progress trên `/user/:userId` — nền hồng, fill gradient vàng→cam = điểm còn lại |
 
 **Schema:** `Complaint`, `PartnerReputationPeriod`, `ReputationLedgerEntry`  
 **API:** `POST /api/bookings/:id/complaints` · `GET /api/complaints/mine` · `GET/PATCH /api/admin/complaints*` · `GET /api/partners/public/:userId` (kèm `reputation`)
@@ -444,7 +458,7 @@ flowchart TD
   C --> D{Đã có PartnerReputationPeriod?}
   D -->|Không| E[Tạo period: startingPoints=1000, currentPoints=1000]
   D -->|Có| F[Dùng currentPoints hiện tại]
-  E --> G[Hiển thị progress bar trên /nguoi/:userId]
+  E --> G[Hiển thị progress bar trên /user/:userId]
   F --> G
 
   H[Khách thuê trên đơn có partner] --> I[POST /bookings/:id/complaints]
@@ -561,7 +575,9 @@ IN_PROGRESS
 └─ Partner → AWAITING_CONFIRM               [confirmDeadlineAt = now+48h]
 
 AWAITING_CONFIRM (escrow vẫn HELD)
-├─ Customer confirmCompletion → COMPLETED   [release; checklist thiếu → cần acceptIncomplete]
+├─ Customer đề xuất % nghiệm thu (1..100) + Partner đồng ý + Customer đồng ý
+│    → COMPLETED + RELEASED theo % nghiệm thu (phần còn lại hoàn về ví khách)
+├─ Customer confirmCompletion (legacy) = đề xuất 100% + đồng ý phía khách
 ├─ Hết 48h (lazy settle khi đọc/list đơn) → COMPLETED + RELEASED
 ├─ Gửi khiếu nại → DISPUTED
 └─ Cancel: chỉ Admin
@@ -605,7 +621,7 @@ Escrow / đặt cọc (`PaymentStatus`):
 | Hết SLA / partner hủy lúc CONFIRMED | Tịch thu cọc (`APPLY_FORFEIT`); mở lại PENDING nếu còn hạn ghép |
 | `CONFIRMED→IN_PROGRESS` | Partner (cần HELD; clear SLA) |
 | `IN_PROGRESS→AWAITING_CONFIRM` | Partner |
-| `AWAITING_CONFIRM→COMPLETED` | Customer `confirmCompletion` / Admin / auto 48h |
+| `AWAITING_CONFIRM→COMPLETED` | Hai bên đồng ý cùng % nghiệm thu (`settlement`) / Admin / auto 48h |
 | `→DISPUTED` | Gửi khiếu nại (không PATCH status thường) |
 | `PENDING/CONFIRMED→CANCELLED` | Customer hoặc Partner |
 | Hủy từ `IN_PROGRESS` / `AWAITING_CONFIRM` / `DISPUTED` | Chỉ Admin |
@@ -813,13 +829,13 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - **Escrow mock** (`PaymentStatus`): **tạo đơn = tự giam cọc** từ ví → `HELD` (ví thiếu → không tạo đơn); `RELEASED` + hoa hồng 15% khi hoàn thành; chặn hàng chờ / nhận việc / chat / `IN_PROGRESS` khi chưa `HELD`
 - **Review hai chiều** sau `COMPLETED` (cập nhật `PartnerProfile.ratingAvg`)
 - **Admin dashboard** `/admin` (nested routes) + `/api/admin/*`: tổng quan có GMV/escrow, list có **search + filter + phân trang**, hàng đợi duyệt hồ sơ partner, **chi tiết đơn** (chat đầy đủ + timeline escrow), **CRUD dịch vụ** & bật/tắt nhóm featured — xem mục [Admin](#admin)
-- Hồ sơ công khai `/nguoi/:userId` (`GET /api/partners/public/:userId`): tên, bio, cấp, verified, districts, offerings…; **lưu partner yêu thích**. Dashboard sửa hồ sơ chỉ **4 mục**: SĐT, địa chỉ, nghề, giới thiệu kỹ năng.
+- Hồ sơ công khai `/user/:userId` (`GET /api/partners/public/:userId`): tên, bio, cấp, verified, districts, offerings…; **lưu partner yêu thích**. Dashboard sửa hồ sơ chỉ **4 mục**: SĐT, địa chỉ, nghề, giới thiệu kỹ năng.
 - **Retention P0:** lưu người làm quen (`PartnerFavorite`); gợi ý thuê lại (`GET /api/bookings/rebook-hints`); trang chủ section «Thuê lại nhanh» / «Người làm quen»; đề xuất dịch vụ theo lịch sử thuê (không shuffle); deep-link `?partner=` trên `/dich-vu/:slug`
 - Card dịch vụ: bỏ badge «Đã xác thực»; hiện **số người làm nghề** (`_count.partners`) thay cho «lượt đặt»
 - Trang chi tiết dịch vụ `/dich-vu/:slug`:
   - Cột trái: ảnh / mô tả / giá từ
   - Cột phải + form thuê: **chỉ hiện sau khi chọn Người làm**; ẩn khi mode «Người làm»
-  - Lưới Người làm: **5 cột / hàng**; ảnh **chân dung người Việt** + nghề nhỏ; **hover** bảng theo chuột; **nhấp tile / bảng hover** → `/nguoi/:userId` (nút Thuê riêng để chọn thuê)
+  - Lưới Người làm: **5 cột / hàng**; ảnh **chân dung người Việt** + nghề nhỏ; **hover** bảng theo chuột; **nhấp tile / bảng hover** → `/user/:userId` (nút Thuê riêng để chọn thuê)
   - Avatar gán ổn định theo seed qua `portraitAvatarUrl()` (`apps/api/src/common/portrait-avatar.ts`) — dùng chung cho seed, đăng ký và bật nhận việc
   - Bộ lọc / search: tên, khu vực, **slider giá 0–100 triệu ₫** (kéo + ô nhập đồng bộ, `PriceRangeSlider`), năm KN tối thiểu, sắp xếp (rating / giá / tên / KN)
   - Chưa có lọc availability trống theo ngày trên trang dịch vụ (roadmap P2); partner đã có **lịch tháng 24×ngày** tại `/doi-tac`

@@ -59,6 +59,15 @@ export function findProvince(slug: string | null | undefined): Province {
   return PROVINCES.find((p) => p.slug === slug) ?? PROVINCES.find((p) => p.slug === DEFAULT_PROVINCE_SLUG)!;
 }
 
+/** Khớp theo tên hiển thị (vd. «Hồ Chí Minh») — dùng cho hồ sơ partner. */
+export function findProvinceByName(name: string | null | undefined): Province | undefined {
+  const trimmed = name?.trim();
+  if (!trimmed) return undefined;
+  return PROVINCES.find(
+    (p) => p.name.toLowerCase() === trimmed.toLowerCase(),
+  );
+}
+
 export function loadProvinceSlug(): string {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);

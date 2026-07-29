@@ -134,7 +134,18 @@ export function resolveContactPolicy(
   }
 
   if (viewer === 'customer') {
-    if (!funded && status !== 'CANCELLED') {
+    if (status === 'CANCELLED') {
+      return {
+        channel: 'in_app',
+        phoneRevealed: false,
+        addressRevealed: true,
+        hint:
+          paymentStatus === 'REFUNDED'
+            ? 'Đơn đã hủy — cọc đã hoàn về ví.'
+            : 'Đơn đã hủy.',
+      };
+    }
+    if (!funded) {
       return {
         channel: 'in_app',
         phoneRevealed: false,

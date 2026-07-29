@@ -60,6 +60,25 @@ export function CustomerBookingDetailPage() {
     },
   });
 
+  const proposeSettlementMutation = useMutation({
+    mutationFn: (percent: number) => api.proposeBookingSettlement(id, percent),
+    onSuccess: (booking) => {
+      queryClient.setQueryData(['booking', id], booking);
+      invalidate();
+    },
+  });
+
+  const approveSettlementMutation = useMutation({
+    mutationFn: () => api.approveBookingSettlement(id),
+    onSuccess: async (booking) => {
+      queryClient.setQueryData(['booking', id], booking);
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      await refreshMe();
+    },
+  });
+
   if (loading || bookingQuery.isLoading) return <p>Đang tải đơn...</p>;
   if (!user) {
     return <Navigate to={`/dang-nhap?redirect=/don-cua-toi/don/${id}`} replace />;
@@ -85,19 +104,24 @@ export function CustomerBookingDetailPage() {
     booking.paymentStatus === 'HELD';
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="glass-page -mx-4 space-y-5 rounded-[24px] px-4 py-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
             to="/don-cua-toi"
-            className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
+            className="text-sm font-semibold text-[#4977E8] hover:underline"
           >
             ← Đơn thuê
           </Link>
-          <h1 className="mt-2 text-2xl font-extrabold">Chi tiết đơn</h1>
-          <p className="mt-1 text-xs text-[var(--color-muted)]">Mã: {booking.id}</p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#172033]">
+            Chi tiết đơn
+          </h1>
+          <p className="mt-1 text-xs text-[#7C8799]">Mã: {booking.id}</p>
         </div>
-        <Link to="/don-cua-toi/khieu-nai" className="text-sm font-semibold text-[var(--color-muted)]">
+        <Link
+          to="/don-cua-toi/khieu-nai"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#7C8799] hover:text-[#4977E8]"
+        >
           Hướng dẫn khiếu nại
         </Link>
       </div>
@@ -109,6 +133,9 @@ export function CustomerBookingDetailPage() {
         cancelling={cancelMutation.isPending}
         confirming={confirmMutation.isPending}
         payError={payMutation.isError ? (payMutation.error as Error).message : null}
+        cancelError={
+          cancelMutation.isError ? (cancelMutation.error as Error).message : null
+        }
         confirmError={
           confirmMutation.isError ? (confirmMutation.error as Error).message : null
         }
@@ -117,18 +144,33 @@ export function CustomerBookingDetailPage() {
         onConfirm={(_bookingId, acceptIncomplete) =>
           confirmMutation.mutate(acceptIncomplete)
         }
+        settlementPending={
+          proposeSettlementMutation.isPending || approveSettlementMutation.isPending
+        }
+        settlementError={
+          proposeSettlementMutation.isError
+            ? (proposeSettlementMutation.error as Error).message
+            : approveSettlementMutation.isError
+              ? (approveSettlementMutation.error as Error).message
+              : null
+        }
+        onProposeSettlement={(_bookingId, percent) =>
+          proposeSettlementMutation.mutate(percent)
+        }
+        onApproveSettlement={() => approveSettlementMutation.mutate()}
       />
 
       {showApplicants ? (
         <BookingApplicantsList
           applications={booking.applications ?? []}
+          serviceId={booking.service?.id}
           matchingDeadlineAt={booking.matchingDeadlineAt}
           selecting={selectMutation.isPending}
           onSelect={(applicationId) => selectMutation.mutate(applicationId)}
         />
       ) : null}
       {selectMutation.isError ? (
-        <p className="text-sm text-red-600">
+        <p className="text-sm text-[#C45B5B]">
           {(selectMutation.error as Error).message}
         </p>
       ) : null}

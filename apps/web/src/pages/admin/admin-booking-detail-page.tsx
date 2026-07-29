@@ -283,7 +283,7 @@ export function AdminBookingDetailPage() {
               name={booking.partner?.fullName ?? 'Chưa có ai nhận'}
               email={booking.partner ? mask(booking.partner.email) : '—'}
               phone={booking.partner ? mask(booking.partner.phone) : '—'}
-              href={booking.partner ? `/nguoi/${booking.partner.id}` : undefined}
+              href={booking.partner ? `/user/${booking.partner.id}` : undefined}
             />
           </div>
 

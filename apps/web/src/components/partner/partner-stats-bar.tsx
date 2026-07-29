@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { formatPrice } from '../../services/api';
 import type { Booking } from '../../types/catalog';
 
@@ -38,13 +39,16 @@ export function PartnerStatsBar({ mine, openCount }: Props) {
 
   return (
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
+      <Link
+        to="/doi-tac/viec"
+        className="border border-[var(--color-line)] bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40"
+      >
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
           Đơn mở (hàng chờ)
         </p>
         <p className="mt-1 text-2xl font-extrabold text-emerald-700">{stats.openCount}</p>
-        <p className="mt-1 text-xs text-[var(--color-muted)]">Realtime — nhận ngay</p>
-      </div>
+        <p className="mt-1 text-xs text-[var(--color-muted)]">Xem tại Việc của tôi →</p>
+      </Link>
       <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
           Việc đang làm
@@ -60,7 +64,7 @@ export function PartnerStatsBar({ mine, openCount }: Props) {
       </div>
       <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-          Escrow đang giữ
+          Hệ thống đang giữ cọc
         </p>
         <p className="mt-1 text-2xl font-extrabold text-amber-700">
           {formatPrice(stats.held)}

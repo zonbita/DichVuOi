@@ -7,17 +7,48 @@ import type { BookingMessage } from '../../types/catalog';
 type Props = {
   bookingId: string;
   enabled?: boolean;
+  /** `panel` = full chiều cao trong drawer 360px. */
+  layout?: 'inline' | 'panel';
 };
 
-export function BookingChat({ bookingId, enabled = true }: Props) {
+function MessageCard({ message }: { message: BookingMessage }) {
+  return (
+    <div className="rounded-lg border border-black/4 bg-white px-3 py-2.5 shadow-sm">
+      <div className="flex items-start gap-2">
+        <p className="min-w-0 flex-1 text-xs leading-snug">
+          <span className="font-semibold text-[var(--color-ink)]">
+            {message.sender.fullName}
+          </span>
+          <span className="ml-1.5 font-normal text-[var(--color-muted)]">
+            {new Date(message.createdAt).toLocaleString('vi-VN')}
+          </span>
+        </p>
+        {message.redacted ? (
+          <span className="shrink-0 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+            Đã ẩn liên hệ
+          </span>
+        ) : null}
+      </div>
+      <p className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-ink)]">
+        {message.body}
+      </p>
+    </div>
+  );
+}
+
+export function BookingChat({
+  bookingId,
+  enabled = true,
+  layout = 'inline',
+}: Props) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState('');
+  const isPanel = layout === 'panel';
 
   const messagesQuery = useQuery({
     queryKey: ['booking-messages', bookingId],
     queryFn: () => api.getBookingMessages(bookingId),
     enabled: enabled && Boolean(bookingId),
-    // Realtime qua Socket; poll thưa chỉ làm lưới an toàn khi WS rớt
     refetchInterval: 60_000,
   });
 
@@ -46,39 +77,50 @@ export function BookingChat({ bookingId, enabled = true }: Props) {
   const messages: BookingMessage[] = messagesQuery.data ?? [];
 
   return (
-    <div className="mt-3 rounded-md border border-black/8 bg-[var(--color-canvas)]/60 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-        Chat đơn · chỉ qua Dich Vụ Ơi
-      </p>
-      <p className="mt-1 text-xs text-[var(--color-muted)]">
-        Không gửi SĐT / Zalo / Facebook — hệ thống tự ẩn nếu phát hiện.
-      </p>
+    <div
+      className={
+        isPanel
+          ? 'flex h-full min-h-0 flex-col bg-[var(--color-canvas)]'
+          : 'mt-3 rounded-md border border-black/8 bg-[var(--color-canvas)]/60 p-3'
+      }
+    >
+      {!isPanel ? (
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+          Chat đơn · chỉ qua Dich Vụ Ơi
+        </p>
+      ) : null}
 
-      <div className="mt-3 max-h-48 space-y-2 overflow-y-auto text-sm">
-        {messagesQuery.isLoading ? <p>Đang tải tin…</p> : null}
+      <div
+        className={
+          isPanel
+            ? 'min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3'
+            : 'mt-3 max-h-48 space-y-2.5 overflow-y-auto'
+        }
+      >
+        {messagesQuery.isLoading ? (
+          <p className="text-sm text-[var(--color-muted)]">Đang tải tin…</p>
+        ) : null}
         {messagesQuery.isError ? (
-          <p className="text-red-600">Không tải được chat.</p>
+          <p className="text-sm text-red-600">Không tải được chat.</p>
         ) : null}
         {messages.map((m) => (
-          <div key={m.id} className="rounded bg-white px-2.5 py-2 shadow-sm">
-            <p className="text-xs font-semibold text-[var(--color-ink)]">
-              {m.sender.fullName}
-              <span className="ml-2 font-normal text-[var(--color-muted)]">
-                {new Date(m.createdAt).toLocaleString('vi-VN')}
-              </span>
-              {m.redacted ? (
-                <span className="ml-2 font-normal text-amber-700">(đã ẩn liên hệ)</span>
-              ) : null}
-            </p>
-            <p className="mt-0.5 whitespace-pre-wrap">{m.body}</p>
-          </div>
+          <MessageCard key={m.id} message={m} />
         ))}
         {!messagesQuery.isLoading && messages.length === 0 ? (
-          <p className="text-[var(--color-muted)]">Chưa có tin — bắt đầu trao đổi tại đây.</p>
+          <p className="text-sm text-[var(--color-muted)]">
+            Chưa có tin — bắt đầu trao đổi tại đây.
+          </p>
         ) : null}
       </div>
 
-      <form onSubmit={onSubmit} className="mt-3 flex gap-2">
+      <form
+        onSubmit={onSubmit}
+        className={
+          isPanel
+            ? 'flex shrink-0 gap-2 border-t border-[var(--color-line)] bg-white p-3'
+            : 'mt-3 flex gap-2'
+        }
+      >
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -95,7 +137,9 @@ export function BookingChat({ bookingId, enabled = true }: Props) {
         </button>
       </form>
       {sendMutation.isError ? (
-        <p className="mt-1 text-xs text-red-600">
+        <p
+          className={`text-xs text-red-600 ${isPanel ? 'px-3 pb-2' : 'mt-1'}`}
+        >
           {(sendMutation.error as Error).message || 'Gửi thất bại'}
         </p>
       ) : null}

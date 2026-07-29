@@ -116,7 +116,7 @@ export function AdminPartnersPage() {
                 <div className="min-w-0">
                   <p className="flex flex-wrap items-center gap-2 font-bold">
                     <Link
-                      to={`/nguoi/${partner.userId}`}
+                      to={`/user/${partner.userId}`}
                       className="hover:text-[var(--color-brand-deep)]"
                     >
                       {partner.user.fullName}

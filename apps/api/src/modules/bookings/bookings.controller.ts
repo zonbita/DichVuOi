@@ -21,9 +21,11 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateBookingMessageDto } from './dto/create-booking-message.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { PartnerScheduleQueryDto } from './dto/partner-schedule-query.dto';
+import { ProposeSettlementDto } from './dto/settlement.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import {
   ConfirmBookingDto,
+  CreateRequirementDto,
   UpdateRequirementDto,
 } from './dto/update-requirement.dto';
 
@@ -73,8 +75,8 @@ export class BookingsController {
   @UseGuards(RolesGuard)
   @Roles(Role.PARTNER, Role.ADMIN)
   @Get('open')
-  listOpen() {
-    return this.bookingsService.listOpen();
+  listOpen(@CurrentUser() user: AuthUser) {
+    return this.bookingsService.listOpen(user.id);
   }
 
   @Get(':id/messages')
@@ -142,6 +144,29 @@ export class BookingsController {
     @Body() dto: ConfirmBookingDto,
   ) {
     return this.bookingsService.confirmCompletion(id, user, dto);
+  }
+
+  @Post(':id/settlement/propose')
+  proposeSettlement(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: ProposeSettlementDto,
+  ) {
+    return this.bookingsService.proposeSettlement(id, user, dto.percent);
+  }
+
+  @Post(':id/settlement/approve')
+  approveSettlement(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.bookingsService.approveSettlement(id, user);
+  }
+
+  @Post(':id/requirements')
+  addRequirement(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: CreateRequirementDto,
+  ) {
+    return this.bookingsService.addRequirement(id, user, dto);
   }
 
   @Patch(':id/requirements/:requirementId')

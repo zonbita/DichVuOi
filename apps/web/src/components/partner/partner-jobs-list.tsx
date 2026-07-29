@@ -42,26 +42,38 @@ function matchesTab(b: Booking, tab: TabId, userId: string) {
 
 type Props = {
   bookings: Booking[];
+  /** Tổng đơn trước khi lọc nghề (để empty copy đúng). */
+  sourceTotal?: number;
   loading?: boolean;
   currentUserId: string;
   statusPending?: boolean;
   statusVariables?: { id: string; status: string } | null;
   statusError?: Error | null;
+  settlementPending?: boolean;
+  settlementBookingId?: string | null;
+  settlementError?: Error | null;
   onStart: (id: string) => void;
   onComplete: (id: string) => void;
+  onApproveSettlement?: (id: string) => void;
 };
 
 export function PartnerJobsList({
   bookings,
+  sourceTotal,
   loading,
   currentUserId,
   statusPending,
   statusVariables,
   statusError,
+  settlementPending,
+  settlementBookingId,
+  settlementError,
   onStart,
   onComplete,
+  onApproveSettlement,
 }: Props) {
   const [tab, setTab] = useState<TabId>('action');
+  const poolSize = sourceTotal ?? bookings.length;
 
   const tabCounts = useMemo(() => {
     return {
@@ -131,17 +143,26 @@ export function PartnerJobsList({
                 ? statusError.message
                 : null
             }
+            settlementPending={settlementPending && settlementBookingId === booking.id}
+            settlementError={
+              settlementError && settlementBookingId === booking.id
+                ? settlementError.message
+                : null
+            }
             onStart={onStart}
             onComplete={onComplete}
+            onApproveSettlement={onApproveSettlement}
           />
         ))}
       </div>
 
       {!loading && filtered.length === 0 ? (
         <p className="mt-4 border border-dashed border-[var(--color-line)] bg-white px-4 py-8 text-center text-[var(--color-muted)]">
-          {bookings.length === 0
+          {poolSize === 0
             ? 'Chưa nhận việc nào. Nhận đơn từ hàng chờ realtime bên trên.'
-            : 'Không có đơn trong mục này.'}
+            : bookings.length === 0
+              ? 'Không có đơn thuộc nghề đang chọn.'
+              : 'Không có đơn trong mục này.'}
         </p>
       ) : null}
     </section>

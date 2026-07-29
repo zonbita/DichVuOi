@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api } from '../../services/api';
 import type { BookingRequirement } from '../../types/catalog';
 import {
@@ -15,6 +15,11 @@ type BookingComplaintFormProps = {
   requirements?: BookingRequirement[];
 };
 
+function buildEvidenceNote(text: string, imageUrls: string[]) {
+  const parts = [text.trim(), ...imageUrls].filter(Boolean);
+  return parts.join('\n');
+}
+
 export function BookingComplaintForm({
   bookingId,
   partnerId,
@@ -23,36 +28,66 @@ export function BookingComplaintForm({
   requirements = [],
 }: BookingComplaintFormProps) {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const categories =
     mode === 'partner' ? COMPLAINT_CATEGORIES_PARTNER : COMPLAINT_CATEGORIES_CUSTOMER;
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<string>(categories[0].value);
   const [description, setDescription] = useState('');
   const [evidenceNote, setEvidenceNote] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [selectedReqs, setSelectedReqs] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState('');
 
   const canFile =
     Boolean(partnerId) &&
     (bookingStatus === 'AWAITING_CONFIRM' || bookingStatus === 'DISPUTED');
+
+  const evidenceCombined = buildEvidenceNote(evidenceNote, imageUrls);
 
   const mutation = useMutation({
     mutationFn: () =>
       api.createBookingComplaint(bookingId, {
         category,
         description,
-        evidenceNote: evidenceNote.trim(),
+        evidenceNote: evidenceCombined,
         requirementIds: selectedReqs.length > 0 ? selectedReqs : undefined,
       }),
     onSuccess: () => {
       setOpen(false);
       setDescription('');
       setEvidenceNote('');
+      setImageUrls([]);
       setSelectedReqs([]);
+      setUploadError('');
       void queryClient.invalidateQueries({ queryKey: ['complaints', 'mine'] });
       void queryClient.invalidateQueries({ queryKey: ['booking', bookingId] });
       void queryClient.invalidateQueries({ queryKey: ['bookings'] });
     },
   });
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) => api.uploadEvidenceImage(file),
+    onSuccess: (data) => {
+      setImageUrls((prev) => [...prev, data.url]);
+      setUploadError('');
+    },
+    onError: (err) => {
+      setUploadError((err as Error).message || 'Tải ảnh thất bại');
+    },
+  });
+
+  function onPickFiles(files: FileList | null) {
+    if (!files?.length) return;
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        setUploadError('Chỉ nhận file ảnh');
+        continue;
+      }
+      uploadMutation.mutate(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
 
   if (!partnerId) return null;
 
@@ -116,20 +151,65 @@ export function BookingComplaintForm({
               placeholder="Mô tả vấn đề, thời điểm…"
             />
           </label>
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="font-semibold text-[var(--color-muted)]">
-              Bằng chứng (link / mô tả ảnh·video·chat)
+              Bằng chứng (ảnh hoặc mô tả)
             </span>
             <textarea
               className="mt-1 w-full rounded-lg border border-[var(--color-line)] px-3 py-2"
               rows={2}
-              minLength={3}
-              required
               value={evidenceNote}
               onChange={(e) => setEvidenceNote(e.target.value)}
-              placeholder="Vd. ảnh checklist, đoạn chat đơn…"
+              placeholder="Vd. mô tả thêm, link chat…"
             />
-          </label>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                multiple
+                className="hidden"
+                onChange={(e) => onPickFiles(e.target.files)}
+              />
+              <button
+                type="button"
+                disabled={uploadMutation.isPending}
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-lg border border-[var(--color-line)] bg-white px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-canvas)] disabled:opacity-60"
+              >
+                {uploadMutation.isPending ? 'Đang tải ảnh…' : 'Tải ảnh lên'}
+              </button>
+              <span className="text-xs text-[var(--color-muted)]">
+                JPG/PNG/WEBP/GIF · tối đa 5MB
+              </span>
+            </div>
+            {imageUrls.length > 0 ? (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {imageUrls.map((url) => (
+                  <li key={url} className="relative">
+                    <img
+                      src={url}
+                      alt="Bằng chứng"
+                      className="h-20 w-20 rounded-lg border border-[var(--color-line)] object-cover"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Xóa ảnh"
+                      onClick={() =>
+                        setImageUrls((prev) => prev.filter((u) => u !== url))
+                      }
+                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {uploadError ? (
+              <p className="mt-1 text-sm text-red-600">{uploadError}</p>
+            ) : null}
+          </div>
           {requirements.length > 0 ? (
             <fieldset className="text-sm">
               <legend className="font-semibold text-[var(--color-muted)]">
@@ -178,7 +258,7 @@ export function BookingComplaintForm({
               disabled={
                 mutation.isPending ||
                 description.trim().length < 10 ||
-                evidenceNote.trim().length < 3
+                evidenceCombined.trim().length < 3
               }
               className="btn-primary px-4 py-2 text-sm"
             >

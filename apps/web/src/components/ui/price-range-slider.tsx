@@ -88,14 +88,6 @@ export function PriceRangeSlider({
     else setMax(value);
   }
 
-  const header = (
-    <div className="mb-3">
-      <span className="text-sm font-semibold text-[var(--color-ink)]">
-        Khoảng giá tham khảo (VNĐ)
-      </span>
-    </div>
-  );
-
   const slider = (
     <>
       <div
@@ -182,11 +174,17 @@ export function PriceRangeSlider({
     </>
   );
 
+  const fieldShell =
+    'flex min-w-0 items-stretch overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-white transition-[border-color,box-shadow] focus-within:border-[var(--color-brand)] focus-within:shadow-[0_0_0_3px_rgba(0,156,149,0.15)]';
+
   const manualInputs = (
-    <div className="flex flex-nowrap items-end gap-3">
-      <label className="block text-sm" htmlFor={`${id}-min`}>
-        <span className="mb-1.5 block font-semibold text-[var(--color-ink)]">Từ</span>
-        <div className="w-[150px]">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+      <label className={fieldShell} htmlFor={`${id}-min`}>
+        <span className="flex shrink-0 items-center px-3 text-sm font-semibold text-[var(--color-ink)]">
+          Từ
+        </span>
+        <span className="w-px shrink-0 bg-[var(--color-line)]" aria-hidden />
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 px-3 py-2.5">
           <input
             id={`${id}-min`}
             type="text"
@@ -203,13 +201,17 @@ export function PriceRangeSlider({
               }
               setMin(parsed);
             }}
-            className="field-input"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[var(--color-ink)] outline-none"
           />
-        </div>
+          <span className="shrink-0 text-sm font-medium text-[var(--color-ink)]">VNĐ</span>
+        </span>
       </label>
-      <label className="block text-sm" htmlFor={`${id}-max`}>
-        <span className="mb-1.5 block font-semibold text-[var(--color-ink)]">Đến</span>
-        <div className="w-[150px]">
+      <label className={fieldShell} htmlFor={`${id}-max`}>
+        <span className="flex shrink-0 items-center px-3 text-sm font-semibold text-[var(--color-ink)]">
+          Đến
+        </span>
+        <span className="w-px shrink-0 bg-[var(--color-line)]" aria-hidden />
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 px-3 py-2.5">
           <input
             id={`${id}-max`}
             type="text"
@@ -226,32 +228,29 @@ export function PriceRangeSlider({
               }
               setMax(parsed);
             }}
-            className="field-input"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[var(--color-ink)] outline-none"
           />
-        </div>
+          <span className="shrink-0 text-sm font-medium text-[var(--color-ink)]">VNĐ</span>
+        </span>
       </label>
     </div>
   );
 
   if (layout === 'split') {
     return (
-      <div className={`grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(220px,280px)] lg:items-center ${className}`}>
-        <div className="min-w-0">
-          {header}
-          {slider}
-        </div>
+      <div className={`grid gap-4 lg:grid-cols-[3fr_auto_2fr] lg:items-end ${className}`}>
+        <div className="min-w-0">{slider}</div>
         <div className="hidden self-stretch lg:block lg:w-px lg:bg-[var(--color-line)]" aria-hidden />
-        <div className="lg:pt-6">{manualInputs}</div>
+        <div className="min-w-0">{manualInputs}</div>
       </div>
     );
   }
 
   return (
     <div className={className}>
-      {header}
-      <div className="flex flex-nowrap items-end gap-4">
-        <div className="min-w-0 flex-1">{slider}</div>
-        <div className="shrink-0 pb-0.5">{manualInputs}</div>
+      <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-5">
+        <div className="min-w-0 sm:col-span-3">{slider}</div>
+        <div className="min-w-0 sm:col-span-2">{manualInputs}</div>
       </div>
     </div>
   );

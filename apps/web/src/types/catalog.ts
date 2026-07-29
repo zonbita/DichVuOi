@@ -120,7 +120,10 @@ export type BookingApplication = {
       avatarUrl?: string | null;
       city?: string | null;
       isVerified?: boolean;
+      onlineSeconds?: number;
+      offerings?: Array<{ serviceId: string; price: number | null }>;
     } | null;
+    reputationPeriods?: Array<{ currentPoints: number }>;
   } | null;
 };
 
@@ -148,6 +151,11 @@ export type Booking = {
   matchingDeadlineAt?: string | null;
   responseDeadlineAt?: string | null;
   disputeResultNote?: string | null;
+  settlementPercent?: number | null;
+  settlementProposedBy?: 'CUSTOMER' | 'PARTNER' | 'ADMIN' | null;
+  customerSettlementApprovedAt?: string | null;
+  partnerSettlementApprovedAt?: string | null;
+  settlementResolvedAt?: string | null;
   customerPhoneMasked?: boolean;
   addressMasked?: boolean;
   contactPolicy?: ContactPolicy;

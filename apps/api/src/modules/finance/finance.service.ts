@@ -25,6 +25,11 @@ type SettlementOptions = {
   disputeResultNote?: string | null;
 };
 
+type PercentSettlementOptions = {
+  expectedStatus?: BookingStatus;
+  disputeResultNote?: string | null;
+};
+
 type ApplyDepositOptions = {
   /** Override amount; default 10% of booking.totalPrice. */
   amount?: number;
@@ -461,6 +466,118 @@ export class FinanceService {
         },
       });
       return true;
+  }
+
+  /**
+   * Giải ngân theo % nghiệm thu đã chốt:
+   * - Trả partner theo grossRelease trừ commission
+   * - Hoàn phần còn lại về ví khách
+   * - paymentStatus vẫn chuyển RELEASED (escrow đã quyết toán xong)
+   */
+  async releaseBookingByPercent(
+    bookingId: string,
+    percent: number,
+    options: PercentSettlementOptions = {},
+  ): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+      });
+      if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+      if (booking.paymentStatus === PaymentStatus.RELEASED) return false;
+      if (booking.paymentStatus !== PaymentStatus.HELD) {
+        throw new BadRequestException('Escrow không ở trạng thái đang giữ');
+      }
+      if (!booking.partnerId) {
+        throw new BadRequestException('Đơn chưa có người làm để giải ngân');
+      }
+      if (
+        options.expectedStatus &&
+        booking.status !== options.expectedStatus
+      ) {
+        throw new BadRequestException('Đơn không ở trạng thái hợp lệ để quyết toán');
+      }
+      if (!Number.isFinite(percent) || percent < 1 || percent > 100) {
+        throw new BadRequestException('Phần trăm nghiệm thu phải trong khoảng 1..100');
+      }
+
+      const grossRelease = Math.round((booking.totalPrice * percent) / 100);
+      const customerRefund = Math.max(0, booking.totalPrice - grossRelease);
+      const split = computeEscrowSplit(
+        grossRelease,
+        booking.commissionBps || DEFAULT_COMMISSION_BPS,
+      );
+      const settledAt = new Date();
+
+      const updated = await tx.booking.updateMany({
+        where: {
+          id: bookingId,
+          paymentStatus: PaymentStatus.HELD,
+          ...(options.expectedStatus ? { status: options.expectedStatus } : {}),
+        },
+        data: {
+          paymentStatus: PaymentStatus.RELEASED,
+          status: BookingStatus.COMPLETED,
+          commissionAmount: split.commissionAmount,
+          partnerPayout: split.partnerPayout,
+          releasedAt: settledAt,
+          refundedAt: customerRefund > 0 ? settledAt : null,
+          confirmDeadlineAt: null,
+          disputeResultNote: options.disputeResultNote,
+        },
+      });
+      if (updated.count !== 1) return false;
+
+      const partner = await tx.user.update({
+        where: { id: booking.partnerId },
+        data: { walletBalance: { increment: split.partnerPayout } },
+        select: { walletBalance: true },
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId: booking.partnerId,
+          bookingId,
+          type: WalletTransactionType.PARTNER_PAYOUT,
+          amount: split.partnerPayout,
+          balanceAfter: partner.walletBalance,
+          description: `Giải ngân ${percent}% đơn ${bookingId}`,
+          reference: `payout:${bookingId}`,
+        },
+      });
+
+      if (customerRefund > 0) {
+        const customer = await tx.user.update({
+          where: { id: booking.userId },
+          data: { walletBalance: { increment: customerRefund } },
+          select: { walletBalance: true },
+        });
+        await tx.walletTransaction.create({
+          data: {
+            userId: booking.userId,
+            bookingId,
+            type: WalletTransactionType.ESCROW_REFUND,
+            amount: customerRefund,
+            balanceAfter: customer.walletBalance,
+            description: `Hoàn phần chưa nghiệm thu ${100 - percent}% đơn ${bookingId}`,
+            reference: `partial-refund:${bookingId}`,
+          },
+        });
+      }
+
+      await tx.invoice.update({
+        where: { bookingId },
+        data: {
+          partnerId: booking.partnerId,
+          commissionAmount: split.commissionAmount,
+          partnerPayout: split.partnerPayout,
+          status: InvoiceStatus.SETTLED,
+          settledAt,
+          refundedAt: customerRefund > 0 ? settledAt : null,
+        },
+      });
+
+      return true;
+    });
   }
 
   /** Người làm đặt cọc ứng tuyển (10% totalPrice) — debit ví. */

@@ -29,7 +29,7 @@ export function BookingChecklist({ booking, mode }: Props) {
   const items = booking.requirements ?? [];
   const canEdit = tickable(booking.status);
 
-  const mutation = useMutation({
+  const toggleMutation = useMutation({
     mutationFn: ({
       requirementId,
       payload,
@@ -43,62 +43,65 @@ export function BookingChecklist({ booking, mode }: Props) {
     },
   });
 
-  if (items.length === 0) {
-    return (
-      <div className="border border-[var(--color-line)] bg-white p-4 text-sm shadow-sm">
-        <p className="font-extrabold">Mục yêu cầu</p>
-        <p className="mt-1 text-[var(--color-muted)]">
-          Chưa có checklist — sẽ tạo từ gói dịch vụ / ghi chú khi có người làm.
-        </p>
-      </div>
-    );
-  }
-
   const confirmedCount = items.filter((i) => i.customerConfirmed).length;
   const partnerDoneCount = items.filter((i) => i.partnerDone).length;
+  const pending = toggleMutation.isPending;
 
   return (
-    <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
+    <div className="glass-card p-5 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="font-extrabold">Mục yêu cầu</p>
-          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-            Tick khách = xác nhận bàn giao · Tick người làm = «đã làm» (gợi ý)
+          <p className="font-bold tracking-tight text-[#172033]">
+            Công việc cần làm
           </p>
+          {mode === 'customer' ? (
+            <p className="mt-0.5 text-xs text-[#7C8799]">
+              Danh sách cố định từ lúc tạo đơn — chỉ tích đã xong
+            </p>
+          ) : null}
         </div>
-        <p className="text-xs font-semibold text-[var(--color-muted)]">
-          Khách {confirmedCount}/{items.length} · Người làm {partnerDoneCount}/
-          {items.length}
-        </p>
+        {items.length > 0 ? (
+          <p className="text-xs font-semibold text-[#7C8799]">
+            {mode === 'customer'
+              ? `${confirmedCount}/${items.length} đã xong`
+              : `Khách ${confirmedCount}/${items.length} · Người làm ${partnerDoneCount}/${items.length}`}
+          </p>
+        ) : null}
       </div>
 
-      <ul className="mt-3 space-y-2">
-        {items.map((item) => (
-          <RequirementRow
-            key={item.id}
-            item={item}
-            mode={mode}
-            canEdit={canEdit}
-            pending={mutation.isPending}
-            onTogglePartner={(done) =>
-              mutation.mutate({
-                requirementId: item.id,
-                payload: { partnerDone: done },
-              })
-            }
-            onToggleCustomer={(confirmed) =>
-              mutation.mutate({
-                requirementId: item.id,
-                payload: { customerConfirmed: confirmed },
-              })
-            }
-          />
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <p className="mt-3 text-sm text-[#7C8799]">
+          Không có mục checklist — chỉ thêm được khi tạo đơn thuê.
+        </p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {items.map((item) => (
+            <RequirementRow
+              key={item.id}
+              item={item}
+              mode={mode}
+              canEdit={canEdit}
+              pending={pending}
+              onTogglePartner={(done) =>
+                toggleMutation.mutate({
+                  requirementId: item.id,
+                  payload: { partnerDone: done },
+                })
+              }
+              onToggleCustomer={(confirmed) =>
+                toggleMutation.mutate({
+                  requirementId: item.id,
+                  payload: { customerConfirmed: confirmed },
+                })
+              }
+            />
+          ))}
+        </ul>
+      )}
 
-      {mutation.isError ? (
+      {toggleMutation.isError ? (
         <p className="mt-2 text-sm text-red-600">
-          {(mutation.error as Error).message}
+          {(toggleMutation.error as Error).message}
         </p>
       ) : null}
     </div>
@@ -118,10 +121,46 @@ function RequirementRow({
   canEdit: boolean;
   pending: boolean;
   onTogglePartner: (done: boolean) => void;
-  onToggleCustomer: (confirmed: boolean) => void;
+  onToggleCustomer: (done: boolean) => void;
 }) {
   const partnerEditable = canEdit && (mode === 'partner' || mode === 'admin');
   const customerEditable = canEdit && (mode === 'customer' || mode === 'admin');
+
+  if (mode === 'customer') {
+    return (
+      <li className="flex items-start gap-3 rounded-lg border border-[var(--color-line)] px-3 py-2.5">
+        <label
+          className={`mt-0.5 flex shrink-0 items-center gap-2 text-sm ${
+            customerEditable ? 'cursor-pointer' : 'opacity-70'
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={item.customerConfirmed}
+            disabled={!customerEditable || pending}
+            onChange={(e) => onToggleCustomer(e.target.checked)}
+            className="size-4 accent-emerald-700"
+          />
+          <span className="sr-only">Đã xong</span>
+        </label>
+        <div className="min-w-0 flex-1">
+          <p
+            className={`text-sm ${
+              item.customerConfirmed
+                ? 'text-[var(--color-muted)] line-through'
+                : 'text-[var(--color-ink)]'
+            }`}
+          >
+            {item.content}
+          </p>
+          <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
+            {sourceLabel[item.source] ?? item.source}
+            {item.partnerDone ? ' · Người làm đã đánh dấu xong' : ''}
+          </p>
+        </div>
+      </li>
+    );
+  }
 
   return (
     <li className="flex flex-wrap items-start gap-3 rounded-lg border border-[var(--color-line)] px-3 py-2.5">
@@ -154,7 +193,7 @@ function RequirementRow({
             onChange={(e) => onToggleCustomer(e.target.checked)}
             className="size-4 accent-emerald-700"
           />
-          <span className="font-semibold text-emerald-800">Nhận</span>
+          <span className="font-semibold text-emerald-800">Đã xong</span>
         </label>
       </div>
       <div className="min-w-0 flex-1">

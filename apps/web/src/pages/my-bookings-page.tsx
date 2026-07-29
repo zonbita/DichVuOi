@@ -7,58 +7,62 @@ import { useCustomerRealtime } from '../hooks/use-customer-realtime';
 import { api, formatPrice } from '../services/api';
 import type { Booking } from '../types/catalog';
 
-type TabId = 'all' | 'action' | 'active' | 'done' | 'cancelled';
+type TabId =
+  | 'all'
+  | 'waiting'
+  | 'active'
+  | 'expired'
+  | 'cancelled'
+  | 'complaint'
+  | 'done';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'action', label: 'Cần xử lý' },
-  { id: 'active', label: 'Đang diễn ra' },
+  { id: 'waiting', label: 'Đơn chờ' },
+  { id: 'active', label: 'Đang thực hiện' },
+  { id: 'expired', label: 'Hết hạn' },
+  { id: 'cancelled', label: 'Đơn bị huỷ' },
+  { id: 'complaint', label: 'Khiếu nại' },
   { id: 'done', label: 'Hoàn thành' },
-  { id: 'cancelled', label: 'Đã hủy' },
 ];
 
-function isActive(b: Booking) {
+function isInProgress(b: Booking) {
   return (
-    b.status === 'PENDING' ||
     b.status === 'CONFIRMED' ||
     b.status === 'IN_PROGRESS' ||
-    b.status === 'AWAITING_CONFIRM' ||
-    b.status === 'DISPUTED'
+    b.status === 'AWAITING_CONFIRM'
   );
 }
 
-function matchesTab(b: Booking, tab: TabId, userId: string) {
+function isActive(b: Booking) {
+  return b.status === 'PENDING' || isInProgress(b) || b.status === 'DISPUTED';
+}
+
+function matchesTab(b: Booking, tab: TabId) {
   switch (tab) {
     case 'all':
       return true;
-    case 'action':
-      if (b.status === 'CANCELLED') return false;
-      if (b.paymentStatus === 'UNPAID') return true;
-      if (b.status === 'COMPLETED') {
-        return !(b.reviews ?? []).some((r) => r.fromUserId === userId);
-      }
-      if (b.status === 'PENDING' && b.paymentStatus === 'HELD' && !b.partnerId) {
-        return true; // chờ nhận — khách theo dõi
-      }
-      if (b.status === 'AWAITING_CONFIRM' || b.status === 'DISPUTED') {
-        return true;
-      }
-      return false;
+    case 'waiting':
+      return b.status === 'PENDING';
     case 'active':
-      return isActive(b);
+      return isInProgress(b);
+    case 'expired':
+      return b.status === 'CANCELLED' && !!b.matchingDeadlineAt;
+    case 'cancelled':
+      return b.status === 'CANCELLED' && !b.matchingDeadlineAt;
+    case 'complaint':
+      return b.status === 'DISPUTED';
     case 'done':
       return b.status === 'COMPLETED';
-    case 'cancelled':
-      return b.status === 'CANCELLED';
     default:
-      return true;
+      return false;
   }
 }
 
 export function MyBookingsPage() {
   const { user, loading, refreshMe } = useAuth();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabId>('action');
+  const [tab, setTab] = useState<TabId>('all');
 
   useCustomerRealtime(Boolean(user), user?.id);
 
@@ -89,23 +93,23 @@ export function MyBookingsPage() {
     return { total, waitingPay, active, spent, awaitingPartner, completed: completed.length };
   }, [bookings]);
 
-  const filtered = useMemo(() => {
-    if (!user) return [];
-    return bookings.filter((b) => matchesTab(b, tab, user.id));
-  }, [bookings, tab, user]);
+  const filtered = useMemo(
+    () => bookings.filter((b) => matchesTab(b, tab)),
+    [bookings, tab],
+  );
 
-  const tabCounts = useMemo(() => {
-    if (!user) {
-      return { all: 0, action: 0, active: 0, done: 0, cancelled: 0 };
-    }
-    return {
+  const tabCounts = useMemo(
+    () => ({
       all: bookings.length,
-      action: bookings.filter((b) => matchesTab(b, 'action', user.id)).length,
-      active: bookings.filter((b) => matchesTab(b, 'active', user.id)).length,
-      done: bookings.filter((b) => matchesTab(b, 'done', user.id)).length,
-      cancelled: bookings.filter((b) => matchesTab(b, 'cancelled', user.id)).length,
-    };
-  }, [bookings, user]);
+      waiting: bookings.filter((b) => matchesTab(b, 'waiting')).length,
+      active: bookings.filter((b) => matchesTab(b, 'active')).length,
+      expired: bookings.filter((b) => matchesTab(b, 'expired')).length,
+      cancelled: bookings.filter((b) => matchesTab(b, 'cancelled')).length,
+      complaint: bookings.filter((b) => matchesTab(b, 'complaint')).length,
+      done: bookings.filter((b) => matchesTab(b, 'done')).length,
+    }),
+    [bookings],
+  );
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['bookings', 'mine'] });
@@ -121,6 +125,24 @@ export function MyBookingsPage() {
 
   const payMutation = useMutation({
     mutationFn: (id: string) => api.payBooking(id),
+    onSuccess: async () => {
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      await refreshMe();
+    },
+  });
+
+  const proposeSettlementMutation = useMutation({
+    mutationFn: ({ id, percent }: { id: string; percent: number }) =>
+      api.proposeBookingSettlement(id, percent),
+    onSuccess: async () => {
+      invalidate();
+    },
+  });
+
+  const approveSettlementMutation = useMutation({
+    mutationFn: (id: string) => api.approveBookingSettlement(id),
     onSuccess: async () => {
       invalidate();
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
@@ -167,12 +189,12 @@ export function MyBookingsPage() {
         </div>
         <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Đang diễn ra
+            Đang thực hiện
           </p>
           <p className="mt-1 text-2xl font-extrabold text-sky-700">{stats.active}</p>
           {stats.awaitingPartner > 0 ? (
             <p className="mt-1 text-xs text-[var(--color-muted)]">
-              {stats.awaitingPartner} chờ người làm nhận
+              {stats.awaitingPartner} đơn chờ người làm
             </p>
           ) : null}
         </div>
@@ -187,7 +209,7 @@ export function MyBookingsPage() {
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2 border-b border-[var(--color-line)] pb-3">
+      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
         {TABS.map((item) => {
           const count = tabCounts[item.id];
           const activeTab = tab === item.id;
@@ -196,15 +218,17 @@ export function MyBookingsPage() {
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`px-3 py-2 text-sm font-bold transition ${
+              className={`px-3 py-1.5 text-sm font-bold transition ${
                 activeTab
-                  ? 'bg-[var(--color-ink)] text-white'
-                  : 'bg-[var(--color-canvas)] text-[var(--color-ink)] hover:bg-[var(--color-brand-soft)]'
+                  ? 'rounded-full bg-[var(--color-ink)] text-white'
+                  : 'text-[var(--color-ink)] hover:text-[var(--color-brand-deep)]'
               }`}
             >
               {item.label}
               <span
-                className={`ml-1.5 text-xs ${activeTab ? 'text-white/80' : 'text-[var(--color-muted)]'}`}
+                className={`ml-1.5 text-xs font-semibold ${
+                  activeTab ? 'text-white/80' : 'text-[var(--color-muted)]'
+                }`}
               >
                 {count}
               </span>
@@ -233,8 +257,30 @@ export function MyBookingsPage() {
                 ? (payMutation.error as Error).message
                 : null
             }
+            cancelError={
+              cancelMutation.isError && cancelMutation.variables === booking.id
+                ? (cancelMutation.error as Error).message
+                : null
+            }
             onPay={(id) => payMutation.mutate(id)}
             onCancel={(id) => cancelMutation.mutate(id)}
+            settlementPending={
+              proposeSettlementMutation.isPending ||
+              approveSettlementMutation.isPending
+            }
+            settlementError={
+              proposeSettlementMutation.isError &&
+              proposeSettlementMutation.variables?.id === booking.id
+                ? (proposeSettlementMutation.error as Error).message
+                : approveSettlementMutation.isError &&
+                    approveSettlementMutation.variables === booking.id
+                  ? (approveSettlementMutation.error as Error).message
+                  : null
+            }
+            onProposeSettlement={(id, percent) =>
+              proposeSettlementMutation.mutate({ id, percent })
+            }
+            onApproveSettlement={(id) => approveSettlementMutation.mutate(id)}
           />
         ))}
       </div>

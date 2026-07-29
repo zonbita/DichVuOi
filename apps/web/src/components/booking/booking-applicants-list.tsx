@@ -1,15 +1,153 @@
 import { formatPrice } from '../../services/api';
 import type { BookingApplication } from '../../types/catalog';
+import {
+  AvatarLevelOverlay,
+  VerificationBadge,
+} from '../ui/partner-badges';
 
 type Props = {
   applications: BookingApplication[];
+  serviceId?: string;
   selecting?: boolean;
   onSelect: (applicationId: string) => void;
   matchingDeadlineAt?: string | null;
 };
 
+function formatWorkHours(onlineSeconds: number) {
+  const hours = Math.round(onlineSeconds / 3600);
+  return `${hours} giờ làm`;
+}
+
+function ApplicantCard({
+  app,
+  serviceId,
+  selecting,
+  onSelect,
+}: {
+  app: BookingApplication;
+  serviceId?: string;
+  selecting?: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const profile = app.partner?.partnerProfile;
+  const avatarUrl = profile?.avatarUrl;
+  const level = profile?.level;
+  const isVerified = profile?.isVerified;
+  const ratingAvg = profile?.ratingAvg;
+  const ratingCount = profile?.ratingCount ?? 0;
+  const onlineSeconds = profile?.onlineSeconds ?? 0;
+  const reputationPoints =
+    app.partner?.reputationPeriods?.[0]?.currentPoints ?? null;
+
+  const offeringPrice =
+    serviceId && profile?.offerings
+      ? profile.offerings.find((o) => o.serviceId === serviceId)?.price ?? null
+      : null;
+
+  const avatar = avatarUrl ? (
+    <img
+      src={avatarUrl}
+      alt=""
+      className="h-16 w-16 rounded-full border-2 border-amber-300 object-cover shadow"
+    />
+  ) : (
+    <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--color-line)] bg-[var(--color-canvas)] text-2xl font-bold text-[var(--color-muted)]">
+      {app.partner?.fullName?.charAt(0) ?? '?'}
+    </div>
+  );
+
+  return (
+    <li className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-sm">
+      <div className="flex gap-4 p-4">
+        <div className="shrink-0">
+          {level != null ? (
+            <AvatarLevelOverlay level={level}>{avatar}</AvatarLevelOverlay>
+          ) : (
+            avatar
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-base font-extrabold text-[var(--color-ink)]">
+              {app.partner?.fullName ?? 'Người làm'}
+            </p>
+            <VerificationBadge verified={!!isVerified} />
+          </div>
+
+          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+            {profile?.headline || 'Freelancer trên Dich Vụ Ơi'}
+          </p>
+
+          {/* Stats row */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            {reputationPoints != null ? (
+              <span className="text-[var(--color-ink)]">
+                <span className="font-semibold text-[var(--color-muted)]">
+                  UY TÍN
+                </span>{' '}
+                <span className="font-extrabold">{reputationPoints}</span>
+                <span className="text-xs text-[var(--color-muted)]">
+                  /1000
+                </span>
+              </span>
+            ) : null}
+
+            {ratingAvg != null && ratingAvg > 0 ? (
+              <span className="inline-flex items-center gap-1">
+                <span className="text-amber-500">★</span>
+                <span className="font-bold">{ratingAvg.toFixed(1)}</span>
+                <span className="text-xs text-[var(--color-muted)]">
+                  ({ratingCount})
+                </span>
+              </span>
+            ) : null}
+
+            <span className="inline-flex items-center gap-1 text-[var(--color-muted)]">
+              ◷ {formatWorkHours(onlineSeconds)}
+            </span>
+          </div>
+
+          {/* Offering price */}
+          {offeringPrice != null ? (
+            <p className="mt-2 text-lg font-extrabold text-amber-600">
+              {formatPrice(offeringPrice)}
+              <span className="text-xs font-semibold text-[var(--color-muted)]">
+                /gói
+              </span>
+            </p>
+          ) : null}
+
+          {app.note ? (
+            <p className="mt-1.5 line-clamp-2 text-xs text-[var(--color-ink)]">
+              {app.note}
+            </p>
+          ) : null}
+
+          <p className="mt-1 text-[11px] text-[var(--color-muted)]">
+            Cọc ứng tuyển: {formatPrice(app.depositAmount)}
+          </p>
+        </div>
+
+        {/* CTA */}
+        <div className="flex shrink-0 items-start">
+          <button
+            type="button"
+            disabled={selecting}
+            onClick={() => onSelect(app.id)}
+            className="rounded-xl bg-[var(--color-ink)] px-4 py-2.5 text-sm font-bold text-white shadow transition hover:-translate-y-0.5 hover:bg-[var(--color-ink)]/90 disabled:opacity-60"
+          >
+            Chọn làm việc
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export function BookingApplicantsList({
   applications,
+  serviceId,
   selecting,
   onSelect,
   matchingDeadlineAt,
@@ -18,10 +156,12 @@ export function BookingApplicantsList({
   const others = applications.filter((a) => a.status !== 'APPLIED');
 
   return (
-    <section className="surface-card space-y-3 p-4 sm:p-5">
+    <section className="glass-card space-y-3 p-5 sm:p-6">
       <div>
-        <h2 className="text-lg font-extrabold">Ứng viên ứng tuyển</h2>
-        <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+        <h2 className="text-lg font-bold tracking-tight text-[#172033]">
+          Ứng viên ứng tuyển
+        </h2>
+        <p className="mt-0.5 text-xs text-[#7C8799]">
           Người làm đặt cọc 10% để vào list. Bạn chọn 1 người để giao việc.
           {matchingDeadlineAt
             ? ` Hạn ghép: ${new Date(matchingDeadlineAt).toLocaleString('vi-VN')}.`
@@ -30,54 +170,20 @@ export function BookingApplicantsList({
       </div>
 
       {applied.length === 0 ? (
-        <p className="rounded-xl bg-[var(--color-canvas)]/80 px-3 py-6 text-center text-sm text-[var(--color-muted)]">
+        <p className="rounded-[14px] border border-dashed border-[#172033]/12 bg-white/40 px-3 py-6 text-center text-sm text-[#7C8799]">
           Chưa có ai ứng tuyển. Đơn đang hiện trên hàng chờ người làm.
         </p>
       ) : (
-        <ul className="space-y-2">
-          {applied.map((app) => {
-            const profile = app.partner?.partnerProfile;
-            return (
-              <li
-                key={app.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-line)] bg-white p-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-extrabold">
-                    {app.partner?.fullName ?? 'Người làm'}
-                    {profile?.isVerified ? (
-                      <span className="ml-1 text-[10px] font-bold text-emerald-700">
-                        ✓
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-                    {profile?.headline || profile?.city || '—'}
-                    {profile?.ratingAvg != null
-                      ? ` · ★ ${profile.ratingAvg.toFixed(1)} (${profile.ratingCount ?? 0})`
-                      : null}
-                    {profile?.level != null ? ` · Lv.${profile.level}` : null}
-                  </p>
-                  {app.note ? (
-                    <p className="mt-1 line-clamp-2 text-xs text-[var(--color-ink)]">
-                      {app.note}
-                    </p>
-                  ) : null}
-                  <p className="mt-1 text-[11px] text-[var(--color-muted)]">
-                    Cọc ứng tuyển: {formatPrice(app.depositAmount)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  disabled={selecting}
-                  onClick={() => onSelect(app.id)}
-                  className="shrink-0 rounded-lg bg-[var(--color-ink)] px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
-                >
-                  Chọn làm việc
-                </button>
-              </li>
-            );
-          })}
+        <ul className="space-y-3">
+          {applied.map((app) => (
+            <ApplicantCard
+              key={app.id}
+              app={app}
+              serviceId={serviceId}
+              selecting={selecting}
+              onSelect={onSelect}
+            />
+          ))}
         </ul>
       )}
 

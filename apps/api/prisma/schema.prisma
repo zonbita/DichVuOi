@@ -277,6 +277,16 @@ model Booking {
   responseDeadlineAt DateTime?
   /** Ghi chú kết quả tranh chấp công khai cho 2 bên. */
   disputeResultNote String?
+  /** % nghiệm thu do 1 bên đề xuất khi chờ xác nhận (1..100). */
+  settlementPercent Int?
+  /** Ai đang là bên đề xuất % nghiệm thu. */
+  settlementProposedBy Role?
+  /** Thời điểm khách thuê bấm đồng ý % hiện tại. */
+  customerSettlementApprovedAt DateTime?
+  /** Thời điểm người làm bấm đồng ý % hiện tại. */
+  partnerSettlementApprovedAt DateTime?
+  /** Đã chốt thanh toán theo % (hai bên đồng ý). */
+  settlementResolvedAt DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   messages      BookingMessage[]

@@ -59,18 +59,18 @@ export function RetentionPartnerCard({
 }: Props) {
   const hireTo = serviceSlug
     ? `/dich-vu/${serviceSlug}?partner=${partnerUserId}`
-    : `/nguoi/${partnerUserId}`;
+    : `/user/${partnerUserId}`;
 
   return (
     <article className="flex w-[min(100%,280px)] shrink-0 flex-col border border-[var(--color-line)] bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <Link to={`/nguoi/${partnerUserId}`} className="shrink-0">
+        <Link to={`/user/${partnerUserId}`} className="shrink-0">
           <Avatar name={fullName} src={avatarUrl} />
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <Link
-              to={`/nguoi/${partnerUserId}`}
+              to={`/user/${partnerUserId}`}
               className="truncate text-base font-extrabold hover:text-[var(--color-brand-deep)]"
             >
               {fullName}

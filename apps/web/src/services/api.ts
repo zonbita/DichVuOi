@@ -86,6 +86,11 @@ function authHeaders(token?: string | null): HeadersInit {
   };
 }
 
+function authOnlyHeaders(token?: string | null): HeadersInit {
+  const stored = token ?? localStorage.getItem('dichvuoi_token');
+  return stored ? { Authorization: `Bearer ${stored}` } : {};
+}
+
 async function request<T>(path: string, init?: RequestInit & { token?: string | null }): Promise<T> {
   const { token, ...rest } = init ?? {};
   const response = await fetch(`${API_BASE}${path}`, {
@@ -188,6 +193,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ acceptIncomplete }),
     }),
+  proposeBookingSettlement: (id: string, percent: number) =>
+    request<Booking>(`/api/bookings/${id}/settlement/propose`, {
+      method: 'POST',
+      body: JSON.stringify({ percent }),
+    }),
+  approveBookingSettlement: (id: string) =>
+    request<Booking>(`/api/bookings/${id}/settlement/approve`, {
+      method: 'POST',
+    }),
   updateBookingRequirement: (
     bookingId: string,
     requirementId: string,
@@ -204,6 +218,11 @@ export const api = {
         body: JSON.stringify(payload),
       },
     ),
+  addBookingRequirement: (bookingId: string, content: string) =>
+    request<Booking>(`/api/bookings/${bookingId}/requirements`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
   getBookingMessages: (id: string) =>
     request<BookingMessage[]>(`/api/bookings/${id}/messages`),
   postBookingMessage: (id: string, body: string) =>
@@ -251,6 +270,58 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  uploadEvidenceImage: async (file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    const response = await fetch(`${API_BASE}/api/uploads/evidence`, {
+      method: 'POST',
+      headers: authOnlyHeaders(),
+      body,
+    });
+    if (!response.ok) {
+      const raw = await response.text();
+      let message = 'Tải ảnh thất bại';
+      try {
+        const parsed = JSON.parse(raw) as { message?: string | string[] };
+        if (typeof parsed.message === 'string') message = parsed.message;
+        else if (Array.isArray(parsed.message)) message = parsed.message.join(', ');
+      } catch {
+        if (raw.trim()) message = raw.slice(0, 200);
+      }
+      throw new Error(message);
+    }
+    return response.json() as Promise<{
+      url: string;
+      fileName: string;
+      size: number;
+    }>;
+  },
+  uploadAvatarImage: async (file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    const response = await fetch(`${API_BASE}/api/uploads/avatar`, {
+      method: 'POST',
+      headers: authOnlyHeaders(),
+      body,
+    });
+    if (!response.ok) {
+      const raw = await response.text();
+      let message = 'Tải ảnh đại diện thất bại';
+      try {
+        const parsed = JSON.parse(raw) as { message?: string | string[] };
+        if (typeof parsed.message === 'string') message = parsed.message;
+        else if (Array.isArray(parsed.message)) message = parsed.message.join(', ');
+      } catch {
+        if (raw.trim()) message = raw.slice(0, 200);
+      }
+      throw new Error(message);
+    }
+    return response.json() as Promise<{
+      url: string;
+      fileName: string;
+      size: number;
+    }>;
+  },
   listMyComplaints: () => request<Complaint[]>('/api/complaints/mine'),
 
   adminStats: () => request<AdminStats>('/api/admin/stats'),
@@ -438,7 +509,7 @@ export function formatBookingStatus(status: string) {
 export function formatPaymentStatus(status: string) {
   const map: Record<string, string> = {
     UNPAID: 'Chưa đặt cọc',
-    HELD: 'Đã đặt cọc (escrow)',
+    HELD: 'Hệ thống đang giữ cọc',
     RELEASED: 'Đã giải ngân',
     REFUNDED: 'Đã hoàn cọc',
   };

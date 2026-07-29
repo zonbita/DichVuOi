@@ -1,24 +1,32 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
-import { PartnerCompletenessBar } from '../components/partner/partner-completeness-bar';
+import { PartnerAvatarUpload } from '../components/partner/partner-avatar-upload';
 import { PartnerIncomingList } from '../components/partner/partner-incoming-list';
 import { PartnerJobsList } from '../components/partner/partner-jobs-list';
+import { PartnerProfessionTabs } from '../components/partner/partner-profession-tabs';
 import { PartnerScheduleBoard } from '../components/partner/partner-schedule-board';
 import { PartnerStatsBar } from '../components/partner/partner-stats-bar';
 import { LevelBadgeGold, VerificationBadge } from '../components/ui/partner-badges';
 import { ProfessionTagsInput } from '../components/ui/profession-tags-input';
 import type { ProfessionOption } from '../components/ui/profession-tags-input';
+import { ProvinceSelect } from '../components/ui/province-select';
 import { useAuth } from '../features/auth/auth-context';
 import { usePartnerRealtime } from '../hooks/use-partner-realtime';
 import { catalogQueries } from '../lib/catalog-queries';
+import {
+  DEFAULT_PROVINCE_SLUG,
+  findProvince,
+  findProvinceByName,
+} from '../data/provinces';
 import { api } from '../services/api';
 import type { PartnerLevelBreakdown } from '../types/auth';
 
 const phoneRegex = /^(0|\+84)\d{8,10}$/;
+const defaultCity = findProvince(DEFAULT_PROVINCE_SLUG).name;
 
 const profileSchema = z.object({
   phone: z
@@ -26,7 +34,7 @@ const profileSchema = z.object({
     .trim()
     .regex(phoneRegex, 'Số điện thoại không hợp lệ'),
   bio: z.string().max(2000).optional(),
-  districts: z.string().max(200).optional(),
+  city: z.string().min(1, 'Chọn tỉnh / thành phố'),
 });
 
 /** `z.coerce` khiến giá trị vào form (input) khác giá trị đã parse (output). */
@@ -50,6 +58,9 @@ export function PartnerDashboardPage() {
   const [enableError, setEnableError] = useState('');
   const [enableServiceIds, setEnableServiceIds] = useState<string[]>([]);
   const [profileServiceIds, setProfileServiceIds] = useState<string[]>([]);
+  /** Lọc Việc của tôi theo nghề — `'all'` = mọi nghề. */
+  const [jobsProfessionId, setJobsProfessionId] = useState('all');
+  const [appliedBookingIds, setAppliedBookingIds] = useState<string[]>([]);
 
   const openQuery = useQuery({
     queryKey: ['bookings', 'open'],
@@ -113,16 +124,17 @@ export function PartnerDashboardPage() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { isSubmitting, errors },
   } = useForm<ProfileInput, unknown, ProfileValues>({
     resolver: zodResolver(profileSchema),
     values: {
       phone: profileQuery.data?.user?.phone ?? user?.phone ?? '',
       bio: profileQuery.data?.bio ?? '',
-      districts:
-        profileQuery.data?.districtsList?.join(', ') ??
-        profileQuery.data?.districts ??
-        '',
+      city:
+        findProvinceByName(profileQuery.data?.city)?.name ??
+        findProvinceByName(profileQuery.data?.districtsList?.[0])?.name ??
+        defaultCity,
     },
   });
 
@@ -131,7 +143,7 @@ export function PartnerDashboardPage() {
     defaultValues: {
       phone: user?.phone ?? '',
       bio: '',
-      districts: '',
+      city: defaultCity,
     },
   });
 
@@ -142,7 +154,8 @@ export function PartnerDashboardPage() {
 
   const acceptMutation = useMutation({
     mutationFn: (id: string) => api.applyBooking(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
+      setAppliedBookingIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
       void queryClient.invalidateQueries({ queryKey: ['bookings'] });
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
     },
@@ -157,13 +170,23 @@ export function PartnerDashboardPage() {
     },
   });
 
+  const approveSettlementMutation = useMutation({
+    mutationFn: (id: string) => api.approveBookingSettlement(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      void queryClient.invalidateQueries({ queryKey: ['partner', 'me', 'level'] });
+    },
+  });
+
   const profileMutation = useMutation({
     mutationFn: async (values: ProfileValues) => {
       await api.updatePartnerProfile({
         phone: values.phone,
         bio: values.bio,
-        city: profileQuery.data?.city ?? 'Hồ Chí Minh',
-        districts: values.districts,
+        city: values.city,
+        districts: values.city,
       });
       await api.syncPartnerOfferings(profileServiceIds);
     },
@@ -180,8 +203,8 @@ export function PartnerDashboardPage() {
       api.enableOffering({
         phone: values.phone,
         bio: values.bio,
-        city: 'Hồ Chí Minh',
-        districts: values.districts,
+        city: values.city,
+        districts: values.city,
         serviceIds: enableServiceIds,
       }),
     onSuccess: (session) => {
@@ -192,6 +215,67 @@ export function PartnerDashboardPage() {
       void queryClient.invalidateQueries({ queryKey: ['services'] });
     },
   });
+
+  const jobsProfessionTabs = useMemo(() => {
+    const open = openQuery.data ?? [];
+    const mine = mineQuery.data ?? [];
+
+    /** Chỉ nghề user đã gắn trên hồ sơ — không suy từ đơn lạ. */
+    const fromOfferings = (profileQuery.data?.offerings ?? [])
+      .filter((o) => o.isActive !== false)
+      .map((o) => ({ id: o.serviceId, label: o.service.name }));
+
+    const selected =
+      fromOfferings.length > 0
+        ? fromOfferings
+        : (profileQuery.data?.serviceIds ?? profileServiceIds).map((id) => {
+            const opt = professionOptions.find((p) => p.id === id);
+            return { id, label: opt?.name ?? id };
+          });
+
+    const countFor = (serviceId: string) =>
+      open.filter((b) => b.service?.id === serviceId).length +
+      mine.filter((b) => b.service?.id === serviceId).length;
+
+    const professionTabs = selected
+      .map((s) => {
+        const option = professionOptions.find((p) => p.id === s.id);
+        return {
+          id: s.id,
+          label: s.label,
+          count: countFor(s.id),
+          groupSlug: option?.groupSlug,
+          groupName: option?.groupName,
+          categoryName: option?.categoryName,
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label, 'vi'));
+
+    return [
+      {
+        id: 'all',
+        label: 'Tất cả nghề',
+        count: open.length + mine.length,
+        groupSlug: undefined,
+        groupName: undefined,
+        categoryName: undefined,
+      },
+      ...professionTabs,
+    ];
+  }, [
+    openQuery.data,
+    mineQuery.data,
+    profileQuery.data?.offerings,
+    profileQuery.data?.serviceIds,
+    profileServiceIds,
+    professionOptions,
+  ]);
+
+  useEffect(() => {
+    if (jobsProfessionId === 'all') return;
+    const stillExists = jobsProfessionTabs.some((t) => t.id === jobsProfessionId);
+    if (!stillExists) setJobsProfessionId('all');
+  }, [jobsProfessionId, jobsProfessionTabs]);
 
   if (loading) return <p>Đang tải...</p>;
   if (!user) return <Navigate to="/dang-nhap?redirect=/doi-tac" replace />;
@@ -247,10 +331,17 @@ export function PartnerDashboardPage() {
             ) : null}
           </div>
 
-          <input
-            {...enableForm.register('districts')}
-            placeholder="Địa chỉ / khu vực phục vụ (vd: Quận 1, Bình Thạnh)"
-            className="field-input w-full"
+          <Controller
+            name="city"
+            control={enableForm.control}
+            render={({ field }) => (
+              <ProvinceSelect
+                id="enable-city"
+                value={field.value}
+                onChange={field.onChange}
+                error={enableForm.formState.errors.city?.message}
+              />
+            )}
           />
 
           <div>
@@ -301,38 +392,65 @@ export function PartnerDashboardPage() {
   const inProgressCount = (mineQuery.data ?? []).filter((b) => b.status === 'IN_PROGRESS').length;
   const openCount = (openQuery.data ?? []).length;
 
+  const openBookings = openQuery.data ?? [];
+  const mineBookings = mineQuery.data ?? [];
+  const filteredOpenBookings =
+    jobsProfessionId === 'all'
+      ? openBookings
+      : openBookings.filter((b) => b.service?.id === jobsProfessionId);
+  const filteredMineBookings =
+    jobsProfessionId === 'all'
+      ? mineBookings
+      : mineBookings.filter((b) => b.service?.id === jobsProfessionId);
+
   return (
-    <div className="space-y-8 pb-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-extrabold sm:text-3xl">
-              {tab === 'jobs'
-                ? 'Việc của tôi'
-                : tab === 'profile'
-                  ? 'Hồ sơ'
-                  : tab === 'level'
-                    ? 'Cấp độ'
-                    : 'Nhận việc'}
-            </h1>
-            {tab === 'overview' ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+    <div className="space-y-1 pb-6">
+      {tab !== 'overview' ? (
+        <header className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              {tab !== 'profile' ? (
+                <h1 className="text-2xl font-extrabold sm:text-3xl">
+                  {tab === 'jobs'
+                    ? 'Việc của tôi'
+                    : tab === 'level'
+                      ? 'Cấp độ'
+                      : 'Nhận việc'}
+                </h1>
+              ) : null}
+              {tab === 'jobs' ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                  Live
                 </span>
-                Live
-              </span>
+              ) : null}
+            </div>
+            {tab === 'jobs' ? (
+              <p className="mt-2 text-[15px] text-[var(--color-muted)]">
+                Đơn mở realtime và việc đã nhận.
+              </p>
             ) : null}
           </div>
-          <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-            {user.fullName} — vừa là khách thuê vừa là người làm trên cùng tài khoản.
-            {tab === 'overview'
-              ? ' Đơn mở và lịch cập nhật realtime.'
-              : null}
-          </p>
-          {user.partnerProfile && tab === 'overview' ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+          {tab === 'jobs' ? (
+            <div className="w-full md:w-[360px]">
+              <PartnerProfessionTabs
+                tabs={jobsProfessionTabs}
+                value={jobsProfessionId}
+                onChange={setJobsProfessionId}
+                orientation="vertical"
+              />
+            </div>
+          ) : null}
+        </header>
+      ) : null}
+
+      {(tab === 'overview' || !tab) && (
+        <>
+          {user.partnerProfile ? (
+            <div className="flex flex-wrap items-center gap-2">
               <LevelBadgeGold level={levelQuery.data?.level ?? user.partnerProfile.level ?? 1} />
               <VerificationBadge
                 verified={Boolean(
@@ -340,20 +458,12 @@ export function PartnerDashboardPage() {
                 )}
               />
               <Link
-                to={`/nguoi/${user.id}`}
+                to={`/user/${user.id}`}
                 className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
               >
                 Xem hồ sơ công khai ›
               </Link>
             </div>
-          ) : null}
-        </div>
-      </header>
-
-      {(tab === 'overview' || !tab) && (
-        <>
-          {profileQuery.data ? (
-            <PartnerCompletenessBar profile={profileQuery.data} />
           ) : null}
 
           <PartnerStatsBar
@@ -361,13 +471,8 @@ export function PartnerDashboardPage() {
             openCount={openCount}
           />
 
-          {needStartCount + inProgressCount + openCount > 0 ? (
+          {needStartCount + inProgressCount > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {openCount > 0 ? (
-                <span className="rounded-full bg-emerald-100 px-3.5 py-1.5 text-sm font-semibold text-emerald-900">
-                  {openCount} đơn mở trên hàng chờ
-                </span>
-              ) : null}
               {needStartCount > 0 ? (
                 <Link
                   to="/doi-tac/viec"
@@ -387,36 +492,53 @@ export function PartnerDashboardPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <PartnerScheduleBoard enabled={canOffer} />
+          <PartnerScheduleBoard enabled={canOffer} />
+        </>
+      )}
+
+      {tab === 'jobs' && (
+        <div className="min-w-0 space-y-5">
+          <div className="min-w-0 space-y-8">
             <PartnerIncomingList
-              bookings={openQuery.data ?? []}
+              bookings={filteredOpenBookings}
               loading={openQuery.isLoading}
-              applying={acceptMutation.isPending}
+              applyingId={acceptMutation.isPending ? (acceptMutation.variables ?? null) : null}
+              appliedIds={appliedBookingIds}
               applyError={
                 acceptMutation.isError
                   ? (acceptMutation.error as Error).message
                   : null
               }
               onApply={(id) => acceptMutation.mutate(id)}
+              emptyHint={
+                jobsProfessionId !== 'all' && openBookings.length > 0
+                  ? 'Không có đơn mở thuộc nghề đang chọn.'
+                  : undefined
+              }
+            />
+            <PartnerJobsList
+              bookings={filteredMineBookings}
+              sourceTotal={mineBookings.length}
+              loading={mineQuery.isLoading}
+              currentUserId={user.id}
+              statusPending={statusMutation.isPending}
+              statusVariables={statusMutation.variables ?? null}
+              statusError={statusMutation.isError ? (statusMutation.error as Error) : null}
+              settlementPending={approveSettlementMutation.isPending}
+              settlementBookingId={approveSettlementMutation.variables ?? null}
+              settlementError={
+                approveSettlementMutation.isError
+                  ? (approveSettlementMutation.error as Error)
+                  : null
+              }
+              onStart={(id) => statusMutation.mutate({ id, status: 'IN_PROGRESS' })}
+              onComplete={(id) =>
+                statusMutation.mutate({ id, status: 'AWAITING_CONFIRM' })
+              }
+              onApproveSettlement={(id) => approveSettlementMutation.mutate(id)}
             />
           </div>
-        </>
-      )}
-
-      {tab === 'jobs' && (
-        <PartnerJobsList
-          bookings={mineQuery.data ?? []}
-          loading={mineQuery.isLoading}
-          currentUserId={user.id}
-          statusPending={statusMutation.isPending}
-          statusVariables={statusMutation.variables ?? null}
-          statusError={statusMutation.isError ? (statusMutation.error as Error) : null}
-          onStart={(id) => statusMutation.mutate({ id, status: 'IN_PROGRESS' })}
-          onComplete={(id) =>
-            statusMutation.mutate({ id, status: 'AWAITING_CONFIRM' })
-          }
-        />
+        </div>
       )}
 
       {tab === 'level' && canOffer && levelQuery.data ? (
@@ -425,11 +547,20 @@ export function PartnerDashboardPage() {
 
       {tab === 'profile' && (
       <section className="space-y-4">
-        {profileQuery.data ? (
-          <PartnerCompletenessBar profile={profileQuery.data} />
-        ) : null}
       <div className="surface-card p-5">
-        <h2 className="text-xl font-extrabold">Hồ sơ</h2>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <PartnerAvatarUpload
+            name={user?.fullName ?? 'Người làm'}
+            avatarUrl={profileQuery.data?.avatarUrl}
+          />
+          <Link
+            to={`/user/${user.id}`}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand)]/15 bg-[var(--color-brand-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-deep)] shadow-[0_10px_24px_rgba(0,156,149,0.18)] ring-1 ring-white/70 transition hover:-translate-y-0.5 hover:bg-[#f2fbfa]"
+          >
+            Xem hồ sơ công khai
+            <span aria-hidden>›</span>
+          </Link>
+        </div>
         <form
           className="mt-4 space-y-3"
           onSubmit={handleSubmit(async (values) => {
@@ -454,10 +585,17 @@ export function PartnerDashboardPage() {
             ) : null}
           </div>
 
-          <input
-            {...register('districts')}
-            placeholder="Địa chỉ / khu vực phục vụ"
-            className="field-input w-full"
+          <Controller
+            name="city"
+            control={control}
+            render={({ field }) => (
+              <ProvinceSelect
+                id="profile-city"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.city?.message}
+              />
+            )}
           />
 
           <div>

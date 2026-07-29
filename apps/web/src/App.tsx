@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { SiteLayout } from './components/layout/site-layout';
 import { UserDashboardLayout } from './components/layout/user-dashboard-layout';
 import { AdminBookingDetailPage } from './pages/admin/admin-booking-detail-page';
@@ -40,6 +40,11 @@ import {
   WarrantyPage,
 } from './pages/static-site-pages';
 
+function RedirectNguoiToUser() {
+  const { userId = '' } = useParams();
+  return <Navigate to={`/user/${userId}`} replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -60,7 +65,8 @@ export default function App() {
           <Route path="/nhom" element={<GroupsPage />} />
           <Route path="/nhom/:slug" element={<GroupDetailPage />} />
           <Route path="/dich-vu/:slug" element={<ServiceDetailPage />} />
-          <Route path="/nguoi/:userId" element={<PartnerProfilePage />} />
+          <Route path="/user/:userId" element={<PartnerProfilePage />} />
+          <Route path="/nguoi/:userId" element={<RedirectNguoiToUser />} />
           <Route path="/dat-lich/:id" element={<BookingSuccessPage />} />
           <Route path="/dang-nhap" element={<LoginPage />} />
           <Route path="/dang-ky" element={<RegisterPage />} />

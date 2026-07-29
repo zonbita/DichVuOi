@@ -4,7 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, PaymentStatus, Role, ApplicationStatus } from '../../database/prisma/client';
+import {
+  ApplicationStatus,
+  BookingStatus,
+  PaymentStatus,
+  Role,
+} from '../../database/prisma/client';
 import {
   isDepositHeld,
   redactContactLeak,
@@ -25,8 +30,11 @@ import { ApplyBookingDto } from './dto/apply-booking.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateBookingMessageDto } from './dto/create-booking-message.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { ConfirmBookingDto } from './dto/update-requirement.dto';
-import { UpdateRequirementDto } from './dto/update-requirement.dto';
+import {
+  ConfirmBookingDto,
+  CreateRequirementDto,
+  UpdateRequirementDto,
+} from './dto/update-requirement.dto';
 import { PartnerRealtimeService } from './partner-realtime.service';
 
 /** Cửa sổ chờ xác nhận mặc định (giờ) sau khi người làm báo xong. */
@@ -48,7 +56,16 @@ const applicationInclude = {
           avatarUrl: true,
           city: true,
           isVerified: true,
+          onlineSeconds: true,
+          offerings: {
+            select: { serviceId: true, price: true },
+          },
         },
+      },
+      reputationPeriods: {
+        orderBy: { periodIndex: 'desc' as const },
+        take: 1,
+        select: { currentPoints: true },
       },
     },
   },
@@ -126,6 +143,13 @@ export class BookingsService {
     const apps = Array.isArray(shaped.applications)
       ? shaped.applications
       : undefined;
+    const viewerApplications =
+      viewer &&
+      viewer.role === Role.PARTNER &&
+      booking.userId !== viewer.id &&
+      apps
+        ? apps.filter((a) => a.partnerId === viewer.id)
+        : undefined;
 
     if (mode === 'open_queue') {
       const { applications: _drop, ...rest } = shaped as T & {
@@ -134,21 +158,17 @@ export class BookingsService {
       return {
         ...rest,
         applicationCount: apps?.length ?? 0,
+        applications: viewerApplications,
         applyDepositAmount: computeApplyDeposit(
           Number((booking as { totalPrice?: number }).totalPrice ?? 0),
         ),
       };
     }
 
-    if (
-      viewer &&
-      viewer.role === Role.PARTNER &&
-      booking.userId !== viewer.id &&
-      apps
-    ) {
+    if (viewerApplications) {
       return {
         ...shaped,
-        applications: apps.filter((a) => a.partnerId === viewer.id),
+        applications: viewerApplications,
       };
     }
 
@@ -179,7 +199,10 @@ export class BookingsService {
     return viewer ? this.shape(booking, viewer) : this.shape(booking, undefined);
   }
 
-  /** Seed checklist từ includes gói + ghi chú khách (một lần khi đã có partner). */
+  /**
+   * Seed checklist một lần khi tạo đơn (ghi chú khách + includes nếu thuê kèm partner).
+   * Không bổ sung mục sau khi đơn đã đăng.
+   */
   private async seedRequirementsIfEmpty(bookingId: string) {
     const existing = await this.prisma.bookingRequirement.count({
       where: { bookingId },
@@ -194,19 +217,17 @@ export class BookingsService {
         partnerId: true,
       },
     });
-    if (!booking?.partnerId) return;
+    if (!booking) return;
 
-    const offering = await this.prisma.partnerService.findFirst({
-      where: {
-        serviceId: booking.serviceId,
-        isActive: true,
-        partnerProfile: { userId: booking.partnerId },
-      },
-      select: { includes: true },
-    });
-
+    let includes: string | null | undefined;
+    if (booking.partnerId) {
+      includes = await this.partnerIncludes(
+        booking.serviceId,
+        booking.partnerId,
+      );
+    }
     const seeds = buildRequirementSeeds({
-      includes: offering?.includes,
+      includes,
       customerNote: booking.note,
     });
     if (seeds.length === 0) return;
@@ -219,6 +240,18 @@ export class BookingsService {
         sortOrder: item.sortOrder,
       })),
     });
+  }
+
+  private async partnerIncludes(serviceId: string, partnerUserId: string) {
+    const offering = await this.prisma.partnerService.findFirst({
+      where: {
+        serviceId,
+        isActive: true,
+        partnerProfile: { userId: partnerUserId },
+      },
+      select: { includes: true },
+    });
+    return offering?.includes;
   }
 
   /**
@@ -567,9 +600,7 @@ export class BookingsService {
       throw error;
     }
 
-    if (partnerId) {
-      await this.seedRequirementsIfEmpty(booking.id);
-    }
+    await this.seedRequirementsIfEmpty(booking.id);
 
     const fresh = await this.prisma.booking.findUniqueOrThrow({
       where: { id: booking.id },
@@ -752,7 +783,7 @@ export class BookingsService {
     return { year, month, daysInMonth, items };
   }
 
-  async listOpen() {
+  async listOpen(viewerId?: string) {
     await this.settleExpiredMatching();
     await this.settleExpiredResponseSla();
     // Chỉ đơn đã đặt cọc mới vào hàng chờ — tránh nhận việc rồi bỏ sàn.
@@ -769,7 +800,8 @@ export class BookingsService {
       orderBy: { scheduledAt: 'asc' },
       include: bookingInclude,
     });
-    return rows.map((b) => this.shape(b, undefined, 'open_queue'));
+    const viewer = viewerId ? { id: viewerId, role: Role.PARTNER } : undefined;
+    return rows.map((b) => this.shape(b, viewer, 'open_queue'));
   }
 
   async accept(id: string, partnerId: string) {
@@ -806,7 +838,7 @@ export class BookingsService {
     });
     if (!offering) {
       throw new BadRequestException(
-        'Bạn chưa đăng ký cung cấp dịch vụ này hoặc đang tạm nghỉ nhận việc',
+        'Hồ sơ bạn chưa có đăng ký nghề này',
       );
     }
 
@@ -950,7 +982,7 @@ export class BookingsService {
       },
     });
 
-    await this.seedRequirementsIfEmpty(bookingId);
+    // Checklist cố định từ lúc tạo đơn — không seed/thêm mục khi chọn người làm.
     const withReqs = await this.prisma.booking.findUniqueOrThrow({
       where: { id: bookingId },
       include: bookingInclude,
@@ -1106,17 +1138,19 @@ export class BookingsService {
     } else if (status === BookingStatus.COMPLETED) {
       if (viewer.role === Role.ADMIN) {
         // admin ok
-      } else if (
-        raw.userId === viewer.id &&
-        raw.status === BookingStatus.AWAITING_CONFIRM
-      ) {
-        // khách đồng ý hoàn thành
       } else if (raw.partnerId === viewer.id) {
         throw new ForbiddenException(
           'Người làm báo xong → chờ xác nhận. Khách hoặc ban kiểm duyệt mới hoàn thành.',
         );
       } else {
-        throw new ForbiddenException('Chỉ khách thuê xác nhận hoàn thành');
+        throw new ForbiddenException(
+          'Hoàn thành thủ công chỉ cho admin. Khách dùng luồng nghiệm thu % (2 bên đồng ý).',
+        );
+      }
+      if (viewer.role !== Role.ADMIN) {
+        throw new BadRequestException(
+          'Khách cần dùng đề xuất nghiệm thu % và hai bên cùng bấm đồng ý để hoàn thành đơn',
+        );
       }
       if (
         viewer.role !== Role.ADMIN &&
@@ -1272,6 +1306,7 @@ export class BookingsService {
     if (booking.status !== BookingStatus.AWAITING_CONFIRM) {
       throw new BadRequestException('Đơn không ở trạng thái chờ xác nhận');
     }
+    this.assertSettlementAllowed(booking);
 
     const incomplete = booking.requirements.filter((r) => !r.customerConfirmed);
     if (incomplete.length > 0 && !dto.acceptIncomplete) {
@@ -1280,11 +1315,114 @@ export class BookingsService {
       );
     }
 
-    return this.updateStatus(
-      id,
-      BookingStatus.COMPLETED,
-      viewer,
-      dto.acceptIncomplete === true,
+    // Legacy endpoint: giữ tương thích bằng cách đề xuất 100% và đồng ý phía khách.
+    if (!booking.settlementPercent) {
+      await this.proposeSettlement(id, viewer, 100);
+    }
+    return this.approveSettlement(id, viewer);
+  }
+
+  async proposeSettlement(id: string, viewer: Viewer, percent: number) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: bookingInclude,
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+    this.assertBookingParty(booking, viewer);
+    this.assertSettlementAllowed(booking);
+
+    if (viewer.role !== Role.ADMIN && booking.userId !== viewer.id) {
+      throw new ForbiddenException('Chỉ khách thuê đề xuất % nghiệm thu');
+    }
+    if (!Number.isFinite(percent) || percent < 1 || percent > 100) {
+      throw new BadRequestException('Phần trăm nghiệm thu phải trong khoảng 1..100');
+    }
+
+    const updated = await this.prisma.booking.update({
+      where: { id },
+      data: {
+        settlementPercent: Math.round(percent),
+        settlementProposedBy:
+          viewer.role === Role.ADMIN ? Role.ADMIN : Role.CUSTOMER,
+        customerSettlementApprovedAt: null,
+        partnerSettlementApprovedAt: null,
+        settlementResolvedAt: null,
+      },
+      include: bookingInclude,
+    });
+    return this.emitBookingUpdate(updated, viewer);
+  }
+
+  async approveSettlement(id: string, viewer: Viewer) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: bookingInclude,
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+    this.assertBookingParty(booking, viewer);
+    this.assertSettlementAllowed(booking);
+
+    if (!booking.settlementPercent || booking.settlementPercent < 1) {
+      throw new BadRequestException('Chưa có đề xuất % nghiệm thu');
+    }
+
+    const now = new Date();
+    const data: {
+      customerSettlementApprovedAt?: Date;
+      partnerSettlementApprovedAt?: Date;
+    } = {};
+    if (viewer.role === Role.ADMIN || booking.userId === viewer.id) {
+      data.customerSettlementApprovedAt = now;
+    }
+    if (viewer.role === Role.ADMIN || booking.partnerId === viewer.id) {
+      data.partnerSettlementApprovedAt = now;
+    }
+    if (Object.keys(data).length === 0) {
+      throw new ForbiddenException('Bạn không thuộc hai bên của đơn');
+    }
+    await this.prisma.booking.update({
+      where: { id },
+      data,
+    });
+
+    const afterApprove = await this.prisma.booking.findUniqueOrThrow({
+      where: { id },
+      include: bookingInclude,
+    });
+    const bothApproved =
+      Boolean(afterApprove.customerSettlementApprovedAt) &&
+      Boolean(afterApprove.partnerSettlementApprovedAt);
+    if (!bothApproved) {
+      return this.emitBookingUpdate(afterApprove, viewer);
+    }
+
+    const settledPercent = afterApprove.settlementPercent;
+    if (!settledPercent) {
+      throw new BadRequestException('Đề xuất % nghiệm thu không hợp lệ');
+    }
+    await this.finance.releaseBookingByPercent(id, settledPercent, {
+      expectedStatus: BookingStatus.AWAITING_CONFIRM,
+    });
+
+    const settled = await this.prisma.booking.update({
+      where: { id },
+      data: { settlementResolvedAt: new Date() },
+      include: bookingInclude,
+    });
+    if (settled.partnerId) {
+      await this.refundSelectedApplyDeposit(id, settled.partnerId);
+      await recalculatePartnerLevel(this.prisma, settled.partnerId);
+    }
+    return this.emitBookingUpdate(settled, viewer);
+  }
+
+  async addRequirement(
+    _bookingId: string,
+    _viewer: Viewer,
+    _dto: CreateRequirementDto,
+  ) {
+    throw new BadRequestException(
+      'Chỉ thêm công việc khi tạo đơn thuê. Sau khi đăng, checklist đã khóa.',
     );
   }
 
@@ -1403,6 +1541,24 @@ export class BookingsService {
       throw new BadRequestException(
         'Chat mở sau khi có người nhận việc. Không trao đổi SĐT ngoài sàn.',
       );
+    }
+  }
+
+  private assertSettlementAllowed(booking: {
+    status: BookingStatus;
+    paymentStatus: PaymentStatus;
+    partnerId: string | null;
+  }) {
+    if (booking.status !== BookingStatus.AWAITING_CONFIRM) {
+      throw new BadRequestException(
+        'Chỉ thương lượng nghiệm thu khi đơn đang chờ xác nhận',
+      );
+    }
+    if (booking.paymentStatus !== PaymentStatus.HELD) {
+      throw new BadRequestException('Escrow không còn giữ để thương lượng nghiệm thu');
+    }
+    if (!booking.partnerId) {
+      throw new BadRequestException('Đơn chưa có người làm');
     }
   }
 

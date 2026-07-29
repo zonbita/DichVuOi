@@ -1,5 +1,19 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+
+export class CreateRequirementDto {
+  @ApiProperty({ description: 'Nội dung công việc cần làm', example: 'Lau kính cửa sổ' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(500)
+  content!: string;
+}
 
 export class UpdateRequirementDto {
   @ApiPropertyOptional({ description: 'Người làm đánh dấu đã làm' })

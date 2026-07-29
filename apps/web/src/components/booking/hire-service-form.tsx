@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -15,6 +15,7 @@ import { groupColor } from '../../utils/catalog-colors';
 import { marketPriceRange } from '../../utils/market-price';
 import { AddressMapPicker } from './address-map-picker';
 import { HireServicePicker } from './hire-service-picker';
+import { HireTasksInput } from './hire-tasks-input';
 import type { CatalogServicePick } from '../home/catalog-menu-shared';
 import { PRICE_SLIDER_MIN, PriceRangeSlider } from '../ui/price-range-slider';
 import { Icon } from '../ui/icon';
@@ -133,6 +134,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
   const { user, refreshMe } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [tasks, setTasks] = useState<string[]>([]);
 
   const services = useMemo(() => flattenServices(groups), [groups]);
 
@@ -251,6 +253,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       return;
     }
 
+    const taskNote = tasks.map((t) => t.trim()).filter(Boolean).join('\n');
     bookingMutation.mutate({
       serviceSlug: values.serviceSlug,
       customerName: values.customerName,
@@ -258,7 +261,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       customerEmail: values.customerEmail || undefined,
       address: values.address,
       scheduledAt: new Date(values.scheduledAt).toISOString(),
-      note: values.note || undefined,
+      note: taskNote || undefined,
       budgetMin: values.budgetMin,
       budgetMax: values.budgetMax,
     });
@@ -301,7 +304,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
           onSubmit={handleSubmit(onSubmit)}
           noValidate
         >
-          <div className="sm:col-span-2">
+          <div>
             <FieldLabel htmlFor="hire-service-slug">
               Nghề / dịch vụ cần thuê
             </FieldLabel>
@@ -327,7 +330,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
 
           {activeService && activeColor ? (
             <div
-              className="sm:col-span-2 flex flex-wrap items-center gap-2.5 rounded-xl px-4 py-3.5"
+              className="flex flex-wrap items-center gap-2.5 self-end rounded-xl px-4 py-3.5"
               style={{
                 backgroundColor: activeColor.soft,
                 color: activeColor.ink,
@@ -353,11 +356,11 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
               </Link>
             </div>
           ) : (
-            <div className="sm:col-span-2 flex items-start gap-2.5 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3.5 text-sm text-[var(--color-brand-deep)]">
+            <div className="flex items-start gap-2.5 self-end rounded-xl bg-[var(--color-brand-soft)] px-4 py-3.5 text-sm text-[var(--color-brand-deep)]">
               <Icon name="briefcase" className="mt-0.5 h-4 w-4 shrink-0" />
               <p>
                 <span className="font-semibold">Nghề / dịch vụ chưa được chọn.</span>{' '}
-                Chọn từ danh sách phía trên để tiếp tục.
+                Chọn từ danh sách bên trái để tiếp tục.
               </p>
             </div>
           )}
@@ -463,13 +466,15 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
           </div>
 
           <div className="sm:col-span-2">
-            <FieldLabel htmlFor="hire-note">Mô tả yêu cầu</FieldLabel>
-            <textarea
-              id="hire-note"
-              {...register('note')}
-              rows={4}
-              placeholder="Mô tả công việc, yêu cầu thêm, lưu ý khi đến…"
-              className="field-input min-h-[110px] resize-y"
+            <FieldLabel htmlFor="hire-task-draft">Công việc cần làm</FieldLabel>
+            <p className="mb-2 text-xs text-[var(--color-muted)]">
+              Thêm từng mục trước khi gửi. Sau khi đăng đơn, danh sách bị khóa —
+              không thêm được nữa.
+            </p>
+            <HireTasksInput
+              value={tasks}
+              onChange={setTasks}
+              disabled={bookingMutation.isPending || !user}
             />
           </div>
 
