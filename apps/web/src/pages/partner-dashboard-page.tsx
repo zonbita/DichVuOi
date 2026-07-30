@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { PartnerAvatarUpload } from '../components/partner/partner-avatar-upload';
 import { PartnerIncomingList } from '../components/partner/partner-incoming-list';
 import { PartnerJobsList } from '../components/partner/partner-jobs-list';
+import { PartnerLevelPanel } from '../components/partner/partner-level-panel';
 import { PartnerProfessionTabs } from '../components/partner/partner-profession-tabs';
 import { PartnerScheduleBoard } from '../components/partner/partner-schedule-board';
 import { PartnerStatsBar } from '../components/partner/partner-stats-bar';
@@ -17,13 +18,13 @@ import { ProvinceSelect } from '../components/ui/province-select';
 import { useAuth } from '../features/auth/auth-context';
 import { usePartnerRealtime } from '../hooks/use-partner-realtime';
 import { catalogQueries } from '../lib/catalog-queries';
+import { toast } from '../lib/notify';
 import {
   DEFAULT_PROVINCE_SLUG,
   findProvince,
   findProvinceByName,
 } from '../data/provinces';
 import { api } from '../services/api';
-import type { PartnerLevelBreakdown } from '../types/auth';
 
 const phoneRegex = /^(0|\+84)\d{8,10}$/;
 const defaultCity = findProvince(DEFAULT_PROVINCE_SLUG).name;
@@ -55,8 +56,6 @@ export function PartnerDashboardPage() {
         : pathname.endsWith('/cap-do') || legacyTab === 'level'
           ? 'level'
           : 'overview';
-  const [enableError, setEnableError] = useState('');
-  const [enableServiceIds, setEnableServiceIds] = useState<string[]>([]);
   const [profileServiceIds, setProfileServiceIds] = useState<string[]>([]);
   /** Lọc Việc của tôi theo nghề — `'all'` = mọi nghề. */
   const [jobsProfessionId, setJobsProfessionId] = useState('all');
@@ -125,6 +124,7 @@ export function PartnerDashboardPage() {
     handleSubmit,
     reset,
     control,
+    getValues,
     formState: { isSubmitting, errors },
   } = useForm<ProfileInput, unknown, ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -138,19 +138,28 @@ export function PartnerDashboardPage() {
     },
   });
 
-  const enableForm = useForm<ProfileInput, unknown, ProfileValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      phone: user?.phone ?? '',
-      bio: '',
-      city: defaultCity,
-    },
-  });
-
-  useEffect(() => {
-    if (canOffer || !user) return;
-    enableForm.setValue('phone', user.phone ?? '');
-  }, [canOffer, user?.phone]);
+  /** Tạo hồ sơ nhận việc lần đầu (API enable) — không còn form «Bật nhận việc» riêng. */
+  async function ensurePartnerProfile(values?: ProfileValues) {
+    if (canOffer) return;
+    const v = values ?? getValues();
+    const phone = (v.phone || user?.phone || '').trim();
+    if (!phoneRegex.test(phone)) {
+      throw new Error('Nhập SĐT hợp lệ trên hồ sơ trước khi tải ảnh');
+    }
+    const city = v.city || defaultCity;
+    const session = await api.enableOffering({
+      phone,
+      bio: v.bio,
+      city,
+      districts: city,
+      serviceIds: profileServiceIds,
+    });
+    applySession(session);
+    setMode('offer');
+    await queryClient.invalidateQueries({ queryKey: ['partner'] });
+    await queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    await queryClient.invalidateQueries({ queryKey: ['services'] });
+  }
 
   const acceptMutation = useMutation({
     mutationFn: (id: string) => api.applyBooking(id),
@@ -158,6 +167,18 @@ export function PartnerDashboardPage() {
       setAppliedBookingIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
       void queryClient.invalidateQueries({ queryKey: ['bookings'] });
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      toast.success('Đã ứng tuyển', {
+        description: 'Chờ chủ đơn chọn người làm',
+      });
+    },
+    onError: (err) => {
+      const message = (err as Error).message || 'Không ứng tuyển được';
+      toast.error(message, {
+        description:
+          message.includes('chưa có đăng ký nghề')
+            ? 'Vào Hồ sơ để thêm nghề này rồi thử lại'
+            : undefined,
+      });
     },
   });
 
@@ -182,6 +203,10 @@ export function PartnerDashboardPage() {
 
   const profileMutation = useMutation({
     mutationFn: async (values: ProfileValues) => {
+      if (!canOffer) {
+        await ensurePartnerProfile(values);
+        return;
+      }
       await api.updatePartnerProfile({
         phone: values.phone,
         bio: values.bio,
@@ -195,24 +220,14 @@ export function PartnerDashboardPage() {
       await queryClient.invalidateQueries({ queryKey: ['partner', 'me'] });
       await queryClient.invalidateQueries({ queryKey: ['partner', 'me', 'level'] });
       await queryClient.invalidateQueries({ queryKey: ['services'] });
+      toast.success('Đã lưu hồ sơ', {
+        description: 'Thông tin người làm đã được cập nhật',
+      });
     },
-  });
-
-  const enableMutation = useMutation({
-    mutationFn: (values: ProfileValues) =>
-      api.enableOffering({
-        phone: values.phone,
-        bio: values.bio,
-        city: values.city,
-        districts: values.city,
-        serviceIds: enableServiceIds,
-      }),
-    onSuccess: (session) => {
-      applySession(session);
-      setMode('offer');
-      void queryClient.invalidateQueries({ queryKey: ['partner'] });
-      void queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      void queryClient.invalidateQueries({ queryKey: ['services'] });
+    onError: (err) => {
+      toast.error('Không lưu được hồ sơ', {
+        description: (err as Error).message || 'Thử lại sau',
+      });
     },
   });
 
@@ -291,99 +306,26 @@ export function PartnerDashboardPage() {
     return <Navigate to="/doi-tac/cap-do" replace />;
   }
 
-  if (!canOffer) {
+  // Chưa có hồ sơ: vẫn mở được «Hồ sơ»; tab khác gợi ý sang hồ sơ (không form «Bật nhận việc»).
+  if (!canOffer && tab !== 'profile') {
     return (
       <div className="w-full rounded-2xl border border-[var(--color-line)] bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-extrabold">Bắt đầu nhận việc</h1>
+        <h1 className="text-2xl font-extrabold">
+          {tab === 'jobs'
+            ? 'Việc của tôi'
+            : tab === 'level'
+              ? 'Cấp độ'
+              : 'Tổng quan'}
+        </h1>
         <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-          Bạn đang chuyển sang vai người làm trên cùng tài khoản. Chọn một
-          hoặc nhiều nghề (tags) — giống gắn gameplay tags trong UE5.
+          Điền hồ sơ người làm (SĐT, nghề, ảnh) rồi lưu — sau đó nhận việc bình thường.
         </p>
-        <form
-          className="mt-6 space-y-3"
-          onSubmit={enableForm.handleSubmit(async (values) => {
-            setEnableError('');
-            try {
-              await enableMutation.mutateAsync(values);
-            } catch (err) {
-              setEnableError(
-                (err as Error).message || 'Không bật được hồ sơ người làm',
-              );
-            }
-          })}
+        <Link
+          to="/doi-tac/ho-so"
+          className="mt-5 inline-flex rounded-xl bg-[var(--color-brand)] px-5 py-3 text-sm font-bold text-white"
         >
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold" htmlFor="enable-phone">
-              Số điện thoại
-            </label>
-            <input
-              id="enable-phone"
-              {...enableForm.register('phone')}
-              placeholder="0901234567"
-              className="field-input w-full"
-              inputMode="tel"
-              autoComplete="tel"
-            />
-            {enableForm.formState.errors.phone ? (
-              <p className="mt-1 text-sm text-red-600">
-                {enableForm.formState.errors.phone.message}
-              </p>
-            ) : null}
-          </div>
-
-          <Controller
-            name="city"
-            control={enableForm.control}
-            render={({ field }) => (
-              <ProvinceSelect
-                id="enable-city"
-                value={field.value}
-                onChange={field.onChange}
-                error={enableForm.formState.errors.city?.message}
-              />
-            )}
-          />
-
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              Nghề bạn làm
-            </label>
-            <ProfessionTagsInput
-              value={enableServiceIds}
-              onChange={setEnableServiceIds}
-              options={professionOptions}
-              placeholder="Gõ tên nghề để gắn tag…"
-            />          </div>
-
-          <textarea
-            {...enableForm.register('bio')}
-            rows={4}
-            placeholder="Giới thiệu kỹ năng, kinh nghiệm..."
-            className="field-input w-full"
-          />
-          {enableError ? (
-            <p className="text-sm text-red-600">{enableError}</p>
-          ) : null}
-          <button
-            type="submit"
-            disabled={enableMutation.isPending}
-            className="w-full bg-[var(--color-brand)] py-3 text-[15px] font-bold text-white disabled:opacity-60"
-          >
-            {enableMutation.isPending
-              ? 'Đang bật...'
-              : 'Bật nhận việc trên tài khoản này'}
-          </button>
-        </form>
-        <p className="mt-4 text-sm text-[var(--color-muted)]">
-          Vẫn thuê được bình thường tại{' '}
-          <Link
-            to="/don-cua-toi"
-            className="font-semibold text-[var(--color-brand-deep)]"
-          >
-            Đơn thuê
-          </Link>
-          .
-        </p>
+          Mở Hồ sơ
+        </Link>
       </div>
     );
   }
@@ -394,10 +336,17 @@ export function PartnerDashboardPage() {
 
   const openBookings = openQuery.data ?? [];
   const mineBookings = mineQuery.data ?? [];
-  const filteredOpenBookings =
+  const filteredOpenBookings = (
     jobsProfessionId === 'all'
       ? openBookings
-      : openBookings.filter((b) => b.service?.id === jobsProfessionId);
+      : openBookings.filter((b) => b.service?.id === jobsProfessionId)
+  )
+    .slice()
+    .sort((a, b) => {
+      const ta = new Date(a.createdAt ?? a.scheduledAt).getTime();
+      const tb = new Date(b.createdAt ?? b.scheduledAt).getTime();
+      return tb - ta;
+    });
   const filteredMineBookings =
     jobsProfessionId === 'all'
       ? mineBookings
@@ -431,6 +380,10 @@ export function PartnerDashboardPage() {
             {tab === 'jobs' ? (
               <p className="mt-2 text-[15px] text-[var(--color-muted)]">
                 Đơn mở realtime và việc đã nhận.
+              </p>
+            ) : tab === 'level' ? (
+              <p className="mt-2 text-[15px] text-[var(--color-muted)]">
+                Cấp merit 1–100 từ giờ online, đơn, đánh giá và hồ sơ.
               </p>
             ) : null}
           </div>
@@ -504,11 +457,6 @@ export function PartnerDashboardPage() {
               loading={openQuery.isLoading}
               applyingId={acceptMutation.isPending ? (acceptMutation.variables ?? null) : null}
               appliedIds={appliedBookingIds}
-              applyError={
-                acceptMutation.isError
-                  ? (acceptMutation.error as Error).message
-                  : null
-              }
               onApply={(id) => acceptMutation.mutate(id)}
               emptyHint={
                 jobsProfessionId !== 'all' && openBookings.length > 0
@@ -541,8 +489,16 @@ export function PartnerDashboardPage() {
         </div>
       )}
 
-      {tab === 'level' && canOffer && levelQuery.data ? (
-        <LevelBreakdownCard data={levelQuery.data} />
+      {tab === 'level' && canOffer ? (
+        levelQuery.isLoading ? (
+          <p className="text-sm text-[var(--color-muted)]">Đang tải cấp độ…</p>
+        ) : levelQuery.isError ? (
+          <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {(levelQuery.error as Error).message || 'Không tải được cấp độ'}
+          </p>
+        ) : levelQuery.data ? (
+          <PartnerLevelPanel data={levelQuery.data} />
+        ) : null
       ) : null}
 
       {tab === 'profile' && (
@@ -552,6 +508,7 @@ export function PartnerDashboardPage() {
           <PartnerAvatarUpload
             name={user?.fullName ?? 'Người làm'}
             avatarUrl={profileQuery.data?.avatarUrl}
+            ensureProfile={() => ensurePartnerProfile()}
           />
           <Link
             to={`/user/${user.id}`}
@@ -634,72 +591,5 @@ export function PartnerDashboardPage() {
       </section>
       )}
     </div>
-  );
-}
-
-function LevelBreakdownCard({ data }: { data: PartnerLevelBreakdown }) {
-  const onlineCap = data.formula.online?.totalCap ?? data.formula.hours.totalCap;
-  const rows = [
-    { label: 'Giờ online', value: data.hoursPoints, hint: `max ${onlineCap}` },
-    { label: 'Đơn hoàn thành', value: data.jobsPoints, hint: 'max 20' },
-    { label: 'Điểm ★ trung bình', value: data.ratingPoints, hint: 'max 15' },
-    { label: 'Số đánh giá', value: data.reviewCountPoints, hint: 'max 5' },
-    { label: 'Đã xác thực', value: data.verifiedBonus, hint: '+10' },
-    { label: 'Đa dạng nghề', value: data.diversityBonus, hint: 'max 5' },
-  ];
-
-  return (
-    <section className="surface-card p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-extrabold">Cấp của bạn</h2>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Công thức: giờ online (Socket) + điểm đơn, ★, xác thực, đa dạng nghề → cấp 1–100.
-          </p>
-        </div>
-        <LevelBadgeGold level={data.level} />
-      </div>
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {rows.map((row) => (
-          <div
-            key={row.label}
-            className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/70 px-3 py-2"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-              {row.label}
-            </p>
-            <p className="mt-0.5 text-lg font-extrabold text-[var(--color-ink)]">
-              {row.value}
-              <span className="ml-1 text-xs font-medium text-[var(--color-muted)]">
-                ({row.hint})
-              </span>
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-3 text-sm text-[var(--color-muted)]">
-        Tổng điểm {data.totalPoints} · {data.inputs.onlineHours.toFixed(1)} giờ online ·{' '}
-        {data.inputs.completedJobs} đơn hoàn thành · ★ {data.inputs.ratingAvg.toFixed(1)} (
-        {data.inputs.ratingCount} đánh giá) · {data.inputs.activeOfferings} nghề đang gắn
-        {data.inputs.isVerified ? ' · Đã xác minh' : ' · Chưa xác minh'}
-      </p>
-
-      {data.inputs.onlineHours > 0 ? (
-        <p className="mt-4 text-sm text-[var(--color-muted)]">
-          Giờ online tích lũy khi bạn mở app (WS). Công thức:{' '}
-          <strong className="text-[var(--color-ink)]">
-            min(giờ, {data.formula.online?.hoursCap ?? 180}) ×{' '}
-            {data.formula.online?.perHour ?? 0.25}
-          </strong>{' '}
-          (tối đa {onlineCap} điểm).
-        </p>
-      ) : (
-        <p className="mt-4 text-sm text-[var(--color-muted)]">
-          Chưa có giờ online — mở trang Người làm / giữ app mở để tích cấp theo thời gian online.
-        </p>
-      )}
-    </section>
   );
 }

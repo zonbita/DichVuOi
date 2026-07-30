@@ -20,11 +20,17 @@ DB local: **SQLite** (`DATABASE_URL` trong `.env`). Production chuyển PostgreS
 
 ### Tài khoản seed
 
-| Email | Password | Role |
-|-------|----------|------|
-| `demo@dichvuoi.vn` | `demo1234` | CUSTOMER |
-| `admin@dichvuoi.vn` | `demo1234` | ADMIN |
-| `partner@dichvuoi.vn` / `partnerNN@…` | `demo1234` | PARTNER |
+Mật khẩu chung: **`demo1234`**
+
+| Email | Role | Ghi chú |
+|-------|------|---------|
+| `demo@dichvuoi.vn` | CUSTOMER | Khách Demo — ví 5 triệu |
+| `demo02@dichvuoi.vn` | CUSTOMER | Khách Demo 02 — ví 3 triệu |
+| `demo03@dichvuoi.vn` | CUSTOMER | Khách Demo 03 — ví 2 triệu |
+| `lan@dichvuoi.vn` | CUSTOMER | Nguyễn Thị Lan — ví 4 triệu |
+| `minh@dichvuoi.vn` | CUSTOMER | Trần Văn Minh — ví 4 triệu |
+| `admin@dichvuoi.vn` | ADMIN | Admin nội bộ |
+| `partner@dichvuoi.vn` / `partnerNN@…` | PARTNER | Người làm (45 hồ sơ seed) |
 
 ## Module hiện có
 

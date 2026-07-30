@@ -42,7 +42,7 @@ type Listener = () => void;
 
 let items: NotifyItem[] = [];
 const listeners = new Set<Listener>();
-let defaultPosition: NotifyPosition = 'top-right';
+let defaultPosition: NotifyPosition = 'bottom-right';
 
 function emit() {
   for (const listener of listeners) listener();

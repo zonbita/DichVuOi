@@ -179,32 +179,32 @@ File chính: `apps/web/src/lib/catalog-cache.ts`, `catalog-queries.ts`; `apps/ap
 
 ## Nhóm dịch vụ bao quát (tầm nhìn catalog)
 
-22 nhóm là **tầm nhìn dài hạn**, không phải phạm vi launch ngày 1. Các nhóm online thuần (marketing, dịch thuật, trợ lý từ xa, tư vấn cá nhân, giải trí…) là phần khách nhìn thấy trên sàn khi chỉ hiện nghề `supportsOnline`. Cột **Ví dụ nghề / dịch vụ** liệt kê các nghề cụ thể (Service) nằm dưới mỗi nhóm — seed local đang seed dần theo danh sách này.
+22 nhóm là **tầm nhìn dài hạn**. Catalog công khai **chỉ hiện nghề `supportsOnline=true`** (menu ~13 nhóm online/hybrid). Nghề offline-only vẫn seed/admin nhưng ẩn khỏi trang chủ / `/nhom` / mega menu.
 
 | Nhóm bao quát | Ví dụ nghề / dịch vụ bên trong | Ghi chú |
 |---------------|--------------------------------|---------|
-| **Nhà cửa - không gian sống** | Dọn nhà theo ca, giúp việc theo giờ, tổng vệ sinh, vệ sinh sau xây dựng, giặt sofa, vệ sinh rèm/thảm/đệm, khử khuẩn nhà, diệt côn trùng, vệ sinh kính cao tầng, dọn kho / gác | Core MVP offline |
-| **Sửa chữa - kỹ thuật** | Sửa điện nước, sửa ổ cắm/đèn, thông tắc cống, vệ sinh máy lạnh, sửa tủ lạnh/máy giặt, lắp camera, sửa/tối ưu Wi‑Fi, chống thấm, sơn nhà, sửa khóa cửa, lắp quạt trần, bảo trì bình nóng lạnh | Core MVP offline |
-| **Xây dựng - hoàn thiện** | Thợ hồ sửa nhỏ, ốp lát gạch, trần thạch cao, lắp đặt nội thất, làm cửa kính, lắp rèm, sơn bả tường, lát sàn gỗ, làm tủ bếp cơ bản, tháo dỡ nhẹ | Sau MVP |
-| **Chăm sóc - sức khỏe** | Chăm sóc người già, bảo mẫu theo giờ, chăm bệnh nhẹ tại nhà, massage tại nhà, spa foot tại nhà, vật lý trị liệu hỗ trợ, đồng hành khám bệnh, chăm mẹ sau sinh | Core MVP offline |
-| **Làm đẹp** | Makeup tại nhà, makeup cô dâu, nail tại nhà, gội đầu dưỡng sinh, cắt/uốn/nhuộm tóc tại nhà, nối mi, phun xăm hỗ trợ, chăm da mặt tại nhà | Sau MVP |
-| **Bếp - đời sống** | Nấu ăn theo bữa, meal prep tuần, đi chợ hộ, giặt ủi, may sửa đồ, ủi đồ công sở, nấu tiệc nhỏ tại nhà, pha chế/đồ uống sự kiện | Sau MVP |
-| **Xe - vận chuyển** | Rửa xe tại nhà, đánh bóng xe, cứu hộ xe nhẹ, tài xế theo giờ, chuyển nhà nhẹ, bê đồ văn phòng, giao hàng đặc biệt, thuê xe kèm tài | Một phần sau |
-| **Học tập - ngoại ngữ** | Gia sư Toán/Lý/Hóa/Văn, IELTS, tiếng Anh giao tiếp, tiếng Trung/Nhật/Hàn, dạy nhạc (piano/guitar), dạy vẽ, tin học văn phòng, luyện thi đại học, dạy lập trình cho trẻ | Core MVP (gia sư) |
-| **Game - eSports** | Coaching game (Lien Quân / LMHT / Valorant / PUBG / FC…), review replay, setup PC gaming, dạy làm game cơ bản, edit stream/highlight (không cày thuê / boosting) | MVP số — hạn chế cày thuê (ToS) |
-| **Lập trình - công nghệ** | Sửa máy/cài Windows, lập trình web/app nhỏ, fix bug, SEO kỹ thuật, Excel/macro, chatbot/API, WordPress, cài mạng văn phòng, hỗ trợ Google Workspace | MVP số |
-| **Thiết kế - sáng tạo nội dung** | Logo/banner, UI/UX, edit TikTok/Reels/Short, viết content, voice-over, thiết kế menu/catalogue, retouch ảnh, thiết kế slide thuyết trình | MVP số |
-| **Sự kiện - truyền thông** | Chụp/quay sự kiện, MC, livestream bán hàng, trang trí tiệc, ban nhạc acoustic, quay phóng sự ngắn, setup âm thanh ánh sáng nhỏ | Sau MVP |
-| **Thú cưng** | Tắm cắt thú cưng, dắt chó, trông pet tại nhà, đưa khám thú y, huấn luyện cơ bản, vệ sinh chuồng/cát | Sau MVP |
-| **Thể thao - PT** | PT gym 1 kèm 1, yoga tại nhà, dạy bơi, pickleball coach, tennis/cầu lông coach, chạy bộ coach, boxing/Muay cơ bản, dinh dưỡng tập luyện | Sau MVP |
-| **Doanh nghiệp - văn phòng** | Dọn văn phòng, vệ sinh công nghiệp, lễ tân thời vụ, trợ lý hành chính theo giờ, sắp xếp kho/văn thư, phục vụ tea-break | B2B — sau |
-| **Tài chính – hành chính – pháp lý hỗ trợ** | Kế toán hộ KD, kê khai thuế cơ bản, runner công chứng, nộp hồ sơ hành chính, tư vấn thủ tục cơ bản, soạn hợp đồng mẫu (đối tác có phép khi cần) | **Compliance** |
-| **Sân vườn - ngoài trời** | Cắt cỏ, tỉa cây, chăm cây cảnh, tiểu cảnh ban công, vệ sinh hồ cá, lắp hệ thống tưới, dọn sân thượng | Sau MVP |
-| **Marketing - bán hàng online** | Chạy ads Facebook/Google/TikTok, nghiên cứu từ khóa, tối ưu chuyển đổi, quản lý fanpage, vận hành Shopee / TikTok Shop, chăm sóc inbox, viết mô tả sản phẩm | Online 100% |
-| **Dịch thuật - ngôn ngữ** | Dịch Anh/Trung/Nhật/Hàn – Việt, hiệu đính, phiên dịch online, làm phụ đề, gỡ băng ghi âm, chuẩn hóa CV tiếng Anh | Online 100% |
-| **Trợ lý từ xa - vận hành** | Trợ lý ảo theo giờ, quản lý email – lịch hẹn, gọi xác nhận khách, nhập liệu, làm sạch dữ liệu, nghiên cứu thị trường, báo cáo định kỳ | Online 100% |
-| **Tư vấn - phát triển cá nhân** | Hướng nghiệp, coach sự nghiệp, luyện phỏng vấn, tối ưu CV – LinkedIn, quản lý thời gian, dinh dưỡng, tham vấn tâm lý (có chứng chỉ), thiền chánh niệm | Online 100% — **compliance**: không thay tư vấn y tế |
-| **Giải trí** | Hát live / karaoke đồng hành, ảo thuật online, DJ mix, MC tiệc online, RPG / board game, cờ vua–cờ tướng, quiz đêm, kể chuyện, xem phim đồng hành, trò chuyện theo chủ đề, gợi ý playlist | Online 100% — tách khỏi eSports; **không** nội dung người lớn / cày thuê |
+| **Nhà cửa - không gian sống** | *(ẩn)* Dọn nhà, giúp việc, tổng vệ sinh, sofa/rèm, khử khuẩn, diệt côn trùng… | Offline-only |
+| **Sửa chữa - kỹ thuật** | *(ẩn)* Điện nước, điện lạnh, camera/mạng tại chỗ, sơn chống thấm… | Offline-only |
+| **Xây dựng - hoàn thiện** | *(ẩn)* Thợ hồ, ốp lát, thạch cao, nội thất… | Offline-only |
+| **Chăm sóc - sức khỏe** | *(ẩn)* Chăm già, bảo mẫu, massage/spa tại nhà… | Offline-only |
+| **Làm đẹp** | *(ẩn)* Makeup, nail, tóc tại nhà… | Offline-only |
+| **Bếp - đời sống** | *(ẩn)* Nấu ăn, đi chợ, giặt ủi tại chỗ… | Offline-only |
+| **Xe - vận chuyển** | *(ẩn)* Rửa xe, tài xế, chuyển nhà… | Offline-only |
+| **Học tập - ngoại ngữ** | **Gia sư:** Toán, Lý, Hóa, Sinh, Văn, Sử, Địa, Tin · **Ngoại ngữ:** Anh, Nhật, Hàn, Trung, Đức, Pháp, Tây Ban Nha, Việt cho NN · **Luyện thi:** IELTS, TOEIC, TOEFL, SAT, GRE, GMAT, JLPT, TOPIK, HSK, VSTEP, ĐH | Online / hybrid |
+| **Game - eSports** | Coaching, Game Tester, dạy/lập trình/đồ họa game, edit highlight, overlay, thumbnail, cộng đồng, Caster, tổ chức giải, dịch game, VO · *(ẩn)* setup PC | Online; cấm boosting |
+| **Lập trình - công nghệ** | Frontend / Backend / Fullstack / Mobile / DevOps / QA / Game Dev, WordPress, SEO kỹ thuật, hỗ trợ máy từ xa, MVP · **AI Engineer, Prompt, AI Automation, Chatbot, Consultant** · Excel · *(ẩn)* cài mạng VP | MVP số + Top IT |
+| **Thiết kế - sáng tạo nội dung** | UI/UX, Graphic, Illustrator, 3D, Interior (online), Retoucher · Video / Motion / Audio / Podcast / AI Video · Content / Copy / Technical / Ghostwriter / Biên tập / AI Content | MVP số + creative |
+| **Sự kiện - truyền thông** | Webinar, MC online, hỗ trợ họp, **Livestream Operator từ xa** · *(ẩn)* chụp/quay tại chỗ, trang trí, ban nhạc | Một phần online |
+| **Thú cưng** | *(ẩn)* Tắm cắt, dắt chó, trông pet… | Offline-only |
+| **Thể thao - PT** | PT / yoga / coach chạy **online**, giáo án · *(ẩn)* PT gym, bơi, pickleball tại chỗ | Hybrid |
+| **Doanh nghiệp - văn phòng** | CSKH từ xa, tuyển dụng, quy trình, đào tạo NV online, kế toán hộ KD · *(ẩn)* dọn VP, lễ tân, tea-break | Hybrid |
+| **Tài chính – hành chính – pháp lý hỗ trợ** | Báo cáo TC, **tư vấn thuế / luật sư / HR online** (có phép) · *(ẩn)* runner công chứng | Compliance |
+| **Sân vườn - ngoài trời** | *(ẩn)* Cắt cỏ, tiểu cảnh, hồ cá… | Offline-only |
+| **Marketing - bán hàng online** | **SEO Specialist**, Facebook/Google/TikTok Ads, email/affiliate, Social Media Manager, **Shopee / TikTok Shop / Lazada Operator**, inbox, product listing | Online 100% |
+| **Dịch thuật - ngôn ngữ** | Dịch Anh/Trung/Nhật/Hàn – Việt, hiệu đính, phiên dịch online, phụ đề, gỡ băng, chuẩn hóa CV | Online 100% |
+| **Trợ lý từ xa - vận hành** | **VA**, Appointment Setter, Live Chat, **Data Entry**, Excel/PPT, Research, Project Coordinator, **Sales Online / Telesales / Lead Gen** · *(ẩn)* nộp hồ sơ tại chỗ | Online (+ runner ẩn) |
+| **Tư vấn - phát triển cá nhân** | Hướng nghiệp, **Career Coach**, phỏng vấn, CV–LinkedIn, dinh dưỡng / tham vấn tâm lý online (chứng chỉ) | Online — compliance y tế |
+| **Giải trí** | Hát live, ảo thuật/DJ/MC online, RPG/board/cờ, quiz, kể chuyện, xem phim đồng hành | Online 100% — không người lớn / cày thuê |
 
 ## Hệ thống giao diện (UI)
 

@@ -47,8 +47,17 @@ export function usePartnerRealtime(enabled: boolean, currentUserId?: string) {
     socket.on('booking:open', (booking: Booking) => {
       queryClient.setQueryData<Booking[]>(['bookings', 'open'], (prev) => {
         const list = prev ?? [];
-        if (list.some((b) => b.id === booking.id)) return list;
-        return [booking, ...list];
+        const byNewest = (a: Booking, b: Booking) => {
+          const ta = new Date(a.createdAt ?? a.scheduledAt).getTime();
+          const tb = new Date(b.createdAt ?? b.scheduledAt).getTime();
+          return tb - ta;
+        };
+        if (list.some((b) => b.id === booking.id)) {
+          return list
+            .map((b) => (b.id === booking.id ? booking : b))
+            .sort(byNewest);
+        }
+        return [booking, ...list].sort(byNewest);
       });
       invalidateOpen();
       toast.message('Đơn mới trên hàng chờ', {

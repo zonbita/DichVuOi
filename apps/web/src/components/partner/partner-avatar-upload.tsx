@@ -1,14 +1,22 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
+import { useAuth } from '../../features/auth/auth-context';
 import { api } from '../../services/api';
 import { resizeImageToSquare } from '../../utils/resize-image';
 
 type Props = {
   name: string;
   avatarUrl?: string | null;
+  /** Tạo PartnerProfile nếu chưa có (trước khi PATCH avatar). */
+  ensureProfile?: () => Promise<void>;
 };
 
-export function PartnerAvatarUpload({ name, avatarUrl }: Props) {
+export function PartnerAvatarUpload({
+  name,
+  avatarUrl,
+  ensureProfile,
+}: Props) {
+  const { refreshMe } = useAuth();
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -18,15 +26,17 @@ export function PartnerAvatarUpload({ name, avatarUrl }: Props) {
 
   const mutation = useMutation({
     mutationFn: async (file: File) => {
+      if (ensureProfile) await ensureProfile();
       const square = await resizeImageToSquare(file, 200);
       const uploaded = await api.uploadAvatarImage(square);
       await api.updatePartnerProfile({ avatarUrl: uploaded.url });
       return uploaded.url;
     },
-    onSuccess: (url) => {
+    onSuccess: async (url) => {
       setPreview(url);
       setError('');
-      void queryClient.invalidateQueries({ queryKey: ['partner', 'me'] });
+      await queryClient.invalidateQueries({ queryKey: ['partner', 'me'] });
+      await refreshMe();
     },
     onError: (err) => {
       setError((err as Error).message || 'Tải ảnh thất bại');

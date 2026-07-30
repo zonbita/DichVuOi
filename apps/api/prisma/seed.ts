@@ -1,6 +1,6 @@
 import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { catalogGroups } from './catalog-data';
+import { catalogGroups, obsoleteCategorySlugs } from './catalog-data';
 
 const prisma = new PrismaClient();
 
@@ -298,21 +298,65 @@ function buildSeedPartners(): SeedPartner[] {
 async function main() {
   const passwordHash = await bcrypt.hash('demo1234', 10);
 
-  await prisma.user.upsert({
-    where: { email: 'demo@dichvuoi.vn' },
-    update: {
-      passwordHash,
-      walletBalance: 5_000_000,
-    },
-    create: {
+  /** Nick khách thuê demo — cùng mật khẩu demo1234, ví đủ để đặt đơn. */
+  const demoCustomers: Array<{
+    email: string;
+    fullName: string;
+    phone: string;
+    walletBalance: number;
+  }> = [
+    {
       email: 'demo@dichvuoi.vn',
-      passwordHash,
       fullName: 'Khách Demo',
       phone: '0900000000',
-      role: Role.CUSTOMER,
       walletBalance: 5_000_000,
     },
-  });
+    {
+      email: 'demo02@dichvuoi.vn',
+      fullName: 'Khách Demo 02',
+      phone: '0900000002',
+      walletBalance: 3_000_000,
+    },
+    {
+      email: 'demo03@dichvuoi.vn',
+      fullName: 'Khách Demo 03',
+      phone: '0900000003',
+      walletBalance: 2_000_000,
+    },
+    {
+      email: 'lan@dichvuoi.vn',
+      fullName: 'Nguyễn Thị Lan',
+      phone: '0901234567',
+      walletBalance: 4_000_000,
+    },
+    {
+      email: 'minh@dichvuoi.vn',
+      fullName: 'Trần Văn Minh',
+      phone: '0907654321',
+      walletBalance: 4_000_000,
+    },
+  ];
+
+  for (const customer of demoCustomers) {
+    await prisma.user.upsert({
+      where: { email: customer.email },
+      update: {
+        passwordHash,
+        fullName: customer.fullName,
+        phone: customer.phone,
+        walletBalance: customer.walletBalance,
+        role: Role.CUSTOMER,
+      },
+      create: {
+        email: customer.email,
+        passwordHash,
+        fullName: customer.fullName,
+        phone: customer.phone,
+        role: Role.CUSTOMER,
+        walletBalance: customer.walletBalance,
+      },
+    });
+  }
 
   await prisma.user.upsert({
     where: { email: 'admin@dichvuoi.vn' },
@@ -463,9 +507,12 @@ async function main() {
     }
   }
 
-  // Dọn category gán nhầm (vd. gia-su-hoa từng nằm trong cham-soc).
+  // Dọn category cũ / gộp (service đã chuyển sang category mới qua upsert).
   await prisma.category.deleteMany({
-    where: { slug: 'gia-su-suc-khoe' },
+    where: {
+      slug: { in: obsoleteCategorySlugs },
+      services: { none: {} },
+    },
   });
 
   // Gộp coaching theo game → chỉ giữ «Coaching game».

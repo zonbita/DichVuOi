@@ -797,7 +797,8 @@ export class BookingsService {
           { matchingDeadlineAt: { gt: new Date() } },
         ],
       },
-      orderBy: { scheduledAt: 'asc' },
+      // Mới nhất lên đầu — khớp prepend realtime `booking:open`.
+      orderBy: { createdAt: 'desc' },
       include: bookingInclude,
     });
     const viewer = viewerId ? { id: viewerId, role: Role.PARTNER } : undefined;

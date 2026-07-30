@@ -133,6 +133,7 @@ export type Booking = {
   status: string;
   address: string;
   scheduledAt: string;
+  createdAt?: string;
   totalPrice: number;
   customerName: string;
   customerPhone: string;

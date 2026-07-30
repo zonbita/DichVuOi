@@ -14,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <App />
-        <RxNotifyToaster position="top-right" />
+        <RxNotifyToaster position="bottom-right" />
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

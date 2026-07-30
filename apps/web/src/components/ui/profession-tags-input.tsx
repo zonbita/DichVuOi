@@ -60,7 +60,7 @@ export function ProfessionTagsInput({
 
   const suggestions = useMemo(() => {
     const available = options.filter((option) => !selectedSet.has(option.id));
-    const filtered = query.trim()
+    return query.trim()
       ? available.filter((option) =>
           fuzzyMatch(
             `${option.name} ${option.categoryName} ${option.groupName}`,
@@ -68,7 +68,6 @@ export function ProfessionTagsInput({
           ),
         )
       : available;
-    return filtered.slice(0, 12);
   }, [options, query, selectedSet]);
 
   useEffect(() => {
@@ -212,7 +211,7 @@ export function ProfessionTagsInput({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-lg"
+          className="absolute z-30 mt-1 max-h-80 w-full overflow-auto rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-lg"
         >
           {suggestions.length === 0 ? (
             <li className="px-3 py-2.5 text-sm text-[var(--color-muted)]">

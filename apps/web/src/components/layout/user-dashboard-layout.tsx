@@ -236,7 +236,7 @@ export function UserDashboardLayout() {
         ) : null}
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pb-2">
+      <nav className="min-h-0 flex-1 space-y-0.5 overflow-hidden pb-2">
         {navItems.map((item) => {
           const active = navActive(pathname, item);
           const count = badgeValue(item.badge);
@@ -276,8 +276,8 @@ export function UserDashboardLayout() {
   );
 
   return (
-    <div className="admin-shell flex min-h-[calc(100dvh-4.5rem)] w-full flex-1">
-      <aside className="sticky top-[4.5rem] hidden h-[calc(100dvh-4.5rem)] w-[248px] shrink-0 border-r border-[var(--admin-border)] bg-white lg:block">
+    <div className="admin-shell flex h-full min-h-0 w-full flex-1 overflow-hidden">
+      <aside className="hidden h-full w-[248px] shrink-0 border-r border-[var(--admin-border)] bg-white lg:block">
         {sidebar}
       </aside>
 
@@ -295,8 +295,8 @@ export function UserDashboardLayout() {
         </div>
       ) : null}
 
-      <div className="flex min-h-[calc(100dvh-4.5rem)] min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-[var(--admin-border)] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center gap-3 border-b border-[var(--admin-border)] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
           <button
             type="button"
             aria-label="Mở menu"
@@ -308,8 +308,8 @@ export function UserDashboardLayout() {
           <p className="font-extrabold">{title}</p>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-          <div className="mx-auto w-full max-w-[1600px]">
+        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col">
             <Outlet />
           </div>
         </main>

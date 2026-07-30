@@ -1,20 +1,38 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import bannerUyTin from '../../assets/banner-uy-tin-dam-bao.png';
 import type { IconName } from '../ui/icon';
 import { Icon } from '../ui/icon';
 
-type BannerSlide = {
+type ComposeSlide = {
+  kind?: 'compose';
   tag: string;
   title: string;
   subtitle: string;
-  /** Icon nghề chủ đạo của slide. */
   focus: IconName;
-  /** Cụm icon nghề liên quan (đang dùng trên catalog). */
   icons: IconName[];
   accent: string;
 };
 
+type ImageSlide = {
+  kind: 'image';
+  /** Ảnh đã vẽ sẵn (slogan + art). */
+  src: string;
+  alt: string;
+  href: string;
+  ctaLabel: string;
+};
+
+type BannerSlide = ComposeSlide | ImageSlide;
+
 const banners: BannerSlide[] = [
+  {
+    kind: 'image',
+    src: bannerUyTin,
+    alt: 'Uy tín · Đảm bảo · Ngăn lừa đảo — Cọc giữ trên sàn, chat trong app, không lộ SĐT sớm',
+    href: '/nhom',
+    ctaLabel: 'Thuê ngay',
+  },
   {
     tag: 'Dịch vụ yêu thích',
     title: 'Dọn nhà sạch sâu',
@@ -51,7 +69,7 @@ const ICON_LAYOUT: Array<{ top: string; left: string; size: string; opacity: num
   { top: '72%', left: '48%', size: '3rem', opacity: 0.88 },
 ];
 
-function ProfessionArt({ slide }: { slide: BannerSlide }) {
+function ProfessionArt({ slide }: { slide: ComposeSlide }) {
   const tiles = [slide.focus, ...slide.icons].slice(0, ICON_LAYOUT.length);
 
   return (
@@ -62,7 +80,6 @@ function ProfessionArt({ slide }: { slide: BannerSlide }) {
           background: `radial-gradient(ellipse 80% 70% at 55% 45%, ${slide.accent}55 0%, transparent 70%)`,
         }}
       />
-      {/* Soft rings */}
       <div className="absolute left-[18%] top-[18%] h-40 w-40 rounded-full border border-white/15" />
       <div className="absolute bottom-[12%] right-[10%] h-28 w-28 rounded-full border border-white/10" />
       <div className="absolute right-[22%] top-[8%] h-16 w-16 rounded-full bg-white/10" />
@@ -95,6 +112,10 @@ function ProfessionArt({ slide }: { slide: BannerSlide }) {
   );
 }
 
+function slideKey(banner: BannerSlide, index: number) {
+  return banner.kind === 'image' ? `image-${index}` : banner.title;
+}
+
 export function HeroBanner() {
   const [active, setActive] = useState(0);
 
@@ -114,47 +135,68 @@ export function HeroBanner() {
       <div className="relative aspect-[16/6.4] min-h-[248px] w-full">
         {banners.map((banner, index) => (
           <div
-            key={banner.title}
+            key={slideKey(banner, index)}
             className={`absolute inset-0 transition-opacity duration-700 ${
               index === active ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
           >
-            <div
-              className="absolute inset-0"
-              style={{
-                background: `linear-gradient(115deg, #073b5c 0%, #0a4f6e 42%, ${banner.accent} 78%, #1a6b78 100%)`,
-              }}
-            />
-            <div
-              className="absolute inset-0 opacity-40"
-              style={{
-                backgroundImage:
-                  'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.14) 0 1px, transparent 1px), radial-gradient(circle at 80% 60%, rgba(255,255,255,0.1) 0 1px, transparent 1px)',
-                backgroundSize: '28px 28px, 36px 36px',
-              }}
-            />
-            <ProfessionArt slide={banner} />
-
-            <div className="absolute inset-0 z-[1] flex flex-col justify-center gap-3 py-7 pl-14 pr-14 text-white sm:py-9 sm:pl-16 sm:pr-16 lg:pl-[4.5rem] lg:pr-[4.5rem]">
-              <span className="hero-banner__tag w-fit rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-white">
-                {banner.tag}
-              </span>
-              <h2 className="max-w-[22rem] text-[28px] font-extrabold uppercase leading-[1.15] tracking-tight sm:text-[32px] lg:text-[34px]">
-                {banner.title}
-              </h2>
-              <p className="max-w-[22rem] text-[15px] leading-relaxed text-white/88 sm:text-base">
-                {banner.subtitle}
-              </p>
-              <div className="mt-1">
+            {banner.kind === 'image' ? (
+              <>
+                <img
+                  src={banner.src}
+                  alt={banner.alt}
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                  draggable={false}
+                />
+                {/* Hit-area CTA — nút trên ảnh chỉ là art */}
                 <Link
-                  to="/nhom"
-                  className="hero-banner__cta inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-[15px] font-bold text-white"
+                  to={banner.href}
+                  className="absolute bottom-[18%] left-[8%] z-[1] inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full px-6 py-3 text-[15px] font-bold text-transparent sm:left-[9%] sm:bottom-[16%]"
+                  aria-label={banner.ctaLabel}
                 >
-                  Đặt ngay
-                  <Icon name="chevronRight" className="h-4 w-4" />
+                  {banner.ctaLabel}
                 </Link>
-              </div>
-            </div>
+              </>
+            ) : (
+              <>
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(115deg, #073b5c 0%, #0a4f6e 42%, ${banner.accent} 78%, #1a6b78 100%)`,
+                  }}
+                />
+                <div
+                  className="absolute inset-0 opacity-40"
+                  style={{
+                    backgroundImage:
+                      'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.14) 0 1px, transparent 1px), radial-gradient(circle at 80% 60%, rgba(255,255,255,0.1) 0 1px, transparent 1px)',
+                    backgroundSize: '28px 28px, 36px 36px',
+                  }}
+                />
+                <ProfessionArt slide={banner} />
+
+                <div className="absolute inset-0 z-[1] flex flex-col justify-center gap-3 py-7 pl-14 pr-14 text-white sm:py-9 sm:pl-16 sm:pr-16 lg:pl-[4.5rem] lg:pr-[4.5rem]">
+                  <span className="hero-banner__tag w-fit rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-white">
+                    {banner.tag}
+                  </span>
+                  <h2 className="max-w-[28rem] text-[26px] font-extrabold uppercase leading-[1.15] tracking-tight sm:text-[30px] lg:text-[32px]">
+                    {banner.title}
+                  </h2>
+                  <p className="max-w-[28rem] text-[15px] leading-relaxed text-white/88 sm:text-base">
+                    {banner.subtitle}
+                  </p>
+                  <div className="mt-1">
+                    <Link
+                      to="/nhom"
+                      className="hero-banner__cta inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-[15px] font-bold text-white"
+                    >
+                      Đặt ngay
+                      <Icon name="chevronRight" className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -179,7 +221,7 @@ export function HeroBanner() {
       <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center gap-2">
         {banners.map((banner, index) => (
           <button
-            key={banner.title}
+            key={slideKey(banner, index)}
             type="button"
             onClick={() => setActive(index)}
             aria-label={`Xem banner ${index + 1}`}

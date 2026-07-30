@@ -484,8 +484,41 @@ export class PartnersService {
     return this.getMine(userId);
   }
 
+  /**
+   * Heal orphan PARTNER/ADMIN (có role nhưng mất PartnerProfile) — dùng trước PATCH avatar / lưu hồ sơ.
+   */
+  private async requireOrCreateProfile(userId: string) {
+    const existing = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+    });
+    if (existing) return existing;
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+
+    if (user.role === Role.CUSTOMER) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { role: Role.PARTNER },
+      });
+    }
+
+    return this.prisma.partnerProfile.create({
+      data: {
+        userId,
+        headline: 'Freelancer trên Dịch Vụ Ơi',
+        bio: '',
+        city: 'Hồ Chí Minh',
+        level: 1,
+        avatarUrl: portraitAvatarUrl(userId),
+        acceptingJobs: true,
+        responseMinutes: 30,
+      },
+    });
+  }
+
   async updateMine(userId: string, dto: UpdatePartnerProfileDto) {
-    await this.getMine(userId);
+    await this.requireOrCreateProfile(userId);
     if (dto.phone !== undefined) {
       await this.prisma.user.update({
         where: { id: userId },
@@ -530,10 +563,7 @@ export class PartnersService {
 
   /** Gắn / gỡ nhiều nghề (Service) trên hồ sơ — UX kiểu tags. */
   async syncOfferings(userId: string, dto: SyncPartnerOfferingsDto) {
-    const profile = await this.prisma.partnerProfile.findUnique({
-      where: { userId },
-    });
-    if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
+    const profile = await this.requireOrCreateProfile(userId);
     await this.syncOfferingsForProfile(profile.id, dto.serviceIds ?? []);
     await recalculatePartnerLevel(this.prisma, userId);
     return this.getMine(userId);

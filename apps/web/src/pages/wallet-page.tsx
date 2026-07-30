@@ -14,12 +14,42 @@ import {
 
 type HistoryFilter = 'day' | 'week' | 'month' | 'all';
 
+const HISTORY_PAGE_SIZE = 5;
+
+function historyPageNumbers(current: number, pageCount: number): Array<number | '…'> {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, i) => i + 1);
+  }
+  const pages = new Set<number>([1, pageCount, current, current - 1, current + 1]);
+  if (current <= 3) {
+    pages.add(2);
+    pages.add(3);
+    pages.add(4);
+  }
+  if (current >= pageCount - 2) {
+    pages.add(pageCount - 1);
+    pages.add(pageCount - 2);
+    pages.add(pageCount - 3);
+  }
+  const sorted = [...pages].filter((p) => p >= 1 && p <= pageCount).sort((a, b) => a - b);
+  const out: Array<number | '…'> = [];
+  for (const p of sorted) {
+    if (out.length > 0) {
+      const prev = out[out.length - 1];
+      if (typeof prev === 'number' && p - prev > 1) out.push('…');
+    }
+    out.push(p);
+  }
+  return out;
+}
+
 export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac' }) {
   const { user, loading, refreshMe } = useAuth();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState<number>(TOP_UP_PRESETS[3]);
   const [intent, setIntent] = useState<VietQrTopUpIntent | null>(null);
   const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('all');
+  const [historyPage, setHistoryPage] = useState(1);
   const paidHandledRef = useRef<string | null>(null);
 
   const walletQuery = useQuery({
@@ -70,12 +100,6 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
     },
   });
 
-  if (loading) return <p>Đang tải…</p>;
-  if (!user) {
-    return <Navigate to={`/dang-nhap?redirect=${basePath}/vi`} replace />;
-  }
-
-  const balance = walletQuery.data?.balance ?? user.walletBalance ?? 0;
   const transactions = walletQuery.data?.transactions ?? [];
   const activeStatus = statusQuery.data;
 
@@ -90,6 +114,21 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
           : now - 30 * 24 * 60 * 60 * 1000;
     return transactions.filter((tx) => new Date(tx.createdAt).getTime() >= start);
   }, [historyFilter, transactions]);
+
+  const historyPageCount = Math.max(
+    1,
+    Math.ceil(filteredTransactions.length / HISTORY_PAGE_SIZE),
+  );
+  const safeHistoryPage = Math.min(historyPage, historyPageCount);
+
+  const pagedTransactions = useMemo(() => {
+    const start = (safeHistoryPage - 1) * HISTORY_PAGE_SIZE;
+    return filteredTransactions.slice(start, start + HISTORY_PAGE_SIZE);
+  }, [filteredTransactions, safeHistoryPage]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historyFilter]);
 
   useEffect(() => {
     if (!intent || activeStatus?.status !== 'PAID') return;
@@ -111,33 +150,40 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
     return Math.max(0, Math.floor(diffMs / 1000));
   }, [intent, statusQuery.dataUpdatedAt]);
 
+  if (loading) return <p>Đang tải…</p>;
+  if (!user) {
+    return <Navigate to={`/dang-nhap?redirect=${basePath}/vi`} replace />;
+  }
+
+  const balance = walletQuery.data?.balance ?? user.walletBalance ?? 0;
+
   function handleAmountChange(raw: string) {
     const digits = raw.replace(/[^\d]/g, '');
     setAmount(digits ? Number(digits) : 0);
   }
 
   return (
-    <div className="space-y-5 pb-8">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <section className="border border-[var(--color-line)] bg-white p-5 shadow-sm">
-        <div className="grid gap-5 lg:grid-cols-2">
+    <div className="flex h-full min-h-0 flex-col gap-4 pb-2 lg:h-full">
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:overflow-hidden">
+      <section className="no-scrollbar border border-[var(--color-line)] bg-white p-4 shadow-sm lg:min-h-0 lg:overflow-y-auto">
+        <div className="grid gap-4 lg:grid-cols-2">
           <div>
-            <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-4">
+            <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
                 Số dư khả dụng
               </p>
-              <p className="mt-2 text-3xl font-extrabold text-[var(--color-gold)]">
+              <p className="mt-1.5 text-2xl font-extrabold text-[var(--color-gold)]">
                 {formatPrice(balance)}
               </p>
-              <p className="mt-1 text-sm text-[var(--color-muted)]">
+              <p className="mt-0.5 text-xs text-[var(--color-muted)]">
                 Đơn vị VNĐ · thanh toán nội bộ trên sàn (mô phỏng)
               </p>
             </div>
-            <h2 className="mt-4 font-extrabold">Nạp VNĐ</h2>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
+            <h2 className="mt-3 font-extrabold">Nạp VNĐ</h2>
+            <p className="mt-0.5 text-sm text-[var(--color-muted)]">
               Chọn mức hoặc nhập số tiền rồi tạo mã VietQR (tối thiểu 20.000 VNĐ).
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               {TOP_UP_PRESETS.map((preset) => (
                 <button
                   key={preset}
@@ -153,7 +199,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                 </button>
               ))}
             </div>
-            <label className="mt-4 flex items-center gap-3 text-sm">
+            <label className="mt-3 flex items-center gap-3 text-sm">
               <span className="shrink-0 font-semibold text-[var(--color-muted)]">Số tiền (VNĐ)</span>
               <input
                 type="text"
@@ -172,7 +218,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
               type="button"
               disabled={createIntentMutation.isPending || amount < 20000}
               onClick={() => createIntentMutation.mutate(amount)}
-              className="btn-primary mt-4 px-4 py-2 text-sm disabled:opacity-50"
+              className="btn-primary mt-3 px-4 py-2 text-sm disabled:opacity-50"
             >
               {createIntentMutation.isPending
                 ? 'Đang tạo mã…'
@@ -180,16 +226,16 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
             </button>
           </div>
 
-          <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-4">
+          <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-3">
             {intent ? (
               <>
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-2">
                   <img
                     src={intent.qrImageUrl}
                     alt="VietQR nạp ví"
-                    className="h-[400px] w-[300px] rounded-lg border border-[var(--color-line)] bg-white p-1 object-contain"
+                    className="h-[220px] w-[165px] rounded-lg border border-[var(--color-line)] bg-white p-1 object-contain"
                   />
-                  <div className="w-full space-y-1 text-sm">
+                  <div className="w-full space-y-0.5 text-sm">
                     <p>
                       <span className="font-semibold">Số tiền:</span> {formatPrice(intent.amount)}
                     </p>
@@ -217,11 +263,11 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                 </div>
 
                 {confirmMutation.isError ? (
-                  <p className="mt-3 text-sm text-red-600">
+                  <p className="mt-2 text-sm text-red-600">
                     {(confirmMutation.error as Error).message}
                   </p>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
                     disabled={confirmMutation.isPending || activeStatus?.status === 'PAID'}
@@ -250,8 +296,8 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
         </div>
       </section>
 
-      <section className="border border-[var(--color-line)] bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <section className="flex min-h-0 flex-col border border-[var(--color-line)] bg-white p-4 shadow-sm lg:h-full lg:max-h-full">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
           <h2 className="font-extrabold">Lịch sử ví</h2>
           <div className="flex flex-wrap gap-1.5">
             {[
@@ -279,27 +325,29 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
           </div>
         </div>
         {walletQuery.isLoading ? (
-          <p className="mt-3 text-sm text-[var(--color-muted)]">Đang tải…</p>
+          <p className="mt-2 text-sm text-[var(--color-muted)]">Đang tải…</p>
         ) : null}
         {filteredTransactions.length === 0 && !walletQuery.isLoading ? (
-          <p className="mt-3 text-sm text-[var(--color-muted)]">
+          <p className="mt-2 text-sm text-[var(--color-muted)]">
             Chưa có giao dịch.
           </p>
         ) : null}
-        <ul className="mt-3 divide-y divide-[var(--color-line)]">
-          {filteredTransactions.map((tx: WalletTransaction) => {
+        <ul className="mt-2 min-h-0 flex-1 divide-y divide-[var(--color-line)] overflow-hidden">
+          {pagedTransactions.map((tx: WalletTransaction) => {
             const positive = tx.amount > 0;
             return (
               <li
                 key={tx.id}
-                className="flex flex-wrap items-start justify-between gap-3 py-3 text-sm"
+                className="flex items-start justify-between gap-2 py-2 text-sm"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold">
+                  <p className="truncate font-semibold leading-snug">
                     {WALLET_TX_LABELS[tx.type as WalletTransactionType] ?? tx.type}
                   </p>
-                  <p className="text-[var(--color-muted)]">{tx.description}</p>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                  <p className="truncate text-xs text-[var(--color-muted)]">
+                    {tx.description}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-[var(--color-muted)]">
                     {new Date(tx.createdAt).toLocaleString('vi-VN')}
                     {tx.bookingId ? (
                       <>
@@ -318,23 +366,74 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                     ) : null}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <p
-                    className={`font-extrabold ${
+                    className={`text-sm font-extrabold leading-snug ${
                       positive ? 'text-[var(--color-gold)]' : 'text-[var(--color-invoice)]'
                     }`}
                   >
                     {positive ? '+' : ''}
                     {formatPrice(tx.amount)}
                   </p>
-                  <p className="text-xs text-[var(--color-muted)]">
-                    Sau GD: {formatPrice(tx.balanceAfter)}
+                  <p className="text-[11px] text-[var(--color-muted)]">
+                    Sau: {formatPrice(tx.balanceAfter)}
                   </p>
                 </div>
               </li>
             );
           })}
         </ul>
+        {historyPageCount > 1 ? (
+          <div className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[var(--color-line)] pt-2 text-sm">
+            <p className="text-xs text-[var(--color-muted)]">
+              {filteredTransactions.length} GD · trang {safeHistoryPage}/{historyPageCount}
+            </p>
+            <nav className="flex flex-wrap items-center gap-1" aria-label="Phân trang lịch sử ví">
+              <button
+                type="button"
+                disabled={safeHistoryPage <= 1}
+                onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                className="border border-[var(--color-line)] bg-white px-2 py-0.5 text-xs font-semibold disabled:opacity-40"
+              >
+                Trước
+              </button>
+              {historyPageNumbers(safeHistoryPage, historyPageCount).map((item, idx) =>
+                item === '…' ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-1 text-[var(--color-muted)]"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setHistoryPage(item)}
+                    aria-current={item === safeHistoryPage ? 'page' : undefined}
+                    className={`min-w-7 border px-2 py-0.5 text-xs font-bold ${
+                      item === safeHistoryPage
+                        ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
+                        : 'border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-canvas)]'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ),
+              )}
+              <button
+                type="button"
+                disabled={safeHistoryPage >= historyPageCount}
+                onClick={() =>
+                  setHistoryPage((p) => Math.min(historyPageCount, p + 1))
+                }
+                className="border border-[var(--color-line)] bg-white px-2 py-0.5 text-xs font-semibold disabled:opacity-40"
+              >
+                Sau
+              </button>
+            </nav>
+          </div>
+        ) : null}
       </section>
       </div>
     </div>

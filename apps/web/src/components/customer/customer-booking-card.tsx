@@ -433,7 +433,7 @@ export function CustomerBookingCard({
         </div>
       ) : null}
       {showChat ? (
-        <div className="border-t border-[#172033]/08 px-5 py-2.5">
+        <div className="px-5 pb-3 pt-1">
           <p className="text-xs font-semibold text-[#4977E8]">
             {unreadCount > 0
               ? `${unreadCount > 9 ? '9+' : unreadCount} tin mới — nhấp để mở chat →`

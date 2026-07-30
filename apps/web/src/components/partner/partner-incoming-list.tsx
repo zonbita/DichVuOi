@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { formatPrice, formatPriceNumber } from '../../services/api';
 import type { Booking } from '../../types/catalog';
 import { serviceImage } from '../../utils/catalog-images';
@@ -10,7 +9,6 @@ type Props = {
   onApply: (id: string) => void;
   applyingId?: string | null;
   appliedIds?: string[];
-  applyError?: string | null;
   emptyHint?: string;
 };
 
@@ -32,7 +30,6 @@ export function PartnerIncomingList({
   onApply,
   applyingId,
   appliedIds = [],
-  applyError,
   emptyHint,
 }: Props) {
   return (
@@ -52,19 +49,6 @@ export function PartnerIncomingList({
           Live
         </span>
       </div>
-
-      {applyError ? (
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
-          <p>{applyError}</p>
-          <Link
-            to="/doi-tac/ho-so"
-            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-white px-3 py-1.5 text-[11px] font-bold text-red-700 shadow-sm transition hover:bg-red-50"
-          >
-            Vào hồ sơ
-            <Icon name="chevronRight" className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      ) : null}
 
       <div className="mt-3 flex-1 space-y-2 overflow-y-auto pr-0.5">
         {bookings.map((booking) => {

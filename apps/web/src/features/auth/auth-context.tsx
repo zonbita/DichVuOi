@@ -89,10 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshMe();
   }, [refreshMe]);
 
-  const canOffer =
-    Boolean(user?.partnerProfile) ||
-    user?.role === 'PARTNER' ||
-    user?.role === 'ADMIN';
+  /** Chỉ khi đã có PartnerProfile — role PARTNER/ADMIN orphan không đủ để sửa hồ sơ / tải avatar. */
+  const canOffer = Boolean(user?.partnerProfile);
 
   const value = useMemo<AuthContextValue>(
     () => ({
