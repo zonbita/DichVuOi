@@ -43,6 +43,8 @@ export type PartnerProfile = {
   city: string | null;
   districts?: string | null;
   isVerified: boolean;
+  phoneVerified?: boolean;
+  bankVerified?: boolean;
   /** Cấp 1–100 — chỉ có khi user là người làm. */
   level: number;
   avatarUrl?: string | null;
@@ -115,6 +117,8 @@ export type PublicPartnerProfile = {
   ratingCount: number;
   level: number;
   isVerified: boolean;
+  phoneVerified?: boolean;
+  bankVerified?: boolean;
   avatarUrl: string | null;
   gallery: string[];
   completedJobs: number;

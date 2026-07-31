@@ -1,0 +1,63 @@
+import type { ReactNode } from 'react';
+import type { IconName } from '../ui/icon';
+import { Icon } from '../ui/icon';
+
+function pad2(n: number) {
+  return String(n).padStart(2, '0');
+}
+
+const pillBase =
+  'inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px]';
+
+/** Pill meta chung trên card job — viền mỏng, icon không vòng nền. */
+export function JobMetaPill({
+  icon,
+  children,
+  className = '',
+  iconClassName = 'text-[#64748B]',
+  title,
+}: {
+  icon: IconName;
+  children: ReactNode;
+  className?: string;
+  iconClassName?: string;
+  title?: string;
+}) {
+  return (
+    <span
+      className={`${pillBase} border-[#E8EEF5] bg-white ${className}`}
+      title={title}
+    >
+      <Icon name={icon} className={`h-3.5 w-3.5 shrink-0 ${iconClassName}`} />
+      <span className="min-w-0 truncate">{children}</span>
+    </span>
+  );
+}
+
+/** Pill giờ · ngày (job card) — clock + giờ đậm · ngày nhạt. */
+export function ScheduleTimePill({
+  date,
+  className = '',
+}: {
+  date: string | Date;
+  className?: string;
+}) {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  const day = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+
+  return (
+    <JobMetaPill
+      icon="clock"
+      iconClassName="text-[#2563EB]"
+      className={`border-[#BFDBFE] ${className}`}
+      title={d.toLocaleString('vi-VN')}
+    >
+      <span className="font-bold tabular-nums text-[var(--color-navy)]">
+        {time}
+      </span>
+      <span className="mx-1.5 text-[#94A3B8]">·</span>
+      <span className="font-medium tabular-nums text-[#64748B]">{day}</span>
+    </JobMetaPill>
+  );
+}

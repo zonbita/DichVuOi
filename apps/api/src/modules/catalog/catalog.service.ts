@@ -304,6 +304,8 @@ export class CatalogService {
           ratingAvg: offering.partnerProfile.ratingAvg,
           ratingCount: offering.partnerProfile.ratingCount,
           isVerified: offering.partnerProfile.isVerified,
+          phoneVerified: offering.partnerProfile.phoneVerified,
+          bankVerified: offering.partnerProfile.bankVerified,
           level: offering.partnerProfile.level,
           avatarUrl: offering.partnerProfile.avatarUrl,
           completedJobs: completedCounts[index] ?? 0,

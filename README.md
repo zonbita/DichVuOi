@@ -284,6 +284,8 @@ Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): 
 - Header navy (`site-header.tsx`): logo trái · search giữa · tài khoản phải; dropdown khu vực / nhóm dịch vụ dùng prop `onDark`.
 - Hero banner + benefit cards + chip marquee dịch vụ (`service-tag-nav`) — nền/viền theo token hệ thống.
 - Tab «Dịch vụ nổi bật» trên home: active mint/teal (UI chung), **không** recolor theo ngành.
+- **Card việc mới** (`OpenJobCard`): hàng đầu **Hạn ứng tuyển** (trái) + giá ví (phải) → hàng nội dung ảnh trái | tiêu đề + khách + pill meta **ngang** (lịch · thời lượng · ứng viên, cách bằng dấu ·) → footer trạng thái + CTA `rounded-full`. 8 việc / trang.
+- **Pill meta** (`JobMetaPill` / `ScheduleTimePill`): capsule viền mỏng màu theo loại — lịch hẹn xanh dương, thời lượng sky, ứng viên xanh lá, hạn ứng tuyển đỏ. Dùng chung home + danh sách đơn realtime người làm.
 
 ### Tách màu UI vs màu ngành (icon)
 

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { FavoritePartnerButton } from '../components/partner/favorite-partner-button';
 import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
-import { AvatarLevelOverlay, VerificationBadge } from '../components/ui/partner-badges';
+import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { StarIcon, Icon } from '../components/ui/icon';
 import { api, formatPrice, formatWorkHours } from '../services/api';
 import type { PublicPartnerProfile } from '../types/auth';
@@ -395,7 +395,11 @@ function ProfileSidebar({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-lg font-extrabold leading-tight">{data.fullName}</h1>
-                <VerificationBadge verified={data.isVerified} />
+                <PartnerVerificationBadges
+                  isVerified={data.isVerified}
+                  phoneVerified={data.phoneVerified}
+                  bankVerified={data.bankVerified}
+                />
               </div>
             </div>
             <FavoritePartnerButton partnerUserId={data.userId} showLabel={false} />

@@ -14,6 +14,8 @@ export declare class PartnersController {
         ratingAvg: number;
         level: number;
         isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
         serviceSlug: string | null;
         serviceName: string | null;
         price: number | null;
@@ -37,6 +39,8 @@ export declare class PartnersController {
         ratingCount: number;
         level: number;
         isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
         avatarUrl: string | null;
         gallery: string[];
         completedJobs: number;
@@ -91,6 +95,8 @@ export declare class PartnersController {
         ratingCount: number;
         level: number;
         isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
         acceptingJobs: boolean;
         favoritedAt: Date;
         topOffering: {
@@ -178,6 +184,8 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -300,6 +308,8 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -367,6 +377,8 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;

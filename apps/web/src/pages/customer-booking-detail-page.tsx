@@ -104,7 +104,7 @@ export function CustomerBookingDetailPage() {
     booking.paymentStatus === 'HELD';
 
   return (
-    <div className="glass-page -mx-4 space-y-5 rounded-[24px] px-4 py-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <div className="glass-page -mx-4 flex flex-col gap-4 rounded-[24px] px-4 py-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
@@ -126,39 +126,45 @@ export function CustomerBookingDetailPage() {
         </Link>
       </div>
 
-      <CustomerBookingCard
-        booking={booking}
-        currentUserId={user.id}
-        paying={payMutation.isPending}
-        cancelling={cancelMutation.isPending}
-        confirming={confirmMutation.isPending}
-        payError={payMutation.isError ? (payMutation.error as Error).message : null}
-        cancelError={
-          cancelMutation.isError ? (cancelMutation.error as Error).message : null
-        }
-        confirmError={
-          confirmMutation.isError ? (confirmMutation.error as Error).message : null
-        }
-        onPay={() => payMutation.mutate()}
-        onCancel={() => cancelMutation.mutate()}
-        onConfirm={(_bookingId, acceptIncomplete) =>
-          confirmMutation.mutate(acceptIncomplete)
-        }
-        settlementPending={
-          proposeSettlementMutation.isPending || approveSettlementMutation.isPending
-        }
-        settlementError={
-          proposeSettlementMutation.isError
-            ? (proposeSettlementMutation.error as Error).message
-            : approveSettlementMutation.isError
-              ? (approveSettlementMutation.error as Error).message
-              : null
-        }
-        onProposeSettlement={(_bookingId, percent) =>
-          proposeSettlementMutation.mutate(percent)
-        }
-        onApproveSettlement={() => approveSettlementMutation.mutate()}
-      />
+      <div className="glass-card overflow-hidden">
+        <CustomerBookingCard
+          booking={booking}
+          currentUserId={user.id}
+          embedded
+          paying={payMutation.isPending}
+          cancelling={cancelMutation.isPending}
+          confirming={confirmMutation.isPending}
+          payError={payMutation.isError ? (payMutation.error as Error).message : null}
+          cancelError={
+            cancelMutation.isError ? (cancelMutation.error as Error).message : null
+          }
+          confirmError={
+            confirmMutation.isError ? (confirmMutation.error as Error).message : null
+          }
+          onPay={() => payMutation.mutate()}
+          onCancel={() => cancelMutation.mutate()}
+          onConfirm={(_bookingId, acceptIncomplete) =>
+            confirmMutation.mutate(acceptIncomplete)
+          }
+          settlementPending={
+            proposeSettlementMutation.isPending || approveSettlementMutation.isPending
+          }
+          settlementError={
+            proposeSettlementMutation.isError
+              ? (proposeSettlementMutation.error as Error).message
+              : approveSettlementMutation.isError
+                ? (approveSettlementMutation.error as Error).message
+                : null
+          }
+          onProposeSettlement={(_bookingId, percent) =>
+            proposeSettlementMutation.mutate(percent)
+          }
+          onApproveSettlement={() => approveSettlementMutation.mutate()}
+        />
+        <div>
+          <BookingChecklist booking={booking} mode="customer" embedded />
+        </div>
+      </div>
 
       {showApplicants ? (
         <BookingApplicantsList
@@ -174,8 +180,6 @@ export function CustomerBookingDetailPage() {
           {(selectMutation.error as Error).message}
         </p>
       ) : null}
-
-      <BookingChecklist booking={booking} mode="customer" />
 
       <BookingComplaintForm
         bookingId={booking.id}

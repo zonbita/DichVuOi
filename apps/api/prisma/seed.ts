@@ -20,6 +20,8 @@ type SeedPartner = {
   ratingAvg: number;
   ratingCount: number;
   isVerified: boolean;
+  phoneVerified: boolean;
+  bankVerified: boolean;
   priceFactor: number;
   /** Cấp 1–100 (chỉ người làm). */
   level: number;
@@ -245,6 +247,8 @@ function buildSeedPartners(): SeedPartner[] {
       ratingAvg: 4.9,
       ratingCount: 214,
       isVerified: true,
+      phoneVerified: true,
+      bankVerified: true,
       priceFactor: 1,
       level: 42,
       avatarUrl: partnerAvatar('partner@dichvuoi.vn'),
@@ -285,6 +289,8 @@ function buildSeedPartners(): SeedPartner[] {
       ratingAvg: Math.min(5, ratingAvg),
       ratingCount: 20 + i * 17,
       isVerified: i % 3 !== 0,
+      phoneVerified: i % 2 !== 0,
+      bankVerified: i % 4 === 0,
       priceFactor,
       level,
       avatarUrl: partnerAvatar(email),
@@ -420,6 +426,8 @@ async function main() {
         ratingAvg: p.ratingAvg,
         ratingCount: p.ratingCount,
         isVerified: p.isVerified,
+        phoneVerified: p.phoneVerified,
+        bankVerified: p.bankVerified,
         level: p.level,
         avatarUrl: p.avatarUrl,
       },
@@ -436,6 +444,8 @@ async function main() {
         ratingAvg: p.ratingAvg,
         ratingCount: p.ratingCount,
         isVerified: p.isVerified,
+        phoneVerified: p.phoneVerified,
+        bankVerified: p.bankVerified,
         level: p.level,
         avatarUrl: p.avatarUrl,
       },
@@ -599,6 +609,204 @@ async function main() {
 
   console.log(
     `Seeded ${partnerProfiles.length} partners · ${offeringCount} offerings · tối đa ${PROVIDERS_PER_SERVICE} người / dịch vụ (${allServices.length} services)`,
+  );
+
+  // --- Demo: ~10 đơn COMPLETED (nghề online random) cho khách demo ---
+  const demoCustomer = await prisma.user.findUnique({
+    where: { email: 'demo@dichvuoi.vn' },
+  });
+  if (!demoCustomer) {
+    console.warn('Bỏ qua seed booking: không tìm thấy demo@dichvuoi.vn');
+    return;
+  }
+
+  await prisma.booking.deleteMany({
+    where: {
+      userId: demoCustomer.id,
+      note: { startsWith: '[seed-completed]' },
+    },
+  });
+
+  const offeringPool = await prisma.partnerService.findMany({
+    where: {
+      isActive: true,
+      service: { supportsOnline: true, isActive: true },
+    },
+    include: {
+      partnerProfile: { select: { userId: true } },
+      service: {
+        select: {
+          id: true,
+          name: true,
+          unit: true,
+          durationMin: true,
+          basePrice: true,
+        },
+      },
+    },
+    take: 120,
+  });
+
+  const byService = new Map<string, (typeof offeringPool)[number]>();
+  for (const offering of offeringPool) {
+    if (!byService.has(offering.serviceId)) {
+      byService.set(offering.serviceId, offering);
+    }
+  }
+  const uniqueOfferings = [...byService.values()];
+  // Xáo trộn nhẹ theo seed cố định để ổn định giữa các lần seed
+  uniqueOfferings.sort(
+    (a, b) =>
+      (a.serviceId.charCodeAt(0) + a.partnerProfileId.charCodeAt(2)) -
+      (b.serviceId.charCodeAt(0) + b.partnerProfileId.charCodeAt(2)),
+  );
+  const picks = uniqueOfferings.slice(0, 10);
+
+  const addresses = [
+    'Online · Google Meet',
+    'Online · Zoom',
+    'Online · Discord',
+    'Online · Zalo Video',
+    'Online · Microsoft Teams',
+  ];
+
+  let completedSeed = 0;
+  for (let i = 0; i < picks.length; i += 1) {
+    const offering = picks[i];
+    const price = offering.price ?? offering.service.basePrice;
+    const commissionBps = 1500;
+    const commissionAmount = Math.round((price * commissionBps) / 10000);
+    const partnerPayout = price - commissionAmount;
+    const daysAgo = 2 + i * 3;
+    const scheduledAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+    const paidAt = new Date(scheduledAt.getTime() - 2 * 60 * 60 * 1000);
+    const releasedAt = new Date(scheduledAt.getTime() + offering.service.durationMin * 60 * 1000);
+
+    const booking = await prisma.booking.create({
+      data: {
+        userId: demoCustomer.id,
+        partnerId: offering.partnerProfile.userId,
+        serviceId: offering.service.id,
+        address: addresses[i % addresses.length],
+        scheduledAt,
+        note: `[seed-completed] Demo đơn hoàn thành · ${offering.service.name}`,
+        status: 'COMPLETED',
+        totalPrice: price,
+        customerName: demoCustomer.fullName,
+        customerPhone: demoCustomer.phone ?? '0900000000',
+        paymentStatus: 'RELEASED',
+        commissionBps,
+        commissionAmount,
+        partnerPayout,
+        paidAt,
+        releasedAt,
+        settlementPercent: 100,
+        settlementResolvedAt: releasedAt,
+      },
+    });
+
+    await prisma.invoice.create({
+      data: {
+        invoiceNumber: `SEED-${String(i + 1).padStart(4, '0')}-${booking.id.slice(-6).toUpperCase()}`,
+        bookingId: booking.id,
+        customerId: demoCustomer.id,
+        partnerId: offering.partnerProfile.userId,
+        customerName: demoCustomer.fullName,
+        serviceName: offering.service.name,
+        subtotal: price,
+        commissionAmount,
+        partnerPayout,
+        status: 'SETTLED',
+        issuedAt: paidAt,
+        settledAt: releasedAt,
+      },
+    });
+
+    await prisma.review.create({
+      data: {
+        bookingId: booking.id,
+        fromUserId: demoCustomer.id,
+        toUserId: offering.partnerProfile.userId,
+        rating: 4 + (i % 2),
+        comment: `Seed review — ${offering.service.name} ổn, đúng hẹn.`,
+      },
+    });
+
+    completedSeed += 1;
+  }
+
+  console.log(
+    `Seeded ${completedSeed} COMPLETED bookings for demo@dichvuoi.vn (tab Hoàn thành)`,
+  );
+
+  // --- Demo: đơn PENDING mở (HELD, chưa có partner) cho bảng tin trang chủ ---
+  await prisma.booking.deleteMany({
+    where: {
+      userId: demoCustomer.id,
+      note: { startsWith: '[seed-open]' },
+    },
+  });
+
+  const openServices = await prisma.service.findMany({
+    where: { isActive: true, supportsOnline: true },
+    select: {
+      id: true,
+      name: true,
+      unit: true,
+      durationMin: true,
+      basePrice: true,
+    },
+    orderBy: { slug: 'asc' },
+    take: 40,
+  });
+  openServices.sort(
+    (a, b) =>
+      a.id.charCodeAt(0) +
+      a.name.length -
+      (b.id.charCodeAt(0) + b.name.length),
+  );
+  const openPicks = openServices.slice(0, 8);
+  const matchingMs = 7 * 24 * 60 * 60 * 1000;
+
+  let openSeed = 0;
+  for (let i = 0; i < openPicks.length; i += 1) {
+    const service = openPicks[i];
+    const price = service.basePrice;
+    const commissionBps = 1500;
+    const commissionAmount = Math.round((price * commissionBps) / 10000);
+    const partnerPayout = price - commissionAmount;
+    const hoursAhead = 12 + i * 6;
+    const scheduledAt = new Date(Date.now() + hoursAhead * 60 * 60 * 1000);
+    const paidAt = new Date(Date.now() - (i + 1) * 45 * 60 * 1000);
+    const matchingDeadlineAt = new Date(paidAt.getTime() + matchingMs);
+
+    await prisma.booking.create({
+      data: {
+        userId: demoCustomer.id,
+        partnerId: null,
+        serviceId: service.id,
+        address: addresses[i % addresses.length],
+        scheduledAt,
+        note: `[seed-open] Demo đơn mở · ${service.name}`,
+        status: 'PENDING',
+        totalPrice: price,
+        customerName: demoCustomer.fullName,
+        customerPhone: demoCustomer.phone ?? '0900000000',
+        paymentStatus: 'HELD',
+        commissionBps,
+        commissionAmount,
+        partnerPayout,
+        paidAt,
+        matchingDeadlineAt,
+        budgetMin: Math.round(price * 0.9),
+        budgetMax: Math.round(price * 1.15),
+      },
+    });
+    openSeed += 1;
+  }
+
+  console.log(
+    `Seeded ${openSeed} OPEN PENDING bookings for homepage board (demo@dichvuoi.vn)`,
   );
 }
 

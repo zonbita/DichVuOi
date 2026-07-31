@@ -54,7 +54,7 @@ export function ReferencePrice({
         <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
           Giá tham khảo
         </span>
-        <span className="text-sm font-extrabold text-[var(--color-sale)]">
+        <span className="text-[15px] font-extrabold text-[var(--color-sale)]">
           {same ? (
             formatPrice(range.min)
           ) : (

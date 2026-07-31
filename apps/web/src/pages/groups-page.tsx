@@ -1,15 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { GroupCard } from '../components/common/group-card';
+import { GroupTile } from '../components/common/group-card';
 import { RetentionPartnerCard } from '../components/home/retention-partner-card';
+import { Icon } from '../components/ui/icon';
 import { catalogQueries } from '../lib/catalog-queries';
 import { api } from '../services/api';
 import { groupColor } from '../utils/catalog-colors';
 import { phraseMatch } from '../utils/search';
 
+type SortMode = 'default' | 'name-asc' | 'name-desc';
+
 export function GroupsPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const keyword = (searchParams.get('q') ?? '').trim();
+  const [draftQuery, setDraftQuery] = useState(keyword);
+  const [sortMode, setSortMode] = useState<SortMode>('default');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const { data, isLoading, isError } = useQuery(catalogQueries.groupsTree);
 
@@ -19,7 +26,16 @@ export function GroupsPage() {
     enabled: Boolean(keyword),
   });
 
-  const groups = data ?? [];
+  const groups = useMemo(() => {
+    const list = [...(data ?? [])];
+    if (sortMode === 'name-asc') {
+      list.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+    } else if (sortMode === 'name-desc') {
+      list.sort((a, b) => b.name.localeCompare(a.name, 'vi'));
+    }
+    return list;
+  }, [data, sortMode]);
+
   const partnerHits = partnersQuery.data ?? [];
 
   const serviceHits = keyword
@@ -45,17 +61,86 @@ export function GroupsPage() {
     serviceHits.length === 0 &&
     partnerHits.length === 0;
 
+  function commitSearch(value: string) {
+    const next = value.trim();
+    setDraftQuery(next);
+    if (next) setSearchParams({ q: next });
+    else setSearchParams({});
+  }
+
   return (
     <div>
-      <div>
-        <h1 className="text-2xl font-bold sm:text-3xl">
-          {keyword ? `Kết quả cho “${keyword}”` : 'Tất cả nhóm dịch vụ'}
-        </h1>
-        {!keyword ? (
-          <p className="mt-2 max-w-2xl text-sm text-[var(--color-muted)] sm:text-base">
-            Chỉ hiện nghề có thể thực hiện hoàn toàn online.
-          </p>
-        ) : null}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-navy)] sm:text-3xl">
+            {keyword ? `Kết quả cho “${keyword}”` : 'Tất cả ngành nghề'}
+          </h1>
+          {!keyword ? (
+            <p className="mt-1.5 text-sm text-[var(--color-muted)] sm:text-base">
+              Khám phá dịch vụ phù hợp với nhu cầu của bạn
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:max-w-xl">
+          <label className="relative min-w-0 flex-1">
+            <span className="sr-only">Tìm kiếm ngành nghề</span>
+            <Icon
+              name="search"
+              className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
+            />
+            <input
+              type="search"
+              value={draftQuery}
+              onChange={(event) => setDraftQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') commitSearch(draftQuery);
+              }}
+              placeholder="Tìm kiếm ngành nghề..."
+              className="field-input w-full rounded-full py-2.5 pr-4 pl-10 text-sm"
+            />
+          </label>
+
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              aria-expanded={filterOpen}
+              onClick={() => setFilterOpen((open) => !open)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-navy)] shadow-sm transition hover:bg-[var(--color-canvas)] sm:w-auto"
+            >
+              <Icon name="settings" className="h-4 w-4" />
+              Bộ lọc
+              <Icon name="chevronDown" className="h-3.5 w-3.5 text-[var(--color-muted)]" />
+            </button>
+            {filterOpen ? (
+              <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-[var(--shadow-hover)]">
+                {(
+                  [
+                    ['default', 'Mặc định'],
+                    ['name-asc', 'Tên A → Z'],
+                    ['name-desc', 'Tên Z → A'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setSortMode(value);
+                      setFilterOpen(false);
+                    }}
+                    className={`block w-full px-3.5 py-2 text-left text-sm font-medium transition hover:bg-[var(--color-canvas)] ${
+                      sortMode === value
+                        ? 'text-[var(--color-brand-deep)]'
+                        : 'text-[var(--color-ink)]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       {isLoading && <p className="mt-6">Đang tải...</p>}
@@ -68,9 +153,9 @@ export function GroupsPage() {
       ) : null}
 
       {!keyword && groups.length > 0 ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
           {groups.map((group) => (
-            <GroupCard key={group.id} group={group} to={`/nhom/${group.slug}`} />
+            <GroupTile key={group.id} group={group} />
           ))}
         </div>
       ) : null}

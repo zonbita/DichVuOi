@@ -120,6 +120,8 @@ export type BookingApplication = {
       avatarUrl?: string | null;
       city?: string | null;
       isVerified?: boolean;
+      phoneVerified?: boolean;
+      bankVerified?: boolean;
       onlineSeconds?: number;
       offerings?: Array<{ serviceId: string; price: number | null }>;
     } | null;
@@ -236,6 +238,8 @@ export type ServiceProvider = {
     ratingAvg: number;
     ratingCount: number;
     isVerified: boolean;
+    phoneVerified?: boolean;
+    bankVerified?: boolean;
     /** Cấp 1–100 — chỉ người làm. */
     level: number;
     avatarUrl: string | null;
@@ -262,6 +266,8 @@ export type FavoritePartner = {
   ratingCount: number;
   level: number;
   isVerified: boolean;
+  phoneVerified?: boolean;
+  bankVerified?: boolean;
   acceptingJobs: boolean;
   favoritedAt: string;
   topOffering: {
@@ -281,6 +287,8 @@ export type PartnerSearchHit = {
   ratingAvg: number;
   level: number;
   isVerified: boolean;
+  phoneVerified?: boolean;
+  bankVerified?: boolean;
   serviceSlug: string | null;
   serviceName: string | null;
   price: number | null;

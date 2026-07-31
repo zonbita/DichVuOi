@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { DealCard } from '../components/common/deal-card';
-import { GroupTile } from '../components/common/group-card';
 import { ScrollRail } from '../components/common/scroll-rail';
 import { ServiceCard } from '../components/common/service-card';
 import { HeroSection } from '../components/home/hero-section';
+import { HomeOpenJobsSection } from '../components/home/home-open-jobs-section';
 import { FamiliarPartnersSection, RebookSection } from '../components/home/retention-sections';
 import { Icon } from '../components/ui/icon';
 import type { IconName } from '../components/ui/icon';
@@ -18,6 +18,7 @@ import {
 } from '../lib/catalog-cache';
 import { catalogQueries } from '../lib/catalog-queries';
 import { api } from '../services/api';
+import { groupIcon } from '../utils/catalog-display';
 import {
   rankFeaturedServices,
   signalsFromRebookHints,
@@ -127,14 +128,16 @@ export function HomePage() {
   const groups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data]);
   const tabs = useMemo(
     () => [
-      { slug: 'all', name: 'Đề xuất cho bạn' },
+      { slug: 'all', name: 'Đề xuất cho bạn', icon: 'sparkles' as IconName },
       ...groups.map((group) => ({
         slug: group.slug,
         name: group.name,
+        icon: groupIcon(group.slug),
       })),
     ],
     [groups],
   );
+  const tabRailRef = useRef<HTMLDivElement>(null);
 
   const featuredServices = useMemo(() => {
     const limit = activeTab === 'all' ? 8 : 16;
@@ -194,49 +197,49 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="page-shell mt-10">
-        <div className="section-container">
-          <SectionHeader
-            title="Tất cả ngành nghề"
-            action={<ViewAllLink />}
-          />
-          {groupsQuery.isLoading ? (
-            <p className="text-base text-[var(--color-muted)]">Đang tải ngành nghề...</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
-              {groups.map((group) => (
-                <GroupTile key={group.id} group={group} />
-              ))}
-            </div>
-          )}
-          {!groupsQuery.isLoading && groups.length === 0 ? (
-            <p className="text-base text-[var(--color-muted)]">Chưa có nhóm dịch vụ.</p>
-          ) : null}
-        </div>
-      </section>
+      <HomeOpenJobsSection />
 
       <section className="page-shell mt-10">
         <div className="section-container">
           <SectionHeader title="Dịch vụ nổi bật" action={<ViewAllLink />} />
 
-          <div className="no-scrollbar mb-4 flex gap-2 overflow-x-auto pb-0.5">
-            {tabs.map((tab) => {
-              const active = activeTab === tab.slug;
-              return (
-                <button
-                  key={tab.slug}
-                  type="button"
-                  onClick={() => setActiveTab(tab.slug)}
-                  className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[14px] font-semibold transition ${
-                    active
-                      ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-navy)] shadow-sm'
-                      : 'border-[var(--color-line)] bg-white text-[var(--color-muted)] hover:border-[var(--color-brand)]/40 hover:text-[var(--color-ink)]'
-                  }`}
-                >
-                  {tab.name}
-                </button>
-              );
-            })}
+          <div className="relative mb-5">
+            <div
+              ref={tabRailRef}
+              className="no-scrollbar flex gap-2.5 overflow-x-auto scroll-smooth pr-12 pb-0.5"
+            >
+              {tabs.map((tab) => {
+                const active = activeTab === tab.slug;
+                return (
+                  <button
+                    key={tab.slug}
+                    type="button"
+                    onClick={() => setActiveTab(tab.slug)}
+                    className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-[14px] font-semibold transition ${
+                      active
+                        ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-sm'
+                        : 'border-[var(--color-line)] bg-[#eef2f5] text-[var(--color-ink)] hover:border-[var(--color-navy)]/25 hover:bg-white'
+                    }`}
+                  >
+                    <Icon
+                      name={tab.icon}
+                      className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-[var(--color-navy)]'}`}
+                    />
+                    {tab.name}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              aria-label="Cuộn danh mục tiếp"
+              onClick={() =>
+                tabRailRef.current?.scrollBy({ left: 240, behavior: 'smooth' })
+              }
+              className="absolute top-1/2 right-0 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--color-line)] bg-white text-[var(--color-navy)] shadow-sm transition hover:bg-[var(--color-brand-soft)]"
+            >
+              <Icon name="chevronRight" className="h-4 w-4" />
+            </button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

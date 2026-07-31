@@ -23,7 +23,7 @@ exports.catalogGroups = [
         name: 'Nhà cửa - không gian sống',
         description: 'Dọn nhà, tổng vệ sinh, sofa/rèm/thảm, khử khuẩn, diệt côn trùng',
         icon: 'home',
-        sortOrder: 1,
+        sortOrder: 14,
         isFeatured: true,
         categories: [
             {
@@ -63,7 +63,7 @@ exports.catalogGroups = [
         name: 'Sửa chữa - kỹ thuật',
         description: 'Điện, nước, điện lạnh, điện máy, camera, mạng, chống thấm, sơn',
         icon: 'wrench',
-        sortOrder: 2,
+        sortOrder: 15,
         isFeatured: true,
         categories: [
             {
@@ -110,7 +110,7 @@ exports.catalogGroups = [
         name: 'Xây dựng - hoàn thiện',
         description: 'Thợ hồ, ốp lát, thạch cao, cửa kính, rèm, lắp đặt nội thất',
         icon: 'hammer',
-        sortOrder: 3,
+        sortOrder: 16,
         isFeatured: false,
         categories: [
             {
@@ -141,7 +141,7 @@ exports.catalogGroups = [
         name: 'Chăm sóc - sức khỏe',
         description: 'Trông trẻ, người già, người bệnh, massage, spa tại nhà',
         icon: 'heart',
-        sortOrder: 4,
+        sortOrder: 17,
         isFeatured: true,
         categories: [
             {
@@ -171,7 +171,7 @@ exports.catalogGroups = [
         name: 'Làm đẹp',
         description: 'Makeup, tóc, nail, gội đầu dưỡng sinh tại nhà',
         icon: 'beauty',
-        sortOrder: 5,
+        sortOrder: 18,
         isFeatured: true,
         categories: [
             {
@@ -201,7 +201,7 @@ exports.catalogGroups = [
         name: 'Bếp - đời sống',
         description: 'Nấu ăn, đi chợ, meal prep, giặt ủi, may sửa đồ',
         icon: 'utensils',
-        sortOrder: 6,
+        sortOrder: 19,
         isFeatured: true,
         categories: [
             {
@@ -224,7 +224,7 @@ exports.catalogGroups = [
         name: 'Xe - vận chuyển',
         description: 'Rửa xe, cứu hộ nhẹ, tài xế theo giờ, chuyển nhà, bê đồ',
         icon: 'truck',
-        sortOrder: 7,
+        sortOrder: 20,
         isFeatured: true,
         categories: [
             {
@@ -247,7 +247,7 @@ exports.catalogGroups = [
         name: 'Học tập - ngoại ngữ',
         description: 'Gia sư các môn, ngoại ngữ, luyện thi quốc tế / ĐH; dạy nhạc, vẽ, tin học từ xa',
         icon: 'book',
-        sortOrder: 8,
+        sortOrder: 1,
         isFeatured: true,
         categories: [
             {
@@ -316,7 +316,7 @@ exports.catalogGroups = [
         name: 'Game - eSports',
         description: 'Coaching, QA game, dạy / làm game, edit stream, caster — không boosting / cày thuê',
         icon: 'game',
-        sortOrder: 9,
+        sortOrder: 7,
         isFeatured: true,
         categories: [
             {
@@ -353,7 +353,7 @@ exports.catalogGroups = [
         name: 'Lập trình - công nghệ',
         description: 'Frontend/Backend/Mobile/DevOps/QA, AI, WordPress, SEO kỹ thuật, hỗ trợ máy từ xa, Excel',
         icon: 'code',
-        sortOrder: 10,
+        sortOrder: 5,
         isFeatured: true,
         categories: [
             {
@@ -402,7 +402,7 @@ exports.catalogGroups = [
         name: 'Thiết kế - sáng tạo nội dung',
         description: 'UI/UX, graphic, 3D, video/motion, content writer, AI content — làm từ xa',
         icon: 'design',
-        sortOrder: 11,
+        sortOrder: 4,
         isFeatured: true,
         categories: [
             {
@@ -486,7 +486,7 @@ exports.catalogGroups = [
         name: 'Thú cưng',
         description: 'Tắm cắt, trông pet, dắt chó, đưa khám',
         icon: 'pet',
-        sortOrder: 13,
+        sortOrder: 21,
         isFeatured: false,
         categories: [
             {
@@ -507,7 +507,7 @@ exports.catalogGroups = [
         name: 'Thể thao - PT',
         description: 'PT / yoga / coach chạy online; PT gym và môn tại chỗ',
         icon: 'dumbbell',
-        sortOrder: 14,
+        sortOrder: 11,
         isFeatured: false,
         categories: [
             {
@@ -540,7 +540,7 @@ exports.catalogGroups = [
         name: 'Doanh nghiệp - văn phòng',
         description: 'CSKH / tuyển dụng / đào tạo từ xa; dọn VP và lễ tân tại chỗ',
         icon: 'briefcase',
-        sortOrder: 15,
+        sortOrder: 8,
         isFeatured: false,
         categories: [
             {
@@ -572,7 +572,7 @@ exports.catalogGroups = [
         name: 'Tài chính – hành chính – pháp lý hỗ trợ',
         description: 'Báo cáo TC, tư vấn thuế / luật / HR online (đối tác có phép khi pháp luật yêu cầu)',
         icon: 'scale',
-        sortOrder: 16,
+        sortOrder: 9,
         isFeatured: false,
         categories: [
             {
@@ -596,7 +596,7 @@ exports.catalogGroups = [
         name: 'Sân vườn - ngoài trời',
         description: 'Cắt cỏ, chăm cây, tiểu cảnh, hồ cá',
         icon: 'leaf',
-        sortOrder: 17,
+        sortOrder: 22,
         isFeatured: false,
         categories: [
             {
@@ -618,7 +618,7 @@ exports.catalogGroups = [
         name: 'Marketing - bán hàng online',
         description: 'SEO, ads, SMM, vận hành Shopee / TikTok Shop / Lazada, inbox, listing',
         icon: 'chart',
-        sortOrder: 18,
+        sortOrder: 2,
         isFeatured: true,
         categories: [
             {
@@ -654,7 +654,7 @@ exports.catalogGroups = [
         name: 'Dịch thuật - ngôn ngữ',
         description: 'Biên dịch, hiệu đính, phiên dịch online, phụ đề, gỡ băng, chuẩn hóa CV',
         icon: 'book',
-        sortOrder: 19,
+        sortOrder: 6,
         isFeatured: true,
         categories: [
             {
@@ -685,7 +685,7 @@ exports.catalogGroups = [
         name: 'Trợ lý từ xa - vận hành',
         description: 'VA, appointment setter, live chat, data entry, research, sales online / lead gen',
         icon: 'clock',
-        sortOrder: 20,
+        sortOrder: 3,
         isFeatured: true,
         categories: [
             {
@@ -727,7 +727,7 @@ exports.catalogGroups = [
         name: 'Tư vấn - phát triển cá nhân',
         description: 'Hướng nghiệp, career coach, phỏng vấn, CV–LinkedIn, dinh dưỡng / tâm lý online (chứng chỉ)',
         icon: 'users',
-        sortOrder: 21,
+        sortOrder: 10,
         isFeatured: true,
         categories: [
             {
@@ -757,7 +757,7 @@ exports.catalogGroups = [
         name: 'Giải trí',
         description: 'Biểu diễn online, trò chơi, đồng hành xem phim / kể chuyện — không cày thuê game, không nội dung người lớn',
         icon: 'sparkles',
-        sortOrder: 22,
+        sortOrder: 13,
         isFeatured: true,
         categories: [
             {

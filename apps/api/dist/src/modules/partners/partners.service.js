@@ -122,6 +122,8 @@ let PartnersService = class PartnersService {
             ratingCount: profile.ratingCount,
             level: profile.level,
             isVerified: profile.isVerified,
+            phoneVerified: profile.phoneVerified,
+            bankVerified: profile.bankVerified,
             avatarUrl: profile.avatarUrl,
             gallery: (0, partner_profile_fields_1.parseGallery)(profile.galleryJson),
             completedJobs,
@@ -154,6 +156,8 @@ let PartnersService = class PartnersService {
                 ratingAvg: true,
                 level: true,
                 isVerified: true,
+                phoneVerified: true,
+                bankVerified: true,
                 avatarUrl: true,
                 user: { select: { id: true, fullName: true } },
                 offerings: {
@@ -199,6 +203,8 @@ let PartnersService = class PartnersService {
                 ratingAvg: profile.ratingAvg,
                 level: profile.level,
                 isVerified: profile.isVerified,
+                phoneVerified: profile.phoneVerified,
+                bankVerified: profile.bankVerified,
                 serviceSlug: matchedOffering?.service.slug ?? null,
                 serviceName: matchedOffering?.service.name ?? null,
                 price: matchedOffering
@@ -560,6 +566,8 @@ let PartnersService = class PartnersService {
                                 ratingCount: true,
                                 level: true,
                                 isVerified: true,
+                                phoneVerified: true,
+                                bankVerified: true,
                                 acceptingJobs: true,
                                 offerings: {
                                     where: { isActive: true },
@@ -597,6 +605,8 @@ let PartnersService = class PartnersService {
                 ratingCount: profile.ratingCount,
                 level: profile.level,
                 isVerified: profile.isVerified,
+                phoneVerified: profile.phoneVerified,
+                bankVerified: profile.bankVerified,
                 acceptingJobs: profile.acceptingJobs,
                 favoritedAt: r.createdAt,
                 topOffering: top

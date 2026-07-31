@@ -56,6 +56,8 @@ const applicationInclude = {
           avatarUrl: true,
           city: true,
           isVerified: true,
+          phoneVerified: true,
+          bankVerified: true,
           onlineSeconds: true,
           offerings: {
             select: { serviceId: true, price: true },
@@ -783,10 +785,14 @@ export class BookingsService {
     return { year, month, daysInMonth, items };
   }
 
-  async listOpen(viewerId?: string) {
+  async listOpen(viewerId?: string, limit?: number) {
     await this.settleExpiredMatching();
     await this.settleExpiredResponseSla();
     // Chỉ đơn đã đặt cọc mới vào hàng chờ — tránh nhận việc rồi bỏ sàn.
+    const take =
+      limit != null && Number.isFinite(limit)
+        ? Math.min(Math.max(Math.floor(limit), 1), 48)
+        : undefined;
     const rows = await this.prisma.booking.findMany({
       where: {
         status: BookingStatus.PENDING,
@@ -799,10 +805,49 @@ export class BookingsService {
       },
       // Mới nhất lên đầu — khớp prepend realtime `booking:open`.
       orderBy: { createdAt: 'desc' },
+      ...(take ? { take } : {}),
       include: bookingInclude,
     });
     const viewer = viewerId ? { id: viewerId, role: Role.PARTNER } : undefined;
     return rows.map((b) => this.shape(b, viewer, 'open_queue'));
+  }
+
+  /** Bảng tin đơn mở công khai (trang chủ) — che SĐT/địa chỉ qua open_queue. */
+  async listOpenBoard(page = 1, pageSize = 8) {
+    await this.settleExpiredMatching();
+    await this.settleExpiredResponseSla();
+
+    const safePage = Math.max(1, Math.floor(page) || 1);
+    const safeSize = Math.min(Math.max(Math.floor(pageSize) || 8, 1), 24);
+    const where = {
+      status: BookingStatus.PENDING,
+      partnerId: null,
+      paymentStatus: PaymentStatus.HELD,
+      OR: [
+        { matchingDeadlineAt: null },
+        { matchingDeadlineAt: { gt: new Date() } },
+      ],
+    };
+
+    const [total, rows] = await Promise.all([
+      this.prisma.booking.count({ where }),
+      this.prisma.booking.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (safePage - 1) * safeSize,
+        take: safeSize,
+        include: bookingInclude,
+      }),
+    ]);
+
+    const pageCount = Math.max(1, Math.ceil(total / safeSize));
+    return {
+      items: rows.map((b) => this.shape(b, undefined, 'open_queue')),
+      total,
+      page: safePage,
+      pageSize: safeSize,
+      pageCount,
+    };
   }
 
   async accept(id: string, partnerId: string) {

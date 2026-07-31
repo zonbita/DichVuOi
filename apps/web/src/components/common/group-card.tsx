@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import type { ServiceGroup } from '../../types/catalog';
 import { groupColor } from '../../utils/catalog-colors';
+import { groupIcon } from '../../utils/catalog-display';
 import { groupBanner } from '../../utils/catalog-images';
+import { Icon } from '../ui/icon';
 
 export function GroupCard({ group, to }: { group: ServiceGroup; to?: string }) {
   const image = groupBanner(group.slug);
@@ -46,9 +48,9 @@ export function GroupTile({ group }: { group: ServiceGroup }) {
   return (
     <Link
       to={`/nhom/${group.slug}`}
-      className="group flex w-full min-w-0 flex-col overflow-hidden bg-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-hover)]"
+      className="group flex w-full min-w-0 flex-col overflow-hidden rounded-[16px] bg-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-hover)]"
     >
-      <span className="relative aspect-[3/2] overflow-hidden bg-[var(--color-canvas)]">
+      <span className="relative aspect-[16/10] overflow-hidden bg-[var(--color-canvas)]">
         <img
           src={image}
           alt={group.name}
@@ -56,17 +58,22 @@ export function GroupTile({ group }: { group: ServiceGroup }) {
           loading="lazy"
         />
       </span>
-      <span className="flex flex-col items-center px-3 pb-4 pt-3">
+      <span className="flex items-center gap-2.5 px-3 py-3">
         <span
-          aria-hidden
-          className="mb-2.5 h-1 w-7 rounded-full"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-white"
           style={{ backgroundColor: color.main }}
-        />
-        <span
-          className="line-clamp-2 text-center text-[15px] font-bold leading-snug sm:text-base"
-          style={{ color: color.main }}
+          aria-hidden
         >
+          <Icon name={groupIcon(group.slug)} className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1 line-clamp-2 text-[14px] font-bold leading-snug text-[var(--color-navy)] sm:text-[15px]">
           {group.name}
+        </span>
+        <span
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eef2f5] text-[var(--color-muted)] transition group-hover:bg-[var(--color-brand-soft)] group-hover:text-[var(--color-navy)]"
+          aria-hidden
+        >
+          <Icon name="chevronRight" className="h-4 w-4" />
         </span>
       </span>
     </Link>

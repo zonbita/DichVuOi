@@ -85,6 +85,8 @@ export class PartnersService {
       ratingCount: number;
       level: number;
       isVerified: boolean;
+      phoneVerified: boolean;
+      bankVerified: boolean;
       avatarUrl: string | null;
       galleryJson?: string | null;
       skillsJson: string | null;
@@ -208,6 +210,8 @@ export class PartnersService {
       ratingCount: profile.ratingCount,
       level: profile.level,
       isVerified: profile.isVerified,
+      phoneVerified: profile.phoneVerified,
+      bankVerified: profile.bankVerified,
       avatarUrl: profile.avatarUrl,
       gallery: parseGallery(profile.galleryJson),
       completedJobs,
@@ -245,6 +249,8 @@ export class PartnersService {
         ratingAvg: true,
         level: true,
         isVerified: true,
+        phoneVerified: true,
+        bankVerified: true,
         avatarUrl: true,
         user: { select: { id: true, fullName: true } },
         offerings: {
@@ -276,6 +282,8 @@ export class PartnersService {
       ratingAvg: number;
       level: number;
       isVerified: boolean;
+      phoneVerified: boolean;
+      bankVerified: boolean;
       serviceSlug: string | null;
       serviceName: string | null;
       price: number | null;
@@ -311,6 +319,8 @@ export class PartnersService {
         ratingAvg: profile.ratingAvg,
         level: profile.level,
         isVerified: profile.isVerified,
+        phoneVerified: profile.phoneVerified,
+        bankVerified: profile.bankVerified,
         serviceSlug: matchedOffering?.service.slug ?? null,
         serviceName: matchedOffering?.service.name ?? null,
         price: matchedOffering
@@ -718,6 +728,8 @@ export class PartnersService {
                 ratingCount: true,
                 level: true,
                 isVerified: true,
+                phoneVerified: true,
+                bankVerified: true,
                 acceptingJobs: true,
                 offerings: {
                   where: { isActive: true },
@@ -756,6 +768,8 @@ export class PartnersService {
           ratingCount: profile.ratingCount,
           level: profile.level,
           isVerified: profile.isVerified,
+          phoneVerified: profile.phoneVerified,
+          bankVerified: profile.bankVerified,
           acceptingJobs: profile.acceptingJobs,
           favoritedAt: r.createdAt,
           topOffering: top

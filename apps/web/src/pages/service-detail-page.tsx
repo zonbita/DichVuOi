@@ -5,7 +5,7 @@ import type { MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { AvatarLevelOverlay, LevelBadge, VerificationBadge } from '../components/ui/partner-badges';
+import { AvatarLevelOverlay, LevelBadge, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { AddressMapPicker } from '../components/booking/address-map-picker';
 import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
 import { CatalogOverlayHero } from '../components/catalog/group-detail-hero';
@@ -142,21 +142,25 @@ function ProviderTile({
 
       <Link
         to={`/user/${partner.userId}`}
-        className="flex min-h-0 flex-1 flex-col items-center text-center"
+        className="flex min-h-0 flex-1 flex-col items-center gap-2.5 text-center"
         aria-label={`Xem hồ sơ ${partner.fullName}`}
       >
-        <div className="min-h-[1.5rem]">
-          <VerificationBadge verified={Boolean(partner.isVerified)} />
-        </div>
-        <h3 className="mt-2 line-clamp-2 min-h-[2.5rem] text-lg font-extrabold leading-snug text-[var(--color-ink)]">
+        <h3 className="line-clamp-2 text-lg font-extrabold leading-snug text-[var(--color-ink)]">
           {partner.fullName}
         </h3>
+        <PartnerVerificationBadges
+          isVerified={partner.isVerified}
+          phoneVerified={partner.phoneVerified}
+          bankVerified={partner.bankVerified}
+          showGeneral={false}
+          className="!flex-col !gap-2.5"
+        />
         {partner.reputation ? (
-          <div className="mt-2 w-full max-w-[200px]">
+          <div className="w-full max-w-[200px]">
             <ReputationProgressBar reputation={partner.reputation} variant="compact" />
           </div>
         ) : null}
-        <div className="mt-3 inline-flex flex-col items-center leading-tight">
+        <div className="inline-flex flex-col items-center leading-tight">
           <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
             Giá chào
           </span>
@@ -165,7 +169,7 @@ function ProviderTile({
             <span className="text-sm font-semibold text-[var(--color-muted)]">/{unit}</span>
           </p>
         </div>
-        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white px-3 py-1 text-sm font-semibold text-[var(--color-ink)] shadow-sm">
+        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white px-3 py-1 text-sm font-semibold text-[var(--color-ink)] shadow-sm">
           <span className="text-amber-500">★</span>
           {partner.ratingAvg.toFixed(1)}
           <span className="text-[var(--color-line)]">|</span>
@@ -179,13 +183,11 @@ function ProviderTile({
             {formatWorkHours(provider.hoursWorked)} làm
           </span>
         </div>
-        <p
-          className={`mt-2 min-h-[1rem] text-[11px] font-semibold ${
-            partner.acceptingJobs === false ? 'text-amber-700' : 'invisible'
-          }`}
-        >
-          Tạm nghỉ nhận việc
-        </p>
+        {partner.acceptingJobs === false ? (
+          <p className="text-[11px] font-semibold text-amber-700">
+            Tạm nghỉ nhận việc
+          </p>
+        ) : null}
       </Link>
       {canHire ? (
         <button
@@ -195,7 +197,7 @@ function ProviderTile({
             event.stopPropagation();
             onSelect();
           }}
-          className={`mt-auto w-full rounded-2xl px-2 py-3 text-[15px] font-bold text-white transition ${
+          className={`mt-2.5 w-full rounded-2xl px-2 py-3 text-[15px] font-bold text-white transition ${
             selected
               ? 'bg-[var(--color-brand)]'
               : 'bg-[var(--color-navy)] hover:bg-[var(--color-navy-deep)]'
@@ -206,7 +208,7 @@ function ProviderTile({
       ) : (
         <Link
           to={`/user/${partner.userId}`}
-          className="btn-navy mt-auto w-full rounded-2xl px-2 py-3 text-center text-[15px] font-bold"
+          className="btn-navy mt-2.5 w-full rounded-2xl px-2 py-3 text-center text-[15px] font-bold"
         >
           Xem hồ sơ
         </Link>
@@ -225,7 +227,12 @@ function ProviderTile({
                     <div className="flex flex-wrap items-start gap-2">
                       <p className="text-base font-bold">{partner.fullName}</p>
                       <LevelBadge level={partner.level} />
-                      <VerificationBadge verified={Boolean(partner.isVerified)} />
+                      <PartnerVerificationBadges
+                        isVerified={partner.isVerified}
+                        phoneVerified={partner.phoneVerified}
+                        bankVerified={partner.bankVerified}
+                        className="!justify-start"
+                      />
                     </div>
                     <p className="mt-1 text-sm font-medium text-[var(--color-brand-deep)]">
                       {provider.headline || partner.headline}

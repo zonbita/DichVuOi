@@ -29,6 +29,8 @@ export declare class CatalogController {
             ratingAvg: number;
             ratingCount: number;
             isVerified: boolean;
+            phoneVerified: boolean;
+            bankVerified: boolean;
             level: number;
             avatarUrl: string | null;
             completedJobs: number;

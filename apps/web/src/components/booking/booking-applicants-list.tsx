@@ -2,7 +2,7 @@ import { formatPrice } from '../../services/api';
 import type { BookingApplication } from '../../types/catalog';
 import {
   AvatarLevelOverlay,
-  VerificationBadge,
+  PartnerVerificationBadges,
 } from '../ui/partner-badges';
 
 type Props = {
@@ -33,6 +33,8 @@ function ApplicantCard({
   const avatarUrl = profile?.avatarUrl;
   const level = profile?.level;
   const isVerified = profile?.isVerified;
+  const phoneVerified = profile?.phoneVerified;
+  const bankVerified = profile?.bankVerified;
   const ratingAvg = profile?.ratingAvg;
   const ratingCount = profile?.ratingCount ?? 0;
   const onlineSeconds = profile?.onlineSeconds ?? 0;
@@ -72,7 +74,12 @@ function ApplicantCard({
             <p className="truncate text-base font-extrabold text-[var(--color-ink)]">
               {app.partner?.fullName ?? 'Người làm'}
             </p>
-            <VerificationBadge verified={!!isVerified} />
+            <PartnerVerificationBadges
+              isVerified={!!isVerified}
+              phoneVerified={!!phoneVerified}
+              bankVerified={!!bankVerified}
+              className="!justify-start"
+            />
           </div>
 
           <p className="mt-0.5 text-xs text-[var(--color-muted)]">
@@ -164,13 +171,13 @@ export function BookingApplicantsList({
         <p className="mt-0.5 text-xs text-[#7C8799]">
           Người làm đặt cọc 10% để vào list. Bạn chọn 1 người để giao việc.
           {matchingDeadlineAt
-            ? ` Hạn ghép: ${new Date(matchingDeadlineAt).toLocaleString('vi-VN')}.`
+            ? ` Hạn ứng tuyển: ${new Date(matchingDeadlineAt).toLocaleString('vi-VN')}.`
             : null}
         </p>
       </div>
 
       {applied.length === 0 ? (
-        <p className="rounded-[14px] border border-dashed border-[#172033]/12 bg-white/40 px-3 py-6 text-center text-sm text-[#7C8799]">
+        <p className="rounded-[14px] border border-dashed border-[#172033]/12 bg-white/40 px-3 py-4 text-center text-sm text-[#7C8799]">
           Chưa có ai ứng tuyển. Đơn đang hiện trên hàng chờ người làm.
         </p>
       ) : (

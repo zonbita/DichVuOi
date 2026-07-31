@@ -43,6 +43,113 @@ export function VerificationBadge({
   );
 }
 
+function PhoneBadgeIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M5.2 1.8h5.6c.7 0 1.2.5 1.2 1.2v10c0 .7-.5 1.2-1.2 1.2H5.2c-.7 0-1.2-.5-1.2-1.2v-10c0-.7.5-1.2 1.2-1.2Zm.4 1.4v8.8h4.8V3.2H5.6Zm2.4 10.2a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4Z"
+      />
+    </svg>
+  );
+}
+
+function BankBadgeIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M8 1.4 1.8 4.2v1.4h12.4V4.2L8 1.4Zm-4.6 5.2h1.6v4.2H3.4V6.6Zm3.5 0h2.2v4.2H6.9V6.6Zm3.5 0h1.6v4.2h-1.6V6.6ZM1.8 12.4h12.4V14H1.8v-1.6Z"
+      />
+    </svg>
+  );
+}
+
+/** Badge xác minh số điện thoại. */
+export function PhoneVerificationBadge({
+  verified,
+  className = '',
+}: {
+  verified: boolean;
+  className?: string;
+}) {
+  if (verified) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full border border-[var(--color-brand)]/35 bg-[var(--color-brand-soft)] px-2.5 py-0.5 text-[11px] font-extrabold text-[var(--color-brand-deep)] shadow-sm ${className}`}
+        title="Số điện thoại đã xác minh"
+      >
+        <PhoneBadgeIcon />
+        Đã xác minh SĐT
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 shadow-sm ${className}`}
+      title="Số điện thoại chưa xác minh"
+    >
+      <PhoneBadgeIcon />
+      Chưa xác minh SĐT
+    </span>
+  );
+}
+
+/** Badge xác minh tài khoản ngân hàng. */
+export function BankVerificationBadge({
+  verified,
+  className = '',
+}: {
+  verified: boolean;
+  className?: string;
+}) {
+  if (verified) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full border border-sky-500/35 bg-sky-50 px-2.5 py-0.5 text-[11px] font-extrabold text-sky-800 shadow-sm ${className}`}
+        title="Tài khoản ngân hàng đã xác minh"
+      >
+        <BankBadgeIcon />
+        Đã xác minh NH
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 shadow-sm ${className}`}
+      title="Tài khoản ngân hàng chưa xác minh"
+    >
+      <BankBadgeIcon />
+      Chưa xác minh NH
+    </span>
+  );
+}
+
+/** Cụm badge xác minh trên card / hồ sơ người làm. */
+export function PartnerVerificationBadges({
+  isVerified,
+  phoneVerified,
+  bankVerified,
+  className = '',
+  showGeneral = true,
+}: {
+  isVerified?: boolean;
+  phoneVerified?: boolean;
+  bankVerified?: boolean;
+  className?: string;
+  showGeneral?: boolean;
+}) {
+  return (
+    <div className={`flex flex-wrap items-center justify-center gap-1.5 ${className}`}>
+      {showGeneral ? <VerificationBadge verified={Boolean(isVerified)} /> : null}
+      <PhoneVerificationBadge verified={Boolean(phoneVerified)} />
+      <BankVerificationBadge verified={Boolean(bankVerified)} />
+    </div>
+  );
+}
+
 /** @deprecated Dùng VerificationBadge — giữ alias tương thích. */
 export function VerifiedBadge({ className = '' }: { className?: string }) {
   return <VerificationBadge verified className={className} />;

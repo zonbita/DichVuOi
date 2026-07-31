@@ -145,6 +145,10 @@ model PartnerProfile {
   /** Lần cuối còn online (heartbeat / flush disconnect). */
   lastOnlineAt DateTime?
   isVerified  Boolean          @default(false)
+  /** Đã xác minh số điện thoại (OTP / vận hành). */
+  phoneVerified Boolean        @default(false)
+  /** Đã xác minh tài khoản ngân hàng nhận payout. */
+  bankVerified Boolean         @default(false)
   /** Ảnh đại diện người làm (URL). */
   avatarUrl   String?
   /** Gallery portfolio — JSON array URL ảnh (3–6), vd. ["https://..."]. */

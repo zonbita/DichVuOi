@@ -36,6 +36,8 @@ const applicationInclude = {
                     avatarUrl: true,
                     city: true,
                     isVerified: true,
+                    phoneVerified: true,
+                    bankVerified: true,
                     onlineSeconds: true,
                     offerings: {
                         select: { serviceId: true, price: true },
@@ -603,9 +605,12 @@ let BookingsService = class BookingsService {
         });
         return { year, month, daysInMonth, items };
     }
-    async listOpen(viewerId) {
+    async listOpen(viewerId, limit) {
         await this.settleExpiredMatching();
         await this.settleExpiredResponseSla();
+        const take = limit != null && Number.isFinite(limit)
+            ? Math.min(Math.max(Math.floor(limit), 1), 48)
+            : undefined;
         const rows = await this.prisma.booking.findMany({
             where: {
                 status: client_1.BookingStatus.PENDING,
@@ -617,10 +622,44 @@ let BookingsService = class BookingsService {
                 ],
             },
             orderBy: { createdAt: 'desc' },
+            ...(take ? { take } : {}),
             include: bookingInclude,
         });
         const viewer = viewerId ? { id: viewerId, role: client_1.Role.PARTNER } : undefined;
         return rows.map((b) => this.shape(b, viewer, 'open_queue'));
+    }
+    async listOpenBoard(page = 1, pageSize = 8) {
+        await this.settleExpiredMatching();
+        await this.settleExpiredResponseSla();
+        const safePage = Math.max(1, Math.floor(page) || 1);
+        const safeSize = Math.min(Math.max(Math.floor(pageSize) || 8, 1), 24);
+        const where = {
+            status: client_1.BookingStatus.PENDING,
+            partnerId: null,
+            paymentStatus: client_1.PaymentStatus.HELD,
+            OR: [
+                { matchingDeadlineAt: null },
+                { matchingDeadlineAt: { gt: new Date() } },
+            ],
+        };
+        const [total, rows] = await Promise.all([
+            this.prisma.booking.count({ where }),
+            this.prisma.booking.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip: (safePage - 1) * safeSize,
+                take: safeSize,
+                include: bookingInclude,
+            }),
+        ]);
+        const pageCount = Math.max(1, Math.ceil(total / safeSize));
+        return {
+            items: rows.map((b) => this.shape(b, undefined, 'open_queue')),
+            total,
+            page: safePage,
+            pageSize: safeSize,
+            pageCount,
+        };
     }
     async accept(id, partnerId) {
         return this.apply(id, partnerId, {});

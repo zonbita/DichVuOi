@@ -105,6 +105,8 @@ export function FamiliarPartnersSection() {
             ratingAvg={item.ratingAvg}
             level={item.level}
             isVerified={item.isVerified}
+            phoneVerified={item.phoneVerified}
+            bankVerified={item.bankVerified}
             serviceSlug={item.topOffering?.serviceSlug}
             serviceName={item.topOffering?.serviceName}
             price={item.topOffering?.price}

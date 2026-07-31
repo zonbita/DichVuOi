@@ -115,6 +115,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -261,6 +263,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -411,6 +415,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -557,6 +563,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -707,6 +715,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -853,6 +863,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1014,6 +1026,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1160,6 +1174,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1319,6 +1335,8 @@ export declare class BookingsService {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -1491,7 +1509,7 @@ export declare class BookingsService {
             applyDepositAmount: number;
         })[];
     }>;
-    listOpen(viewerId?: string): Promise<(({
+    listOpen(viewerId?: string, limit?: number): Promise<(({
         user: {
             id: string;
             email: string;
@@ -1579,6 +1597,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1725,6 +1745,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1787,8 +1809,8 @@ export declare class BookingsService {
         }[] | undefined;
         applyDepositAmount: number;
     }))[]>;
-    accept(id: string, partnerId: string): Promise<{
-        booking: ({
+    listOpenBoard(page?: number, pageSize?: number): Promise<{
+        items: (({
             user: {
                 id: string;
                 email: string;
@@ -1876,6 +1898,8 @@ export declare class BookingsService {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -2022,6 +2046,314 @@ export declare class BookingsService {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
+                        avatarUrl: string | null;
+                        offerings: {
+                            serviceId: string;
+                            price: number | null;
+                        }[];
+                    } | null;
+                    reputationPeriods: {
+                        currentPoints: number;
+                    }[];
+                };
+            } & {
+                id: string;
+                partnerId: string;
+                note: string | null;
+                status: import(".prisma/client/client").$Enums.ApplicationStatus;
+                createdAt: Date;
+                updatedAt: Date;
+                bookingId: string;
+                depositAmount: number;
+                depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
+            })[];
+        } & {
+            id: string;
+            userId: string;
+            partnerId: string | null;
+            serviceId: string;
+            address: string;
+            scheduledAt: Date;
+            note: string | null;
+            budgetMin: number | null;
+            budgetMax: number | null;
+            status: import(".prisma/client/client").$Enums.BookingStatus;
+            totalPrice: number;
+            customerName: string;
+            customerPhone: string;
+            paymentStatus: import(".prisma/client/client").$Enums.PaymentStatus;
+            commissionBps: number;
+            commissionAmount: number;
+            partnerPayout: number;
+            paidAt: Date | null;
+            releasedAt: Date | null;
+            refundedAt: Date | null;
+            confirmDeadlineAt: Date | null;
+            matchingDeadlineAt: Date | null;
+            responseDeadlineAt: Date | null;
+            disputeResultNote: string | null;
+            settlementPercent: number | null;
+            settlementProposedBy: import(".prisma/client/client").$Enums.Role | null;
+            customerSettlementApprovedAt: Date | null;
+            partnerSettlementApprovedAt: Date | null;
+            settlementResolvedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+        } & {
+            applications?: unknown;
+        }, "applications"> & {
+            applicationCount: number;
+            applications: {
+                partnerId: string;
+            }[] | undefined;
+            applyDepositAmount: number;
+        }))[];
+        total: number;
+        page: number;
+        pageSize: number;
+        pageCount: number;
+    }>;
+    accept(id: string, partnerId: string): Promise<{
+        booking: ({
+            user: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            };
+            partner: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            } | null;
+            service: {
+                category: {
+                    group: {
+                        id: string;
+                        createdAt: Date;
+                        updatedAt: Date;
+                        name: string;
+                        slug: string;
+                        description: string | null;
+                        supportsOnline: boolean;
+                        sortOrder: number;
+                        icon: string | null;
+                        isFeatured: boolean;
+                    };
+                } & {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    name: string;
+                    slug: string;
+                    description: string | null;
+                    groupId: string;
+                };
+            } & {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string;
+                slug: string;
+                description: string | null;
+                basePrice: number;
+                priceMin: number;
+                priceMax: number;
+                unit: string;
+                durationMin: number;
+                supportsOnline: boolean;
+                isActive: boolean;
+                categoryId: string;
+            };
+            reviews: {
+                id: string;
+                createdAt: Date;
+                fromUserId: string;
+                toUserId: string;
+                rating: number;
+                comment: string | null;
+            }[];
+            requirements: {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                bookingId: string;
+                content: string;
+                sortOrder: number;
+                source: import(".prisma/client/client").$Enums.RequirementSource;
+                partnerDone: boolean;
+                partnerDoneAt: Date | null;
+                customerConfirmed: boolean;
+                customerConfirmedAt: Date | null;
+                evidenceUrl: string | null;
+            }[];
+            applications: ({
+                partner: {
+                    id: string;
+                    email: string;
+                    fullName: string;
+                    phone: string | null;
+                    partnerProfile: {
+                        headline: string | null;
+                        city: string | null;
+                        ratingAvg: number;
+                        ratingCount: number;
+                        level: number;
+                        onlineSeconds: number;
+                        isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
+                        avatarUrl: string | null;
+                        offerings: {
+                            serviceId: string;
+                            price: number | null;
+                        }[];
+                    } | null;
+                    reputationPeriods: {
+                        currentPoints: number;
+                    }[];
+                };
+            } & {
+                id: string;
+                partnerId: string;
+                note: string | null;
+                status: import(".prisma/client/client").$Enums.ApplicationStatus;
+                createdAt: Date;
+                updatedAt: Date;
+                bookingId: string;
+                depositAmount: number;
+                depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
+            })[];
+        } & {
+            id: string;
+            userId: string;
+            partnerId: string | null;
+            serviceId: string;
+            address: string;
+            scheduledAt: Date;
+            note: string | null;
+            budgetMin: number | null;
+            budgetMax: number | null;
+            status: import(".prisma/client/client").$Enums.BookingStatus;
+            totalPrice: number;
+            customerName: string;
+            customerPhone: string;
+            paymentStatus: import(".prisma/client/client").$Enums.PaymentStatus;
+            commissionBps: number;
+            commissionAmount: number;
+            partnerPayout: number;
+            paidAt: Date | null;
+            releasedAt: Date | null;
+            refundedAt: Date | null;
+            confirmDeadlineAt: Date | null;
+            matchingDeadlineAt: Date | null;
+            responseDeadlineAt: Date | null;
+            disputeResultNote: string | null;
+            settlementPercent: number | null;
+            settlementProposedBy: import(".prisma/client/client").$Enums.Role | null;
+            customerSettlementApprovedAt: Date | null;
+            partnerSettlementApprovedAt: Date | null;
+            settlementResolvedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+        } & {
+            applications?: {
+                partnerId: string;
+            }[] | undefined;
+            applicationCount?: number;
+        }) | (Omit<{
+            user: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            };
+            partner: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            } | null;
+            service: {
+                category: {
+                    group: {
+                        id: string;
+                        createdAt: Date;
+                        updatedAt: Date;
+                        name: string;
+                        slug: string;
+                        description: string | null;
+                        supportsOnline: boolean;
+                        sortOrder: number;
+                        icon: string | null;
+                        isFeatured: boolean;
+                    };
+                } & {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    name: string;
+                    slug: string;
+                    description: string | null;
+                    groupId: string;
+                };
+            } & {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string;
+                slug: string;
+                description: string | null;
+                basePrice: number;
+                priceMin: number;
+                priceMax: number;
+                unit: string;
+                durationMin: number;
+                supportsOnline: boolean;
+                isActive: boolean;
+                categoryId: string;
+            };
+            reviews: {
+                id: string;
+                createdAt: Date;
+                fromUserId: string;
+                toUserId: string;
+                rating: number;
+                comment: string | null;
+            }[];
+            requirements: {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                bookingId: string;
+                content: string;
+                sortOrder: number;
+                source: import(".prisma/client/client").$Enums.RequirementSource;
+                partnerDone: boolean;
+                partnerDoneAt: Date | null;
+                customerConfirmed: boolean;
+                customerConfirmedAt: Date | null;
+                evidenceUrl: string | null;
+            }[];
+            applications: ({
+                partner: {
+                    id: string;
+                    email: string;
+                    fullName: string;
+                    phone: string | null;
+                    partnerProfile: {
+                        headline: string | null;
+                        city: string | null;
+                        ratingAvg: number;
+                        ratingCount: number;
+                        level: number;
+                        onlineSeconds: number;
+                        isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -2098,6 +2430,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2210,6 +2544,8 @@ export declare class BookingsService {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -2356,6 +2692,8 @@ export declare class BookingsService {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -2432,6 +2770,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2543,6 +2883,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2689,6 +3031,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2765,6 +3109,8 @@ export declare class BookingsService {
                 level: number;
                 onlineSeconds: number;
                 isVerified: boolean;
+                phoneVerified: boolean;
+                bankVerified: boolean;
                 avatarUrl: string | null;
                 offerings: {
                     serviceId: string;
@@ -2874,6 +3220,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -3020,6 +3368,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -3170,6 +3520,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -3316,6 +3668,8 @@ export declare class BookingsService {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;

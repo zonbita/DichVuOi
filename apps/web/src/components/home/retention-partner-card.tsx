@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../../services/api';
-import { LevelBadge, VerificationBadge } from '../ui/partner-badges';
+import { LevelBadge, PartnerVerificationBadges } from '../ui/partner-badges';
 
 type Props = {
   partnerUserId: string;
@@ -10,6 +10,8 @@ type Props = {
   ratingAvg?: number;
   level?: number;
   isVerified?: boolean;
+  phoneVerified?: boolean;
+  bankVerified?: boolean;
   serviceSlug?: string;
   serviceName?: string;
   price?: number;
@@ -50,6 +52,8 @@ export function RetentionPartnerCard({
   ratingAvg,
   level = 1,
   isVerified = false,
+  phoneVerified = false,
+  bankVerified = false,
   serviceSlug,
   serviceName,
   price,
@@ -76,7 +80,12 @@ export function RetentionPartnerCard({
               {fullName}
             </Link>
             <LevelBadge level={level} />
-            <VerificationBadge verified={isVerified} />
+            <PartnerVerificationBadges
+              isVerified={isVerified}
+              phoneVerified={phoneVerified}
+              bankVerified={bankVerified}
+              className="!justify-start"
+            />
           </div>
           {subtitle ? (
             <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-muted)]">{subtitle}</p>

@@ -35,8 +35,8 @@ function FilterField({
   children: ReactNode;
 }) {
   return (
-    <label className="block min-w-0 text-sm">
-      <span className="mb-1.5 block font-semibold text-[var(--color-ink)]">{label}</span>
+    <label className="block min-w-0 text-sm" aria-label={label}>
+      <span className="sr-only">{label}</span>
       <div className="filter-field relative">
         <Icon
           name={icon}
@@ -70,7 +70,7 @@ export function ProviderFilterPanel({
 }: ProviderFilterPanelProps) {
   return (
     <div className="surface-card overflow-hidden p-4 sm:p-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,1fr)_auto] xl:items-end">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,0.85fr)_minmax(0,1fr)_auto] xl:items-center">
         <FilterField label="Tên / chuyên môn" icon="search">
           <input
             value={nameQuery}
@@ -114,7 +114,7 @@ export function ProviderFilterPanel({
           </select>
         </FilterField>
 
-        <div className="flex items-end sm:col-span-2 xl:col-span-1">
+        <div className="flex items-center sm:col-span-2 xl:col-span-1">
           <button
             type="button"
             onClick={onClear}

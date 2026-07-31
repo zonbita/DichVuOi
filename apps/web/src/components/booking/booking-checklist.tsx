@@ -7,6 +7,8 @@ type RoleMode = 'customer' | 'partner' | 'admin';
 type Props = {
   booking: Booking;
   mode: RoleMode;
+  /** Không bọc glass-card — dùng khi nằm trong khung cha. */
+  embedded?: boolean;
 };
 
 const sourceLabel: Record<string, string> = {
@@ -24,7 +26,7 @@ function tickable(status: string) {
   );
 }
 
-export function BookingChecklist({ booking, mode }: Props) {
+export function BookingChecklist({ booking, mode, embedded = false }: Props) {
   const queryClient = useQueryClient();
   const items = booking.requirements ?? [];
   const canEdit = tickable(booking.status);
@@ -48,7 +50,7 @@ export function BookingChecklist({ booking, mode }: Props) {
   const pending = toggleMutation.isPending;
 
   return (
-    <div className="glass-card p-5 sm:p-6">
+    <div className={embedded ? 'p-5 sm:p-6' : 'glass-card p-5 sm:p-6'}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <p className="font-bold tracking-tight text-[#172033]">
@@ -70,7 +72,7 @@ export function BookingChecklist({ booking, mode }: Props) {
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-3 text-sm text-[#7C8799]">
+        <p className="mt-3 rounded-[14px] border border-dashed border-[#172033]/12 bg-white/40 px-3 py-4 text-center text-sm text-[#7C8799]">
           Không có mục checklist — chỉ thêm được khi tạo đơn thuê.
         </p>
       ) : (

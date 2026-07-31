@@ -16,6 +16,8 @@ import { useBookingUnreadCount } from '../../hooks/use-booking-unread-count';
 type Props = {
   booking: Booking;
   currentUserId: string;
+  /** @deprecated Giữ tương thích — card luôn tự bọc surface. */
+  embedded?: boolean;
   paying?: boolean;
   cancelling?: boolean;
   confirming?: boolean;
@@ -45,23 +47,26 @@ function partnerLabel(booking: Booking) {
 function statusBadgeClass(status: string) {
   switch (status) {
     case 'PENDING':
-      return 'bg-[#F4E8D8] text-[#8A5A2B]';
+      return 'bg-[#FFF7E8] text-[#C98518]';
     case 'CONFIRMED':
-      return 'bg-[#E8F0FE] text-[#4977E8]';
+      return 'bg-[#EFF6FF] text-[#2563EB]';
     case 'IN_PROGRESS':
-      return 'bg-[#EEE8FF] text-[#5B4B8A]';
+      return 'bg-[#EFF6FF] text-[#1D4ED8]';
     case 'AWAITING_CONFIRM':
-      return 'bg-[#FFF0E6] text-[#B8642A]';
+      return 'bg-[#FFF7E8] text-[#C98518]';
     case 'DISPUTED':
-      return 'bg-[#FDECEC] text-[#C45B5B]';
+      return 'bg-[#FFF5F5] text-[#DC5B5B]';
     case 'COMPLETED':
-      return 'bg-[#E7F6EE] text-[#2F7A52]';
+      return 'bg-[#ECFDF5] text-[#047857]';
     case 'CANCELLED':
-      return 'bg-[#EEF1F5] text-[#7C8799]';
+      return 'bg-[#F1F5F9] text-[#64748B]';
     default:
-      return 'bg-[#EEF1F5] text-[#7C8799]';
+      return 'bg-[#F1F5F9] text-[#64748B]';
   }
 }
+
+const surface =
+  'overflow-hidden rounded-[20px] border border-[#DCE4EF]/70 bg-white/85 shadow-[0_8px_28px_rgba(15,39,71,0.06)] backdrop-blur-md';
 
 export function CustomerBookingCard({
   booking,
@@ -126,22 +131,22 @@ export function CustomerBookingCard({
 
   return (
     <article
-      className={`glass-card overflow-hidden ${showChat ? 'cursor-pointer' : ''} ${
+      className={`${surface} ${showChat ? 'cursor-pointer' : ''} ${
         unreadCount > 0
-          ? 'ring-2 ring-[#E41E3F] ring-offset-2 ring-offset-[#F7F8FA]'
+          ? 'ring-2 ring-[#DC5B5B] ring-offset-2 ring-offset-[#F4F7FB]'
           : ''
       }`}
       onClick={onCardClick}
       title={showChat ? 'Nhấp để mở chat đơn' : undefined}
     >
-      <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-stretch lg:gap-0 lg:p-0">
-        {/* Thumbnail */}
-        <div className="flex shrink-0 items-start lg:p-5">
+      <div className="flex flex-col gap-6 p-6 sm:p-7 lg:flex-row lg:items-stretch lg:gap-0 lg:p-8">
+        {/* Job information */}
+        <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:gap-5">
           <Link
             to={`/dich-vu/${booking.service.slug}`}
-            className="relative block h-[88px] w-[88px] overflow-visible sm:h-[96px] sm:w-[96px]"
+            className="relative block h-[140px] w-full shrink-0 overflow-visible sm:h-[160px] sm:w-[160px] lg:h-[180px] lg:w-[180px]"
           >
-            <span className="block h-full w-full overflow-hidden rounded-[18px] bg-[#EEF1F5] ring-1 ring-[#172033]/06">
+            <span className="block h-full w-full overflow-hidden rounded-2xl bg-[#EEF2F7] ring-1 ring-[#DCE4EF]">
               <img
                 src={cover}
                 alt={booking.service.name}
@@ -151,103 +156,107 @@ export function CustomerBookingCard({
             </span>
             <ChatUnreadBadge count={unreadCount} />
           </Link>
-        </div>
 
-        {/* Main info */}
-        <div className="min-w-0 flex-1 lg:py-5 lg:pr-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to={`/don-cua-toi/don/${booking.id}`}
-              className="text-xl font-bold tracking-tight text-[#172033] hover:text-[#4977E8]"
-            >
-              {booking.service.name}
-            </Link>
-            <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusBadgeClass(booking.status)}`}
-            >
-              {formatBookingStatus(booking.status)}
-            </span>
-            <Link
-              to={`/dich-vu/${booking.service.slug}`}
-              className="inline-flex rounded-full bg-[#E8F0FE] px-2.5 py-1 text-[11px] font-semibold text-[#4977E8] hover:bg-[#dce8fd]"
-            >
-              Dịch vụ
-            </Link>
-          </div>
-
-          <p className="mt-1.5 text-sm text-[#7C8799]">
-            {booking.service.category.group.name}
-            {booking.paymentStatus
-              ? ` · ${formatPaymentStatus(booking.paymentStatus)}`
-              : null}
-          </p>
-
-          <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#7C8799]">
-            <span className="inline-flex items-center gap-1.5">
-              <Icon name="receipt" className="h-3.5 w-3.5 shrink-0 opacity-70" />
-              {shortRef(booking.id)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Icon name="clock" className="h-3.5 w-3.5 shrink-0 opacity-70" />
-              {new Date(booking.scheduledAt).toLocaleString('vi-VN')}
-            </span>
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
-              {booking.partner ? (
-                <Link
-                  to={`/user/${booking.partner.id}`}
-                  className="truncate font-semibold text-[#172033] hover:text-[#4977E8]"
-                >
-                  {booking.partner.fullName}
-                </Link>
-              ) : (
-                <span className="truncate">{partnerLabel(booking)}</span>
-              )}
-            </span>
-            {booking.address ? (
-              <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                <Icon name="pin" className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                <span className="truncate">{booking.address}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to={`/don-cua-toi/don/${booking.id}`}
+                className="text-2xl font-bold tracking-tight text-[#0F2747] hover:text-[#2563EB] sm:text-[26px]"
+              >
+                {booking.service.name}
+              </Link>
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusBadgeClass(booking.status)}`}
+              >
+                {formatBookingStatus(booking.status)}
               </span>
+              <Link
+                to={`/dich-vu/${booking.service.slug}`}
+                className="inline-flex rounded-full bg-[#EFF6FF] px-2.5 py-1 text-[11px] font-semibold text-[#2563EB] hover:bg-[#DBEAFE]"
+              >
+                Dịch vụ
+              </Link>
+            </div>
+
+            <p className="mt-1.5 text-[15px] text-[#64748B]">
+              {booking.service.category.group.name}
+              {booking.paymentStatus
+                ? ` · ${formatPaymentStatus(booking.paymentStatus)}`
+                : null}
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2.5 text-sm text-[#64748B]">
+              <span className="inline-flex items-center gap-2">
+                <Icon name="receipt" className="h-4 w-4 shrink-0 text-[#64748B]" />
+                {shortRef(booking.id)}
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Icon name="clock" className="h-4 w-4 shrink-0 text-[#64748B]" />
+                {new Date(booking.scheduledAt).toLocaleString('vi-VN')}
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <Icon name="user" className="h-4 w-4 shrink-0 text-[#64748B]" />
+                {booking.partner ? (
+                  <Link
+                    to={`/user/${booking.partner.id}`}
+                    className="truncate font-semibold text-[#0F2747] hover:text-[#2563EB]"
+                  >
+                    {booking.partner.fullName}
+                  </Link>
+                ) : (
+                  <span className="truncate">{partnerLabel(booking)}</span>
+                )}
+              </span>
+              {booking.address ? (
+                <span className="inline-flex min-w-0 max-w-full items-center gap-2">
+                  <Icon name="pin" className="h-4 w-4 shrink-0 text-[#64748B]" />
+                  <span className="truncate">{booking.address}</span>
+                </span>
+              ) : null}
+            </div>
+
+            {booking.status === 'CONFIRMED' && booking.responseDeadlineAt ? (
+              <p className="mt-4 rounded-xl border border-[#F3D6A4] bg-[#FFF7E8] px-3.5 py-2.5 text-xs font-medium text-[#C98518]">
+                Người làm phải bắt đầu trước{' '}
+                {new Date(booking.responseDeadlineAt).toLocaleString('vi-VN')} —
+                quá hạn tịch thu cọc 10% và mở lại đơn.
+              </p>
+            ) : null}
+
+            {footerHint ? (
+              <p className="mt-4 flex items-start gap-2 rounded-xl border border-[#F3D6A4] bg-[#FFF7E8] px-3.5 py-2.5 text-sm font-medium text-[#C98518]">
+                <Icon name="message" className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{footerHint}</span>
+              </p>
             ) : null}
           </div>
-
-          {booking.status === 'CONFIRMED' && booking.responseDeadlineAt ? (
-            <p className="mt-3 rounded-[12px] bg-[#FFF0E6] px-3 py-2 text-xs font-medium text-[#8A5A2B]">
-              Người làm phải bắt đầu trước{' '}
-              {new Date(booking.responseDeadlineAt).toLocaleString('vi-VN')} —
-              quá hạn tịch thu cọc 10% và mở lại đơn.
-            </p>
-          ) : null}
-
-          {footerHint ? (
-            <p className="mt-3 flex items-start gap-1.5 text-xs font-medium text-[#8A5A2B]">
-              <Icon name="message" className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
-              <span>{footerHint}</span>
-            </p>
-          ) : null}
         </div>
 
-        {/* Price + actions */}
-        <div className="flex w-full shrink-0 flex-col justify-center gap-3 border-t border-[#172033]/08 pt-4 lg:w-[220px] lg:border-t-0 lg:px-5 lg:py-5 lg:pt-5">
-          <div className="text-center lg:text-left">
-            <p className="text-2xl font-bold tracking-tight text-[#C8963E]">
-              {formatPrice(booking.totalPrice)}
-            </p>
+        {/* Payment summary */}
+        <div className="flex w-full shrink-0 flex-col justify-center gap-4 border-t border-[#DCE4EF] pt-5 lg:w-[240px] lg:border-t-0 lg:border-l lg:pl-7 lg:pt-0">
+          <div className="flex flex-col items-center gap-2.5 lg:items-start">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFF7E8] text-[#C98518]">
+                <Icon name="wallet" className="h-5 w-5" />
+              </span>
+              <p className="text-2xl font-bold tracking-tight text-[#C98518]">
+                {formatPrice(booking.totalPrice)}
+              </p>
+            </div>
 
             {booking.paymentStatus === 'REFUNDED' ? (
-              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#E7F6EE] px-2.5 py-1 text-[11px] font-semibold text-[#2F7A52]">
+              <p className="inline-flex items-center gap-1.5 rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-semibold text-[#047857]">
                 <Icon name="check" className="h-3.5 w-3.5" />
                 Đã hoàn cọc
               </p>
             ) : null}
             {booking.paymentStatus === 'RELEASED' ? (
-              <p className="mt-2 text-xs text-[#7C8799]">
+              <p className="text-xs text-[#64748B]">
                 Đã giải ngân {formatPrice(booking.partnerPayout ?? 0)}
               </p>
             ) : null}
             {booking.paymentStatus === 'HELD' && booking.status !== 'CANCELLED' ? (
-              <p className="mt-2 inline-flex rounded-full bg-[#F4E8D8] px-2.5 py-1 text-[11px] font-semibold text-[#8A5A2B]">
+              <p className="inline-flex rounded-full bg-[#FFF7E8] px-2.5 py-1 text-[11px] font-semibold text-[#C98518]">
                 Hệ thống đang giữ cọc
               </p>
             ) : null}
@@ -259,7 +268,7 @@ export function CustomerBookingCard({
                 type="button"
                 onClick={() => onPay(booking.id)}
                 disabled={paying}
-                className="w-full rounded-xl bg-[#4977E8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3d66c9] disabled:opacity-50"
+                className="h-12 w-full rounded-xl bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-50"
               >
                 Đặt cọc từ ví VNĐ
               </button>
@@ -267,7 +276,7 @@ export function CustomerBookingCard({
             {booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED' ? (
               <Link
                 to="/don-cua-toi/vi"
-                className="text-center text-xs font-semibold text-[#4977E8] hover:underline"
+                className="text-center text-xs font-semibold text-[#2563EB] hover:underline"
               >
                 Nạp ví nếu thiếu số dư
               </Link>
@@ -279,13 +288,13 @@ export function CustomerBookingCard({
                   type="button"
                   onClick={() => onConfirm(booking.id, incompleteCount > 0)}
                   disabled={confirming}
-                  className="w-full rounded-xl bg-[#4977E8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#3d66c9] disabled:opacity-50"
+                  className="h-12 w-full rounded-xl bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-50"
                 >
                   Đồng ý 100%
                 </button>
                 {onProposeSettlement ? (
-                  <div className="space-y-1.5 rounded-xl border border-[#172033]/10 bg-[#F7F9FA] p-2.5">
-                    <p className="text-[11px] font-semibold text-[#7C8799]">
+                  <div className="space-y-1.5 rounded-xl border border-[#DCE4EF] bg-[#F8FAFC] p-2.5">
+                    <p className="text-[11px] font-semibold text-[#64748B]">
                       Nghiệm thu theo % (cần 2 bên đồng ý)
                     </p>
                     <div className="flex items-center gap-2">
@@ -304,20 +313,20 @@ export function CustomerBookingCard({
                         }
                         className="field-input w-20 text-sm"
                       />
-                      <span className="text-xs text-[#7C8799]">%</span>
+                      <span className="text-xs text-[#64748B]">%</span>
                       <button
                         type="button"
                         disabled={settlementPending}
                         onClick={() =>
                           onProposeSettlement(booking.id, settlementPercentDraft)
                         }
-                        className="rounded-lg border border-[#B7C9F5] bg-white px-3 py-2 text-xs font-semibold text-[#4977E8] hover:bg-[#F3F7FF] disabled:opacity-50"
+                        className="rounded-lg border border-[#BFDBFE] bg-white px-3 py-2 text-xs font-semibold text-[#2563EB] hover:bg-[#EFF6FF] disabled:opacity-50"
                       >
                         Gửi đề xuất
                       </button>
                     </div>
                     {booking.settlementPercent ? (
-                      <p className="text-[11px] text-[#7C8799]">
+                      <p className="text-[11px] text-[#64748B]">
                         Đề xuất hiện tại: <strong>{booking.settlementPercent}%</strong> ·
                         Khách{' '}
                         {booking.customerSettlementApprovedAt ? 'đã đồng ý' : 'chưa đồng ý'} ·
@@ -330,7 +339,7 @@ export function CustomerBookingCard({
                         type="button"
                         disabled={settlementPending}
                         onClick={() => onApproveSettlement(booking.id)}
-                        className="w-full rounded-lg bg-[#172033] px-3 py-2 text-xs font-semibold text-white hover:bg-[#101b2d] disabled:opacity-50"
+                        className="w-full rounded-lg bg-[#0F2747] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0B1C33] disabled:opacity-50"
                       >
                         Đồng ý mức {booking.settlementPercent}%
                       </button>
@@ -338,7 +347,7 @@ export function CustomerBookingCard({
                   </div>
                 ) : null}
                 {incompleteCount > 0 ? (
-                  <p className="text-center text-[11px] text-[#7C8799]">
+                  <p className="text-center text-[11px] text-[#64748B]">
                     Còn {incompleteCount} mục chưa tích — nên kiểm checklist trước.
                   </p>
                 ) : null}
@@ -346,7 +355,7 @@ export function CustomerBookingCard({
             ) : null}
 
             {booking.disputeResultNote ? (
-              <p className="text-center text-xs text-[#7C8799] lg:text-left">
+              <p className="text-center text-xs text-[#64748B] lg:text-left">
                 KQ tranh chấp: {booking.disputeResultNote}
               </p>
             ) : null}
@@ -367,7 +376,7 @@ export function CustomerBookingCard({
                   onCancel(booking.id);
                 }}
                 disabled={cancelling}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#E8A0A0] bg-white px-4 py-2.5 text-sm font-semibold text-[#C45B5B] transition hover:bg-[#FDF4F4] disabled:opacity-50"
+                className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl border border-[#DC5B5B] bg-white px-4 text-sm font-semibold text-[#DC5B5B] transition hover:bg-[#FFF5F5] disabled:opacity-50"
               >
                 <span aria-hidden className="text-base leading-none">
                   ×
@@ -377,7 +386,7 @@ export function CustomerBookingCard({
             ) : null}
 
             {payError ? (
-              <p className="text-center text-xs text-[#C45B5B]">
+              <p className="text-center text-xs text-[#DC5B5B]">
                 {payError}
                 {payError.includes('Số dư') ? (
                   <>
@@ -390,19 +399,19 @@ export function CustomerBookingCard({
               </p>
             ) : null}
             {cancelError ? (
-              <p className="text-center text-xs text-[#C45B5B]">{cancelError}</p>
+              <p className="text-center text-xs text-[#DC5B5B]">{cancelError}</p>
             ) : null}
             {confirmError ? (
-              <p className="text-center text-xs text-[#C45B5B]">{confirmError}</p>
+              <p className="text-center text-xs text-[#DC5B5B]">{confirmError}</p>
             ) : null}
             {settlementError ? (
-              <p className="text-center text-xs text-[#C45B5B]">{settlementError}</p>
+              <p className="text-center text-xs text-[#DC5B5B]">{settlementError}</p>
             ) : null}
 
             {booking.status === 'COMPLETED' && booking.partnerId ? (
               <Link
                 to={`/dich-vu/${booking.service.slug}?partner=${booking.partnerId}`}
-                className="w-full rounded-xl bg-[#4977E8] px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-[#3d66c9]"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1D4ED8]"
               >
                 Thuê lại
               </Link>
@@ -413,7 +422,7 @@ export function CustomerBookingCard({
             booking.paymentStatus === 'REFUNDED' ? (
               <Link
                 to="/don-cua-toi/khieu-nai"
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#B7C9F5] bg-white px-3 py-2.5 text-sm font-semibold text-[#4977E8] transition hover:bg-[#F3F7FF]"
+                className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl border border-[#BFDBFE] bg-white px-3 text-sm font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF]"
               >
                 <Icon name="shield" className="h-3.5 w-3.5" />
                 Khiếu nại đơn
@@ -426,22 +435,22 @@ export function CustomerBookingCard({
       {booking.partnerId &&
       booking.paymentStatus === 'UNPAID' &&
       booking.status !== 'CANCELLED' ? (
-        <div className="border-t border-[#172033]/08 px-5 py-3">
-          <p className="text-xs text-[#7C8799]">
+        <div className="border-t border-[#DCE4EF] px-6 py-3 sm:px-8">
+          <p className="text-xs text-[#64748B]">
             Chat mở sau khi đặt cọc giữ chỗ.
           </p>
         </div>
       ) : null}
       {showChat ? (
-        <div className="px-5 pb-3 pt-1">
-          <p className="text-xs font-semibold text-[#4977E8]">
+        <div className="border-t border-[#DCE4EF] px-6 py-3 sm:px-8">
+          <p className="text-xs font-semibold text-[#2563EB]">
             {unreadCount > 0
               ? `${unreadCount > 9 ? '9+' : unreadCount} tin mới — nhấp để mở chat →`
               : 'Nhấp vào thẻ để mở chat đơn →'}
           </p>
         </div>
       ) : null}
-      <div className="px-5 empty:hidden">
+      <div className="px-6 empty:hidden sm:px-8">
         <BookingReviewForm booking={booking} currentUserId={currentUserId} />
       </div>
       <BookingChatPanel

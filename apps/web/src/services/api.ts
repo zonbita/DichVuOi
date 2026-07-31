@@ -156,6 +156,14 @@ export const api = {
   getMyBookings: () => request<Booking[]>('/api/bookings/mine'),
   getRebookHints: () => request<RebookHint[]>('/api/bookings/rebook-hints'),
   getOpenBookings: () => request<Booking[]>('/api/bookings/open'),
+  getOpenJobsBoard: (page = 1, pageSize = 8) =>
+    request<{
+      items: Booking[];
+      total: number;
+      page: number;
+      pageSize: number;
+      pageCount: number;
+    }>(`/api/bookings/open/board${queryString({ page, pageSize })}`),
   getPartnerBookings: () => request<Booking[]>('/api/bookings/partner/mine'),
   getPartnerSchedule: (year: number, month: number) =>
     request<PartnerSchedule>(

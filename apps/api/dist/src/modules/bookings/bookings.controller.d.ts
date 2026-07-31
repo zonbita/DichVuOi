@@ -99,6 +99,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -245,6 +247,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -395,6 +399,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -541,6 +547,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -702,6 +710,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -848,6 +858,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1007,6 +1019,8 @@ export declare class BookingsController {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -1267,6 +1281,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1413,6 +1429,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1616,6 +1634,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1762,6 +1782,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -1913,6 +1935,8 @@ export declare class BookingsController {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -2059,6 +2083,8 @@ export declare class BookingsController {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -2135,6 +2161,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2172,6 +2200,8 @@ export declare class BookingsController {
                 level: number;
                 onlineSeconds: number;
                 isVerified: boolean;
+                phoneVerified: boolean;
+                bankVerified: boolean;
                 avatarUrl: string | null;
                 offerings: {
                     serviceId: string;
@@ -2281,6 +2311,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2427,6 +2459,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2658,6 +2692,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2804,6 +2840,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -2955,6 +2993,8 @@ export declare class BookingsController {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -3101,6 +3141,8 @@ export declare class BookingsController {
                         level: number;
                         onlineSeconds: number;
                         isVerified: boolean;
+                        phoneVerified: boolean;
+                        bankVerified: boolean;
                         avatarUrl: string | null;
                         offerings: {
                             serviceId: string;
@@ -3177,6 +3219,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -3288,6 +3332,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
@@ -3434,6 +3480,8 @@ export declare class BookingsController {
                     level: number;
                     onlineSeconds: number;
                     isVerified: boolean;
+                    phoneVerified: boolean;
+                    bankVerified: boolean;
                     avatarUrl: string | null;
                     offerings: {
                         serviceId: string;
