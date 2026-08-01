@@ -13,6 +13,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { resolveUploadsRoot } from '../../common/uploads-root';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = new Set([
@@ -38,7 +39,7 @@ function safeExt(originalName: string, mime: string) {
 }
 
 function imageInterceptor(subdir: string) {
-  const dest = join(process.cwd(), 'uploads', subdir);
+  const dest = join(resolveUploadsRoot(), subdir);
   return FileInterceptor('file', {
     storage: diskStorage({
       destination: (_req, _file, cb) => {

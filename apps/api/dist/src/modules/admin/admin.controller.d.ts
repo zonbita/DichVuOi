@@ -277,13 +277,13 @@ export declare class AdminController {
             status: import("@prisma/client").$Enums.ComplaintStatus;
             bookingId: string;
             partnerUserId: string;
-            evidenceNote: string | null;
-            resolutionAction: import("@prisma/client").$Enums.ComplaintResolutionAction | null;
-            deductionPoints: number | null;
-            adminNote: string | null;
             reporterUserId: string;
             againstUserId: string | null;
             requirementIdsJson: string | null;
+            evidenceNote: string | null;
+            deductionPoints: number | null;
+            adminNote: string | null;
+            resolutionAction: import("@prisma/client").$Enums.ComplaintResolutionAction | null;
             resolvedAt: Date | null;
             resolvedByUserId: string | null;
         })[];

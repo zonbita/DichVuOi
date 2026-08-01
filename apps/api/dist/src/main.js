@@ -3,19 +3,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const swagger_1 = require("@nestjs/swagger");
-const fs_1 = require("fs");
-const path_1 = require("path");
 const app_module_1 = require("./app.module");
+const cors_origin_1 = require("./common/cors-origin");
+const uploads_root_1 = require("./common/uploads-root");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    const uploadsRoot = (0, path_1.join)(process.cwd(), 'uploads');
-    if (!(0, fs_1.existsSync)(uploadsRoot)) {
-        (0, fs_1.mkdirSync)(uploadsRoot, { recursive: true });
-    }
+    const uploadsRoot = (0, uploads_root_1.ensureUploadsRoot)();
     app.useStaticAssets(uploadsRoot, { prefix: '/uploads/' });
     app.setGlobalPrefix('api');
     app.enableCors({
-        origin: process.env.CORS_ORIGIN?.split(',') ?? true,
+        origin: (0, cors_origin_1.buildCorsOrigin)(),
         credentials: true,
     });
     app.useGlobalPipes(new common_1.ValidationPipe({

@@ -2,22 +2,19 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { AppModule } from './app.module';
+import { buildCorsOrigin } from './common/cors-origin';
+import { ensureUploadsRoot } from './common/uploads-root';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  const uploadsRoot = join(process.cwd(), 'uploads');
-  if (!existsSync(uploadsRoot)) {
-    mkdirSync(uploadsRoot, { recursive: true });
-  }
+  const uploadsRoot = ensureUploadsRoot();
   app.useStaticAssets(uploadsRoot, { prefix: '/uploads/' });
 
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',') ?? true,
+    origin: buildCorsOrigin(),
     credentials: true,
   });
   app.useGlobalPipes(

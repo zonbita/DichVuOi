@@ -21,6 +21,7 @@ const fs_1 = require("fs");
 const multer_1 = require("multer");
 const path_1 = require("path");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
+const uploads_root_1 = require("../../common/uploads-root");
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = new Set([
     'image/jpeg',
@@ -46,7 +47,7 @@ function safeExt(originalName, mime) {
     return '.jpg';
 }
 function imageInterceptor(subdir) {
-    const dest = (0, path_1.join)(process.cwd(), 'uploads', subdir);
+    const dest = (0, path_1.join)((0, uploads_root_1.resolveUploadsRoot)(), subdir);
     return (0, platform_express_1.FileInterceptor)('file', {
         storage: (0, multer_1.diskStorage)({
             destination: (_req, _file, cb) => {

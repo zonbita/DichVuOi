@@ -884,10 +884,11 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 
 ### Hạ tầng
 
-- FE: Vercel · BE: Railway / Render / Fly.io / VPS  
+- FE: Vercel · BE: Vercel (Nest Fluid) + PostgreSQL (Neon)  
+  (hoặc BE Railway / Render / Fly / VPS nếu cần Socket.IO bền)  
 - PostgreSQL managed (Neon, Supabase, …)  
 - Redis: Upstash hoặc managed  
-- Ảnh: Cloudflare R2 hoặc Amazon S3  
+- Ảnh: Cloudflare R2 hoặc Amazon S3 (upload `/tmp` trên Vercel chỉ tạm) 
 
 ## Kiến trúc
 
