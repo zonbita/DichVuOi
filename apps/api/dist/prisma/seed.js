@@ -358,6 +358,21 @@ async function main() {
             role: client_1.Role.ADMIN,
         },
     });
+    await prisma.user.upsert({
+        where: { email: 'moderator@dichvuoi.vn' },
+        update: {
+            passwordHash,
+            fullName: 'Moderator DichVuOi',
+            role: client_1.Role.MODERATOR,
+        },
+        create: {
+            email: 'moderator@dichvuoi.vn',
+            passwordHash,
+            fullName: 'Moderator DichVuOi',
+            phone: '0900888888',
+            role: client_1.Role.MODERATOR,
+        },
+    });
     const seedPartners = buildSeedPartners();
     const partnerProfiles = [];
     for (const p of seedPartners) {

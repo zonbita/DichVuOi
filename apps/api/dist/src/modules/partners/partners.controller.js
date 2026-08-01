@@ -22,6 +22,7 @@ const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
 const auth_service_1 = require("../auth/auth.service");
 const update_partner_profile_dto_1 = require("./dto/update-partner-profile.dto");
+const partner_verify_dto_1 = require("./dto/partner-verify.dto");
 const partners_service_1 = require("./partners.service");
 let PartnersController = class PartnersController {
     partnersService;
@@ -64,6 +65,18 @@ let PartnersController = class PartnersController {
     }
     syncOfferings(user, dto) {
         return this.partnersService.syncOfferings(user.id, dto);
+    }
+    requestPhoneOtp(user, dto) {
+        return this.partnersService.requestPhoneOtp(user.id, dto);
+    }
+    confirmPhoneOtp(user, dto) {
+        return this.partnersService.confirmPhoneOtp(user.id, dto);
+    }
+    linkBank(user, dto) {
+        return this.partnersService.linkBankAccount(user.id, dto);
+    }
+    confirmBank(user, dto) {
+        return this.partnersService.confirmBankVerify(user.id, dto);
     }
 };
 exports.PartnersController = PartnersController;
@@ -174,6 +187,50 @@ __decorate([
     __metadata("design:paramtypes", [Object, update_partner_profile_dto_1.SyncPartnerOfferingsDto]),
     __metadata("design:returntype", void 0)
 ], PartnersController.prototype, "syncOfferings", null);
+__decorate([
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.Role.PARTNER, client_1.Role.ADMIN),
+    (0, common_1.Post)('me/verify-phone/request'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, partner_verify_dto_1.RequestPhoneOtpDto]),
+    __metadata("design:returntype", void 0)
+], PartnersController.prototype, "requestPhoneOtp", null);
+__decorate([
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.Role.PARTNER, client_1.Role.ADMIN),
+    (0, common_1.Post)('me/verify-phone/confirm'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, partner_verify_dto_1.ConfirmPhoneOtpDto]),
+    __metadata("design:returntype", void 0)
+], PartnersController.prototype, "confirmPhoneOtp", null);
+__decorate([
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.Role.PARTNER, client_1.Role.ADMIN),
+    (0, common_1.Post)('me/verify-bank/link'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, partner_verify_dto_1.LinkBankAccountDto]),
+    __metadata("design:returntype", void 0)
+], PartnersController.prototype, "linkBank", null);
+__decorate([
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.Role.PARTNER, client_1.Role.ADMIN),
+    (0, common_1.Post)('me/verify-bank/mock-confirm'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, partner_verify_dto_1.ConfirmBankVerifyDto]),
+    __metadata("design:returntype", void 0)
+], PartnersController.prototype, "confirmBank", null);
 exports.PartnersController = PartnersController = __decorate([
     (0, swagger_1.ApiTags)('partners'),
     (0, common_1.Controller)('partners'),

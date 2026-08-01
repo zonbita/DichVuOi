@@ -230,10 +230,32 @@ let AdminService = class AdminService {
                 ...(dto.acceptingJobs !== undefined
                     ? { acceptingJobs: dto.acceptingJobs }
                     : {}),
+                ...(dto.phoneVerified !== undefined
+                    ? {
+                        phoneVerified: dto.phoneVerified,
+                        ...(dto.phoneVerified
+                            ? { phoneOtpCode: null, phoneOtpExpiresAt: null }
+                            : {}),
+                    }
+                    : {}),
+                ...(dto.bankVerified !== undefined
+                    ? {
+                        bankVerified: dto.bankVerified,
+                        ...(dto.bankVerified
+                            ? { bankVerifyIntentId: null, bankVerifyExpiresAt: null }
+                            : {}),
+                    }
+                    : {}),
             },
             include: {
                 user: {
-                    select: { id: true, email: true, fullName: true, role: true },
+                    select: {
+                        id: true,
+                        email: true,
+                        fullName: true,
+                        phone: true,
+                        role: true,
+                    },
                 },
                 _count: { select: { offerings: true } },
             },

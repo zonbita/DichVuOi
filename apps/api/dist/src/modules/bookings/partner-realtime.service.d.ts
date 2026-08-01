@@ -10,4 +10,5 @@ export declare class PartnerRealtimeService {
         customerId: string;
         partnerId?: string | null;
     }, payload: unknown): void;
+    emitSupportMessage(customerId: string, payload: unknown): void;
 }

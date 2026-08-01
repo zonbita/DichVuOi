@@ -155,6 +155,8 @@ __decorate([
 class AdminUpdatePartnerDto {
     isVerified;
     acceptingJobs;
+    phoneVerified;
+    bankVerified;
 }
 exports.AdminUpdatePartnerDto = AdminUpdatePartnerDto;
 __decorate([
@@ -169,6 +171,18 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], AdminUpdatePartnerDto.prototype, "acceptingJobs", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Admin bật/tắt xác minh SĐT' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], AdminUpdatePartnerDto.prototype, "phoneVerified", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Admin bật/tắt xác minh ngân hàng' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], AdminUpdatePartnerDto.prototype, "bankVerified", void 0);
 class AdminUpdateBookingDto {
     status;
     paymentStatus;

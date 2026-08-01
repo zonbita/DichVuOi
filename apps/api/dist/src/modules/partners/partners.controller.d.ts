@@ -1,6 +1,7 @@
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from '../auth/auth.service';
 import { EnablePartnerDto, SyncPartnerOfferingsDto, UpdatePartnerProfileDto } from './dto/update-partner-profile.dto';
+import { ConfirmBankVerifyDto, ConfirmPhoneOtpDto, LinkBankAccountDto, RequestPhoneOtpDto } from './dto/partner-verify.dto';
 import { PartnersService } from './partners.service';
 export declare class PartnersController {
     private readonly partnersService;
@@ -33,7 +34,7 @@ export declare class PartnersController {
         districts: string[];
         skills: string[];
         acceptingJobs: boolean;
-        workModes: ("onsite" | "online")[];
+        workModes: ("online" | "onsite")[];
         responseMinutes: number;
         ratingAvg: number;
         ratingCount: number;
@@ -130,33 +131,33 @@ export declare class PartnersController {
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
             service: {
-                name: string;
                 id: string;
-                isActive: boolean;
+                name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
                 category: {
-                    name: string;
                     id: string;
+                    name: string;
                     slug: string;
                     group: {
-                        name: string;
                         id: string;
+                        name: string;
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
-            includes: string | null;
             id: string;
-            headline: string | null;
             createdAt: Date;
             updatedAt: Date;
+            includes: string | null;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -165,6 +166,7 @@ export declare class PartnersController {
             excludes: string | null;
             coverageNote: string | null;
         }[];
+        bankVerifyPending: boolean;
         user: {
             id: string;
             email: string;
@@ -173,6 +175,8 @@ export declare class PartnersController {
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         headline: string | null;
         bio: string | null;
@@ -186,14 +190,15 @@ export declare class PartnersController {
         isVerified: boolean;
         phoneVerified: boolean;
         bankVerified: boolean;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     getLevel(user: AuthUser): Promise<{
         inputs: {
@@ -254,33 +259,33 @@ export declare class PartnersController {
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
             service: {
-                name: string;
                 id: string;
-                isActive: boolean;
+                name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
                 category: {
-                    name: string;
                     id: string;
+                    name: string;
                     slug: string;
                     group: {
-                        name: string;
                         id: string;
+                        name: string;
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
-            includes: string | null;
             id: string;
-            headline: string | null;
             createdAt: Date;
             updatedAt: Date;
+            includes: string | null;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -289,6 +294,7 @@ export declare class PartnersController {
             excludes: string | null;
             coverageNote: string | null;
         }[];
+        bankVerifyPending: boolean;
         user: {
             id: string;
             email: string;
@@ -297,6 +303,8 @@ export declare class PartnersController {
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         headline: string | null;
         bio: string | null;
@@ -310,46 +318,47 @@ export declare class PartnersController {
         isVerified: boolean;
         phoneVerified: boolean;
         bankVerified: boolean;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     syncOfferings(user: AuthUser, dto: SyncPartnerOfferingsDto): Promise<{
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
             service: {
-                name: string;
                 id: string;
-                isActive: boolean;
+                name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
                 category: {
-                    name: string;
                     id: string;
+                    name: string;
                     slug: string;
                     group: {
-                        name: string;
                         id: string;
+                        name: string;
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
-            includes: string | null;
             id: string;
-            headline: string | null;
             createdAt: Date;
             updatedAt: Date;
+            includes: string | null;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -358,6 +367,7 @@ export declare class PartnersController {
             excludes: string | null;
             coverageNote: string | null;
         }[];
+        bankVerifyPending: boolean;
         user: {
             id: string;
             email: string;
@@ -366,6 +376,8 @@ export declare class PartnersController {
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         userId: string;
         headline: string | null;
         bio: string | null;
@@ -379,13 +391,179 @@ export declare class PartnersController {
         isVerified: boolean;
         phoneVerified: boolean;
         bankVerified: boolean;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
+    }>;
+    requestPhoneOtp(user: AuthUser, dto: RequestPhoneOtpDto): Promise<{
+        ok: boolean;
+        phone: string;
+        expiresAt: string;
+        debugCode: string;
+        channel: string;
+        message: string;
+    }>;
+    confirmPhoneOtp(user: AuthUser, dto: ConfirmPhoneOtpDto): Promise<{
+        skills: string[];
+        gallery: string[];
+        districtsList: string[];
+        workModesList: ("online" | "onsite")[];
+        serviceIds: string[];
+        offerings: {
+            hoursWorked: number;
+            service: {
+                id: string;
+                name: string;
+                slug: string;
+                category: {
+                    id: string;
+                    name: string;
+                    slug: string;
+                    group: {
+                        id: string;
+                        name: string;
+                        slug: string;
+                    };
+                };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
+            };
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            includes: string | null;
+            headline: string | null;
+            isActive: boolean;
+            partnerProfileId: string;
+            serviceId: string;
+            price: number | null;
+            experienceYears: number;
+            excludes: string | null;
+            coverageNote: string | null;
+        }[];
+        bankVerifyPending: boolean;
+        user: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+            role: import("@prisma/client").$Enums.Role;
+        };
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
+        headline: string | null;
+        bio: string | null;
+        city: string | null;
+        districts: string | null;
+        ratingAvg: number;
+        ratingCount: number;
+        level: number;
+        onlineSeconds: number;
+        lastOnlineAt: Date | null;
+        isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        avatarUrl: string | null;
+        galleryJson: string | null;
+        skillsJson: string | null;
+        acceptingJobs: boolean;
+        workModes: string | null;
+        responseMinutes: number;
+    }>;
+    linkBank(user: AuthUser, dto: LinkBankAccountDto): Promise<{
+        ok: boolean;
+        intentId: string;
+        amount: number;
+        expiresAt: string;
+        qrImageUrl: string;
+        bankName: string;
+        accountNo: string;
+        accountName: string;
+        message: string;
+    }>;
+    confirmBank(user: AuthUser, dto: ConfirmBankVerifyDto): Promise<{
+        skills: string[];
+        gallery: string[];
+        districtsList: string[];
+        workModesList: ("online" | "onsite")[];
+        serviceIds: string[];
+        offerings: {
+            hoursWorked: number;
+            service: {
+                id: string;
+                name: string;
+                slug: string;
+                category: {
+                    id: string;
+                    name: string;
+                    slug: string;
+                    group: {
+                        id: string;
+                        name: string;
+                        slug: string;
+                    };
+                };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
+            };
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            includes: string | null;
+            headline: string | null;
+            isActive: boolean;
+            partnerProfileId: string;
+            serviceId: string;
+            price: number | null;
+            experienceYears: number;
+            excludes: string | null;
+            coverageNote: string | null;
+        }[];
+        bankVerifyPending: boolean;
+        user: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+            role: import("@prisma/client").$Enums.Role;
+        };
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        headline: string | null;
+        bio: string | null;
+        city: string | null;
+        districts: string | null;
+        ratingAvg: number;
+        ratingCount: number;
+        level: number;
+        onlineSeconds: number;
+        lastOnlineAt: Date | null;
+        isVerified: boolean;
+        phoneVerified: boolean;
+        bankVerified: boolean;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        avatarUrl: string | null;
+        galleryJson: string | null;
+        skillsJson: string | null;
+        acceptingJobs: boolean;
+        workModes: string | null;
+        responseMinutes: number;
     }>;
 }

@@ -124,6 +124,16 @@ export class AdminUpdatePartnerDto {
   @IsOptional()
   @IsBoolean()
   acceptingJobs?: boolean;
+
+  @ApiPropertyOptional({ description: 'Admin bật/tắt xác minh SĐT' })
+  @IsOptional()
+  @IsBoolean()
+  phoneVerified?: boolean;
+
+  @ApiPropertyOptional({ description: 'Admin bật/tắt xác minh ngân hàng' })
+  @IsOptional()
+  @IsBoolean()
+  bankVerified?: boolean;
 }
 
 export class AdminUpdateBookingDto {

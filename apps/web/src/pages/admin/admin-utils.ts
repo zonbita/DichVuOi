@@ -93,4 +93,5 @@ export const ROLE_OPTIONS = [
   { value: 'CUSTOMER', label: 'CUSTOMER' },
   { value: 'PARTNER', label: 'PARTNER' },
   { value: 'ADMIN', label: 'ADMIN' },
+  { value: 'MODERATOR', label: 'MODERATOR' },
 ];

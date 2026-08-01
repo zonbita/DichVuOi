@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../../services/api';
-import { LevelBadge, PartnerVerificationBadges } from '../ui/partner-badges';
+import { AvatarLevelOverlay, PartnerVerificationBadges } from '../ui/partner-badges';
 
 type Props = {
   partnerUserId: string;
@@ -69,26 +69,26 @@ export function RetentionPartnerCard({
     <article className="flex w-[min(100%,280px)] shrink-0 flex-col border border-[var(--color-line)] bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <Link to={`/user/${partnerUserId}`} className="shrink-0">
-          <Avatar name={fullName} src={avatarUrl} />
+          <AvatarLevelOverlay level={level}>
+            <Avatar name={fullName} src={avatarUrl} />
+          </AvatarLevelOverlay>
         </Link>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Link
-              to={`/user/${partnerUserId}`}
-              className="truncate text-base font-extrabold hover:text-[var(--color-brand-deep)]"
-            >
-              {fullName}
-            </Link>
-            <LevelBadge level={level} />
-            <PartnerVerificationBadges
-              isVerified={isVerified}
-              phoneVerified={phoneVerified}
-              bankVerified={bankVerified}
-              className="!justify-start"
-            />
-          </div>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <Link
+            to={`/user/${partnerUserId}`}
+            className="block truncate text-base font-extrabold leading-snug hover:text-[var(--color-brand-deep)]"
+          >
+            {fullName}
+          </Link>
+          <PartnerVerificationBadges
+            isVerified={isVerified}
+            phoneVerified={phoneVerified}
+            bankVerified={bankVerified}
+            variant="icon"
+            className="mt-1.5 !justify-start"
+          />
           {subtitle ? (
-            <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-muted)]">{subtitle}</p>
+            <p className="mt-1.5 line-clamp-2 text-xs text-[var(--color-muted)]">{subtitle}</p>
           ) : null}
           {typeof ratingAvg === 'number' && ratingAvg > 0 ? (
             <p className="mt-1 text-xs font-semibold text-[var(--color-ink)]">

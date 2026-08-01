@@ -69,10 +69,9 @@ export function HomeOpenJobsSection() {
                   footerRight={
                     <Link
                       to="/doi-tac/viec"
-                      className="inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[var(--color-brand-deep)]"
+                      className="inline-flex min-w-[132px] items-center justify-center rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-brand-deep)]"
                     >
                       Ứng tuyển
-                      <Icon name="chevronRight" className="h-4 w-4" />
                     </Link>
                   }
                 />

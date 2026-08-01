@@ -55,6 +55,10 @@ export type AdminPartner = {
   ratingCount: number;
   level: number;
   isVerified: boolean;
+  phoneVerified: boolean;
+  bankVerified: boolean;
+  bankName?: string | null;
+  bankAccountNo?: string | null;
   acceptingJobs: boolean;
   createdAt: string;
   user: {

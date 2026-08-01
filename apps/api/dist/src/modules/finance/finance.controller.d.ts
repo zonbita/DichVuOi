@@ -55,15 +55,15 @@ export declare class FinanceController {
         amount: number;
     }>;
     listInvoices(user: AuthUser): Promise<({
+        partner: {
+            id: string;
+            fullName: string;
+        } | null;
         booking: {
             id: string;
             status: import("@prisma/client").$Enums.BookingStatus;
             paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
         };
-        partner: {
-            id: string;
-            fullName: string;
-        } | null;
         customer: {
             id: string;
             fullName: string;
@@ -71,34 +71,34 @@ export declare class FinanceController {
     } & {
         id: string;
         updatedAt: Date;
-        partnerId: string | null;
         status: import("@prisma/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
-        bookingId: string;
-        currency: string;
+        partnerId: string | null;
         invoiceNumber: string;
-        customerId: string;
         serviceName: string;
         subtotal: number;
+        currency: string;
         issuedAt: Date;
         settledAt: Date | null;
+        bookingId: string;
+        customerId: string;
     })[]>;
     getInvoice(user: AuthUser, id: string): Promise<{
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         booking: {
             id: string;
             scheduledAt: Date;
             status: import("@prisma/client").$Enums.BookingStatus;
             paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
         };
-        partner: {
-            id: string;
-            email: string;
-            fullName: string;
-            phone: string | null;
-        } | null;
         customer: {
             id: string;
             email: string;
@@ -108,19 +108,19 @@ export declare class FinanceController {
     } & {
         id: string;
         updatedAt: Date;
-        partnerId: string | null;
         status: import("@prisma/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
-        bookingId: string;
-        currency: string;
+        partnerId: string | null;
         invoiceNumber: string;
-        customerId: string;
         serviceName: string;
         subtotal: number;
+        currency: string;
         issuedAt: Date;
         settledAt: Date | null;
+        bookingId: string;
+        customerId: string;
     }>;
 }

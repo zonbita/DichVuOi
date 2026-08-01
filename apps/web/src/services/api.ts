@@ -31,6 +31,7 @@ import type {
 } from '../types/admin';
 import type { Complaint, ComplaintStatus } from '../types/complaint';
 import type { ChatbotReply, ChatbotStats } from '../types/chatbot';
+import type { SupportMessage, SupportThread, SupportThreadDetail } from '../types/support';
 import type {
   Invoice,
   VietQrTopUpIntent,
@@ -344,7 +345,12 @@ export const api = {
     request<Paginated<AdminPartner>>(`/api/admin/partners${queryString(query)}`),
   adminUpdatePartner: (
     userId: string,
-    payload: { isVerified?: boolean; acceptingJobs?: boolean },
+    payload: {
+      isVerified?: boolean;
+      acceptingJobs?: boolean;
+      phoneVerified?: boolean;
+      bankVerified?: boolean;
+    },
   ) =>
     request<AdminPartner>(`/api/admin/partners/${userId}`, {
       method: 'PATCH',
@@ -471,6 +477,49 @@ export const api = {
       body: JSON.stringify({ serviceIds }),
     }),
 
+  requestPartnerPhoneOtp: (phone: string) =>
+    request<{
+      ok: boolean;
+      phone: string;
+      expiresAt: string;
+      debugCode: string;
+      channel: string;
+      message: string;
+    }>('/api/partners/me/verify-phone/request', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    }),
+  confirmPartnerPhoneOtp: (code: string) =>
+    request<PartnerProfile>('/api/partners/me/verify-phone/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+  linkPartnerBank: (payload: {
+    bankName: string;
+    accountNo: string;
+    accountName: string;
+    bankBin?: string;
+  }) =>
+    request<{
+      ok: boolean;
+      intentId: string;
+      amount: number;
+      expiresAt: string;
+      qrImageUrl: string;
+      bankName: string;
+      accountNo: string;
+      accountName: string;
+      message: string;
+    }>('/api/partners/me/verify-bank/link', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  confirmPartnerBankVerify: (intentId: string) =>
+    request<PartnerProfile>('/api/partners/me/verify-bank/mock-confirm', {
+      method: 'POST',
+      body: JSON.stringify({ intentId }),
+    }),
+
   chatbotStats: () => request<ChatbotStats>('/api/chatbot/stats'),
   chatbotSuggestions: (limit = 8) =>
     request<string[]>(`/api/chatbot/suggestions?limit=${limit}`),
@@ -478,6 +527,32 @@ export const api = {
     request<ChatbotReply>('/api/chatbot/ask', {
       method: 'POST',
       body: JSON.stringify({ message, sessionId }),
+    }),
+
+  getMySupportChat: () => request<SupportThreadDetail>('/api/support/my'),
+  postMySupportMessage: (body: string) =>
+    request<SupportMessage>('/api/support/my/messages', {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    }),
+  listSupportThreads: (status?: string) =>
+    request<SupportThread[]>(
+      status ? `/api/support/threads?status=${status}` : '/api/support/threads',
+    ),
+  getSupportThread: (id: string) =>
+    request<SupportThreadDetail>(`/api/support/threads/${id}`),
+  postSupportThreadMessage: (id: string, body: string) =>
+    request<SupportMessage>(`/api/support/threads/${id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ body }),
+    }),
+  updateSupportThread: (
+    id: string,
+    payload: { status?: string; assigneeId?: string | null },
+  ) =>
+    request<SupportThread>(`/api/support/threads/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
     }),
 };
 

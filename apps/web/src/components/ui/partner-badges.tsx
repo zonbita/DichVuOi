@@ -2,43 +2,58 @@
 
 import type { ReactNode } from 'react';
 
+export type BadgeDisplayVariant = 'default' | 'icon';
+
+function badgeShellClass(verified: boolean, variant: BadgeDisplayVariant, className: string) {
+  const tone = verified
+    ? 'border border-[var(--color-brand)]/35 bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
+    : 'border border-amber-500/40 bg-amber-50 text-amber-800';
+  const size =
+    variant === 'icon'
+      ? 'h-7 w-7 justify-center rounded-full p-0'
+      : 'gap-1 rounded-full px-2.5 py-0.5';
+  return `inline-flex items-center text-[11px] font-extrabold shadow-sm ${tone} ${size} ${className}`;
+}
+
 /** Trạng thái xác minh: Đã xác minh / Chưa xác minh. */
 export function VerificationBadge({
   verified,
   className = '',
+  variant = 'default',
 }: {
   verified: boolean;
   className?: string;
+  variant?: BadgeDisplayVariant;
 }) {
-  if (verified) {
-    return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full border border-[var(--color-brand)]/35 bg-[var(--color-brand-soft)] px-2.5 py-0.5 text-[11px] font-extrabold text-[var(--color-brand-deep)] shadow-sm ${className}`}
-        title="Hồ sơ đã được Dịch Vụ Ơi xác minh"
-      >
-        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
-          <path
-            fill="currentColor"
-            d="M8 1.2 2.5 3.4v3.8c0 3.5 2.3 5.9 5.5 7 3.2-1.1 5.5-3.5 5.5-7V3.4L8 1.2Zm-.2 9.1L4.9 7.4l1.1-1.1 1.8 1.8 3.3-3.3 1.1 1.1-4.4 4.4Z"
-          />
-        </svg>
-        Đã xác minh
-      </span>
-    );
-  }
+  const title = verified
+    ? 'Hồ sơ đã được Dịch Vụ Ơi xác minh'
+    : 'Hồ sơ chưa được xác minh';
+  const icon = verified ? (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M8 1.2 2.5 3.4v3.8c0 3.5 2.3 5.9 5.5 7 3.2-1.1 5.5-3.5 5.5-7V3.4L8 1.2Zm-.2 9.1L4.9 7.4l1.1-1.1 1.8 1.8 3.3-3.3 1.1 1.1-4.4 4.4Z"
+      />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M8 1.5a6.5 6.5 0 1 0 .001 13.001A6.5 6.5 0 0 0 8 1.5Zm0 1.6a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8Zm-.7 2.2h1.4v3.8H7.3V5.3Zm0 4.8h1.4V11H7.3v-.9Z"
+      />
+    </svg>
+  );
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 shadow-sm ${className}`}
-      title="Hồ sơ chưa được xác minh"
+      className={badgeShellClass(verified, variant, className)}
+      title={title}
+      aria-label={title}
     >
-      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
-        <path
-          fill="currentColor"
-          d="M8 1.5a6.5 6.5 0 1 0 .001 13.001A6.5 6.5 0 0 0 8 1.5Zm0 1.6a4.9 4.9 0 1 1 0 9.8 4.9 4.9 0 0 1 0-9.8Zm-.7 2.2h1.4v3.8H7.3V5.3Zm0 4.8h1.4V11H7.3v-.9Z"
-        />
-      </svg>
-      Chưa xác minh
+      {icon}
+      {variant === 'default' ? (
+        <span>{verified ? 'Đã xác minh' : 'Chưa xác minh'}</span>
+      ) : null}
     </span>
   );
 }
@@ -65,33 +80,38 @@ function BankBadgeIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
   );
 }
 
+function bankBadgeShellClass(verified: boolean, variant: BadgeDisplayVariant, className: string) {
+  const tone = verified
+    ? 'border border-sky-500/35 bg-sky-50 text-sky-800'
+    : 'border border-amber-500/40 bg-amber-50 text-amber-800';
+  const size =
+    variant === 'icon'
+      ? 'h-7 w-7 justify-center rounded-full p-0'
+      : 'gap-1 rounded-full px-2.5 py-0.5';
+  return `inline-flex items-center text-[11px] font-extrabold shadow-sm ${tone} ${size} ${className}`;
+}
+
 /** Badge xác minh số điện thoại. */
 export function PhoneVerificationBadge({
   verified,
   className = '',
+  variant = 'default',
 }: {
   verified: boolean;
   className?: string;
+  variant?: BadgeDisplayVariant;
 }) {
-  if (verified) {
-    return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full border border-[var(--color-brand)]/35 bg-[var(--color-brand-soft)] px-2.5 py-0.5 text-[11px] font-extrabold text-[var(--color-brand-deep)] shadow-sm ${className}`}
-        title="Số điện thoại đã xác minh"
-      >
-        <PhoneBadgeIcon />
-        Đã xác minh SĐT
-      </span>
-    );
-  }
-
+  const title = verified ? 'Số điện thoại đã xác minh' : 'Số điện thoại chưa xác minh';
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 shadow-sm ${className}`}
-      title="Số điện thoại chưa xác minh"
+      className={badgeShellClass(verified, variant, className)}
+      title={title}
+      aria-label={title}
     >
       <PhoneBadgeIcon />
-      Chưa xác minh SĐT
+      {variant === 'default' ? (
+        <span>{verified ? 'Đã xác minh SĐT' : 'Chưa xác minh SĐT'}</span>
+      ) : null}
     </span>
   );
 }
@@ -100,29 +120,25 @@ export function PhoneVerificationBadge({
 export function BankVerificationBadge({
   verified,
   className = '',
+  variant = 'default',
 }: {
   verified: boolean;
   className?: string;
+  variant?: BadgeDisplayVariant;
 }) {
-  if (verified) {
-    return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full border border-sky-500/35 bg-sky-50 px-2.5 py-0.5 text-[11px] font-extrabold text-sky-800 shadow-sm ${className}`}
-        title="Tài khoản ngân hàng đã xác minh"
-      >
-        <BankBadgeIcon />
-        Đã xác minh NH
-      </span>
-    );
-  }
-
+  const title = verified
+    ? 'Tài khoản ngân hàng đã xác minh'
+    : 'Tài khoản ngân hàng chưa xác minh';
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-50 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 shadow-sm ${className}`}
-      title="Tài khoản ngân hàng chưa xác minh"
+      className={bankBadgeShellClass(verified, variant, className)}
+      title={title}
+      aria-label={title}
     >
       <BankBadgeIcon />
-      Chưa xác minh NH
+      {variant === 'default' ? (
+        <span>{verified ? 'Đã xác minh NH' : 'Chưa xác minh NH'}</span>
+      ) : null}
     </span>
   );
 }
@@ -134,18 +150,22 @@ export function PartnerVerificationBadges({
   bankVerified,
   className = '',
   showGeneral = true,
+  variant = 'default',
 }: {
   isVerified?: boolean;
   phoneVerified?: boolean;
   bankVerified?: boolean;
   className?: string;
   showGeneral?: boolean;
+  variant?: BadgeDisplayVariant;
 }) {
   return (
     <div className={`flex flex-wrap items-center justify-center gap-1.5 ${className}`}>
-      {showGeneral ? <VerificationBadge verified={Boolean(isVerified)} /> : null}
-      <PhoneVerificationBadge verified={Boolean(phoneVerified)} />
-      <BankVerificationBadge verified={Boolean(bankVerified)} />
+      {showGeneral ? (
+        <VerificationBadge verified={Boolean(isVerified)} variant={variant} />
+      ) : null}
+      <PhoneVerificationBadge verified={Boolean(phoneVerified)} variant={variant} />
+      <BankVerificationBadge verified={Boolean(bankVerified)} variant={variant} />
     </div>
   );
 }

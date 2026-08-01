@@ -54,6 +54,9 @@ let BookingsGateway = BookingsGateway_1 = class BookingsGateway {
             if (payload.role === client_1.Role.PARTNER || payload.role === client_1.Role.ADMIN) {
                 client.join('partners:open');
             }
+            if (payload.role === client_1.Role.ADMIN || payload.role === client_1.Role.MODERATOR) {
+                client.join('staff:support');
+            }
             void this.presence.onConnect(payload.sub, client.id).catch((err) => this.logger.warn(`Presence connect: ${err.message}`));
             client.emit('realtime:ready', { userId: payload.sub });
         }

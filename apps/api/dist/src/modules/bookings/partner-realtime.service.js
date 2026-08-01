@@ -31,6 +31,10 @@ let PartnerRealtimeService = class PartnerRealtimeService {
             this.server?.to(`partner:${parties.partnerId}`).emit('booking:message', payload);
         }
     }
+    emitSupportMessage(customerId, payload) {
+        this.server?.to(`customer:${customerId}`).emit('support:message', payload);
+        this.server?.to('staff:support').emit('support:message', payload);
+    }
 };
 exports.PartnerRealtimeService = PartnerRealtimeService;
 exports.PartnerRealtimeService = PartnerRealtimeService = __decorate([

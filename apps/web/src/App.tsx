@@ -10,6 +10,7 @@ import { AdminLayout } from './pages/admin/admin-layout';
 import { AdminOverviewPage } from './pages/admin/admin-overview-page';
 import { AdminPartnersPage } from './pages/admin/admin-partners-page';
 import { AdminReviewsPage } from './pages/admin/admin-reviews-page';
+import { AdminSupportChatPage } from './pages/admin/admin-support-chat-page';
 import { AdminUsersPage } from './pages/admin/admin-users-page';
 import { BookingSuccessPage } from './pages/booking-success-page';
 import { CompanyInfoPage } from './pages/company-info-page';
@@ -101,6 +102,7 @@ export default function App() {
           </Route>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminOverviewPage />} />
+            <Route path="support" element={<AdminSupportChatPage />} />
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="partners" element={<AdminPartnersPage />} />
             <Route path="bookings" element={<AdminBookingsPage />} />

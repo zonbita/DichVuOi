@@ -96,17 +96,27 @@ function SectionHeader({
   );
 }
 
-function ViewAllLink({ to = '/nhom' }: { to?: string }) {
+function ViewAllLink({
+  to = '/nhom',
+  showChevron = true,
+}: {
+  to?: string;
+  showChevron?: boolean;
+}) {
   return (
     <Link
       to={to}
-      className="group flex items-center gap-1 text-[15px] font-semibold text-[var(--color-brand)] transition hover:text-[var(--color-navy)]"
+      className="text-[15px] font-semibold !text-[var(--color-brand)] transition hover:!text-[var(--color-navy)]"
     >
-      Xem tất cả
-      <Icon
-        name="chevronRight"
-        className="h-4 w-4 transition group-hover:translate-x-0.5"
-      />
+      <span className="inline-flex items-center gap-1">
+        Xem tất cả
+        {showChevron ? (
+          <Icon
+            name="chevronRight"
+            className="h-4 w-4 transition group-hover:translate-x-0.5"
+          />
+        ) : null}
+      </span>
     </Link>
   );
 }
@@ -182,18 +192,23 @@ export function HomePage() {
 
       <section className="page-shell mt-10">
         <div className="section-container">
-          <SectionHeader title="Deal dịch vụ hôm nay" action={<ViewAllLink />}>
-            <CountdownBadge />
-          </SectionHeader>
-          {servicesQuery.isLoading ? (
-            <p className="text-base text-[var(--color-muted)]">Đang tải dịch vụ...</p>
-          ) : (
-            <ScrollRail>
-              {services.slice(0, 8).map((service) => (
-                <DealCard key={service.id} service={service} />
-              ))}
-            </ScrollRail>
-          )}
+          <div className="rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-brand-soft)] p-4 shadow-[var(--shadow-card)] sm:p-5">
+            <SectionHeader
+              title="Deal dịch vụ hôm nay"
+              action={<ViewAllLink showChevron={false} />}
+            >
+              <CountdownBadge />
+            </SectionHeader>
+            {servicesQuery.isLoading ? (
+              <p className="text-base text-[var(--color-muted)]">Đang tải dịch vụ...</p>
+            ) : (
+              <ScrollRail showArrows={false}>
+                {services.slice(0, 8).map((service) => (
+                  <DealCard key={service.id} service={service} />
+                ))}
+              </ScrollRail>
+            )}
+          </div>
         </div>
       </section>
 

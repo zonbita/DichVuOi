@@ -70,7 +70,6 @@ export function OpenJobCard({
   const matchingDeadlineLabel = booking.matchingDeadlineAt
     ? formatRemainingTime(booking.matchingDeadlineAt)
     : null;
-  const tone = openJobRoomTone(booking);
 
   const metaItems = [
     <ScheduleTimePill key="schedule" date={booking.scheduledAt} />,
@@ -154,15 +153,12 @@ export function OpenJobCard({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] px-4 py-3.5 sm:px-5">
-        {footerLeft ?? (
-          <span
-            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-extrabold tracking-wide uppercase ${tone.badge}`}
-          >
-            <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
-            {tone.label}
-          </span>
-        )}
+      <div
+        className={`flex flex-wrap items-center gap-3 px-4 pb-3.5 sm:px-5 sm:pb-4 ${
+          footerLeft != null ? 'justify-between' : 'justify-end'
+        }`}
+      >
+        {footerLeft}
         {footerRight}
       </div>
     </article>

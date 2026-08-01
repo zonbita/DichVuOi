@@ -11,6 +11,7 @@ import { PartnerLevelPanel } from '../components/partner/partner-level-panel';
 import { PartnerProfessionTabs } from '../components/partner/partner-profession-tabs';
 import { PartnerScheduleBoard } from '../components/partner/partner-schedule-board';
 import { PartnerStatsBar } from '../components/partner/partner-stats-bar';
+import { PartnerVerificationPanel } from '../components/partner/partner-verification-panel';
 import { LevelBadgeGold, VerificationBadge } from '../components/ui/partner-badges';
 import { ProfessionTagsInput } from '../components/ui/profession-tags-input';
 import type { ProfessionOption } from '../components/ui/profession-tags-input';
@@ -588,6 +589,12 @@ export function PartnerDashboardPage() {
           </button>
         </form>
       </div>
+      {profileQuery.data ? (
+        <PartnerVerificationPanel
+          profile={profileQuery.data}
+          defaultPhone={profileQuery.data.user?.phone ?? user?.phone ?? ''}
+        />
+      ) : null}
       </section>
       )}
     </div>

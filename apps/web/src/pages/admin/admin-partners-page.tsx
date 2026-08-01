@@ -54,7 +54,12 @@ export function AdminPartnersPage() {
       payload,
     }: {
       userId: string;
-      payload: { isVerified?: boolean; acceptingJobs?: boolean };
+      payload: {
+        isVerified?: boolean;
+        acceptingJobs?: boolean;
+        phoneVerified?: boolean;
+        bankVerified?: boolean;
+      };
     }) => api.adminUpdatePartner(userId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'partners'] });
@@ -124,6 +129,12 @@ export function AdminPartnersPage() {
                     <Badge tone={partner.isVerified ? 'green' : 'amber'}>
                       {partner.isVerified ? 'Đã xác minh' : 'Chưa xác minh'}
                     </Badge>
+                    <Badge tone={partner.phoneVerified ? 'green' : 'amber'}>
+                      {partner.phoneVerified ? 'SĐT OK' : 'SĐT chưa'}
+                    </Badge>
+                    <Badge tone={partner.bankVerified ? 'green' : 'amber'}>
+                      {partner.bankVerified ? 'NH OK' : 'NH chưa'}
+                    </Badge>
                     <Badge tone={partner.acceptingJobs ? 'blue' : 'neutral'}>
                       {partner.acceptingJobs ? 'Đang nhận việc' : 'Tạm nghỉ'}
                     </Badge>
@@ -171,6 +182,32 @@ export function AdminPartnersPage() {
                       Duyệt hồ sơ
                     </button>
                   )}
+                  <button
+                    type="button"
+                    disabled={partnerMutation.isPending}
+                    className="rounded-full border border-[var(--color-line)] px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+                    onClick={() =>
+                      partnerMutation.mutate({
+                        userId: partner.userId,
+                        payload: { phoneVerified: !partner.phoneVerified },
+                      })
+                    }
+                  >
+                    {partner.phoneVerified ? 'Tắt SĐT' : 'Bật SĐT'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={partnerMutation.isPending}
+                    className="rounded-full border border-[var(--color-line)] px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+                    onClick={() =>
+                      partnerMutation.mutate({
+                        userId: partner.userId,
+                        payload: { bankVerified: !partner.bankVerified },
+                      })
+                    }
+                  >
+                    {partner.bankVerified ? 'Tắt NH' : 'Bật NH'}
+                  </button>
                   <button
                     type="button"
                     disabled={partnerMutation.isPending}

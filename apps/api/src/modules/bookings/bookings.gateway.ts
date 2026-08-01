@@ -69,6 +69,10 @@ export class BookingsGateway
         client.join('partners:open');
       }
 
+      if (payload.role === Role.ADMIN || payload.role === Role.MODERATOR) {
+        client.join('staff:support');
+      }
+
       void this.presence.onConnect(payload.sub, client.id).catch((err) =>
         this.logger.warn(`Presence connect: ${(err as Error).message}`),
       );

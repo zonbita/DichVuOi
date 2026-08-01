@@ -78,12 +78,12 @@ export function SiteHeader() {
               <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-2.5">
                 {user ? (
                   <>
-                    {user.role === 'ADMIN' ? (
+                    {user.role === 'ADMIN' || user.role === 'MODERATOR' ? (
                       <Link
-                        to="/admin"
+                        to={user.role === 'MODERATOR' ? '/admin/support' : '/admin'}
                         className="hidden items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-[15px] font-semibold transition hover:bg-white/10 sm:flex"
                       >
-                        Admin
+                        {user.role === 'MODERATOR' ? 'Mod' : 'Admin'}
                       </Link>
                     ) : null}
                     <ModeSwitcher onDark />

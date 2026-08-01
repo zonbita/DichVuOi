@@ -83,6 +83,13 @@ export declare class AdminController {
             isVerified: boolean;
             phoneVerified: boolean;
             bankVerified: boolean;
+            bankName: string | null;
+            bankAccountNo: string | null;
+            bankAccountName: string | null;
+            phoneOtpCode: string | null;
+            phoneOtpExpiresAt: Date | null;
+            bankVerifyIntentId: string | null;
+            bankVerifyExpiresAt: Date | null;
             avatarUrl: string | null;
             galleryJson: string | null;
             skillsJson: string | null;
@@ -100,6 +107,7 @@ export declare class AdminController {
             id: string;
             email: string;
             fullName: string;
+            phone: string | null;
             role: import("@prisma/client").$Enums.Role;
         };
         _count: {
@@ -122,6 +130,13 @@ export declare class AdminController {
         isVerified: boolean;
         phoneVerified: boolean;
         bankVerified: boolean;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        phoneOtpCode: string | null;
+        phoneOtpExpiresAt: Date | null;
+        bankVerifyIntentId: string | null;
+        bankVerifyExpiresAt: Date | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -156,7 +171,6 @@ export declare class AdminController {
             updatedAt: Date;
             userId: string;
             serviceId: string;
-            partnerId: string | null;
             address: string;
             scheduledAt: Date;
             note: string | null;
@@ -182,6 +196,7 @@ export declare class AdminController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            partnerId: string | null;
         })[];
         total: number;
         page: number;
@@ -223,11 +238,11 @@ export declare class AdminController {
             senderId: string;
         })[];
         reviews: ({
-            toUser: {
+            fromUser: {
                 id: string;
                 fullName: string;
             };
-            fromUser: {
+            toUser: {
                 id: string;
                 fullName: string;
             };
@@ -235,10 +250,10 @@ export declare class AdminController {
             id: string;
             createdAt: Date;
             bookingId: string;
+            rating: number;
             comment: string | null;
             fromUserId: string;
             toUserId: string;
-            rating: number;
         })[];
         complaints: ({
             reporter: {
@@ -292,7 +307,6 @@ export declare class AdminController {
         updatedAt: Date;
         userId: string;
         serviceId: string;
-        partnerId: string | null;
         address: string;
         scheduledAt: Date;
         note: string | null;
@@ -318,6 +332,7 @@ export declare class AdminController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     }>;
     updateBooking(id: string, dto: AdminUpdateBookingDto): Promise<{
         user: {
@@ -345,7 +360,6 @@ export declare class AdminController {
         updatedAt: Date;
         userId: string;
         serviceId: string;
-        partnerId: string | null;
         address: string;
         scheduledAt: Date;
         note: string | null;
@@ -371,6 +385,7 @@ export declare class AdminController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     }>;
     listReviews(query: AdminPageQueryDto): Promise<{
         items: ({
@@ -381,12 +396,12 @@ export declare class AdminController {
                 };
                 status: import("@prisma/client").$Enums.BookingStatus;
             };
-            toUser: {
+            fromUser: {
                 id: string;
                 email: string;
                 fullName: string;
             };
-            fromUser: {
+            toUser: {
                 id: string;
                 email: string;
                 fullName: string;
@@ -395,10 +410,10 @@ export declare class AdminController {
             id: string;
             createdAt: Date;
             bookingId: string;
+            rating: number;
             comment: string | null;
             fromUserId: string;
             toUserId: string;
-            rating: number;
         })[];
         total: number;
         page: number;

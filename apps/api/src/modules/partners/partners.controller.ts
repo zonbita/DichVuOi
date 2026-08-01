@@ -23,6 +23,12 @@ import {
   SyncPartnerOfferingsDto,
   UpdatePartnerProfileDto,
 } from './dto/update-partner-profile.dto';
+import {
+  ConfirmBankVerifyDto,
+  ConfirmPhoneOtpDto,
+  LinkBankAccountDto,
+  RequestPhoneOtpDto,
+} from './dto/partner-verify.dto';
 import { PartnersService } from './partners.service';
 
 @ApiTags('partners')
@@ -132,5 +138,46 @@ export class PartnersController {
     @Body() dto: SyncPartnerOfferingsDto,
   ) {
     return this.partnersService.syncOfferings(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN)
+  @Post('me/verify-phone/request')
+  requestPhoneOtp(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RequestPhoneOtpDto,
+  ) {
+    return this.partnersService.requestPhoneOtp(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN)
+  @Post('me/verify-phone/confirm')
+  confirmPhoneOtp(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ConfirmPhoneOtpDto,
+  ) {
+    return this.partnersService.confirmPhoneOtp(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN)
+  @Post('me/verify-bank/link')
+  linkBank(@CurrentUser() user: AuthUser, @Body() dto: LinkBankAccountDto) {
+    return this.partnersService.linkBankAccount(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN)
+  @Post('me/verify-bank/mock-confirm')
+  confirmBank(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ConfirmBankVerifyDto,
+  ) {
+    return this.partnersService.confirmBankVerify(user.id, dto);
   }
 }

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, NavLink, Navigate, Outlet } from 'react-router-dom';
+import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import logo from '../../assets/logo-icon.png';
 import { Icon } from '../../components/ui/icon';
 import type { IconName } from '../../components/ui/icon';
@@ -13,16 +13,31 @@ type NavItem = {
   icon: IconName;
   end?: boolean;
   badge?: 'partners' | 'flagged' | 'complaints';
+  /** Chỉ ADMIN thấy (MODERATOR ẩn). */
+  adminOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
-  { to: '/admin', label: 'Tổng quan', icon: 'home', end: true },
-  { to: '/admin/bookings', label: 'Đơn hàng', icon: 'calendar' },
-  { to: '/admin/catalog', label: 'Dịch vụ', icon: 'sparkles' },
-  { to: '/admin/partners', label: 'Đối tác', icon: 'briefcase', badge: 'partners' },
-  { to: '/admin/users', label: 'Khách hàng', icon: 'users' },
-  { to: '/admin/reviews', label: 'Đánh giá', icon: 'heart' },
-  { to: '/admin/complaints', label: 'Khiếu nại', icon: 'message', badge: 'complaints' },
+  { to: '/admin', label: 'Tổng quan', icon: 'home', end: true, adminOnly: true },
+  { to: '/admin/support', label: 'Chat với khách', icon: 'headset' },
+  { to: '/admin/bookings', label: 'Đơn hàng', icon: 'calendar', adminOnly: true },
+  { to: '/admin/catalog', label: 'Dịch vụ', icon: 'sparkles', adminOnly: true },
+  {
+    to: '/admin/partners',
+    label: 'Đối tác',
+    icon: 'briefcase',
+    badge: 'partners',
+    adminOnly: true,
+  },
+  { to: '/admin/users', label: 'Khách hàng', icon: 'users', adminOnly: true },
+  { to: '/admin/reviews', label: 'Đánh giá', icon: 'heart', adminOnly: true },
+  {
+    to: '/admin/complaints',
+    label: 'Khiếu nại',
+    icon: 'message',
+    badge: 'complaints',
+    adminOnly: true,
+  },
 ];
 
 const soonItems: Array<{ label: string; icon: IconName }> = [
@@ -32,9 +47,12 @@ const soonItems: Array<{ label: string; icon: IconName }> = [
 
 export function AdminLayout() {
   const { user, loading, logout } = useAuth();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = Boolean(user && user.role === 'ADMIN');
+  const isModerator = Boolean(user && user.role === 'MODERATOR');
+  const isStaff = isAdmin || isModerator;
 
   const statsQuery = useQuery({
     queryKey: ['admin', 'stats'],
@@ -50,13 +68,13 @@ export function AdminLayout() {
     );
   }
   if (!user) return <Navigate to="/dang-nhap?redirect=/admin" replace />;
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <div className="admin-shell mx-auto flex max-w-lg items-center p-8">
         <div className="admin-card w-full p-6">
-          <h1 className="text-xl font-extrabold">Không có quyền admin</h1>
+          <h1 className="text-xl font-extrabold">Không có quyền truy cập</h1>
           <p className="mt-2 text-[var(--color-muted)]">
-            Tài khoản hiện tại không phải ADMIN.{' '}
+            Cần tài khoản ADMIN hoặc MODERATOR.{' '}
             <Link to="/" className="font-semibold text-[var(--color-brand-deep)]">
               Về trang chủ
             </Link>
@@ -64,6 +82,15 @@ export function AdminLayout() {
         </div>
       </div>
     );
+  }
+
+  const visibleNav = navItems.filter((item) => isAdmin || !item.adminOnly);
+
+  if (
+    isModerator &&
+    !location.pathname.startsWith('/admin/support')
+  ) {
+    return <Navigate to="/admin/support" replace />;
   }
 
   const pendingVerify = statsQuery.data?.partnersPendingVerify ?? 0;
@@ -89,18 +116,22 @@ export function AdminLayout() {
     return null;
   }
 
+  const roleLabel = isAdmin ? 'Quản trị viên' : 'Moderator';
+
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2.5 px-5 py-5">
         <img src={logo} alt="" className="h-9 w-9 rounded-xl" />
         <p className="truncate text-[15px] font-extrabold tracking-tight">
           Dịch Vụ <span className="text-[var(--color-brand)]">Ơi</span>{' '}
-          <span className="font-semibold text-[var(--color-muted)]">Admin</span>
+          <span className="font-semibold text-[var(--color-muted)]">
+            {isAdmin ? 'Admin' : 'Mod'}
+          </span>
         </p>
       </div>
 
       <nav className="flex-1 space-y-0.5 pb-3">
-        {navItems.map((item) => (
+        {visibleNav.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -116,18 +147,21 @@ export function AdminLayout() {
           </NavLink>
         ))}
 
-        <div className="mx-5 my-3 border-t border-[var(--admin-border)]" />
-
-        {soonItems.map((item) => (
-          <div
-            key={item.label}
-            className="admin-nav-link cursor-not-allowed opacity-45"
-            title="Sắp có"
-          >
-            <Icon name={item.icon} className="h-[18px] w-[18px] shrink-0" />
-            <span>{item.label}</span>
-          </div>
-        ))}
+        {isAdmin ? (
+          <>
+            <div className="mx-5 my-3 border-t border-[var(--admin-border)]" />
+            {soonItems.map((item) => (
+              <div
+                key={item.label}
+                className="admin-nav-link cursor-not-allowed opacity-45"
+                title="Sắp có"
+              >
+                <Icon name={item.icon} className="h-[18px] w-[18px] shrink-0" />
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </>
+        ) : null}
       </nav>
 
       <div className="relative border-t border-[var(--admin-border)] p-3">
@@ -141,7 +175,7 @@ export function AdminLayout() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold">{user.fullName}</p>
-            <p className="truncate text-xs text-[var(--color-muted)]">Quản trị viên</p>
+            <p className="truncate text-xs text-[var(--color-muted)]">{roleLabel}</p>
           </div>
           <Icon name="chevronDown" className="h-4 w-4 text-[var(--color-muted)]" />
         </button>
@@ -202,7 +236,8 @@ export function AdminLayout() {
             <Icon name="menu" className="h-5 w-5" />
           </button>
           <p className="font-extrabold">
-            Dịch Vụ <span className="text-[var(--color-brand)]">Ơi</span> Admin
+            Dịch Vụ <span className="text-[var(--color-brand)]">Ơi</span>{' '}
+            {isAdmin ? 'Admin' : 'Mod'}
           </p>
         </header>
 

@@ -29,6 +29,8 @@ export declare class AdminUpdateUserDto {
 export declare class AdminUpdatePartnerDto {
     isVerified?: boolean;
     acceptingJobs?: boolean;
+    phoneVerified?: boolean;
+    bankVerified?: boolean;
 }
 export declare class AdminUpdateBookingDto {
     status?: BookingStatus;

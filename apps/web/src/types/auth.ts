@@ -1,4 +1,4 @@
-export type UserRole = 'CUSTOMER' | 'PARTNER' | 'ADMIN';
+export type UserRole = 'CUSTOMER' | 'PARTNER' | 'ADMIN' | 'MODERATOR';
 
 export type WorkMode = 'onsite' | 'online';
 

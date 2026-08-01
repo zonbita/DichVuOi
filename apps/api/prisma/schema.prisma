@@ -11,6 +11,7 @@ enum Role {
   CUSTOMER
   PARTNER
   ADMIN
+  MODERATOR
 }
 
 enum BookingStatus {
@@ -111,6 +112,9 @@ model User {
   customerInvoices Invoice[]         @relation("CustomerInvoices")
   partnerInvoices Invoice[]          @relation("PartnerInvoices")
   bookingApplications BookingApplication[]
+  supportThreadsAsCustomer SupportThread[] @relation("SupportCustomer")
+  supportThreadsAssigned   SupportThread[] @relation("SupportAssignee")
+  supportMessages          SupportMessage[]
 }
 
 /** Khách lưu người làm quen — hỗ trợ thuê lại / cá nhân hóa trang chủ. */
@@ -149,6 +153,18 @@ model PartnerProfile {
   phoneVerified Boolean        @default(false)
   /** Đã xác minh tài khoản ngân hàng nhận payout. */
   bankVerified Boolean         @default(false)
+  /** Tên ngân hàng (VD: VCB, MB). */
+  bankName    String?
+  /** Số tài khoản nhận payout. */
+  bankAccountNo String?
+  /** Tên chủ tài khoản. */
+  bankAccountName String?
+  /** OTP SMS mock (dev) — xoá sau khi xác minh. */
+  phoneOtpCode String?
+  phoneOtpExpiresAt DateTime?
+  /** Intent VietQR mock để xác minh NH. */
+  bankVerifyIntentId String?
+  bankVerifyExpiresAt DateTime?
   /** Ảnh đại diện người làm (URL). */
   avatarUrl   String?
   /** Gallery portfolio — JSON array URL ảnh (3–6), vd. ["https://..."]. */
@@ -412,6 +428,44 @@ model BookingMessage {
   createdAt DateTime @default(now())
 
   @@index([bookingId, createdAt])
+  @@index([senderId])
+}
+
+/** Trạng thái hội thoại hỗ trợ khách ↔ admin/moderator. */
+enum SupportThreadStatus {
+  OPEN
+  CLOSED
+}
+
+/** Chat hỗ trợ kỹ thuật — độc lập với chat theo đơn. */
+model SupportThread {
+  id            String              @id @default(cuid())
+  customerId    String
+  customer      User                @relation("SupportCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  assigneeId    String?
+  assignee      User?               @relation("SupportAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  status        SupportThreadStatus @default(OPEN)
+  lastMessageAt DateTime            @default(now())
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  messages      SupportMessage[]
+
+  @@index([customerId, status])
+  @@index([assigneeId])
+  @@index([lastMessageAt])
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  threadId  String
+  thread    SupportThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  redacted  Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@index([threadId, createdAt])
   @@index([senderId])
 }
 

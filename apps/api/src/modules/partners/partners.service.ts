@@ -26,10 +26,20 @@ import { ReputationService } from '../../common/reputation.service';
 import { portraitAvatarUrl } from '../../common/portrait-avatar';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import {
+  ConfirmBankVerifyDto,
+  ConfirmPhoneOtpDto,
+  LinkBankAccountDto,
+  RequestPhoneOtpDto,
+} from './dto/partner-verify.dto';
+import {
   EnablePartnerDto,
   SyncPartnerOfferingsDto,
   UpdatePartnerProfileDto,
 } from './dto/update-partner-profile.dto';
+
+const OTP_TTL_MS = 5 * 60 * 1000;
+const BANK_VERIFY_TTL_MS = 15 * 60 * 1000;
+const DEFAULT_VIETQR_BIN = process.env.VIETQR_BANK_ID ?? '970436';
 
 const userPublicSelect = {
   id: true,
@@ -432,8 +442,16 @@ export class PartnersService {
       profile.offerings.map((o) => o.serviceId),
     );
 
+    const {
+      phoneOtpCode: _otp,
+      phoneOtpExpiresAt: _otpExp,
+      bankVerifyIntentId: _bIntent,
+      bankVerifyExpiresAt: _bExp,
+      ...safeProfile
+    } = profile;
+
     return {
-      ...profile,
+      ...safeProfile,
       skills: parseSkills(profile.skillsJson),
       gallery: parseGallery(profile.galleryJson),
       districtsList: parseDistricts(profile.districts),
@@ -443,6 +461,12 @@ export class PartnersService {
         ...o,
         hoursWorked: hoursByServiceId.get(o.serviceId) ?? 0,
       })),
+      bankVerifyPending: Boolean(
+        profile.bankVerifyIntentId &&
+          profile.bankVerifyExpiresAt &&
+          profile.bankVerifyExpiresAt.getTime() > Date.now() &&
+          !profile.bankVerified,
+      ),
     };
   }
 
@@ -530,10 +554,25 @@ export class PartnersService {
   async updateMine(userId: string, dto: UpdatePartnerProfileDto) {
     await this.requireOrCreateProfile(userId);
     if (dto.phone !== undefined) {
+      const nextPhone = dto.phone.trim().slice(0, 20) || null;
+      const current = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { phone: true },
+      });
       await this.prisma.user.update({
         where: { id: userId },
-        data: { phone: dto.phone.trim().slice(0, 20) || null },
+        data: { phone: nextPhone },
       });
+      if (current?.phone !== nextPhone) {
+        await this.prisma.partnerProfile.update({
+          where: { userId },
+          data: {
+            phoneVerified: false,
+            phoneOtpCode: null,
+            phoneOtpExpiresAt: null,
+          },
+        });
+      }
     }
     await this.prisma.partnerProfile.update({
       where: { userId },
@@ -810,5 +849,130 @@ export class PartnersService {
       where: { userId, partnerUserId },
     });
     return { partnerUserId, saved: false };
+  }
+
+  /** Gửi OTP SMS mock — trả debugCode để test (không tích hợp nhà mạng). */
+  async requestPhoneOtp(userId: string, dto: RequestPhoneOtpDto) {
+    await this.requireOrCreateProfile(userId);
+    const phone = dto.phone.replace(/\s|-/g, '').trim();
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { phone },
+    });
+    await this.prisma.partnerProfile.update({
+      where: { userId },
+      data: {
+        phoneVerified: false,
+        phoneOtpCode: code,
+        phoneOtpExpiresAt: expiresAt,
+      },
+    });
+
+    return {
+      ok: true,
+      phone,
+      expiresAt: expiresAt.toISOString(),
+      /** Dev/mock only — production sẽ gửi SMS, không trả mã. */
+      debugCode: code,
+      channel: 'sms_mock',
+      message: `Đã gửi OTP mock tới ${phone}. Dùng mã debugCode để xác minh.`,
+    };
+  }
+
+  async confirmPhoneOtp(userId: string, dto: ConfirmPhoneOtpDto) {
+    const profile = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
+    if (!profile.phoneOtpCode || !profile.phoneOtpExpiresAt) {
+      throw new BadRequestException('Chưa yêu cầu OTP. Bấm gửi mã trước.');
+    }
+    if (profile.phoneOtpExpiresAt.getTime() < Date.now()) {
+      throw new BadRequestException('OTP đã hết hạn. Gửi lại mã mới.');
+    }
+    if (dto.code.trim() !== profile.phoneOtpCode) {
+      throw new BadRequestException('Mã OTP không đúng.');
+    }
+
+    await this.prisma.partnerProfile.update({
+      where: { userId },
+      data: {
+        phoneVerified: true,
+        phoneOtpCode: null,
+        phoneOtpExpiresAt: null,
+      },
+    });
+    return this.getMine(userId);
+  }
+
+  /**
+   * Liên kết NH + tạo VietQR mock (eKYC payout nhẹ).
+   * Partner “chuyển 1.000đ” rồi mock-confirm → bankVerified.
+   */
+  async linkBankAccount(userId: string, dto: LinkBankAccountDto) {
+    await this.requireOrCreateProfile(userId);
+    const intentId = `bv_${Date.now().toString(36)}_${userId.slice(-6)}`;
+    const expiresAt = new Date(Date.now() + BANK_VERIFY_TTL_MS);
+    const bin = (dto.bankBin ?? DEFAULT_VIETQR_BIN).trim();
+    const amount = 1000;
+    const addInfo = encodeURIComponent(`DVO verify ${intentId.slice(-8)}`);
+    const qrImageUrl = `https://img.vietqr.io/image/${bin}-${dto.accountNo}-compact2.png?amount=${amount}&addInfo=${addInfo}&accountName=${encodeURIComponent(dto.accountName)}`;
+
+    await this.prisma.partnerProfile.update({
+      where: { userId },
+      data: {
+        bankName: dto.bankName.trim(),
+        bankAccountNo: dto.accountNo.trim(),
+        bankAccountName: dto.accountName.trim().toUpperCase(),
+        bankVerified: false,
+        bankVerifyIntentId: intentId,
+        bankVerifyExpiresAt: expiresAt,
+      },
+    });
+
+    return {
+      ok: true,
+      intentId,
+      amount,
+      expiresAt: expiresAt.toISOString(),
+      qrImageUrl,
+      bankName: dto.bankName.trim(),
+      accountNo: dto.accountNo.trim(),
+      accountName: dto.accountName.trim().toUpperCase(),
+      message:
+        'Quét VietQR (mock) hoặc bấm xác nhận đã chuyển để hoàn tất xác minh NH.',
+    };
+  }
+
+  async confirmBankVerify(userId: string, dto: ConfirmBankVerifyDto) {
+    const profile = await this.prisma.partnerProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
+    if (!profile.bankVerifyIntentId || !profile.bankVerifyExpiresAt) {
+      throw new BadRequestException('Chưa tạo yêu cầu xác minh ngân hàng.');
+    }
+    if (profile.bankVerifyIntentId !== dto.intentId.trim()) {
+      throw new BadRequestException('Mã xác minh không khớp.');
+    }
+    if (profile.bankVerifyExpiresAt.getTime() < Date.now()) {
+      throw new BadRequestException('Yêu cầu xác minh đã hết hạn. Tạo lại QR.');
+    }
+    if (!profile.bankAccountNo) {
+      throw new BadRequestException('Thiếu số tài khoản.');
+    }
+
+    await this.prisma.partnerProfile.update({
+      where: { userId },
+      data: {
+        bankVerified: true,
+        bankVerifyIntentId: null,
+        bankVerifyExpiresAt: null,
+      },
+    });
+    return this.getMine(userId);
   }
 }

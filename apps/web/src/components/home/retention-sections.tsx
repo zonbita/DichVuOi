@@ -19,11 +19,13 @@ function SectionShell({
   return (
     <section className="page-shell mt-10">
       <div className="section-container">
-        <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 border border-[var(--color-line)] bg-white px-4 py-3.5 shadow-[0_1px_0_rgba(18,32,46,0.04)] sm:px-5 sm:py-4">
-          <h2 className="text-xl font-extrabold tracking-tight text-[var(--color-ink)] sm:text-2xl">
+        <div className="section-header-bar mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5 sm:px-5 sm:py-4">
+          <h2 className="text-xl font-bold tracking-tight text-[var(--color-navy)] sm:text-2xl">
             {title}
           </h2>
-          {action ? <div className="ml-auto">{action}</div> : null}
+          {action ? (
+            <div className="ml-auto flex shrink-0 items-center gap-3">{action}</div>
+          ) : null}
         </div>
         {children}
       </div>
