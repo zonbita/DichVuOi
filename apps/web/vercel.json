@@ -3,5 +3,6 @@
   "installCommand": "cd ../.. && npm install",
   "buildCommand": "npm run build",
   "framework": "vite",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "regions": ["sin1"]
 }
