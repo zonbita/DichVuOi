@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { FinanceService } from './finance.service';
 import { CreateVietQrIntentDto } from './dto/create-vietqr-intent.dto';
 import { TopUpDto } from './dto/top-up.dto';
+import { WithdrawDto } from './dto/withdraw.dto';
 
 @ApiTags('wallet')
 @ApiBearerAuth()
@@ -17,6 +18,16 @@ export class FinanceController {
   @Get('wallet')
   getWallet(@CurrentUser() user: AuthUser) {
     return this.finance.getWallet(user.id);
+  }
+
+  @Get('wallet/vietqr/banks')
+  listVietQrBanks() {
+    return this.finance.listVietQrBanks();
+  }
+
+  @Post('wallet/withdraw')
+  withdraw(@CurrentUser() user: AuthUser, @Body() dto: WithdrawDto) {
+    return this.finance.withdraw(user.id, dto);
   }
 
   @Post('wallet/top-up')

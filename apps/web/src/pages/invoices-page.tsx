@@ -1,8 +1,12 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import { ListPagination } from '../components/ui/list-pagination';
 import { useAuth } from '../features/auth/auth-context';
 import { api, formatPrice } from '../services/api';
 import { INVOICE_STATUS_LABELS, type InvoiceStatus } from '../types/finance';
+
+const PAGE_SIZE = 6;
 
 export function InvoicesPage({
   basePath,
@@ -10,22 +14,34 @@ export function InvoicesPage({
   basePath: '/don-cua-toi' | '/doi-tac';
 }) {
   const { user, loading } = useAuth();
+  const [page, setPage] = useState(1);
   const invoicesQuery = useQuery({
     queryKey: ['invoices'],
     queryFn: api.listInvoices,
     enabled: Boolean(user),
   });
 
+  const items = invoicesQuery.data ?? [];
+  const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+
+  useEffect(() => {
+    if (page !== safePage) setPage(safePage);
+  }, [page, safePage]);
+
+  const pagedItems = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  }, [items, safePage]);
+
   if (loading) return <p>Đang tải…</p>;
   if (!user) {
     return <Navigate to={`/dang-nhap?redirect=${basePath}/hoa-don`} replace />;
   }
 
-  const items = invoicesQuery.data ?? [];
-
   return (
-    <div className="space-y-5 pb-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold">Hóa đơn VNĐ</h1>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
@@ -40,15 +56,17 @@ export function InvoicesPage({
         </Link>
       </div>
 
-      {invoicesQuery.isLoading ? <p>Đang tải…</p> : null}
-      {items.length === 0 && !invoicesQuery.isLoading ? (
-        <p className="border border-dashed border-[var(--color-line)] bg-white px-4 py-10 text-center text-[var(--color-muted)]">
-          Chưa có hóa đơn. Đặt cọc đơn thuê để phát hành.
-        </p>
-      ) : null}
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
+        {invoicesQuery.isLoading ? (
+          <p className="text-sm text-[var(--color-muted)]">Đang tải…</p>
+        ) : null}
+        {items.length === 0 && !invoicesQuery.isLoading ? (
+          <p className="border border-dashed border-[var(--color-line)] bg-white px-4 py-10 text-center text-[var(--color-muted)]">
+            Chưa có hóa đơn. Đặt cọc đơn thuê để phát hành.
+          </p>
+        ) : null}
 
-      <div className="space-y-3">
-        {items.map((invoice) => (
+        {pagedItems.map((invoice) => (
           <Link
             key={invoice.id}
             to={`${basePath}/hoa-don/${invoice.id}`}
@@ -73,6 +91,15 @@ export function InvoicesPage({
           </Link>
         ))}
       </div>
+
+      <ListPagination
+        page={safePage}
+        pageCount={pageCount}
+        total={items.length}
+        unitLabel="hóa đơn"
+        onChange={setPage}
+        ariaLabel="Phân trang hóa đơn"
+      />
     </div>
   );
 }

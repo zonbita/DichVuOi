@@ -122,12 +122,14 @@ export declare class PartnersController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
             walletBalance: number;
             partnerProfile: {} | null;
         };
     }>;
     getMine(user: AuthUser): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -172,9 +174,14 @@ export declare class PartnersController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -188,11 +195,6 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -256,6 +258,7 @@ export declare class PartnersController {
         };
     }>;
     updateMine(user: AuthUser, dto: UpdatePartnerProfileDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -300,9 +303,14 @@ export declare class PartnersController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -316,11 +324,6 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -329,6 +332,7 @@ export declare class PartnersController {
         responseMinutes: number;
     }>;
     syncOfferings(user: AuthUser, dto: SyncPartnerOfferingsDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -373,9 +377,14 @@ export declare class PartnersController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -389,11 +398,6 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -402,14 +406,26 @@ export declare class PartnersController {
         responseMinutes: number;
     }>;
     requestPhoneOtp(user: AuthUser, dto: RequestPhoneOtpDto): Promise<{
+        debugCode: string | undefined;
         ok: boolean;
         phone: string;
         expiresAt: string;
-        debugCode: string;
+        oneTime: boolean;
+        channel: string;
+        message: string;
+        key?: undefined;
+    } | {
+        debugCode: string | undefined;
+        ok: boolean;
+        phone: string;
+        key: string;
+        expiresAt: string;
+        oneTime: boolean;
         channel: string;
         message: string;
     }>;
     confirmPhoneOtp(user: AuthUser, dto: ConfirmPhoneOtpDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -454,9 +470,14 @@ export declare class PartnersController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -470,11 +491,6 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -491,9 +507,11 @@ export declare class PartnersController {
         bankName: string;
         accountNo: string;
         accountName: string;
+        mockConfirmEnabled: boolean;
         message: string;
     }>;
     confirmBank(user: AuthUser, dto: ConfirmBankVerifyDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -538,9 +556,14 @@ export declare class PartnersController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -554,11 +577,6 @@ export declare class PartnersController {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;

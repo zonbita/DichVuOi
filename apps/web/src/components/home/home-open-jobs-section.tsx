@@ -37,7 +37,7 @@ export function HomeOpenJobsSection() {
           </span>
           <div className="ml-auto">
             <Link
-              to="/doi-tac/viec"
+              to="/doi-tac/don-thue"
               className="group flex items-center gap-1 text-[15px] font-semibold text-[var(--color-brand)] transition hover:text-[var(--color-navy)]"
             >
               Xem tất cả
@@ -68,10 +68,11 @@ export function HomeOpenJobsSection() {
                   booking={booking}
                   footerRight={
                     <Link
-                      to="/doi-tac/viec"
-                      className="inline-flex min-w-[132px] items-center justify-center rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-brand-deep)]"
+                      to="/doi-tac/don-thue"
+                      className="inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-brand-deep)]"
                     >
                       Ứng tuyển
+                      <Icon name="chevronRight" className="h-4 w-4" />
                     </Link>
                   }
                 />

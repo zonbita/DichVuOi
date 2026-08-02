@@ -40,6 +40,7 @@ Mật khẩu chung: **`demo1234`**
 | `demo@dichvuoi.vn` | CUSTOMER | Khách Demo — ví 5 triệu |
 | `demo02@dichvuoi.vn` | CUSTOMER | Khách Demo 02 — ví 3 triệu |
 | `demo03@dichvuoi.vn` | CUSTOMER | Khách Demo 03 — ví 2 triệu |
+| `demo04@dichvuoi.vn` | CUSTOMER | Khách Demo 04 — ví 2,5 triệu |
 | `lan@dichvuoi.vn` | CUSTOMER | Nguyễn Thị Lan — ví 4 triệu |
 | `minh@dichvuoi.vn` | CUSTOMER | Trần Văn Minh — ví 4 triệu |
 | `admin@dichvuoi.vn` | ADMIN | Admin nội bộ |

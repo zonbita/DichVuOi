@@ -9,6 +9,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const core_1 = require("@nestjs/core");
+const throttler_1 = require("@nestjs/throttler");
 const prisma_module_1 = require("./database/prisma/prisma.module");
 const admin_module_1 = require("./modules/admin/admin.module");
 const auth_module_1 = require("./modules/auth/auth.module");
@@ -28,6 +30,13 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
+            throttler_1.ThrottlerModule.forRoot([
+                {
+                    name: 'default',
+                    ttl: 60_000,
+                    limit: 120,
+                },
+            ]),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
             health_module_1.HealthModule,
@@ -40,6 +49,12 @@ exports.AppModule = AppModule = __decorate([
             chatbot_module_1.ChatbotModule,
             uploads_module_1.UploadsModule,
             support_module_1.SupportModule,
+        ],
+        providers: [
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard,
+            },
         ],
     })
 ], AppModule);

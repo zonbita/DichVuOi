@@ -8,25 +8,28 @@ function minutesToWorkHours(minutes) {
     return Math.round((minutes / 60) * 10) / 10;
 }
 async function hoursWorkedByServiceIds(prisma, partnerUserId, serviceIds) {
-    const rows = await prisma.booking.findMany({
+    if (serviceIds && serviceIds.length === 0)
+        return new Map();
+    const groups = await prisma.booking.groupBy({
+        by: ['serviceId'],
         where: {
             partnerId: partnerUserId,
             status: 'COMPLETED',
             ...(serviceIds?.length ? { serviceId: { in: serviceIds } } : {}),
         },
-        select: {
-            serviceId: true,
-            service: { select: { durationMin: true } },
-        },
+        _count: { _all: true },
     });
-    const minutes = new Map();
-    for (const row of rows) {
-        const add = row.service.durationMin > 0 ? row.service.durationMin : 60;
-        minutes.set(row.serviceId, (minutes.get(row.serviceId) ?? 0) + add);
-    }
+    if (!groups.length)
+        return new Map();
+    const services = await prisma.service.findMany({
+        where: { id: { in: groups.map((g) => g.serviceId) } },
+        select: { id: true, durationMin: true },
+    });
+    const durationById = new Map(services.map((s) => [s.id, s.durationMin > 0 ? s.durationMin : 60]));
     const hours = new Map();
-    for (const [serviceId, mins] of minutes) {
-        hours.set(serviceId, minutesToWorkHours(mins));
+    for (const g of groups) {
+        const perJob = durationById.get(g.serviceId) ?? 60;
+        hours.set(g.serviceId, minutesToWorkHours(perJob * g._count._all));
     }
     return hours;
 }

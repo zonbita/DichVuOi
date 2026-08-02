@@ -140,6 +140,40 @@ select {
   box-shadow: var(--shadow-card);
 }
 
+/**
+ * Menu «nhóm dịch vụ» — dark navy gradient glass kiểu bubble, viền xanh.
+ * Dùng trên sidebar catalog, cột trái mega-menu header, drawer mobile.
+ */
+.catalog-menu-glass {
+  border: 1.5px solid color-mix(in srgb, #5eb8e8 55%, transparent);
+  background:
+    radial-gradient(
+      120% 80% at 18% 110%,
+      color-mix(in srgb, #3d9fd4 28%, transparent) 0%,
+      transparent 52%
+    ),
+    linear-gradient(
+      165deg,
+      rgba(2, 22, 36, 0.92) 0%,
+      color-mix(in srgb, var(--color-navy-deep) 88%, transparent) 45%,
+      color-mix(in srgb, var(--color-navy) 78%, transparent) 100%
+    );
+  box-shadow:
+    0 18px 48px rgba(2, 22, 36, 0.42),
+    0 0 0 1px color-mix(in srgb, #4aa8d8 30%, transparent),
+    0 0 32px color-mix(in srgb, #3d9fd4 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #8fd0f0 45%, transparent),
+    inset 0 -10px 28px rgba(2, 22, 36, 0.35);
+  color: #fff;
+  backdrop-filter: blur(26px) saturate(1.4);
+  -webkit-backdrop-filter: blur(26px) saturate(1.4);
+}
+
+.catalog-menu-glass a,
+.catalog-menu-glass button {
+  color: #fff;
+}
+
 /** Glass panel — chi tiết đơn / thẻ booking (minimal). */
 .glass-card {
   --glass-ink: #172033;

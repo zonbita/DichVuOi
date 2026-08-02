@@ -15,7 +15,7 @@ type NavItem = {
   /** Màu icon (currentColor trên SVG). */
   iconClass: string;
   end?: boolean;
-  badge?: 'hireAction' | 'openJobs' | 'partnerAction' | 'jobsHub';
+  badge?: 'hireAction' | 'openJobs' | 'partnerAction';
 };
 
 const hireNav: NavItem[] = [
@@ -46,6 +46,12 @@ const hireNav: NavItem[] = [
     iconClass: 'text-emerald-600',
   },
   {
+    to: '/don-cua-toi/rut-tien',
+    label: 'Rút tiền',
+    icon: 'bank',
+    iconClass: 'text-violet-600',
+  },
+  {
     to: '/don-cua-toi/hoa-don',
     label: 'Hóa đơn',
     icon: 'receipt',
@@ -74,17 +80,30 @@ const offerNav: NavItem[] = [
     end: true,
   },
   {
+    to: '/doi-tac/don-thue',
+    label: 'Đơn thuê realtime',
+    icon: 'sparkles',
+    iconClass: 'text-emerald-600',
+    badge: 'openJobs',
+  },
+  {
     to: '/doi-tac/viec',
     label: 'Việc của tôi',
     icon: 'briefcase',
     iconClass: 'text-[var(--color-navy)]',
-    badge: 'jobsHub',
+    badge: 'partnerAction',
   },
   {
     to: '/doi-tac/vi',
     label: 'Ví VNĐ',
     icon: 'wallet',
     iconClass: 'text-emerald-600',
+  },
+  {
+    to: '/doi-tac/rut-tien',
+    label: 'Rút tiền',
+    icon: 'bank',
+    iconClass: 'text-violet-600',
   },
   {
     to: '/doi-tac/hoa-don',
@@ -201,7 +220,6 @@ export function UserDashboardLayout() {
       hireAction,
       openJobs,
       partnerAction,
-      jobsHub: openJobs + partnerAction,
     };
   }, [hireQuery.data, openQuery.data, partnerMineQuery.data, user]);
 
@@ -276,7 +294,7 @@ export function UserDashboardLayout() {
   );
 
   return (
-    <div className="admin-shell flex h-full min-h-0 w-full flex-1 overflow-hidden">
+    <div className="admin-shell flex h-full min-h-0 w-full flex-1 overflow-hidden !min-h-0">
       <aside className="hidden h-full w-[248px] shrink-0 border-r border-[var(--admin-border)] bg-white lg:block">
         {sidebar}
       </aside>
@@ -308,8 +326,8 @@ export function UserDashboardLayout() {
           <p className="font-extrabold">{title}</p>
         </header>
 
-        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-col">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4 sm:px-6 lg:px-8 lg:py-5">
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto overscroll-contain">
             <Outlet />
           </div>
         </main>

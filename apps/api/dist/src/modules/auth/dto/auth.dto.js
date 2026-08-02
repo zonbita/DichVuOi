@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LoginDto = exports.RegisterDto = void 0;
+exports.ConfirmPhoneOtpDto = exports.RequestPhoneOtpDto = exports.GoogleLoginDto = exports.LoginDto = exports.RegisterDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class RegisterDto {
@@ -68,4 +68,42 @@ __decorate([
     (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
+class GoogleLoginDto {
+    idToken;
+}
+exports.GoogleLoginDto = GoogleLoginDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Google Identity Services ID token (credential JWT)',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(20),
+    __metadata("design:type", String)
+], GoogleLoginDto.prototype, "idToken", void 0);
+class RequestPhoneOtpDto {
+    phone;
+}
+exports.RequestPhoneOtpDto = RequestPhoneOtpDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: '0901234567' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(9),
+    (0, class_validator_1.MaxLength)(15),
+    (0, class_validator_1.Matches)(/^[0-9+\s-]+$/, { message: 'Số điện thoại không hợp lệ' }),
+    __metadata("design:type", String)
+], RequestPhoneOtpDto.prototype, "phone", void 0);
+class ConfirmPhoneOtpDto {
+    key;
+}
+exports.ConfirmPhoneOtpDto = ConfirmPhoneOtpDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: 'NguyenVanA-482910',
+        description: 'Key một lần: TenUser-XXXXXX (hoặc chỉ mã 6 số)',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(4),
+    (0, class_validator_1.MaxLength)(64),
+    __metadata("design:type", String)
+], ConfirmPhoneOtpDto.prototype, "key", void 0);
 //# sourceMappingURL=auth.dto.js.map

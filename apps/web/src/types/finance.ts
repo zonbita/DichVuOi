@@ -1,5 +1,6 @@
 export type WalletTransactionType =
   | 'TOP_UP'
+  | 'WITHDRAW'
   | 'ESCROW_HOLD'
   | 'ESCROW_REFUND'
   | 'PARTNER_PAYOUT'
@@ -29,7 +30,26 @@ export type WalletTransaction = {
 export type WalletSummary = {
   currency: 'VND' | string;
   balance: number;
+  /** Dev/demo: mock top-up / VietQR confirm. Off in production unless ALLOW_MOCK_PAYMENTS. */
+  mockPaymentsEnabled?: boolean;
+  payout?: {
+    bankBin: string | null;
+    bankCode: string | null;
+    bankName: string | null;
+    accountNo: string | null;
+    accountName: string | null;
+  };
   transactions: WalletTransaction[];
+};
+
+export type VietQrBank = {
+  id: number;
+  name: string;
+  code: string;
+  bin: string;
+  shortName: string;
+  logo: string;
+  transferSupported: number;
 };
 
 export type VietQrTopUpIntent = {
@@ -91,6 +111,7 @@ export type Invoice = {
 
 export const WALLET_TX_LABELS: Record<WalletTransactionType, string> = {
   TOP_UP: 'Nạp ví',
+  WITHDRAW: 'Rút tiền',
   ESCROW_HOLD: 'Đặt cọc đơn',
   ESCROW_REFUND: 'Hoàn cọc',
   PARTNER_PAYOUT: 'Giải ngân',

@@ -7,4 +7,11 @@ export declare function computeEscrowSplit(totalPrice: number, commissionBps?: n
     partnerPayout: number;
     commissionBps: number;
 };
-export declare function computeApplyDeposit(totalPrice: number): number;
+export declare function computeApplyDeposit(totalPrice: number, applyDepositBps?: number): number;
+export declare const APPLY_DEPOSIT_BUDGET_THRESHOLD = 5000000;
+export declare function applyDepositPercentBounds(budgetOrTotal: number): {
+    min: number;
+    max: number;
+    defaultPercent: number;
+};
+export declare function clampApplyDepositPercent(percent: number, budgetOrTotal: number): number;

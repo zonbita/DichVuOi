@@ -2,12 +2,21 @@ import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { FinanceService } from './finance.service';
 import { CreateVietQrIntentDto } from './dto/create-vietqr-intent.dto';
 import { TopUpDto } from './dto/top-up.dto';
+import { WithdrawDto } from './dto/withdraw.dto';
 export declare class FinanceController {
     private readonly finance;
     constructor(finance: FinanceService);
     getWallet(user: AuthUser): Promise<{
         currency: string;
         balance: number;
+        mockPaymentsEnabled: boolean;
+        payout: {
+            bankBin: string | null;
+            bankCode: string | null;
+            bankName: string | null;
+            accountNo: string | null;
+            accountName: string | null;
+        };
         transactions: ({
             booking: {
                 id: string;
@@ -26,6 +35,29 @@ export declare class FinanceController {
             balanceAfter: number;
             reference: string;
         })[];
+    }>;
+    listVietQrBanks(): Promise<{
+        id: number;
+        name: string;
+        code: string;
+        bin: string;
+        shortName: string;
+        logo: string;
+        transferSupported: number;
+    }[]>;
+    withdraw(user: AuthUser, dto: WithdrawDto): Promise<{
+        currency: string;
+        balance: number;
+        amount: number;
+        status: string;
+        payout: {
+            bankBin: string | null;
+            bankCode: string | null;
+            bankName: string | null;
+            accountNo: string | null;
+            accountName: string | null;
+        };
+        message: string;
     }>;
     topUp(user: AuthUser, dto: TopUpDto): Promise<{
         currency: string;
@@ -55,15 +87,15 @@ export declare class FinanceController {
         amount: number;
     }>;
     listInvoices(user: AuthUser): Promise<({
-        partner: {
-            id: string;
-            fullName: string;
-        } | null;
         booking: {
             id: string;
             status: import("@prisma/client").$Enums.BookingStatus;
             paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
         };
+        partner: {
+            id: string;
+            fullName: string;
+        } | null;
         customer: {
             id: string;
             fullName: string;
@@ -71,34 +103,34 @@ export declare class FinanceController {
     } & {
         id: string;
         updatedAt: Date;
+        partnerId: string | null;
         status: import("@prisma/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
-        partnerId: string | null;
+        bookingId: string;
+        currency: string;
         invoiceNumber: string;
+        customerId: string;
         serviceName: string;
         subtotal: number;
-        currency: string;
         issuedAt: Date;
         settledAt: Date | null;
-        bookingId: string;
-        customerId: string;
     })[]>;
     getInvoice(user: AuthUser, id: string): Promise<{
-        partner: {
-            id: string;
-            email: string;
-            fullName: string;
-            phone: string | null;
-        } | null;
         booking: {
             id: string;
             scheduledAt: Date;
             status: import("@prisma/client").$Enums.BookingStatus;
             paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         customer: {
             id: string;
             email: string;
@@ -108,19 +140,19 @@ export declare class FinanceController {
     } & {
         id: string;
         updatedAt: Date;
+        partnerId: string | null;
         status: import("@prisma/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
-        partnerId: string | null;
+        bookingId: string;
+        currency: string;
         invoiceNumber: string;
+        customerId: string;
         serviceName: string;
         subtotal: number;
-        currency: string;
         issuedAt: Date;
         settledAt: Date | null;
-        bookingId: string;
-        customerId: string;
     }>;
 }

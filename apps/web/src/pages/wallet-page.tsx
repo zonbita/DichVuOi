@@ -181,7 +181,10 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
             </div>
             <h2 className="mt-3 font-extrabold">Nạp VNĐ</h2>
             <p className="mt-0.5 text-sm text-[var(--color-muted)]">
-              Chọn mức hoặc nhập số tiền rồi tạo mã VietQR (tối thiểu 20.000 VNĐ).
+              Chọn mức hoặc nhập số tiền rồi tạo mã VietQR (tối thiểu 20.000 VNĐ).{' '}
+              <Link to={`${basePath}/rut-tien`} className="font-semibold text-[var(--color-brand-deep)] underline">
+                Rút tiền →
+              </Link>
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {TOP_UP_PRESETS.map((preset) => (
@@ -267,6 +270,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                     {(confirmMutation.error as Error).message}
                   </p>
                 ) : null}
+                {walletQuery.data?.mockPaymentsEnabled !== false ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -286,6 +290,20 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                     Đóng mã QR
                   </button>
                 </div>
+                ) : (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <p className="text-sm text-[var(--color-muted)]">
+                    Đang chờ hệ thống xác nhận chuyển khoản (webhook).
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIntent(null)}
+                    className="rounded-lg border border-[var(--color-line)] bg-white px-3 py-1.5 text-sm"
+                  >
+                    Đóng mã QR
+                  </button>
+                </div>
+                )}
               </>
             ) : (
               <p className="text-sm text-[var(--color-muted)]">

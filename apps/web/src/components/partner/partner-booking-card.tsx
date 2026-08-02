@@ -8,6 +8,7 @@ import {
 import type { Booking } from '../../types/catalog';
 import { useBookingUnreadCount } from '../../hooks/use-booking-unread-count';
 import { BookingChatPanel } from '../booking/booking-chat-panel';
+import { BookingChecklist } from '../booking/booking-checklist';
 import { BookingReviewForm } from '../booking/booking-review-form';
 import { ChatUnreadBadge } from '../ui/chat-unread-badge';
 
@@ -21,6 +22,8 @@ type Props = {
   onApproveSettlement?: (id: string) => void;
   settlementError?: string | null;
   statusError?: string | null;
+  /** Hiện checklist tương tác trên thẻ (list Việc của tôi). */
+  showChecklist?: boolean;
 };
 
 function statusBadgeClass(status: string) {
@@ -63,6 +66,7 @@ export function PartnerBookingCard({
   onApproveSettlement,
   settlementError,
   statusError,
+  showChecklist = true,
 }: Props) {
   const [chatOpen, setChatOpen] = useState(false);
   const showChat =
@@ -84,6 +88,14 @@ export function PartnerBookingCard({
       : booking.paymentStatus === 'HELD'
         ? `~${formatPrice(Math.round((booking.totalPrice * 85) / 100))}`
         : null;
+
+  const myApplication = (booking.applications ?? []).find(
+    (a) =>
+      a.partnerId === currentUserId &&
+      (a.status === 'APPLIED' || a.status === 'SELECTED'),
+  );
+  const awaitingSelection =
+    booking.status === 'PENDING' && !booking.partnerId && Boolean(myApplication);
 
   function onCardClick(event: React.MouseEvent) {
     if (!showChat) return;
@@ -121,13 +133,21 @@ export function PartnerBookingCard({
                 {booking.service.name}
               </Link>
               <span
-                className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ${statusBadgeClass(booking.status)}`}
+                className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold ring-1 ${
+                  awaitingSelection
+                    ? 'bg-amber-50 text-amber-800 ring-amber-200'
+                    : statusBadgeClass(booking.status)
+                }`}
               >
-                {formatBookingStatus(booking.status)}
+                {awaitingSelection
+                  ? 'Đã ứng tuyển'
+                  : formatBookingStatus(booking.status)}
               </span>
             </div>
             <p className="mt-1 text-sm text-[var(--color-muted)]">
-              {formatPaymentStatus(booking.paymentStatus ?? 'UNPAID')}
+              {awaitingSelection
+                ? 'Chờ chủ đơn chọn người làm'
+                : formatPaymentStatus(booking.paymentStatus ?? 'UNPAID')}
               {booking.customerName ? ` · ${booking.customerName}` : null}
             </p>
             <p className="mt-2 text-[15px]">{booking.address}</p>
@@ -161,6 +181,24 @@ export function PartnerBookingCard({
               <p className="mt-2 text-xs text-[var(--color-muted)]">
                 KQ tranh chấp: {booking.disputeResultNote}
               </p>
+            ) : null}
+
+            {(showChecklist && (booking.requirements?.length ?? 0) > 0) ||
+            (showChecklist &&
+              ['CONFIRMED', 'IN_PROGRESS', 'AWAITING_CONFIRM', 'DISPUTED'].includes(
+                booking.status,
+              )) ? (
+              <div
+                className="mt-3"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <BookingChecklist
+                  booking={booking}
+                  mode="partner"
+                  embedded
+                  compact
+                />
+              </div>
             ) : null}
 
             {booking.status === 'COMPLETED' ? (

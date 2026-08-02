@@ -2,6 +2,22 @@ import { z } from 'zod';
 
 const phoneRegex = /^(0|\+84)\d{8,10}$/;
 
+/** Ngưỡng ngân sách: trên mức này cọc ứng tuyển tối thiểu 50%. */
+export const APPLY_DEPOSIT_BUDGET_THRESHOLD = 5_000_000;
+
+/** Khoảng % cọc ứng tuyển theo ngân sách tối đa. */
+export function applyDepositPercentBounds(budgetMax: number) {
+  if (budgetMax > APPLY_DEPOSIT_BUDGET_THRESHOLD) {
+    return { min: 50, max: 100, defaultPercent: 50 };
+  }
+  return { min: 0, max: 50, defaultPercent: 10 };
+}
+
+export function clampApplyDepositPercent(percent: number, budgetMax: number) {
+  const { min, max } = applyDepositPercentBounds(budgetMax);
+  return Math.min(max, Math.max(min, Math.round(percent)));
+}
+
 /** Giá trị cho `<input type="datetime-local">` theo giờ máy local. */
 export function toDatetimeLocalValue(date: Date) {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -54,10 +70,28 @@ export const hireServiceSchema = createBookingSchema
     serviceSlug: z.string().min(1, 'Chọn nghề cần thuê'),
     budgetMin: z.number().int().min(0, 'Giá tối thiểu không hợp lệ'),
     budgetMax: z.number().int().min(0, 'Giá tối đa không hợp lệ'),
+    applyDepositPercent: z
+      .number()
+      .int('Chọn số nguyên')
+      .min(0, 'Tối thiểu 0%')
+      .max(100, 'Tối đa 100%'),
   })
   .refine((data) => data.budgetMin <= data.budgetMax, {
     message: 'Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu',
     path: ['budgetMax'],
+  })
+  .superRefine((data, ctx) => {
+    const { min, max } = applyDepositPercentBounds(data.budgetMax);
+    if (data.applyDepositPercent < min || data.applyDepositPercent > max) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['applyDepositPercent'],
+        message:
+          data.budgetMax > APPLY_DEPOSIT_BUDGET_THRESHOLD
+            ? `Ngân sách trên 5 triệu: cọc ứng tuyển từ ${min}% đến ${max}%`
+            : `Ngân sách từ 5 triệu trở xuống: cọc ứng tuyển từ ${min}% đến ${max}%`,
+      });
+    }
   });
 
 export type HireServiceFormValues = z.infer<typeof hireServiceSchema>;

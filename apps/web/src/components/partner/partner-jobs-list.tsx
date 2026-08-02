@@ -1,43 +1,85 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Booking } from '../../types/catalog';
+import { ListPagination } from '../ui/list-pagination';
 import { PartnerBookingCard } from './partner-booking-card';
 
-type TabId = 'all' | 'action' | 'active' | 'done' | 'cancelled';
+const PAGE_SIZE = 3;
+
+type TabId =
+  | 'all'
+  | 'applied'
+  | 'action'
+  | 'active'
+  | 'awaiting'
+  | 'dispute'
+  | 'done'
+  | 'cancelled';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'action', label: 'Cần xử lý' },
+  { id: 'applied', label: 'Chờ chọn' },
+  { id: 'action', label: 'Công việc cần làm' },
   { id: 'active', label: 'Đang diễn ra' },
+  { id: 'awaiting', label: 'Chờ xác nhận' },
+  { id: 'dispute', label: 'Khiếu nại' },
   { id: 'done', label: 'Hoàn thành' },
   { id: 'cancelled', label: 'Đã hủy' },
 ];
 
+function hasMyApplication(b: Booking, userId: string) {
+  return (
+    b.applications?.some(
+      (a) =>
+        a.partnerId === userId &&
+        (a.status === 'APPLIED' || a.status === 'SELECTED'),
+    ) ?? false
+  );
+}
+
+/** Đã ứng tuyển, chưa được khách chọn. */
+function isAppliedWaiting(b: Booking, userId: string) {
+  return b.status === 'PENDING' && !b.partnerId && hasMyApplication(b, userId);
+}
+
+/**
+ * Tab theo đúng BookingStatus — không chồng chéo (trừ «Tất cả»).
+ * COMPLETED chỉ thuộc «Hoàn thành» (kể cả chưa đánh giá).
+ */
 function matchesTab(b: Booking, tab: TabId, userId: string) {
   switch (tab) {
     case 'all':
       return true;
+    case 'applied':
+      return isAppliedWaiting(b, userId);
     case 'action':
-      if (b.status === 'CONFIRMED') return true;
-      if (b.status === 'IN_PROGRESS') return true;
-      if (b.status === 'COMPLETED') {
-        return !(b.reviews ?? []).some((r) => r.fromUserId === userId);
-      }
-      return false;
-    case 'active':
+      // Cần bắt đầu làm việc
       return (
         b.status === 'CONFIRMED' ||
-        b.status === 'IN_PROGRESS' ||
-        b.status === 'AWAITING_CONFIRM' ||
-        b.status === 'DISPUTED' ||
         (b.status === 'PENDING' && Boolean(b.partnerId))
       );
+    case 'active':
+      return b.status === 'IN_PROGRESS';
+    case 'awaiting':
+      return b.status === 'AWAITING_CONFIRM';
+    case 'dispute':
+      return b.status === 'DISPUTED';
     case 'done':
       return b.status === 'COMPLETED';
     case 'cancelled':
       return b.status === 'CANCELLED';
     default:
-      return true;
+      return false;
   }
+}
+
+function bookingRecency(b: Booking) {
+  return new Date(b.updatedAt ?? b.createdAt ?? b.scheduledAt).getTime();
+}
+
+function sortJobsNewestFirst(bookings: Booking[]) {
+  return bookings
+    .slice()
+    .sort((a, b) => bookingRecency(b) - bookingRecency(a));
 }
 
 type Props = {
@@ -73,22 +115,53 @@ export function PartnerJobsList({
   onApproveSettlement,
 }: Props) {
   const [tab, setTab] = useState<TabId>('action');
+  const [page, setPage] = useState(1);
   const poolSize = sourceTotal ?? bookings.length;
 
   const tabCounts = useMemo(() => {
     return {
       all: bookings.length,
-      action: bookings.filter((b) => matchesTab(b, 'action', currentUserId)).length,
-      active: bookings.filter((b) => matchesTab(b, 'active', currentUserId)).length,
+      applied: bookings.filter((b) => matchesTab(b, 'applied', currentUserId))
+        .length,
+      action: bookings.filter((b) => matchesTab(b, 'action', currentUserId))
+        .length,
+      active: bookings.filter((b) => matchesTab(b, 'active', currentUserId))
+        .length,
+      awaiting: bookings.filter((b) =>
+        matchesTab(b, 'awaiting', currentUserId),
+      ).length,
+      dispute: bookings.filter((b) => matchesTab(b, 'dispute', currentUserId))
+        .length,
       done: bookings.filter((b) => matchesTab(b, 'done', currentUserId)).length,
-      cancelled: bookings.filter((b) => matchesTab(b, 'cancelled', currentUserId)).length,
+      cancelled: bookings.filter((b) =>
+        matchesTab(b, 'cancelled', currentUserId),
+      ).length,
     };
   }, [bookings, currentUserId]);
 
   const filtered = useMemo(
-    () => bookings.filter((b) => matchesTab(b, tab, currentUserId)),
+    () =>
+      sortJobsNewestFirst(
+        bookings.filter((b) => matchesTab(b, tab, currentUserId)),
+      ),
     [bookings, tab, currentUserId],
   );
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+
+  useEffect(() => {
+    setPage(1);
+  }, [tab]);
+
+  useEffect(() => {
+    if (page !== safePage) setPage(safePage);
+  }, [page, safePage]);
+
+  const paged = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, safePage]);
 
   return (
     <section>
@@ -96,7 +169,8 @@ export function PartnerJobsList({
         <div>
           <h2 className="text-xl font-extrabold">Việc của tôi</h2>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Chat / địa chỉ khi khách đã cọc. Bắt đầu làm khi escrow HELD. Hoa hồng 15% khi giải ngân.
+            Đơn đã ứng tuyển và việc đã được chọn. Chat / địa chỉ khi khách đã
+            cọc. Hoa hồng 15% khi giải ngân.
           </p>
         </div>
       </div>
@@ -127,10 +201,12 @@ export function PartnerJobsList({
         })}
       </div>
 
-      {loading ? <p className="mt-4 text-sm text-[var(--color-muted)]">Đang tải…</p> : null}
+      {loading ? (
+        <p className="mt-4 text-sm text-[var(--color-muted)]">Đang tải…</p>
+      ) : null}
 
       <div className="mt-4 space-y-3">
-        {filtered.map((booking) => (
+        {paged.map((booking) => (
           <PartnerBookingCard
             key={booking.id}
             booking={booking}
@@ -143,7 +219,9 @@ export function PartnerJobsList({
                 ? statusError.message
                 : null
             }
-            settlementPending={settlementPending && settlementBookingId === booking.id}
+            settlementPending={
+              settlementPending && settlementBookingId === booking.id
+            }
             settlementError={
               settlementError && settlementBookingId === booking.id
                 ? settlementError.message
@@ -159,12 +237,23 @@ export function PartnerJobsList({
       {!loading && filtered.length === 0 ? (
         <p className="mt-4 border border-dashed border-[var(--color-line)] bg-white px-4 py-8 text-center text-[var(--color-muted)]">
           {poolSize === 0
-            ? 'Chưa nhận việc nào. Nhận đơn từ hàng chờ realtime bên trên.'
+            ? 'Chưa nhận việc nào. Ứng tuyển tại Đơn thuê realtime.'
             : bookings.length === 0
               ? 'Không có đơn thuộc nghề đang chọn.'
               : 'Không có đơn trong mục này.'}
         </p>
       ) : null}
+
+      <div className="mt-4">
+        <ListPagination
+          page={safePage}
+          pageCount={pageCount}
+          total={filtered.length}
+          unitLabel="việc"
+          onChange={setPage}
+          ariaLabel="Phân trang việc của tôi"
+        />
+      </div>
     </section>
   );
 }

@@ -15,7 +15,7 @@ type Props = {
   tabs: ProfessionTab[];
   value: string;
   onChange: (id: string) => void;
-  /** `vertical` = cột trái trên Việc của tôi. */
+  /** `vertical` = dropdown góc phải bảng Đơn thuê realtime. */
   orientation?: 'horizontal' | 'vertical';
 };
 
@@ -37,7 +37,7 @@ function groupProfessionTabs(tabs: ProfessionTab[]) {
   }));
 }
 
-/** Dropdown lọc theo nghề (service) — dùng trên Việc của tôi. */
+/** Dropdown lọc theo nghề (service) — dùng trong Đơn thuê realtime. */
 export function PartnerProfessionTabs({
   tabs,
   value,
@@ -75,41 +75,43 @@ export function PartnerProfessionTabs({
     return (
       <div
         ref={rootRef}
-        className="relative rounded-xl border border-[var(--color-line)] bg-white p-4"
+        className="relative rounded-xl border border-[var(--color-line)] bg-white px-3 py-2.5"
       >
-        <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
-          Nghề của bạn
-        </p>
-        <button
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-controls={listId}
-          onClick={() => setOpen((prev) => !prev)}
-          className="field-input flex w-full items-center justify-between gap-2 text-left"
-          style={
-            triggerColor
-              ? { borderLeftWidth: '4px', borderLeftColor: triggerColor.main }
-              : undefined
-          }
-        >
-          <span className="min-w-0 truncate font-semibold">
-            {selected.label}
-          </span>
-          <span className="ml-auto shrink-0 text-sm font-semibold text-[var(--color-muted)]">
-            {selected.count}
-          </span>
-          <Icon
-            name="chevronDown"
-            className={`h-4 w-4 shrink-0 text-[var(--color-muted)] transition ${open ? 'rotate-180' : ''}`}
-          />
-        </button>
+        <div className="flex items-center gap-2.5">
+          <p className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
+            Nghề của bạn
+          </p>
+          <button
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-controls={listId}
+            onClick={() => setOpen((prev) => !prev)}
+            className="field-input flex min-w-0 flex-1 items-center justify-between gap-2 py-2 text-left"
+            style={
+              triggerColor
+                ? { borderLeftWidth: '4px', borderLeftColor: triggerColor.main }
+                : undefined
+            }
+          >
+            <span className="min-w-0 truncate font-semibold">
+              {selected.label}
+            </span>
+            <span className="ml-auto shrink-0 text-sm font-semibold text-[var(--color-muted)]">
+              {selected.count}
+            </span>
+            <Icon
+              name="chevronDown"
+              className={`h-4 w-4 shrink-0 text-[var(--color-muted)] transition ${open ? 'rotate-180' : ''}`}
+            />
+          </button>
+        </div>
 
         {open ? (
           <div
             id={listId}
             role="listbox"
-            className="absolute left-4 right-4 top-[calc(100%-0.25rem)] z-30 mt-1 max-h-[min(420px,60vh)] overflow-y-auto rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-[var(--shadow-card)]"
+            className="absolute left-3 right-3 top-full z-30 mt-1 max-h-[min(420px,60vh)] overflow-y-auto rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-[var(--shadow-card)]"
           >
             <button
               type="button"

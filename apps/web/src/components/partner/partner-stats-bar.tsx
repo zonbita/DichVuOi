@@ -40,14 +40,14 @@ export function PartnerStatsBar({ mine, openCount }: Props) {
   return (
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Link
-        to="/doi-tac/viec"
+        to="/doi-tac/don-thue"
         className="border border-[var(--color-line)] bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40"
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
           Đơn mở (hàng chờ)
         </p>
         <p className="mt-1 text-2xl font-extrabold text-emerald-700">{stats.openCount}</p>
-        <p className="mt-1 text-xs text-[var(--color-muted)]">Xem tại Việc của tôi →</p>
+        <p className="mt-1 text-xs text-[var(--color-muted)]">Xem Đơn thuê realtime →</p>
       </Link>
       <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">

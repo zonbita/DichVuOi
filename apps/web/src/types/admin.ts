@@ -209,3 +209,51 @@ export type AdminServiceInput = {
   description?: string;
   isActive?: boolean;
 };
+
+export type AdminFinanceOverview = {
+  currency: string;
+  totalWalletBalance: number;
+  walletsWithBalance: number;
+  escrowHeldCount: number;
+  escrowHeldAmount: number;
+  commissionEarned: number;
+  withdrawnTotal: number;
+  recentTransactions: AdminFinanceTransaction[];
+};
+
+export type AdminFinanceWallet = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  role: string;
+  walletBalance: number;
+  bankName: string | null;
+  bankAccountNo: string | null;
+  bankAccountName: string | null;
+  updatedAt: string;
+};
+
+export type AdminFinanceTransaction = {
+  id: string;
+  userId: string;
+  bookingId: string | null;
+  type: string;
+  amount: number;
+  balanceAfter: number;
+  description: string;
+  reference: string;
+  createdAt: string;
+  user: { id: string; fullName: string; email: string };
+  booking?: {
+    id: string;
+    service: { name: string };
+  } | null;
+};
+
+export type AdminFinanceAdjustResult = {
+  currency: string;
+  balance: number;
+  amount: number;
+  user: { id: string; fullName: string; email: string };
+};

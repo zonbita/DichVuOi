@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { BookingChecklist } from '../../components/booking/booking-checklist';
 import { Icon } from '../../components/ui/icon';
 import type { IconName } from '../../components/ui/icon';
 import {
@@ -265,6 +266,10 @@ export function AdminBookingDetailPage() {
           </p>
         ) : null}
       </header>
+
+      <section className="admin-card p-5">
+        <BookingChecklist booking={booking as never} mode="admin" embedded />
+      </section>
 
       {/* 2 cột: Các bên | Escrow + Timeline */}
       <div className="grid gap-4 lg:grid-cols-[1fr_1.15fr]">

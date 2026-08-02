@@ -29,10 +29,13 @@ class ConfirmPhoneOtpDto {
 }
 exports.ConfirmPhoneOtpDto = ConfirmPhoneOtpDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: '123456' }),
+    (0, swagger_1.ApiProperty)({
+        example: 'NguyenVanA-482910',
+        description: 'Key một lần TenUser-XXXXXX (alias: code — tương thích cũ)',
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(4),
-    (0, class_validator_1.MaxLength)(8),
+    (0, class_validator_1.MaxLength)(64),
     __metadata("design:type", String)
 ], ConfirmPhoneOtpDto.prototype, "code", void 0);
 class LinkBankAccountDto {

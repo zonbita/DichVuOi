@@ -2,7 +2,14 @@
 
 ## Tổng quan
 
-**Dịch Vụ Ơi** là sàn kết nối hai phía — giống mô hình **freelancer marketplace** — cho dịch vụ đa ngành nghề tại Việt Nam:
+**Dịch Vụ Ơi** là sàn kết nối hai phía — giống mô hình **freelancer marketplace** — cho dịch vụ đa ngành nghề tại Việt Nam.
+
+| | |
+|--|--|
+| **Trạng thái** | **Production** — web + API triển khai (Vercel), DB PostgreSQL (Neon), escrow ví nội bộ + VietQR nạp |
+| **Web** | Vite/React trên Vercel (`apps/web`) |
+| **API** | NestJS trên Vercel (`apps/api`) + Prisma/Postgres |
+| **Realtime** | Socket.IO — trên host hỗ trợ WS bền (local / VPS); Fluid/Vercel có hạn chế WS dài |
 
 | Phía | Tên trong sản phẩm | Việc họ làm |
 |------|--------------------|-------------|
@@ -60,11 +67,13 @@ Cùng 1 User
 
 | Nguồn | Khi nào | Ghi chú |
 |--------|---------|---------|
+| **Nạp ví (VietQR)** | Khách / người làm nạp VNĐ vào ví nội bộ | QR gắn **TK nhận của sàn** (BIN + STK + tên + số tiền + nội dung CK). Khách **quét app NH** → form CK thường tự điền — **không** nhập STK sàn thủ công. |
 | **Đặt cọc giữ chỗ (escrow)** | **Bắt buộc ngay khi tạo đơn** | Backend tự giam toàn bộ `totalPrice` từ ví (`HELD`). Ví thiếu tiền → **không tạo đơn**. Chưa `HELD` → không vào hàng chờ, không chat, không lộ địa chỉ/SĐT cho partner. |
 | **Hoa hồng theo đơn** | Khi `COMPLETED` → `RELEASED` | Mặc định **15%** (`commissionBps=1500`); phần còn lại `partnerPayout`. |
 
 - Không bán SĐT / “phí xem thông tin” tách rời — lộ liên hệ gắn **đơn đã cọc**.
-- Cổng thanh toán thật (MoMo/VNPay…) là bước tiếp. Local: giam cọc **tự động khi tạo đơn**; `POST /api/bookings/:id/pay` chỉ còn legacy/admin.
+- **Giống sàn freelancer lớn (Upwork/Fiverr/vLance):** lúc **nạp / trả** không lấy STK ngân hàng cá nhân của khách; lúc **rút / payout người làm** mới cần NH đã liên kết.
+- Cổng ví/thẻ (MoMo/VNPay…) và **webhook tự cộng ví** (SePay/Casso/VA) là bước cứng hóa production tiếp — xem [Ví, VietQR & định danh](#ví-vietqr--định-danh-production).
 - Hủy khi đang `HELD` → `REFUNDED` (chính sách phí hủy chi tiết có thể siết sau).
 
 ## Mô hình pháp lý & trách nhiệm (marketplace)
@@ -100,27 +109,100 @@ Không miễn mọi trách nhiệm; giúp chứng minh sàn đã **quản lý r�
 | Biện pháp | Trạng thái |
 |-----------|------------|
 | Điều khoản / chính sách phân định trách nhiệm các bên | **Có** — trang `/dieu-khoan`, `/chinh-sach-doi-tac`, khiếu nại / hoàn tiền |
-| Escrow giữ tiền trên sàn + lịch sử đơn / thanh toán | **Có** (tự giam cọc từ ví khi tạo đơn; cổng thật sau) |
+| Escrow giữ tiền trên sàn + lịch sử đơn / thanh toán | **Có** — ví nội bộ + VietQR nạp; tự giam cọc khi tạo đơn |
+| Xác minh SĐT (OTP key / eSMS Brandname) | **Có** — mock dev; production bật `SMS_PROVIDER=esms` |
+| Liên kết NH **người làm** (payout) | **Có** — `PartnerProfile` bank + VietQR xác minh mock |
 | Chat in-app + lọc PII; che SĐT public | **Có** |
 | Đánh giá sau `COMPLETED`; badge verified admin | **Có** (verified = duyệt vận hành) |
 | Admin khóa / xử lý đơn, flagged PII, hàng đợi duyệt partner | **Có một phần** |
+| Chat hỗ trợ kỹ thuật (MODERATOR) | **Có** — `/admin/support` |
 | Xác minh CCCD / giấy tờ đối tác | **Roadmap** |
+| Webhook ngân hàng tự cộng ví / Virtual Account | **Roadmap** (SePay/Casso…) |
 | Khóa / tạm ngưng nhận việc khi khiếu nại nghiêm trọng (workflow) | **Có một phần** — tự `acceptingJobs=false` khi uy tín &lt; 500 |
 | Module khiếu nại formal + trừ điểm uy tín năm | **Có** — `Complaint`, `PartnerReputationPeriod`, Admin `/admin/complaints` |
 | Module dispute formal + quỹ bồi thường / bảo hiểm trách nhiệm | **Roadmap** — tăng niềm tin, không bắt buộc lúc MVP |
 
-### Nghĩa vụ vận hành sàn TMĐT dịch vụ (VN) — checklist thiết kế
+### Hợp tác cơ quan có thẩm quyền (định danh & giao dịch)
 
-Khi đưa lên production tại Việt Nam, nên thiết kế sớm (không phải cam kết đã làm đủ trong repo):
+> **Không phải tư vấn pháp lý.** Production thương mại nên rà với luật sư / compliance TMĐT VN.
+
+Khi có **yêu cầu hợp pháp**, sàn cung cấp dữ liệu **đã thu thập hợp lệ**, ví dụ:
+
+| Nhóm | Nguồn trong hệ thống |
+|------|----------------------|
+| Định danh tài khoản | Email, họ tên, SĐT (và trạng thái `phoneVerified` nếu đã OTP) |
+| Vai trò / hồ sơ | `Role`, `PartnerProfile`, badge admin `isVerified` |
+| Giao dịch sàn | Đơn (`Booking`), escrow, hóa đơn, `WalletTransaction` |
+| Chứng từ nạp ví | Intent VietQR / nội dung CK (`DVO…`), số tiền, thời điểm; sao kê **TK nhận của sàn** |
+| Chat / hỗ trợ | `BookingMessage`, thread support (trong phạm vi luật cho phép) |
+
+**Không có mặc định:** STK ngân hàng **cá nhân của khách lúc nạp** — VietQR/cổng nhận tiền **không trả** thông tin đó (privacy + thiết kế QR = TK người nhận). Giống các sàn freelancer khác: nạp/trả ≠ thu STK khách; **rút tiền người làm** mới gắn NH đã liên kết.
+
+Cần truy sâu lệnh chuyển phía người gửi → thường qua **ngân hàng / trung gian thanh toán**, không chỉ từ website.
+
+### Nghĩa vụ vận hành sàn TMĐT dịch vụ (VN) — checklist production
+
+Khi vận hành production tại Việt Nam:
 
 1. **Đăng ký / thông báo** hoạt động sàn giao dịch thương mại điện tử với cơ quan quản lý theo quy định hiện hành.
-2. **Điều khoản sử dụng + chính sách bảo mật** công khai, dễ tìm (đã có trang tĩnh; rà pháp lý trước launch).
+2. **Điều khoản sử dụng + chính sách bảo mật** công khai, dễ tìm (đã có trang tĩnh; rà pháp lý trước/scale thương mại).
 3. **Quy trình khiếu nại / giải quyết tranh chấp** có thời hạn phản hồi (trang hướng dẫn + kênh hỗ trợ; module dispute sau).
-4. **Lưu trữ thông tin** giao dịch, định danh tài khoản, log cần thiết trong thời hạn luật yêu cầu (DB + backup prod).
-5. **Hợp tác cung cấp thông tin** khi có yêu cầu hợp pháp từ cơ quan có thẩm quyền.
+4. **Lưu trữ thông tin** giao dịch, định danh tài khoản, log cần thiết trong thời hạn luật yêu cầu (Postgres + backup prod).
+5. **Hợp tác cung cấp thông tin** khi có yêu cầu hợp pháp từ cơ quan có thẩm quyền (bảng trên).
 6. Không đưa ra **cam kết bảo đảm an toàn tuyệt đối** nếu chưa có biện pháp xác minh / bảo hiểm tương ứng.
+7. Bật **eSMS / Brandname** cho OTP SĐT; cấu hình `VIETQR_*` đúng TK doanh nghiệp nhận tiền; `JWT_SECRET` và secret intent riêng production.
 
-> Tài liệu này **không phải tư vấn pháp lý**. Trước khi vận hành thương mại, nên rà với luật sư / đơn vị tư vấn TMĐT.
+> Tài liệu này **không phải tư vấn pháp lý**. Trước / khi scale thương mại, nên rà với luật sư / đơn vị tư vấn TMĐT.
+
+## Ví, VietQR & định danh (production)
+
+Luồng tiền nội bộ: **nạp ví → giam escrow khi tạo đơn → giải ngân / hoàn**.
+
+### Nạp VNĐ bằng VietQR (đã có)
+
+```text
+User đăng nhập → chọn/nhập số tiền (≥ 20.000)
+  → POST /api/wallet/top-up/vietqr/intent
+  → QR (img.vietqr.io) = TK sàn + số tiền + nội dung CK (DVO + intent)
+  → Khách quét app ngân hàng → form CK tự điền
+  → Web hiện bankId / STK sàn / nội dung chỉ để đối chiếu (không phải form nhập NH khách)
+```
+
+| Trường API lúc tạo QR | Ý nghĩa |
+|----------------------|----------|
+| `bankId`, `accountNo`, `accountName` | **TK nhận của sàn** (`VIETQR_BANK_ID` / `ACCOUNT_NO` / `ACCOUNT_NAME`) |
+| `transferNote` | Mã đối soát gắn user đã login (`intentId` ký HMAC) |
+| `qrImageUrl` | Ảnh VietQR để quét |
+
+- **Có:** biết **user sàn nào** đang nạp (session + `intentId` chứa `userId`).
+- **Không có từ QR:** STK / tên NH **cá nhân của khách** — cổng/NH không cung cấp mặc định (privacy + chuẩn VietQR mô tả người nhận).
+- Sau khi tạo QR, `GET …/vietqr/:id` và `POST …/mock-confirm` **không** trả lại thông tin NH (chỉ status / số dư). Dev: nút **«Tôi đã chuyển khoản (mock)»** cộng ví; production nên thay bằng **webhook** (SePay/Casso…) hoặc VA.
+
+### Vì sao không có STK khách lúc nạp?
+
+1. QR chuẩn chỉ mang thông tin **người nhận** (sàn).  
+2. Dữ liệu NH cá nhân nhạy cảm — merchant không cần để nhận tiền.  
+3. Sao kê đối ứng (nếu có) chỉ qua intermediary / NH, **không đủ mọi bank**.  
+4. Cùng mô hình Upwork / Fiverr / vLance: nạp–trả không = thu STK khách; **rút** mới cần NH người nhận.
+
+### SĐT vs ngân hàng
+
+| | SĐT | NH lúc nạp | NH người làm |
+|--|-----|------------|--------------|
+| Lấy thế nào? | User khai + OTP (eSMS / mock key `TenUser-XXXXXX`) | Không lấy từ VietQR | User/partner khai + xác minh VietQR mock |
+| Mục đích | Định danh, liên hệ, hỗ trợ pháp lý cơ bản | — | Payout / hoàn phía partner |
+| API | `POST /api/auth/verify-phone/*` | `…/wallet/top-up/vietqr/*` | `POST /api/partners/me/verify-bank/*` |
+
+### Roadmap cứng hóa tiền vào
+
+| Hạng mục | Mục tiêu |
+|----------|----------|
+| Webhook SePay/Casso | Tự `PAID` + cộng ví theo nội dung CK / mã đơn |
+| Virtual Account (VA) | Mỗi user một số TK ảo → biết **ai nạp** chắc hơn (vẫn không phải STK cá nhân họ) |
+| Form / KYC NH khách | Chỉ nếu sản phẩm cần hoàn về đúng TK khách (khác mục “biết ai nạp”) |
+| MoMo / VNPay | Kênh nạp bổ sung |
+
+Env liên quan: `VIETQR_*`, `VIETQR_INTENT_SECRET`, `SMS_PROVIDER` / `ESMS_*` — xem `apps/api/.env.example`.
 
 ## Personas
 
@@ -541,7 +623,8 @@ Mỗi ngành cần có: quy trình đặt lịch, cách tính giá, tiêu chuẩ
 ### Non-goals (chưa làm ở giai đoạn này)
 
 - Matching tự động thông minh  
-- Cổng thanh toán cổng thật (MoMo/VNPay) — hiện **escrow mock**  
+- Webhook bank / MoMo / VNPay tự cộng ví — hiện VietQR + **mock-confirm**; escrow ví nội bộ đã dùng production-path  
+- Thu STK ngân hàng **cá nhân khách** chỉ vì nạp VietQR (không chuẩn ngành / không khả thi từ QR)  
 - Geo quận-huyện sâu; gói combo (Package)  
 - Partner tự đăng gói dịch vụ riêng (đang dùng catalog chung)  
 
@@ -792,7 +875,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 
 ### Roadmap chống bỏ sàn
 
-1. ~~Đặt cọc bắt buộc + escrow mock~~ — **đã có**; nối cổng thật  
+1. ~~Đặt cọc bắt buộc + escrow ví~~ — **đã có** (VietQR nạp + mock-confirm; webhook bank / VA tiếp theo)
 2. Báo cáo tin nhắn + review thủ công pattern bypass  
 3. Bảo hiểm đơn + quy trình tranh chấp  
 4. Giảm hoa hồng theo level / đơn hoàn thành trên sàn (carrot)
@@ -818,46 +901,39 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 
 ## Tiến độ kỹ thuật
 
-### Đã có (MVP local)
+### Đã có (production path)
 
-- Monorepo `apps/web` + `apps/api`
+- Monorepo `apps/web` + `apps/api` · deploy **Vercel** + **PostgreSQL (Neon)** (không dùng SQLite trên prod)
 - Catalog 3 tầng + seed ~22 nhóm / nhiều nghề cụ thể (`prisma/catalog-data.ts`), mega menu (desktop hover / mobile drawer)
 - **Cache catalog:** FE localStorage + TanStack Query; BE in-memory TTL 60s + `Cache-Control`/`ETag`/`304` — xem [Cache catalog](#cache-catalog-giảm-tải--offline-nhẹ)
 - Auth JWT + dual-role: dropdown header chuyển **Khách thuê** / **Người làm** (cùng account)
+- **Ví + VietQR nạp** (`/vi`): tạo QR TK sàn, đối chiếu nội dung CK; mock-confirm cộng ví — xem [Ví, VietQR & định danh](#ví-vietqr--định-danh-production)
+- **Xác minh SĐT** (khách + partner): OTP key một lần; production eSMS Brandname
+- **Xác minh NH người làm** (payout): liên kết STK trên `PartnerProfile` + VietQR mock
 - Thuê dịch vụ → tạo đơn = tự giam cọc (`PENDING`/`CONFIRMED` + `HELD`; ví thiếu → không tạo); matching mở: ứng tuyển cọc 10% + chủ chọn; `/don-cua-toi`
 - Form đăng ký thuê: UI stepper 3 bước (Chọn dịch vụ → Thông tin → Xác nhận), slider khoảng giá, React Hook Form + Zod (`features/booking/`, `hire-service-form.tsx`)
 - Danh sách Người làm theo dịch vụ (`GET /api/services/:slug/partners`) — **không trả SĐT/email**
 - **Chống bỏ sàn P0:** che liên hệ theo vai trò/trạng thái (`contact-privacy.ts`); chat đơn `BookingMessage` + lọc PII; UI chat trên đơn thuê / việc của partner
-- **Escrow mock** (`PaymentStatus`): **tạo đơn = tự giam cọc** từ ví → `HELD` (ví thiếu → không tạo đơn); `RELEASED` + hoa hồng 15% khi hoàn thành; chặn hàng chờ / nhận việc / chat / `IN_PROGRESS` khi chưa `HELD`
+- **Escrow** (`PaymentStatus`): **tạo đơn = tự giam cọc** từ ví → `HELD`; `RELEASED` + hoa hồng 15% khi hoàn thành; chặn hàng chờ / nhận việc / chat / `IN_PROGRESS` khi chưa `HELD`
 - **Review hai chiều** sau `COMPLETED` (cập nhật `PartnerProfile.ratingAvg`)
-- **Admin dashboard** `/admin` (nested routes) + `/api/admin/*`: tổng quan có GMV/escrow, list có **search + filter + phân trang**, hàng đợi duyệt hồ sơ partner, **chi tiết đơn** (chat đầy đủ + timeline escrow), **CRUD dịch vụ** & bật/tắt nhóm featured — xem mục [Admin](#admin)
-- Hồ sơ công khai `/user/:userId` (`GET /api/partners/public/:userId`): tên, bio, cấp, verified, districts, offerings…; **lưu partner yêu thích**. Dashboard sửa hồ sơ chỉ **4 mục**: SĐT, địa chỉ, nghề, giới thiệu kỹ năng.
-- **Retention P0:** lưu người làm quen (`PartnerFavorite`); gợi ý thuê lại (`GET /api/bookings/rebook-hints`); trang chủ section «Thuê lại nhanh» / «Người làm quen»; đề xuất dịch vụ theo lịch sử thuê (không shuffle); deep-link `?partner=` trên `/dich-vu/:slug`
-- Card dịch vụ: bỏ badge «Đã xác thực»; hiện **số người làm nghề** (`_count.partners`) thay cho «lượt đặt»
-- Trang chi tiết dịch vụ `/dich-vu/:slug`:
-  - Cột trái: ảnh / mô tả / giá từ
-  - Cột phải + form thuê: **chỉ hiện sau khi chọn Người làm**; ẩn khi mode «Người làm»
-  - Lưới Người làm: **5 cột / hàng**; ảnh **chân dung người Việt** + nghề nhỏ; **hover** bảng theo chuột; **nhấp tile / bảng hover** → `/user/:userId` (nút Thuê riêng để chọn thuê)
-  - Avatar gán ổn định theo seed qua `portraitAvatarUrl()` (`apps/api/src/common/portrait-avatar.ts`) — dùng chung cho seed, đăng ký và bật nhận việc
-  - Bộ lọc / search: tên, khu vực, **slider giá 0–100 triệu ₫** (kéo + ô nhập đồng bộ, `PriceRangeSlider`), năm KN tối thiểu, sắp xếp (rating / giá / tên / KN)
-  - Chưa có lọc availability trống theo ngày trên trang dịch vụ (roadmap P2); partner đã có **lịch tháng 24×ngày** tại `/doi-tac`
-- Hồ sơ + nhận việc tại `/doi-tac` (bật lần đầu qua mode người làm; UI hồ sơ tối giản 4 mục: SĐT, địa chỉ, nghề, giới thiệu kỹ năng)
-- Tab `/doi-tac/viec`: danh sách lấy từ `GET /api/bookings/partner/mine` (chỉ đơn có `partnerId` là user hiện tại); mặc định mở filter **Cần xử lý**.
-- **Lịch thuê partner** (`GET /api/bookings/partner/schedule?year&month`): bảng **24 giờ × mỗi ngày trong tháng**; khối hiện giờ thuê (`scheduledAt` + `Service.durationMin`); sidebar **đơn thuê realtime** (Socket.IO namespace `/partner-realtime`) — khách tạo đơn (đã HELD) → hiện Khách thuê ngay; nhận việc → gắn lịch
-- OpenAPI/Swagger: http://localhost:3001/docs
-- Local DB: **SQLite** (không cần Docker)
+- **Admin dashboard** `/admin` + **MODERATOR** chat hỗ trợ `/admin/support`
+- Hồ sơ công khai `/user/:userId` (select gọn + cache TanStack 60s; skeleton loading)
+- **Retention P0:** lưu người làm quen; gợi ý thuê lại; trang chủ «Thuê lại nhanh»
+- **Lịch thuê partner** + realtime Socket.IO `/partner-realtime`
+- OpenAPI/Swagger: `/docs` trên API host
 - Stack FE: Vite, React, Tailwind, React Router, TanStack Query
 
 ### Tiếp theo (theo roadmap)
 
 - `packages/` shared types/validation FE–BE
-- PostgreSQL production; Redis (rate limit, session, **cache phân tán** — bổ sung cho in-memory catalog hiện tại)
+- Redis (rate limit, session, **cache phân tán** catalog đa instance)
 - BullMQ workers (thông báo, matching, tác vụ nền)
+- Webhook SePay/Casso hoặc **Virtual Account** — bỏ mock-confirm nạp ví
 - Lịch trống / availability filter trên trang dịch vụ (khách chọn ngày còn trống)
 - Ảnh dịch vụ trên R2/S3; Partner tự đăng gói dịch vụ  
-- Nối cổng thanh toán thật (MoMo/VNPay); bảo hiểm / dispute  
+- MoMo/VNPay bổ sung kênh nạp  
 - Xác minh CCCD đối tác; workflow tạm khóa nhận việc khi khiếu nại nghiêm trọng  
-- Rà soát nghĩa vụ đăng ký sàn TMĐT VN trước launch production  
+- Rà soát nghĩa vụ đăng ký sàn TMĐT VN khi scale thương mại  
 - Tái cấu trúc FE dần về `features/catalog`, mở rộng `features/booking`  
 
 ## Công nghệ đích
@@ -964,13 +1040,24 @@ Quy tắc đặt tên:
 
 ```bash
 npm install
-npm run db:push
-npm run db:seed
+# Postgres: điền DATABASE_URL trong apps/api/.env (Neon prod hoặc Postgres local)
+npm run prisma:push -w @dichvuoi/api
+npm run prisma:seed -w @dichvuoi/api
 npm run dev        # FE + BE cùng lúc (Windows OK)
 # hoặc tách terminal:
 npm run dev:api    # http://localhost:3001
 npm run dev:web    # http://localhost:5173
 ```
+
+Production: cấu hình env trên Vercel (web `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, API `DATABASE_URL`, `CORS_ORIGIN`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `VIETQR_*`, tùy chọn `SMS_PROVIDER=esms` + `ESMS_*`). Chi tiết mẫu: `apps/api/.env.example`, `apps/web/.env.example`.
+
+### Google OAuth (đăng nhập)
+
+1. Google Cloud Console → **OAuth 2.0 Client ID** (loại Web).
+2. **Authorized JavaScript origins:** `http://localhost:5173`, `https://dich-vu-oi.vercel.app` (đúng domain web).
+3. Cùng Client ID vào API `GOOGLE_CLIENT_ID` và web `VITE_GOOGLE_CLIENT_ID`.
+4. Web hiện nút Google trên `/dang-nhap`, `/dang-ky` → `POST /api/auth/google` `{ idToken }` → JWT như login email.
+5. User Google-only: `passwordHash` null; email trùng tài khoản cũ → tự gắn `googleId`. Không thay OTP SĐT.
 
 ### Công thức cấp (level) Người làm — 1–100
 

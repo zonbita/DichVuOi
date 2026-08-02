@@ -1,24 +1,40 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import {
+  ConfirmPhoneOtpDto,
+  GoogleLoginDto,
+  LoginDto,
+  RegisterDto,
+  RequestPhoneOtpDto,
+} from './dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  /** Google Identity Services — body `{ idToken }` → cùng shape login/register. */
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Post('google')
+  loginWithGoogle(@Body() dto: GoogleLoginDto) {
+    return this.authService.loginWithGoogle(dto);
   }
 
   @ApiBearerAuth()
@@ -26,5 +42,28 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.authService.me(user.id);
+  }
+
+  /** OTP SĐT: eSMS Brandname khi cấu hình, không thì mock key trên web. */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-phone/request')
+  requestPhoneOtp(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RequestPhoneOtpDto,
+  ) {
+    return this.authService.requestPhoneOtp(user.id, dto);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-phone/confirm')
+  confirmPhoneOtp(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ConfirmPhoneOtpDto,
+  ) {
+    return this.authService.confirmPhoneOtp(user.id, dto);
   }
 }

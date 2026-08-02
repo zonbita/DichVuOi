@@ -19,6 +19,7 @@ const jwt_1 = require("@nestjs/jwt");
 const websockets_1 = require("@nestjs/websockets");
 const client_1 = require("@prisma/client");
 const socket_io_1 = require("socket.io");
+const cors_origin_1 = require("../../common/cors-origin");
 const partner_presence_service_1 = require("./partner-presence.service");
 const partner_realtime_service_1 = require("./partner-realtime.service");
 let BookingsGateway = BookingsGateway_1 = class BookingsGateway {
@@ -38,10 +39,7 @@ let BookingsGateway = BookingsGateway_1 = class BookingsGateway {
     }
     handleConnection(client) {
         try {
-            const token = client.handshake.auth?.token ||
-                (typeof client.handshake.query?.token === 'string'
-                    ? client.handshake.query.token
-                    : undefined);
+            const token = client.handshake.auth?.token;
             if (!token) {
                 client.disconnect(true);
                 return;
@@ -97,7 +95,7 @@ exports.BookingsGateway = BookingsGateway = BookingsGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: '/partner-realtime',
         cors: {
-            origin: true,
+            origin: (0, cors_origin_1.buildCorsOrigin)(),
             credentials: true,
         },
     }),

@@ -6,6 +6,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   hireServiceSchema,
   defaultScheduledAtLocal,
+  APPLY_DEPOSIT_BUDGET_THRESHOLD,
+  applyDepositPercentBounds,
+  clampApplyDepositPercent,
   type HireServiceFormValues,
 } from '../../features/booking/create-booking-schema';
 import { useAuth } from '../../features/auth/auth-context';
@@ -158,12 +161,15 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       note: '',
       budgetMin: PRICE_SLIDER_MIN,
       budgetMax: 5_000_000,
+      applyDepositPercent: 10,
     },
   });
 
   const serviceSlug = watch('serviceSlug');
   const budgetMin = watch('budgetMin');
   const budgetMax = watch('budgetMax');
+  const applyDepositPercent = watch('applyDepositPercent');
+  const depositBounds = applyDepositPercentBounds(budgetMax || 0);
   const customerName = watch('customerName');
   const customerPhone = watch('customerPhone');
   const address = watch('address');
@@ -184,6 +190,16 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       setValue('serviceSlug', selected.slug, { shouldValidate: true });
     }
   }, [selected?.slug, setValue]);
+
+  useEffect(() => {
+    const next = clampApplyDepositPercent(
+      Number.isFinite(applyDepositPercent) ? applyDepositPercent : depositBounds.defaultPercent,
+      budgetMax || 0,
+    );
+    if (next !== applyDepositPercent) {
+      setValue('applyDepositPercent', next, { shouldValidate: true });
+    }
+  }, [budgetMax, applyDepositPercent, depositBounds.defaultPercent, setValue]);
 
   useEffect(() => {
     if (!serviceSlug) {
@@ -264,6 +280,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       note: taskNote || undefined,
       budgetMin: values.budgetMin,
       budgetMax: values.budgetMax,
+      applyDepositPercent: values.applyDepositPercent,
     });
   }
 
@@ -384,6 +401,79 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             {errors.budgetMax ? (
               <p className="mt-1 text-sm text-red-600">
                 {errors.budgetMax.message}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="sm:col-span-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/50 p-4 sm:p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="min-w-0">
+                <FieldLabel htmlFor="hire-apply-deposit">
+                  Mức cọc ứng tuyển người làm
+                </FieldLabel>
+                <p className="text-xs text-[var(--color-muted)]">
+                  {(budgetMax || 0) > APPLY_DEPOSIT_BUDGET_THRESHOLD
+                    ? 'Ngân sách trên 5 triệu: chọn từ 50% đến 100%.'
+                    : 'Ngân sách từ 5 triệu trở xuống: chọn từ 0% đến 50%.'}{' '}
+                  Cọc giữ chỗ của bạn vẫn theo ngân sách đơn.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  id="hire-apply-deposit"
+                  type="number"
+                  min={depositBounds.min}
+                  max={depositBounds.max}
+                  step={1}
+                  {...register('applyDepositPercent', { valueAsNumber: true })}
+                  className="field-input w-24 text-center font-bold tabular-nums"
+                />
+                <span className="text-sm font-bold text-[var(--color-ink)]">%</span>
+              </div>
+            </div>
+            <input
+              type="range"
+              min={depositBounds.min}
+              max={depositBounds.max}
+              step={1}
+              value={
+                Number.isFinite(applyDepositPercent)
+                  ? clampApplyDepositPercent(applyDepositPercent, budgetMax || 0)
+                  : depositBounds.defaultPercent
+              }
+              onChange={(e) =>
+                setValue(
+                  'applyDepositPercent',
+                  clampApplyDepositPercent(Number(e.target.value), budgetMax || 0),
+                  { shouldValidate: true },
+                )
+              }
+              className="mt-4 w-full accent-[var(--color-brand)]"
+              aria-label="Mức cọc ứng tuyển %"
+            />
+            <p className="mt-2 text-sm font-semibold text-[var(--color-brand-deep)]">
+              {Number.isFinite(applyDepositPercent)
+                ? applyDepositPercent
+                : depositBounds.defaultPercent}
+              % · ước tính{' '}
+              {Math.max(
+                applyDepositPercent === 0 ? 0 : 1,
+                Math.round(
+                  ((budgetMax || 0) *
+                    (Number.isFinite(applyDepositPercent)
+                      ? applyDepositPercent
+                      : depositBounds.defaultPercent)) /
+                    100,
+                ),
+              ).toLocaleString('vi-VN')}{' '}
+              VNĐ
+              <span className="ml-1 font-medium text-[var(--color-muted)]">
+                ({depositBounds.min}–{depositBounds.max}%)
+              </span>
+            </p>
+            {errors.applyDepositPercent ? (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.applyDepositPercent.message}
               </p>
             ) : null}
           </div>

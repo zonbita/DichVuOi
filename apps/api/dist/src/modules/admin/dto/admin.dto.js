@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminUpdateGroupDto = exports.AdminUpdateServiceDto = exports.AdminCreateServiceDto = exports.AdminUpdateBookingDto = exports.AdminUpdatePartnerDto = exports.AdminUpdateUserDto = exports.AdminServiceQueryDto = exports.AdminBookingQueryDto = exports.AdminPartnerQueryDto = exports.AdminUserQueryDto = exports.AdminPageQueryDto = void 0;
+exports.AdminAdjustWalletDto = exports.AdminFinanceWalletQueryDto = exports.AdminFinanceTxQueryDto = exports.AdminUpdateGroupDto = exports.AdminUpdateServiceDto = exports.AdminCreateServiceDto = exports.AdminUpdateBookingDto = exports.AdminUpdatePartnerDto = exports.AdminUpdateUserDto = exports.AdminServiceQueryDto = exports.AdminBookingQueryDto = exports.AdminPartnerQueryDto = exports.AdminUserQueryDto = exports.AdminPageQueryDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const client_1 = require("@prisma/client");
 const class_transformer_1 = require("class-transformer");
@@ -390,4 +390,48 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], AdminUpdateGroupDto.prototype, "isFeatured", void 0);
+class AdminFinanceTxQueryDto extends AdminPageQueryDto {
+    type;
+    userId;
+}
+exports.AdminFinanceTxQueryDto = AdminFinanceTxQueryDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Lọc WalletTransactionType' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], AdminFinanceTxQueryDto.prototype, "type", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Lọc theo userId' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], AdminFinanceTxQueryDto.prototype, "userId", void 0);
+class AdminFinanceWalletQueryDto extends AdminPageQueryDto {
+    positiveOnly;
+}
+exports.AdminFinanceWalletQueryDto = AdminFinanceWalletQueryDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Chỉ user có số dư > 0' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(toOptionalBoolean),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], AdminFinanceWalletQueryDto.prototype, "positiveOnly", void 0);
+class AdminAdjustWalletDto {
+    amount;
+    reason;
+}
+exports.AdminAdjustWalletDto = AdminAdjustWalletDto;
+__decorate([
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(-100_000_000),
+    (0, class_validator_1.Max)(100_000_000),
+    __metadata("design:type", Number)
+], AdminAdjustWalletDto.prototype, "amount", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], AdminAdjustWalletDto.prototype, "reason", void 0);
 //# sourceMappingURL=admin.dto.js.map

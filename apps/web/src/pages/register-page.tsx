@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import {
+  AuthDivider,
+  GoogleSignInButton,
+} from '../components/auth/google-sign-in-button';
 import { useAuth } from '../features/auth/auth-context';
 
 const schema = z.object({
@@ -15,7 +19,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function RegisterPage() {
-  const { register: registerUser, setMode } = useAuth();
+  const { register: registerUser, loginWithGoogle, setMode } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const {
@@ -48,13 +52,30 @@ export function RegisterPage() {
     }
   }
 
+  async function onGoogle(idToken: string) {
+    setError('');
+    await loginWithGoogle(idToken);
+    navigate('/don-cua-toi');
+  }
+
   return (
     <div className="surface-card mx-auto max-w-md p-6 sm:p-8">
       <h1 className="text-2xl font-extrabold">Đăng ký</h1>
       <p className="mt-2 text-[15px] text-[var(--color-muted)]">
         Một tài khoản thật — vừa là khách thuê vừa là người làm. Chuyển vai bằng menu trên header.
       </p>
-      <form className="mt-6 space-y-3" onSubmit={handleSubmit(onSubmit)} noValidate>
+
+      <div className="mt-6">
+        <GoogleSignInButton
+          mode="signup"
+          disabled={isSubmitting}
+          onCredential={onGoogle}
+          onError={setError}
+        />
+        <AuthDivider />
+      </div>
+
+      <form className="space-y-3" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div>
           <input {...register('fullName')} placeholder="Họ và tên" className="field-input" />
           {errors.fullName ? (

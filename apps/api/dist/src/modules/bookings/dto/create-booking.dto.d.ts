@@ -9,4 +9,5 @@ export declare class CreateBookingDto {
     note?: string;
     budgetMin?: number;
     budgetMax?: number;
+    applyDepositPercent?: number;
 }

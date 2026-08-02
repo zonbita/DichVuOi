@@ -12,13 +12,14 @@ import {
 } from '@nestjs/websockets';
 import { Role } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
+import { buildCorsOrigin } from '../../common/cors-origin';
 import { PartnerPresenceService } from './partner-presence.service';
 import { PartnerRealtimeService } from './partner-realtime.service';
 
 @WebSocketGateway({
   namespace: '/partner-realtime',
   cors: {
-    origin: true,
+    origin: buildCorsOrigin(),
     credentials: true,
   },
 })
@@ -43,11 +44,8 @@ export class BookingsGateway
 
   handleConnection(client: Socket) {
     try {
-      const token =
-        (client.handshake.auth?.token as string | undefined) ||
-        (typeof client.handshake.query?.token === 'string'
-          ? client.handshake.query.token
-          : undefined);
+      // Prefer auth.token — query tokens leak in logs/proxies.
+      const token = client.handshake.auth?.token as string | undefined;
 
       if (!token) {
         client.disconnect(true);

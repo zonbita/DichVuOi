@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { CatalogService } from '../catalog/catalog.service';
 import { FinanceService } from '../finance/finance.service';
-import { AdminBookingQueryDto, AdminCreateServiceDto, AdminPageQueryDto, AdminPartnerQueryDto, AdminServiceQueryDto, AdminUpdateBookingDto, AdminUpdateGroupDto, AdminUpdatePartnerDto, AdminUpdateServiceDto, AdminUpdateUserDto, AdminUserQueryDto } from './dto/admin.dto';
+import { AdminBookingQueryDto, AdminCreateServiceDto, AdminFinanceTxQueryDto, AdminFinanceWalletQueryDto, AdminAdjustWalletDto, AdminPageQueryDto, AdminPartnerQueryDto, AdminServiceQueryDto, AdminUpdateBookingDto, AdminUpdateGroupDto, AdminUpdatePartnerDto, AdminUpdateServiceDto, AdminUpdateUserDto, AdminUserQueryDto } from './dto/admin.dto';
 export declare class AdminService {
     private readonly prisma;
     private readonly finance;
@@ -25,6 +25,95 @@ export declare class AdminService {
         redactedMessages: number;
         complaintsPending: number;
     }>;
+    financeOverview(): Promise<{
+        currency: string;
+        totalWalletBalance: number;
+        walletsWithBalance: number;
+        escrowHeldCount: number;
+        escrowHeldAmount: number;
+        commissionEarned: number;
+        withdrawnTotal: number;
+        recentTransactions: ({
+            user: {
+                id: string;
+                email: string;
+                fullName: string;
+            };
+            booking: {
+                id: string;
+                service: {
+                    name: string;
+                };
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            userId: string;
+            description: string;
+            bookingId: string | null;
+            type: import("@prisma/client").$Enums.WalletTransactionType;
+            amount: number;
+            balanceAfter: number;
+            reference: string;
+        })[];
+    }>;
+    listFinanceWallets(query: AdminFinanceWalletQueryDto): Promise<{
+        items: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+            role: import("@prisma/client").$Enums.Role;
+            walletBalance: number;
+            bankName: string | null;
+            bankAccountNo: string | null;
+            bankAccountName: string | null;
+            updatedAt: Date;
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+        pageCount: number;
+    }>;
+    listFinanceTransactions(query: AdminFinanceTxQueryDto): Promise<{
+        items: ({
+            user: {
+                id: string;
+                email: string;
+                fullName: string;
+            };
+            booking: {
+                id: string;
+                service: {
+                    name: string;
+                };
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            userId: string;
+            description: string;
+            bookingId: string | null;
+            type: import("@prisma/client").$Enums.WalletTransactionType;
+            amount: number;
+            balanceAfter: number;
+            reference: string;
+        })[];
+        total: number;
+        page: number;
+        pageSize: number;
+        pageCount: number;
+    }>;
+    adjustWallet(userId: string, dto: AdminAdjustWalletDto): Promise<{
+        currency: string;
+        balance: number;
+        amount: number;
+        user: {
+            id: string;
+            fullName: string;
+            email: string;
+        };
+    }>;
     listUsers(query: AdminUserQueryDto): Promise<{
         items: {
             id: string;
@@ -35,10 +124,10 @@ export declare class AdminService {
             createdAt: Date;
             partnerProfile: {
                 id: string;
+                isVerified: boolean;
                 ratingAvg: number;
                 ratingCount: number;
                 level: number;
-                isVerified: boolean;
                 acceptingJobs: boolean;
             } | null;
             _count: {
@@ -73,9 +162,16 @@ export declare class AdminService {
             };
         } & {
             id: string;
+            phoneVerified: boolean;
+            phoneOtpExpiresAt: Date | null;
+            bankName: string | null;
+            bankAccountNo: string | null;
+            bankAccountName: string | null;
+            bankVerified: boolean;
             createdAt: Date;
             updatedAt: Date;
             userId: string;
+            isVerified: boolean;
             headline: string | null;
             bio: string | null;
             city: string | null;
@@ -85,14 +181,7 @@ export declare class AdminService {
             level: number;
             onlineSeconds: number;
             lastOnlineAt: Date | null;
-            isVerified: boolean;
-            phoneVerified: boolean;
-            bankVerified: boolean;
-            bankName: string | null;
-            bankAccountNo: string | null;
-            bankAccountName: string | null;
             phoneOtpCode: string | null;
-            phoneOtpExpiresAt: Date | null;
             bankVerifyIntentId: string | null;
             bankVerifyExpiresAt: Date | null;
             avatarUrl: string | null;
@@ -120,9 +209,16 @@ export declare class AdminService {
         };
     } & {
         id: string;
+        phoneVerified: boolean;
+        phoneOtpExpiresAt: Date | null;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
+        isVerified: boolean;
         headline: string | null;
         bio: string | null;
         city: string | null;
@@ -132,14 +228,7 @@ export declare class AdminService {
         level: number;
         onlineSeconds: number;
         lastOnlineAt: Date | null;
-        isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         phoneOtpCode: string | null;
-        phoneOtpExpiresAt: Date | null;
         bankVerifyIntentId: string | null;
         bankVerifyExpiresAt: Date | null;
         avatarUrl: string | null;
@@ -156,11 +245,6 @@ export declare class AdminService {
                 email: string;
                 fullName: string;
             };
-            service: {
-                id: string;
-                name: string;
-                slug: string;
-            };
             _count: {
                 messages: number;
                 reviews: number;
@@ -170,17 +254,24 @@ export declare class AdminService {
                 email: string;
                 fullName: string;
             } | null;
+            service: {
+                id: string;
+                slug: string;
+                name: string;
+            };
         } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             userId: string;
+            partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
             note: string | null;
             budgetMin: number | null;
             budgetMax: number | null;
+            applyDepositBps: number;
             status: import("@prisma/client").$Enums.BookingStatus;
             totalPrice: number;
             customerName: string;
@@ -201,7 +292,6 @@ export declare class AdminService {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
-            partnerId: string | null;
         })[];
         total: number;
         page: number;
@@ -215,19 +305,19 @@ export declare class AdminService {
             fullName: string;
             phone: string | null;
         };
-        service: {
-            id: string;
-            name: string;
-            slug: string;
-            basePrice: number;
-            unit: string;
-        };
         partner: {
             id: string;
             email: string;
             fullName: string;
             phone: string | null;
         } | null;
+        service: {
+            id: string;
+            slug: string;
+            name: string;
+            basePrice: number;
+            unit: string;
+        };
         messages: ({
             sender: {
                 id: string;
@@ -243,11 +333,11 @@ export declare class AdminService {
             senderId: string;
         })[];
         reviews: ({
-            fromUser: {
+            toUser: {
                 id: string;
                 fullName: string;
             };
-            toUser: {
+            fromUser: {
                 id: string;
                 fullName: string;
             };
@@ -255,10 +345,10 @@ export declare class AdminService {
             id: string;
             createdAt: Date;
             bookingId: string;
-            rating: number;
             comment: string | null;
             fromUserId: string;
             toUserId: string;
+            rating: number;
         })[];
         complaints: ({
             reporter: {
@@ -277,12 +367,12 @@ export declare class AdminService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.ComplaintStatus;
             description: string;
             category: string;
-            status: import("@prisma/client").$Enums.ComplaintStatus;
             bookingId: string;
-            partnerUserId: string;
             reporterUserId: string;
+            partnerUserId: string;
             againstUserId: string | null;
             requirementIdsJson: string | null;
             evidenceNote: string | null;
@@ -296,9 +386,9 @@ export declare class AdminService {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            sortOrder: number;
             bookingId: string;
             content: string;
+            sortOrder: number;
             source: import("@prisma/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -311,12 +401,14 @@ export declare class AdminService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
+        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
         note: string | null;
         budgetMin: number | null;
         budgetMax: number | null;
+        applyDepositBps: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         totalPrice: number;
         customerName: string;
@@ -337,18 +429,12 @@ export declare class AdminService {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
-        partnerId: string | null;
     }>;
     updateBooking(id: string, dto: AdminUpdateBookingDto): Promise<{
         user: {
             id: string;
             email: string;
             fullName: string;
-        };
-        service: {
-            id: string;
-            name: string;
-            slug: string;
         };
         _count: {
             messages: number;
@@ -359,17 +445,24 @@ export declare class AdminService {
             email: string;
             fullName: string;
         } | null;
+        service: {
+            id: string;
+            slug: string;
+            name: string;
+        };
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
+        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
         note: string | null;
         budgetMin: number | null;
         budgetMax: number | null;
+        applyDepositBps: number;
         status: import("@prisma/client").$Enums.BookingStatus;
         totalPrice: number;
         customerName: string;
@@ -390,23 +483,22 @@ export declare class AdminService {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
-        partnerId: string | null;
     }>;
     listReviews(query: AdminPageQueryDto): Promise<{
         items: ({
             booking: {
                 id: string;
+                status: import("@prisma/client").$Enums.BookingStatus;
                 service: {
                     name: string;
                 };
-                status: import("@prisma/client").$Enums.BookingStatus;
             };
-            fromUser: {
+            toUser: {
                 id: string;
                 email: string;
                 fullName: string;
             };
-            toUser: {
+            fromUser: {
                 id: string;
                 email: string;
                 fullName: string;
@@ -415,10 +507,10 @@ export declare class AdminService {
             id: string;
             createdAt: Date;
             bookingId: string;
-            rating: number;
             comment: string | null;
             fromUserId: string;
             toUserId: string;
+            rating: number;
         })[];
         total: number;
         page: number;
@@ -429,10 +521,10 @@ export declare class AdminService {
         items: ({
             booking: {
                 id: string;
+                status: import("@prisma/client").$Enums.BookingStatus;
                 service: {
                     name: string;
                 };
-                status: import("@prisma/client").$Enums.BookingStatus;
             };
             sender: {
                 id: string;
@@ -454,59 +546,59 @@ export declare class AdminService {
     }>;
     listCatalogSummary(): Prisma.PrismaPromise<{
         id: string;
-        name: string;
-        categories: {
-            id: string;
-            name: string;
-            _count: {
-                services: number;
-            };
-        }[];
-        slug: string;
-        isFeatured: boolean;
         _count: {
             categories: number;
         };
+        slug: string;
+        name: string;
+        isFeatured: boolean;
+        categories: {
+            id: string;
+            _count: {
+                services: number;
+            };
+            name: string;
+        }[];
     }[]>;
     listCategoryOptions(): Promise<{
         id: string;
-        name: string;
         slug: string;
+        name: string;
         group: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
     }[]>;
     listServices(query: AdminServiceQueryDto): Promise<{
         items: ({
-            category: {
-                id: string;
-                name: string;
-                slug: string;
-                group: {
-                    id: string;
-                    name: string;
-                    slug: string;
-                };
-            };
             _count: {
                 bookings: number;
                 partners: number;
+            };
+            category: {
+                id: string;
+                slug: string;
+                name: string;
+                group: {
+                    id: string;
+                    slug: string;
+                    name: string;
+                };
             };
         } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             slug: string;
+            name: string;
             description: string | null;
-            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
+            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         })[];
@@ -516,71 +608,71 @@ export declare class AdminService {
         pageCount: number;
     }>;
     createService(dto: AdminCreateServiceDto): Promise<{
-        category: {
-            id: string;
-            name: string;
-            slug: string;
-            group: {
-                id: string;
-                name: string;
-                slug: string;
-            };
-        };
         _count: {
             bookings: number;
             partners: number;
+        };
+        category: {
+            id: string;
+            slug: string;
+            name: string;
+            group: {
+                id: string;
+                slug: string;
+                name: string;
+            };
         };
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
+        name: string;
         description: string | null;
-        supportsOnline: boolean;
         basePrice: number;
         priceMin: number;
         priceMax: number;
         unit: string;
         durationMin: number;
+        supportsOnline: boolean;
         isActive: boolean;
         categoryId: string;
     }>;
     updateService(id: string, dto: AdminUpdateServiceDto): Promise<{
-        category: {
-            id: string;
-            name: string;
-            slug: string;
-            group: {
-                id: string;
-                name: string;
-                slug: string;
-            };
-        };
         _count: {
             bookings: number;
             partners: number;
+        };
+        category: {
+            id: string;
+            slug: string;
+            name: string;
+            group: {
+                id: string;
+                slug: string;
+                name: string;
+            };
         };
     } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
+        name: string;
         description: string | null;
-        supportsOnline: boolean;
         basePrice: number;
         priceMin: number;
         priceMax: number;
         unit: string;
         durationMin: number;
+        supportsOnline: boolean;
         isActive: boolean;
         categoryId: string;
     }>;
     updateGroup(id: string, dto: AdminUpdateGroupDto): Promise<{
         id: string;
-        name: string;
         slug: string;
+        name: string;
         isFeatured: boolean;
     }>;
 }

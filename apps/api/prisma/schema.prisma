@@ -59,6 +59,8 @@ enum PaymentStatus {
 
 enum WalletTransactionType {
   TOP_UP
+  /** User rút VNĐ về STK ngân hàng (mock trừ ví). */
+  WITHDRAW
   ESCROW_HOLD
   ESCROW_REFUND
   PARTNER_PAYOUT
@@ -89,12 +91,27 @@ enum InvoiceStatus {
 model User {
   id             String          @id @default(cuid())
   email          String          @unique
-  passwordHash   String
+  /** Null khi tài khoản chỉ đăng nhập bằng Google OAuth. */
+  passwordHash   String?
+  /** Google `sub` — unique khi đã liên kết OAuth. */
+  googleId       String?         @unique
   fullName       String
   phone          String?
+  /** Đã xác minh SĐT (OTP key một lần). */
+  phoneVerified  Boolean         @default(false)
+  /** Key OTP một lần: TenUser-123456 — xoá sau khi dùng. */
+  phoneOtpKey    String?
+  phoneOtpExpiresAt DateTime?
   role           Role            @default(CUSTOMER)
   /** Số dư ví nội bộ, đơn vị VNĐ (số nguyên). */
   walletBalance  Int             @default(0)
+  /** TK nhận khi rút ví (khách / người làm). */
+  bankBin        String?
+  bankCode       String?
+  bankName       String?
+  bankAccountNo  String?
+  bankAccountName String?
+  bankVerified   Boolean         @default(false)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   partnerProfile  PartnerProfile?
@@ -275,6 +292,11 @@ model Booking {
   note          String?
   budgetMin     Int?
   budgetMax     Int?
+  /**
+   * % cọc ứng tuyển người làm yêu cầu trên totalPrice (basis points).
+   * 0 = miễn cọc; 1000 = 10%; 10000 = 100%. Chủ thuê set khi đăng đơn mở.
+   */
+  applyDepositBps Int         @default(1000)
   status        BookingStatus @default(PENDING)
   totalPrice    Int
   customerName   String
@@ -329,14 +351,14 @@ model Booking {
   @@index([responseDeadlineAt])
 }
 
-/** Người làm ứng tuyển đơn mở — cọc 10% totalPrice để vào list chủ đơn chọn. */
+/** Người làm ứng tuyển đơn mở — cọc theo applyDepositBps của đơn. */
 model BookingApplication {
   id            String            @id @default(cuid())
   bookingId     String
   booking       Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   partnerId     String
   partner       User              @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  /** Số tiền cọc ứng tuyển (10% totalPrice). */
+  /** Số tiền cọc ứng tuyển (theo applyDepositBps × totalPrice). */
   depositAmount Int
   /** HELD khi đang ứng tuyển / được chọn; REFUNDED khi hoàn; RELEASED nếu tịch thu (hiếm). */
   depositStatus PaymentStatus     @default(HELD)

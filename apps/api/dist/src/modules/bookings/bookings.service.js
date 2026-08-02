@@ -123,7 +123,11 @@ let BookingsService = class BookingsService {
                 ...rest,
                 applicationCount: apps?.length ?? 0,
                 applications: viewerApplications,
-                applyDepositAmount: (0, escrow_1.computeApplyDeposit)(Number(booking.totalPrice ?? 0)),
+                applyDepositAmount: (0, escrow_1.computeApplyDeposit)(Number(booking.totalPrice ?? 0), Number(booking.applyDepositBps ??
+                    1000)),
+                applyDepositBps: Number(booking.applyDepositBps ?? 1000),
+                applyDepositPercent: Math.round(Number(booking.applyDepositBps ??
+                    1000) / 100),
             };
         }
         if (viewerApplications) {
@@ -156,6 +160,7 @@ let BookingsService = class BookingsService {
                 note: true,
                 serviceId: true,
                 partnerId: true,
+                service: { select: { name: true } },
             },
         });
         if (!booking)
@@ -164,10 +169,19 @@ let BookingsService = class BookingsService {
         if (booking.partnerId) {
             includes = await this.partnerIncludes(booking.serviceId, booking.partnerId);
         }
-        const seeds = (0, booking_requirements_1.buildRequirementSeeds)({
+        let seeds = (0, booking_requirements_1.buildRequirementSeeds)({
             includes,
             customerNote: booking.note,
         });
+        if (seeds.length === 0 && booking.service?.name) {
+            seeds = [
+                {
+                    content: `Thực hiện dịch vụ: ${booking.service.name}`,
+                    source: client_1.RequirementSource.MANUAL,
+                    sortOrder: 0,
+                },
+            ];
+        }
         if (seeds.length === 0)
             return;
         await this.prisma.bookingRequirement.createMany({
@@ -431,6 +445,18 @@ let BookingsService = class BookingsService {
             }
         }
         const split = (0, escrow_1.computeEscrowSplit)(totalPrice);
+        const depositBounds = (0, escrow_1.applyDepositPercentBounds)(totalPrice);
+        let applyDepositPercent = depositBounds.defaultPercent;
+        if (dto.applyDepositPercent != null) {
+            const rounded = Math.round(dto.applyDepositPercent);
+            if (rounded < depositBounds.min || rounded > depositBounds.max) {
+                throw new common_1.BadRequestException(totalPrice > escrow_1.APPLY_DEPOSIT_BUDGET_THRESHOLD
+                    ? `Ngân sách trên 5 triệu: cọc ứng tuyển từ ${depositBounds.min}% đến ${depositBounds.max}%`
+                    : `Ngân sách từ 5 triệu trở xuống: cọc ứng tuyển từ ${depositBounds.min}% đến ${depositBounds.max}%`);
+            }
+            applyDepositPercent = rounded;
+        }
+        const applyDepositBps = applyDepositPercent * 100;
         const booking = await this.prisma.booking.create({
             data: {
                 userId: user.id,
@@ -442,6 +468,7 @@ let BookingsService = class BookingsService {
                 note: noteResult.text,
                 budgetMin,
                 budgetMax,
+                applyDepositBps,
                 totalPrice,
                 customerName: dto.customerName || user.fullName,
                 customerPhone: dto.customerPhone || user.phone || '',
@@ -488,13 +515,41 @@ let BookingsService = class BookingsService {
         if (!booking) {
             throw new common_1.NotFoundException('Không tìm thấy đơn đặt lịch');
         }
-        if (viewer &&
-            viewer.role !== client_1.Role.ADMIN &&
-            booking.userId !== viewer.id &&
-            booking.partnerId !== viewer.id) {
-            throw new common_1.ForbiddenException('Không xem được đơn này');
+        if (viewer && viewer.role !== client_1.Role.ADMIN) {
+            const isCustomer = booking.userId === viewer.id;
+            const isAssignedPartner = booking.partnerId === viewer.id;
+            const isApplicant = !isCustomer &&
+                !isAssignedPartner &&
+                (await this.prisma.bookingApplication.findFirst({
+                    where: {
+                        bookingId: id,
+                        partnerId: viewer.id,
+                        status: {
+                            in: [client_1.ApplicationStatus.APPLIED, client_1.ApplicationStatus.SELECTED],
+                        },
+                    },
+                    select: { id: true },
+                }));
+            if (!isCustomer && !isAssignedPartner && !isApplicant) {
+                throw new common_1.ForbiddenException('Không xem được đơn này');
+            }
         }
-        return this.shape(booking, viewer);
+        if ((booking.partnerId || booking.note) &&
+            (booking.requirements?.length ?? 0) === 0) {
+            await this.seedRequirementsIfEmpty(id);
+            const refreshed = await this.prisma.booking.findUniqueOrThrow({
+                where: { id },
+                include: bookingInclude,
+            });
+            const assigned = Boolean(viewer && refreshed.partnerId === viewer.id);
+            return this.shape(refreshed, viewer, assigned || !viewer ? undefined : 'open_queue');
+        }
+        const assigned = Boolean(viewer && booking.partnerId === viewer.id);
+        const isApplicantOnly = Boolean(viewer) &&
+            !assigned &&
+            booking.userId !== viewer.id &&
+            booking.partnerId !== viewer.id;
+        return this.shape(booking, viewer, isApplicantOnly ? 'open_queue' : undefined);
     }
     async listMineAsCustomer(userId) {
         await this.settleExpiredMatching();
@@ -566,11 +621,53 @@ let BookingsService = class BookingsService {
         await this.settleExpiredResponseSla();
         await this.settleExpiredConfirmations();
         const rows = await this.prisma.booking.findMany({
-            where: { partnerId },
-            orderBy: { createdAt: 'desc' },
+            where: {
+                OR: [
+                    { partnerId },
+                    {
+                        applications: {
+                            some: {
+                                partnerId,
+                                status: {
+                                    in: [client_1.ApplicationStatus.APPLIED, client_1.ApplicationStatus.SELECTED],
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+            orderBy: { updatedAt: 'desc' },
             include: bookingInclude,
         });
-        return rows.map((b) => this.shape(b, { id: partnerId, role: client_1.Role.PARTNER }));
+        for (const row of rows) {
+            if ((row.requirements?.length ?? 0) === 0 &&
+                (row.partnerId === partnerId || row.note)) {
+                await this.seedRequirementsIfEmpty(row.id);
+            }
+        }
+        const fresh = await this.prisma.booking.findMany({
+            where: {
+                OR: [
+                    { partnerId },
+                    {
+                        applications: {
+                            some: {
+                                partnerId,
+                                status: {
+                                    in: [client_1.ApplicationStatus.APPLIED, client_1.ApplicationStatus.SELECTED],
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+            orderBy: { updatedAt: 'desc' },
+            include: bookingInclude,
+        });
+        return fresh.map((b) => {
+            const assigned = b.partnerId === partnerId;
+            return this.shape(b, { id: partnerId, role: client_1.Role.PARTNER }, assigned ? undefined : 'open_queue');
+        });
     }
     async listPartnerSchedule(partnerId, year, month) {
         const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
@@ -700,7 +797,7 @@ let BookingsService = class BookingsService {
             existing.depositStatus === client_1.PaymentStatus.HELD) {
             throw new common_1.BadRequestException('Bạn đã ứng tuyển đơn này');
         }
-        const depositAmount = (0, escrow_1.computeApplyDeposit)(booking.totalPrice);
+        const depositAmount = (0, escrow_1.computeApplyDeposit)(booking.totalPrice, booking.applyDepositBps);
         const noteResult = dto.note
             ? (0, contact_privacy_1.redactContactLeak)(dto.note)
             : { text: undefined };
@@ -714,26 +811,28 @@ let BookingsService = class BookingsService {
                 bookingId: id,
                 partnerId,
                 depositAmount,
-                depositStatus: client_1.PaymentStatus.UNPAID,
+                depositStatus: depositAmount > 0 ? client_1.PaymentStatus.UNPAID : client_1.PaymentStatus.HELD,
                 status: client_1.ApplicationStatus.APPLIED,
                 note: noteResult.text,
             },
         });
         const applicationId = created.id;
-        try {
-            await this.finance.holdApplyDeposit(id, partnerId, applicationId, {
-                amount: depositAmount,
-            });
-            await this.prisma.bookingApplication.update({
-                where: { id: applicationId },
-                data: { depositStatus: client_1.PaymentStatus.HELD },
-            });
-        }
-        catch (err) {
-            await this.prisma.bookingApplication.delete({
-                where: { id: applicationId },
-            });
-            throw err;
+        if (depositAmount > 0) {
+            try {
+                await this.finance.holdApplyDeposit(id, partnerId, applicationId, {
+                    amount: depositAmount,
+                });
+                await this.prisma.bookingApplication.update({
+                    where: { id: applicationId },
+                    data: { depositStatus: client_1.PaymentStatus.HELD },
+                });
+            }
+            catch (err) {
+                await this.prisma.bookingApplication.delete({
+                    where: { id: applicationId },
+                });
+                throw err;
+            }
         }
         const fresh = await this.prisma.booking.findUniqueOrThrow({
             where: { id },
@@ -805,6 +904,7 @@ let BookingsService = class BookingsService {
                 disputeResultNote: null,
             },
         });
+        await this.seedRequirementsIfEmpty(bookingId);
         const withReqs = await this.prisma.booking.findUniqueOrThrow({
             where: { id: bookingId },
             include: bookingInclude,

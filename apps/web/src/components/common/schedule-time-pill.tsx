@@ -7,9 +7,9 @@ function pad2(n: number) {
 }
 
 const pillBase =
-  'inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[13px]';
+  'inline-flex max-w-full items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[13px]';
 
-/** Pill meta chung trên card job — viền mỏng, icon không vòng nền. */
+/** Pill meta chung trên card job — nền pastel, icon + chữ ngang. */
 export function JobMetaPill({
   icon,
   children,
@@ -25,7 +25,7 @@ export function JobMetaPill({
 }) {
   return (
     <span
-      className={`${pillBase} border-[#E8EEF5] bg-white ${className}`}
+      className={`${pillBase} border-transparent bg-[#F8FAFC] ${className}`}
       title={title}
     >
       <Icon name={icon} className={`h-3.5 w-3.5 shrink-0 ${iconClassName}`} />
@@ -48,16 +48,14 @@ export function ScheduleTimePill({
 
   return (
     <JobMetaPill
-      icon="clock"
+      icon="calendar"
       iconClassName="text-[#2563EB]"
-      className={`border-[#BFDBFE] ${className}`}
+      className={`!border-transparent !bg-[#EFF6FF] ${className}`}
       title={d.toLocaleString('vi-VN')}
     >
-      <span className="font-bold tabular-nums text-[var(--color-navy)]">
-        {time}
-      </span>
-      <span className="mx-1.5 text-[#94A3B8]">·</span>
-      <span className="font-medium tabular-nums text-[#64748B]">{day}</span>
+      <span className="font-bold tabular-nums text-[#1D4ED8]">{time}</span>
+      <span className="mx-1.5 text-[#93C5FD]">·</span>
+      <span className="font-medium tabular-nums text-[#3B82F6]">{day}</span>
     </JobMetaPill>
   );
 }

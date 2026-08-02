@@ -11,17 +11,20 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
+const security_env_1 = require("../../common/security-env");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
+const sms_module_1 = require("../sms/sms.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            sms_module_1.SmsModule,
             jwt_1.JwtModule.register({
                 global: true,
-                secret: process.env.JWT_SECRET ?? 'dichvuoi-dev-secret',
+                secret: (0, security_env_1.resolveJwtSecret)(),
                 signOptions: { expiresIn: '7d' },
             }),
         ],

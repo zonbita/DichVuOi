@@ -11,10 +11,13 @@ export class RequestPhoneOtpDto {
 }
 
 export class ConfirmPhoneOtpDto {
-  @ApiProperty({ example: '123456' })
+  @ApiProperty({
+    example: 'NguyenVanA-482910',
+    description: 'Key một lần TenUser-XXXXXX (alias: code — tương thích cũ)',
+  })
   @IsString()
   @MinLength(4)
-  @MaxLength(8)
+  @MaxLength(64)
   code!: string;
 }
 

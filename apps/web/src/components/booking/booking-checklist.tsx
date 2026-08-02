@@ -9,6 +9,8 @@ type Props = {
   mode: RoleMode;
   /** Không bọc glass-card — dùng khi nằm trong khung cha. */
   embedded?: boolean;
+  /** Rút gọn trên thẻ list (ẩn bớt mục). */
+  compact?: boolean;
 };
 
 const sourceLabel: Record<string, string> = {
@@ -26,10 +28,16 @@ function tickable(status: string) {
   );
 }
 
-export function BookingChecklist({ booking, mode, embedded = false }: Props) {
+export function BookingChecklist({
+  booking,
+  mode,
+  embedded = false,
+  compact = false,
+}: Props) {
   const queryClient = useQueryClient();
   const items = booking.requirements ?? [];
-  const canEdit = tickable(booking.status);
+  const canEdit = tickable(booking.status) || mode === 'admin';
+  const visibleItems = compact ? items.slice(0, 6) : items;
 
   const toggleMutation = useMutation({
     mutationFn: ({
@@ -42,63 +50,96 @@ export function BookingChecklist({ booking, mode, embedded = false }: Props) {
     onSuccess: (updated) => {
       queryClient.setQueryData(['booking', booking.id], updated);
       void queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      void queryClient.invalidateQueries({ queryKey: ['bookings', 'partner'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'booking', booking.id] });
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
     },
   });
 
   const confirmedCount = items.filter((i) => i.customerConfirmed).length;
   const partnerDoneCount = items.filter((i) => i.partnerDone).length;
+  const mismatchCount = items.filter(
+    (i) => i.partnerDone !== i.customerConfirmed,
+  ).length;
   const pending = toggleMutation.isPending;
 
+  const hint =
+    mode === 'customer'
+      ? 'Bạn tích cột Khách — khác với cột Người làm. Đối chiếu trước khi nghiệm thu.'
+      : mode === 'partner'
+        ? 'Bạn tích cột Người làm — khác với checklist khách. Hai bên tự kiểm tra chéo.'
+        : 'BQT xem hai cột độc lập — mục lệch giúp biết bên nào chưa xác nhận.';
+
   return (
-    <div className={embedded ? 'p-5 sm:p-6' : 'glass-card p-5 sm:p-6'}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <p className="font-bold tracking-tight text-[#172033]">
+    <div className={embedded ? 'p-0' : 'glass-card p-5 sm:p-6'}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-bold tracking-tight text-[var(--color-ink)]">
             Công việc cần làm
           </p>
-          {mode === 'customer' ? (
-            <p className="mt-0.5 text-xs text-[#7C8799]">
-              Danh sách cố định từ lúc tạo đơn — chỉ tích đã xong
-            </p>
-          ) : null}
+          <p className="mt-0.5 text-xs text-[var(--color-muted)]">{hint}</p>
         </div>
         {items.length > 0 ? (
-          <p className="text-xs font-semibold text-[#7C8799]">
-            {mode === 'customer'
-              ? `${confirmedCount}/${items.length} đã xong`
-              : `Khách ${confirmedCount}/${items.length} · Người làm ${partnerDoneCount}/${items.length}`}
-          </p>
+          <div className="text-right text-xs font-semibold text-[var(--color-muted)]">
+            <p>
+              Người làm {partnerDoneCount}/{items.length}
+              {' · '}
+              Khách {confirmedCount}/{items.length}
+            </p>
+            {mismatchCount > 0 ? (
+              <p className="mt-0.5 font-bold text-amber-700">
+                {mismatchCount} mục lệch giữa hai bên
+              </p>
+            ) : (
+              <p className="mt-0.5 text-emerald-700">Hai bên khớp</p>
+            )}
+          </div>
         ) : null}
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-3 rounded-[14px] border border-dashed border-[#172033]/12 bg-white/40 px-3 py-4 text-center text-sm text-[#7C8799]">
+        <p className="mt-3 rounded-[14px] border border-dashed border-[var(--color-line)] bg-white/40 px-3 py-4 text-center text-sm text-[var(--color-muted)]">
           Không có mục checklist — chỉ thêm được khi tạo đơn thuê.
         </p>
       ) : (
-        <ul className="mt-3 space-y-2">
-          {items.map((item) => (
-            <RequirementRow
-              key={item.id}
-              item={item}
-              mode={mode}
-              canEdit={canEdit}
-              pending={pending}
-              onTogglePartner={(done) =>
-                toggleMutation.mutate({
-                  requirementId: item.id,
-                  payload: { partnerDone: done },
-                })
-              }
-              onToggleCustomer={(confirmed) =>
-                toggleMutation.mutate({
-                  requirementId: item.id,
-                  payload: { customerConfirmed: confirmed },
-                })
-              }
-            />
-          ))}
-        </ul>
+        <>
+          <div className="mt-3 grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 border-b border-[var(--color-line)] pb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
+            <span className="w-14 text-center text-[var(--color-brand-deep)]">
+              NL làm
+            </span>
+            <span className="w-14 text-center text-emerald-800">Khách</span>
+            <span>Nội dung</span>
+          </div>
+          <ul className="mt-1 space-y-1.5">
+            {visibleItems.map((item) => (
+              <RequirementRow
+                key={item.id}
+                item={item}
+                mode={mode}
+                canEdit={canEdit}
+                pending={pending}
+                onTogglePartner={(done) =>
+                  toggleMutation.mutate({
+                    requirementId: item.id,
+                    payload: { partnerDone: done },
+                  })
+                }
+                onToggleCustomer={(confirmed) =>
+                  toggleMutation.mutate({
+                    requirementId: item.id,
+                    payload: { customerConfirmed: confirmed },
+                  })
+                }
+              />
+            ))}
+          </ul>
+          {compact && items.length > visibleItems.length ? (
+            <p className="mt-2 text-xs text-[var(--color-muted)]">
+              +{items.length - visibleItems.length} mục — mở chi tiết việc để xem
+              hết
+            </p>
+          ) : null}
+        </>
       )}
 
       {toggleMutation.isError ? (
@@ -127,81 +168,69 @@ function RequirementRow({
 }) {
   const partnerEditable = canEdit && (mode === 'partner' || mode === 'admin');
   const customerEditable = canEdit && (mode === 'customer' || mode === 'admin');
-
-  if (mode === 'customer') {
-    return (
-      <li className="flex items-start gap-3 rounded-lg border border-[var(--color-line)] px-3 py-2.5">
-        <label
-          className={`mt-0.5 flex shrink-0 items-center gap-2 text-sm ${
-            customerEditable ? 'cursor-pointer' : 'opacity-70'
-          }`}
-        >
-          <input
-            type="checkbox"
-            checked={item.customerConfirmed}
-            disabled={!customerEditable || pending}
-            onChange={(e) => onToggleCustomer(e.target.checked)}
-            className="size-4 accent-emerald-700"
-          />
-          <span className="sr-only">Đã xong</span>
-        </label>
-        <div className="min-w-0 flex-1">
-          <p
-            className={`text-sm ${
-              item.customerConfirmed
-                ? 'text-[var(--color-muted)] line-through'
-                : 'text-[var(--color-ink)]'
-            }`}
-          >
-            {item.content}
-          </p>
-          <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
-            {sourceLabel[item.source] ?? item.source}
-            {item.partnerDone ? ' · Người làm đã đánh dấu xong' : ''}
-          </p>
-        </div>
-      </li>
-    );
-  }
+  const mismatched = item.partnerDone !== item.customerConfirmed;
+  const bothDone = item.partnerDone && item.customerConfirmed;
 
   return (
-    <li className="flex flex-wrap items-start gap-3 rounded-lg border border-[var(--color-line)] px-3 py-2.5">
-      <div className="flex shrink-0 items-center gap-3 pt-0.5">
-        <label
-          className={`flex items-center gap-1.5 text-xs ${
-            partnerEditable ? 'cursor-pointer' : 'opacity-80'
-          }`}
-          title="Người làm đã làm"
-        >
-          <input
-            type="checkbox"
-            checked={item.partnerDone}
-            disabled={!partnerEditable || pending}
-            onChange={(e) => onTogglePartner(e.target.checked)}
-            className="size-4 accent-[var(--color-brand-deep)]"
-          />
-          <span className="font-semibold text-[var(--color-muted)]">Làm</span>
-        </label>
-        <label
-          className={`flex items-center gap-1.5 text-xs ${
-            customerEditable ? 'cursor-pointer' : 'opacity-80'
-          }`}
-          title="Khách đã nhận / xác nhận"
-        >
-          <input
-            type="checkbox"
-            checked={item.customerConfirmed}
-            disabled={!customerEditable || pending}
-            onChange={(e) => onToggleCustomer(e.target.checked)}
-            className="size-4 accent-emerald-700"
-          />
-          <span className="font-semibold text-emerald-800">Đã xong</span>
-        </label>
-      </div>
-      <div className="min-w-0 flex-1">
+    <li
+      className={`grid grid-cols-[auto_auto_minmax(0,1fr)] items-start gap-x-3 rounded-lg border px-2.5 py-2 ${
+        mismatched
+          ? 'border-amber-300 bg-amber-50/70'
+          : bothDone
+            ? 'border-emerald-200 bg-emerald-50/40'
+            : 'border-[var(--color-line)] bg-white'
+      }`}
+    >
+      <label
+        className={`flex w-14 flex-col items-center gap-0.5 pt-0.5 text-[10px] font-semibold ${
+          partnerEditable
+            ? 'cursor-pointer text-[var(--color-brand-deep)]'
+            : 'cursor-default text-[var(--color-muted)] opacity-80'
+        }`}
+        title={
+          partnerEditable
+            ? 'Người làm đánh dấu đã làm'
+            : 'Cột người làm (chỉ NL / BQT sửa)'
+        }
+      >
+        <input
+          type="checkbox"
+          checked={item.partnerDone}
+          disabled={!partnerEditable || pending}
+          onChange={(e) => onTogglePartner(e.target.checked)}
+          onClick={(e) => e.stopPropagation()}
+          className="size-4 accent-[var(--color-brand-deep)]"
+        />
+        <span>NL</span>
+      </label>
+
+      <label
+        className={`flex w-14 flex-col items-center gap-0.5 pt-0.5 text-[10px] font-semibold ${
+          customerEditable
+            ? 'cursor-pointer text-emerald-800'
+            : 'cursor-default text-[var(--color-muted)] opacity-80'
+        }`}
+        title={
+          customerEditable
+            ? 'Khách xác nhận đã nhận / xong'
+            : 'Cột khách (chỉ khách / BQT sửa)'
+        }
+      >
+        <input
+          type="checkbox"
+          checked={item.customerConfirmed}
+          disabled={!customerEditable || pending}
+          onChange={(e) => onToggleCustomer(e.target.checked)}
+          onClick={(e) => e.stopPropagation()}
+          className="size-4 accent-emerald-700"
+        />
+        <span>Khách</span>
+      </label>
+
+      <div className="min-w-0">
         <p
           className={`text-sm ${
-            item.customerConfirmed
+            bothDone
               ? 'text-[var(--color-muted)] line-through'
               : 'text-[var(--color-ink)]'
           }`}
@@ -210,6 +239,11 @@ function RequirementRow({
         </p>
         <p className="mt-0.5 text-[11px] text-[var(--color-muted)]">
           {sourceLabel[item.source] ?? item.source}
+          {mismatched
+            ? item.partnerDone
+              ? ' · NL đã làm — khách chưa xác nhận'
+              : ' · Khách đã xác nhận — NL chưa làm'
+            : null}
         </p>
       </div>
     </li>

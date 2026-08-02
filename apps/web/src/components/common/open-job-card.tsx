@@ -7,11 +7,11 @@ import { Icon } from '../ui/icon';
 
 function formatRemainingTime(deadlineIso: string) {
   const diffMs = new Date(deadlineIso).getTime() - Date.now();
-  if (diffMs <= 0) return 'đã hết hạn';
+  if (diffMs <= 0) return 'Đã hết hạn';
   const totalHours = Math.ceil(diffMs / (60 * 60 * 1000));
-  if (totalHours < 24) return `còn ${totalHours} giờ`;
+  if (totalHours < 24) return `Còn ${totalHours} giờ`;
   const totalDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
-  return `còn ${totalDays} ngày`;
+  return `Còn ${totalDays} ngày`;
 }
 
 /** Trạng thái “room” giống lobby game — badge viền màu. */
@@ -50,7 +50,7 @@ type OpenJobCardProps = {
   footerRight: ReactNode;
 };
 
-/** Card đơn mở — hạn+giá · ảnh | tiêu đề+meta ngang · footer. */
+/** Card đơn mở — ảnh | tiêu đề + chip ngang rộng | giá + CTA. */
 export function OpenJobCard({
   booking,
   footerLeft,
@@ -70,96 +70,126 @@ export function OpenJobCard({
   const matchingDeadlineLabel = booking.matchingDeadlineAt
     ? formatRemainingTime(booking.matchingDeadlineAt)
     : null;
-
-  const metaItems = [
-    <ScheduleTimePill key="schedule" date={booking.scheduledAt} />,
-    durationLabel ? (
-      <JobMetaPill
-        key="duration"
-        icon="clock"
-        iconClassName="text-[#0EA5E9]"
-        className="border-[#BAE6FD]"
-      >
-        <span className="font-semibold text-[#0369A1]">{durationLabel}</span>
-      </JobMetaPill>
-    ) : null,
-    <JobMetaPill
-      key="apps"
-      icon="users"
-      iconClassName="text-[#16A34A]"
-      className="border-[#BBF7D0]"
-    >
-      <span className="font-semibold text-[#15803D]">{applicationsLabel}</span>
-    </JobMetaPill>,
-  ].filter(Boolean);
+  const depositAmount =
+    booking.applyDepositAmount != null
+      ? booking.applyDepositAmount
+      : Math.max(
+          booking.applyDepositBps === 0 ? 0 : 1,
+          Math.round(
+            (booking.totalPrice *
+              (booking.applyDepositBps ??
+                (booking.applyDepositPercent != null
+                  ? booking.applyDepositPercent * 100
+                  : 1000))) /
+              10000,
+          ),
+        );
+  const depositPercent =
+    booking.applyDepositPercent ??
+    Math.round((booking.applyDepositBps ?? 1000) / 100);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-[0_10px_24px_rgba(24,49,63,0.08)]">
-      <div className="p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
-            <JobMetaPill
-              icon="clock"
-              iconClassName="text-[#D0382E]"
-              className="!border-[#F5C6C2] !bg-[#FFF5F4]"
-              title={new Date(booking.matchingDeadlineAt).toLocaleString('vi-VN')}
-            >
-              <span className="font-semibold text-[#D0382E]">
-                Hạn ứng tuyển: {matchingDeadlineLabel}
-              </span>
-            </JobMetaPill>
-          ) : (
-            <span />
-          )}
-          <p className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#F3D6A4] bg-[#FFF7E9] px-3 py-1 text-[13px] font-extrabold text-[#B96A07]">
-            <Icon name="wallet" className="h-3.5 w-3.5 shrink-0" />
-            {budgetLabel}
-          </p>
-        </div>
-
-        <div className="mt-3.5 flex items-start gap-3.5 sm:gap-4">
+    <article className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-gradient-to-br from-white via-white to-emerald-50/40 shadow-[0_10px_24px_rgba(24,49,63,0.08)]">
+      <div className="flex flex-col gap-3.5 p-4 sm:flex-row sm:items-stretch sm:gap-4 sm:p-5">
+        <div className="relative h-[88px] w-[88px] shrink-0 self-start sm:h-[104px] sm:w-[104px]">
           <img
             src={serviceImage(booking.service)}
             alt={booking.service.name}
-            className="h-[88px] w-[88px] shrink-0 rounded-[10px] object-cover sm:h-[96px] sm:w-[96px]"
+            className="h-full w-full rounded-[12px] object-cover shadow-sm ring-1 ring-black/5"
           />
+          <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
+            <Icon name="briefcase" className="h-3.5 w-3.5" />
+          </span>
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-lg font-extrabold text-[var(--color-navy)] sm:text-xl">
+            <h3 className="truncate text-lg font-extrabold tracking-tight text-[var(--color-navy)] sm:text-xl">
               {booking.service.name}
             </h3>
-            <p className="mt-0.5 truncate text-sm text-[var(--color-muted)]">
-              {booking.customerName}
-              {booking.customerPhoneMasked
-                ? ` · ${booking.customerPhone}`
-                : null}
+            <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
+              <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
+              <span className="truncate">
+                {booking.customerName}
+                {booking.customerPhoneMasked
+                  ? ` · ${booking.customerPhone}`
+                  : null}
+              </span>
             </p>
 
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-2">
-              {metaItems.map((item, index) => (
-                <span key={index} className="inline-flex items-center gap-1.5">
-                  {index > 0 ? (
-                    <span
-                      aria-hidden
-                      className="text-[11px] font-bold text-[#CBD5E1]"
-                    >
-                      ·
-                    </span>
-                  ) : null}
-                  {item}
+            <div className="mt-3 flex w-full flex-wrap items-center gap-2">
+              {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
+                <JobMetaPill
+                  icon="clock"
+                  iconClassName="text-[#E11D48]"
+                  className="!border-transparent !bg-[#FFF1F2] !px-3 !py-1.5"
+                  title={new Date(
+                    booking.matchingDeadlineAt,
+                  ).toLocaleString('vi-VN')}
+                >
+                  <span className="font-semibold text-[#BE123C]">
+                    {matchingDeadlineLabel}
+                  </span>
+                </JobMetaPill>
+              ) : null}
+
+              <ScheduleTimePill
+                date={booking.scheduledAt}
+                className="!border-transparent !bg-[#EFF6FF] !px-3 !py-1.5"
+              />
+
+              {durationLabel ? (
+                <JobMetaPill
+                  icon="clock"
+                  iconClassName="text-[#7C3AED]"
+                  className="!border-transparent !bg-[#F5F3FF] !px-3 !py-1.5"
+                >
+                  <span className="font-semibold text-[#6D28D9]">
+                    {durationLabel}
+                  </span>
+                </JobMetaPill>
+              ) : null}
+
+              <JobMetaPill
+                icon="users"
+                iconClassName="text-[#059669]"
+                className="!border-transparent !bg-[#ECFDF5] !px-3 !py-1.5"
+              >
+                <span className="font-semibold text-[#047857]">
+                  {applicationsLabel}
                 </span>
-              ))}
+              </JobMetaPill>
+
+              <JobMetaPill
+                icon="shield"
+                iconClassName="text-[#0F766E]"
+                className="!border-transparent !bg-[#F0FDFA] !px-3 !py-1.5"
+              >
+                <span className="font-semibold text-[#0F766E]">
+                  {depositAmount <= 0
+                    ? `Cọc 0% · miễn`
+                    : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
+                </span>
+              </JobMetaPill>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-stretch justify-between gap-2.5 sm:w-[min(100%,220px)] sm:items-end">
+            <p className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3.5 py-2.5 text-[13px] font-extrabold text-[#C2410C] sm:justify-start">
+              <Icon name="wallet" className="h-4 w-4 shrink-0 text-[#EA580C]" />
+              <span className="min-w-0 leading-snug">{budgetLabel}</span>
+            </p>
+
+            <div
+              className={`flex w-full flex-wrap items-center gap-2 ${
+                footerLeft != null ? 'justify-between' : 'justify-end'
+              } sm:flex-col sm:items-end`}
+            >
+              {footerLeft}
+              {footerRight}
             </div>
           </div>
         </div>
-      </div>
-
-      <div
-        className={`flex flex-wrap items-center gap-3 px-4 pb-3.5 sm:px-5 sm:pb-4 ${
-          footerLeft != null ? 'justify-between' : 'justify-end'
-        }`}
-      >
-        {footerLeft}
-        {footerRight}
       </div>
     </article>
   );

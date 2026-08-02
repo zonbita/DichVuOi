@@ -6,6 +6,7 @@ import { AdminBookingsPage } from './pages/admin/admin-bookings-page';
 import { AdminCatalogPage } from './pages/admin/admin-catalog-page';
 import { AdminComplaintsPage } from './pages/admin/admin-complaints-page';
 import { AdminFlaggedPage } from './pages/admin/admin-flagged-page';
+import { AdminFinancePage } from './pages/admin/admin-finance-page';
 import { AdminLayout } from './pages/admin/admin-layout';
 import { AdminOverviewPage } from './pages/admin/admin-overview-page';
 import { AdminPartnersPage } from './pages/admin/admin-partners-page';
@@ -28,6 +29,7 @@ import { PartnerProfilePage } from './pages/partner-profile-page';
 import { RegisterPage } from './pages/register-page';
 import { ServiceDetailPage } from './pages/service-detail-page';
 import { WalletPage } from './pages/wallet-page';
+import { WithdrawPage } from './pages/withdraw-page';
 import {
   AboutPage,
   BookingGuidePage,
@@ -78,6 +80,10 @@ export default function App() {
             <Route path="/don-cua-toi/ho-so" element={<PartnerDashboardPage />} />
             <Route path="/don-cua-toi/vi" element={<WalletPage basePath="/don-cua-toi" />} />
             <Route
+              path="/don-cua-toi/rut-tien"
+              element={<WithdrawPage basePath="/don-cua-toi" />}
+            />
+            <Route
               path="/don-cua-toi/hoa-don"
               element={<InvoicesPage basePath="/don-cua-toi" />}
             />
@@ -88,9 +94,11 @@ export default function App() {
             <Route path="/don-cua-toi/tro-giup" element={<HelpCenterPage />} />
             <Route path="/don-cua-toi/khieu-nai" element={<ComplaintPage />} />
             <Route path="/doi-tac" element={<PartnerDashboardPage />} />
+            <Route path="/doi-tac/don-thue" element={<PartnerDashboardPage />} />
             <Route path="/doi-tac/viec" element={<PartnerDashboardPage />} />
             <Route path="/doi-tac/viec/:id" element={<PartnerBookingDetailPage />} />
             <Route path="/doi-tac/vi" element={<WalletPage basePath="/doi-tac" />} />
+            <Route path="/doi-tac/rut-tien" element={<WithdrawPage basePath="/doi-tac" />} />
             <Route path="/doi-tac/hoa-don" element={<InvoicesPage basePath="/doi-tac" />} />
             <Route
               path="/doi-tac/hoa-don/:id"
@@ -110,6 +118,7 @@ export default function App() {
             <Route path="reviews" element={<AdminReviewsPage />} />
             <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="flagged" element={<AdminFlaggedPage />} />
+            <Route path="finance" element={<AdminFinancePage />} />
             <Route path="catalog" element={<AdminCatalogPage />} />
           </Route>
         </Routes>

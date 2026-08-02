@@ -9,3 +9,12 @@ export declare class LoginDto {
     email: string;
     password: string;
 }
+export declare class GoogleLoginDto {
+    idToken: string;
+}
+export declare class RequestPhoneOtpDto {
+    phone: string;
+}
+export declare class ConfirmPhoneOtpDto {
+    key: string;
+}

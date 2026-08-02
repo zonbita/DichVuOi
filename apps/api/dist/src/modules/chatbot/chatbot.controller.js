@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatbotController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const ask_chatbot_dto_1 = require("./dto/ask-chatbot.dto");
 const chatbot_service_1 = require("./chatbot.service");
 let ChatbotController = class ChatbotController {
@@ -47,6 +48,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ChatbotController.prototype, "stats", null);
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 20, ttl: 60_000 } }),
     (0, common_1.Post)('ask'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),

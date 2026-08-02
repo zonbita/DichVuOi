@@ -43,18 +43,45 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
+exports.otpNameSlug = otpNameSlug;
+exports.buildOneTimePhoneKey = buildOneTimePhoneKey;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
+const crypto_1 = require("crypto");
+const google_auth_library_1 = require("google-auth-library");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
 const portrait_avatar_1 = require("../../common/portrait-avatar");
+const sms_service_1 = require("../sms/sms.service");
+const OTP_TTL_MS = 5 * 60 * 1000;
+const OTP_MAX_ATTEMPTS = 5;
+const otpFailCounts = new Map();
+function otpNameSlug(fullName) {
+    const slug = fullName
+        .normalize('NFD')
+        .replace(/\p{M}/gu, '')
+        .replace(/đ/gi, (ch) => (ch === 'Đ' ? 'D' : 'd'))
+        .replace(/[^a-zA-Z0-9]+/g, '')
+        .slice(0, 24);
+    return slug || 'User';
+}
+function buildOneTimePhoneKey(fullName, code) {
+    return `${otpNameSlug(fullName)}-${code}`;
+}
+function buildOtpSmsContent(key) {
+    const template = process.env.ESMS_OTP_TEMPLATE?.trim() ||
+        'DichVuOi: Ma xac minh {key}. Het han 5 phut.';
+    return template.replace(/\{key\}/gi, key).replace(/\{code\}/gi, key);
+}
 let AuthService = class AuthService {
     prisma;
     jwt;
-    constructor(prisma, jwt) {
+    sms;
+    constructor(prisma, jwt, sms) {
         this.prisma = prisma;
         this.jwt = jwt;
+        this.sms = sms;
     }
     sanitize(user) {
         return {
@@ -62,6 +89,7 @@ let AuthService = class AuthService {
             email: user.email,
             fullName: user.fullName,
             phone: user.phone,
+            phoneVerified: Boolean(user.phoneVerified),
             role: user.role,
             walletBalance: user.walletBalance ?? 0,
             partnerProfile: user.partnerProfile ?? null,
@@ -116,12 +144,86 @@ let AuthService = class AuthService {
             where: { email },
             include: { partnerProfile: true },
         });
-        if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
-            throw new common_1.UnauthorizedException('Email hoặc mật khẩu không đúng');
+        if (!user?.passwordHash ||
+            !(await bcrypt.compare(dto.password, user.passwordHash))) {
+            throw new common_1.UnauthorizedException(user && !user.passwordHash
+                ? 'Tài khoản dùng Google — hãy đăng nhập bằng Google'
+                : 'Email hoặc mật khẩu không đúng');
         }
         return {
             accessToken: this.sign(user),
             user: this.sanitize(user),
+        };
+    }
+    async loginWithGoogle(dto) {
+        const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+        if (!clientId) {
+            throw new common_1.BadRequestException('Chưa cấu hình Google OAuth (GOOGLE_CLIENT_ID).');
+        }
+        const client = new google_auth_library_1.OAuth2Client(clientId);
+        let payload;
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: dto.idToken,
+                audience: clientId,
+            });
+            payload = ticket.getPayload() ?? {};
+        }
+        catch {
+            throw new common_1.UnauthorizedException('Token Google không hợp lệ hoặc đã hết hạn');
+        }
+        const googleId = payload.sub?.trim();
+        const email = payload.email?.toLowerCase().trim();
+        if (!googleId || !email) {
+            throw new common_1.UnauthorizedException('Tài khoản Google thiếu email');
+        }
+        if (payload.email_verified === false || payload.email_verified === 'false') {
+            throw new common_1.UnauthorizedException('Email Google chưa được xác minh');
+        }
+        const fullName = (payload.name?.trim() ||
+            email.split('@')[0] ||
+            'User').slice(0, 120);
+        const byGoogle = await this.prisma.user.findUnique({
+            where: { googleId },
+            include: { partnerProfile: true },
+        });
+        if (byGoogle) {
+            return {
+                accessToken: this.sign(byGoogle),
+                user: this.sanitize(byGoogle),
+            };
+        }
+        const byEmail = await this.prisma.user.findUnique({
+            where: { email },
+            include: { partnerProfile: true },
+        });
+        if (byEmail) {
+            if (byEmail.googleId && byEmail.googleId !== googleId) {
+                throw new common_1.ConflictException('Email đã liên kết tài khoản Google khác');
+            }
+            const linked = await this.prisma.user.update({
+                where: { id: byEmail.id },
+                data: { googleId },
+                include: { partnerProfile: true },
+            });
+            return {
+                accessToken: this.sign(linked),
+                user: this.sanitize(linked),
+            };
+        }
+        const created = await this.prisma.user.create({
+            data: {
+                email,
+                googleId,
+                fullName,
+                passwordHash: null,
+                role: client_1.Role.CUSTOMER,
+            },
+            include: { partnerProfile: true },
+        });
+        return {
+            accessToken: this.sign(created),
+            user: this.sanitize(created),
         };
     }
     async me(userId) {
@@ -145,11 +247,118 @@ let AuthService = class AuthService {
             user: this.sanitize(user),
         };
     }
+    async requestPhoneOtp(userId, dto) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new common_1.UnauthorizedException();
+        const phone = (0, sms_service_1.normalizeVnPhone)(dto.phone);
+        if (phone.length < 9) {
+            throw new common_1.BadRequestException('Số điện thoại không hợp lệ');
+        }
+        const code = String((0, crypto_1.randomInt)(100000, 1000000));
+        const key = buildOneTimePhoneKey(user.fullName, code);
+        const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+        const liveSms = this.sms.isLive();
+        otpFailCounts.delete(userId);
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                phone,
+                phoneVerified: false,
+                phoneOtpKey: key,
+                phoneOtpExpiresAt: expiresAt,
+            },
+        });
+        await this.prisma.partnerProfile.updateMany({
+            where: { userId },
+            data: {
+                phoneVerified: false,
+                phoneOtpCode: null,
+                phoneOtpExpiresAt: null,
+            },
+        });
+        if (liveSms) {
+            const sent = await this.sms.sendOtpSms(phone, buildOtpSmsContent(key));
+            return {
+                ok: true,
+                phone,
+                expiresAt: expiresAt.toISOString(),
+                oneTime: true,
+                channel: sent.sandbox ? 'esms_sandbox' : 'esms',
+                message: sent.sandbox
+                    ? 'Đã gọi eSMS sandbox (không trừ tiền / có thể không về máy). Nhập key nhận được hoặc theo template đã đăng ký.'
+                    : 'Đã gửi SMS xác minh. Nhập key trong tin nhắn (dạng TenUser-XXXXXX) — chỉ dùng một lần.',
+            };
+        }
+        await this.sms.sendOtpSms(phone, buildOtpSmsContent(key));
+        return {
+            ok: true,
+            phone,
+            key,
+            expiresAt: expiresAt.toISOString(),
+            oneTime: true,
+            channel: 'web_key_mock',
+            message: 'Dev mock: chưa cấu hình eSMS — key hiện trên web. Production: đặt SMS_PROVIDER=esms + ESMS_*.',
+        };
+    }
+    async confirmPhoneOtp(userId, dto) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new common_1.UnauthorizedException();
+        if (!user.phoneOtpKey || !user.phoneOtpExpiresAt) {
+            throw new common_1.BadRequestException('Chưa có key OTP. Bấm tạo key trước (key chỉ dùng một lần).');
+        }
+        if (user.phoneOtpExpiresAt.getTime() < Date.now()) {
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { phoneOtpKey: null, phoneOtpExpiresAt: null },
+            });
+            throw new common_1.BadRequestException('Key đã hết hạn. Tạo key mới.');
+        }
+        const fails = otpFailCounts.get(userId) ?? 0;
+        if (fails >= OTP_MAX_ATTEMPTS) {
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { phoneOtpKey: null, phoneOtpExpiresAt: null },
+            });
+            otpFailCounts.delete(userId);
+            throw new common_1.BadRequestException('Quá nhiều lần nhập sai. Tạo key OTP mới.');
+        }
+        const input = dto.key.trim().replace(/\s+/g, '');
+        const stored = user.phoneOtpKey;
+        const codePart = stored.includes('-') ? stored.split('-').pop() : stored;
+        const match = input.toLowerCase() === stored.toLowerCase() ||
+            input === codePart ||
+            input.toLowerCase() === stored.toLowerCase().replace(/-/g, '');
+        if (!match) {
+            otpFailCounts.set(userId, fails + 1);
+            throw new common_1.BadRequestException('Key không đúng hoặc đã dùng rồi.');
+        }
+        otpFailCounts.delete(userId);
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                phoneVerified: true,
+                phoneOtpKey: null,
+                phoneOtpExpiresAt: null,
+            },
+        });
+        await this.prisma.partnerProfile.updateMany({
+            where: { userId },
+            data: {
+                phoneVerified: true,
+                phoneOtpCode: null,
+                phoneOtpExpiresAt: null,
+            },
+        });
+        return this.me(userId);
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        sms_service_1.SmsService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

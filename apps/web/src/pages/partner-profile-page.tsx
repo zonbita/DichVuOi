@@ -5,6 +5,7 @@ import { FavoritePartnerButton } from '../components/partner/favorite-partner-bu
 import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
 import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { StarIcon, Icon } from '../components/ui/icon';
+import { publicPartnerQueryOptions } from '../lib/query-client';
 import { api, formatPrice, formatWorkHours } from '../services/api';
 import type { PublicPartnerProfile } from '../types/auth';
 import { offeringColor } from '../utils/catalog-colors';
@@ -490,14 +491,58 @@ function ProfileSidebar({
   );
 }
 
+function PartnerProfileSkeleton() {
+  return (
+    <div
+      className="grid w-full gap-5 lg:grid-cols-[minmax(260px,300px)_1fr] lg:items-start"
+      aria-busy="true"
+      aria-label="Đang tải hồ sơ"
+    >
+      <aside className="space-y-4">
+        <section className="surface-card overflow-hidden">
+          <div className="aspect-square w-full animate-pulse bg-[var(--color-line)]" />
+          <div className="space-y-3 border-t border-[var(--color-line)] p-4">
+            <div className="h-5 w-2/3 animate-pulse rounded bg-[var(--color-line)]" />
+            <div className="h-4 w-1/2 animate-pulse rounded bg-[var(--color-line)]" />
+            <div className="h-4 w-full animate-pulse rounded bg-[var(--color-line)]" />
+            <div className="h-4 w-4/5 animate-pulse rounded bg-[var(--color-line)]" />
+            <div className="mt-4 h-10 w-full animate-pulse rounded-full bg-[var(--color-line)]" />
+          </div>
+        </section>
+      </aside>
+      <div className="min-w-0">
+        <section className="surface-card overflow-hidden">
+          <div className="grid lg:grid-cols-[minmax(200px,240px)_1fr]">
+            <div className="space-y-2 border-b border-[var(--color-line)] p-3 lg:border-r lg:border-b-0">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-10 animate-pulse rounded-lg bg-[var(--color-line)]"
+                />
+              ))}
+            </div>
+            <div className="space-y-4 p-5 sm:p-6">
+              <div className="h-6 w-1/2 animate-pulse rounded bg-[var(--color-line)]" />
+              <div className="h-4 w-full animate-pulse rounded bg-[var(--color-line)]" />
+              <div className="h-4 w-5/6 animate-pulse rounded bg-[var(--color-line)]" />
+              <div className="mt-6 h-28 animate-pulse rounded-xl bg-[var(--color-line)]" />
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export function PartnerProfilePage() {
   const { userId = '' } = useParams();
   const [activeOfferingId, setActiveOfferingId] = useState<string | null>(null);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, isFetching } = useQuery({
     queryKey: ['partner', 'public', userId],
     queryFn: () => api.getPublicPartner(userId),
     enabled: Boolean(userId),
+    ...publicPartnerQueryOptions,
   });
 
   const offerings = useMemo(
@@ -520,7 +565,7 @@ export function PartnerProfilePage() {
     [offerings, activeOfferingId],
   );
 
-  if (isLoading) return <p>Đang tải hồ sơ...</p>;
+  if (isLoading && !data) return <PartnerProfileSkeleton />;
   if (isError || !data) {
     return (
       <div>
@@ -544,7 +589,11 @@ export function PartnerProfilePage() {
   };
 
   return (
-    <div className="grid w-full gap-5 lg:grid-cols-[minmax(260px,300px)_1fr] lg:items-start">
+    <div
+      className={`grid w-full gap-5 lg:grid-cols-[minmax(260px,300px)_1fr] lg:items-start ${
+        isFetching ? 'opacity-95' : ''
+      }`}
+    >
       <ProfileSidebar
         data={data}
         offerings={offerings}

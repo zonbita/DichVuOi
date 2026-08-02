@@ -20,9 +20,18 @@ export declare class FinanceService {
     private readonly vietQrAccountName;
     private readonly vietQrIntentSecret;
     private readonly vietQrIntentTtlMs;
+    private vietQrBanksCache;
     getWallet(userId: string): Promise<{
         currency: string;
         balance: number;
+        mockPaymentsEnabled: boolean;
+        payout: {
+            bankBin: string | null;
+            bankCode: string | null;
+            bankName: string | null;
+            accountNo: string | null;
+            accountName: string | null;
+        };
         transactions: ({
             booking: {
                 id: string;
@@ -42,9 +51,50 @@ export declare class FinanceService {
             reference: string;
         })[];
     }>;
+    private assertMockPaymentsAllowed;
+    listVietQrBanks(): Promise<{
+        id: number;
+        name: string;
+        code: string;
+        bin: string;
+        shortName: string;
+        logo: string;
+        transferSupported: number;
+    }[]>;
+    withdraw(userId: string, dto: {
+        amount: number;
+        bankBin: string;
+        bankCode?: string;
+        bankName: string;
+        accountNo: string;
+        accountName: string;
+    }): Promise<{
+        currency: string;
+        balance: number;
+        amount: number;
+        status: string;
+        payout: {
+            bankBin: string | null;
+            bankCode: string | null;
+            bankName: string | null;
+            accountNo: string | null;
+            accountName: string | null;
+        };
+        message: string;
+    }>;
     topUp(userId: string, amount: number): Promise<{
         currency: string;
         balance: number;
+    }>;
+    adminAdjustBalance(userId: string, amount: number, reason: string): Promise<{
+        currency: string;
+        balance: number;
+        amount: number;
+        user: {
+            id: string;
+            fullName: string;
+            email: string;
+        };
     }>;
     createVietQrIntent(userId: string, amount: number): {
         intentId: string;
@@ -70,15 +120,15 @@ export declare class FinanceService {
         amount: number;
     }>;
     listInvoices(userId: string): Promise<({
-        partner: {
-            id: string;
-            fullName: string;
-        } | null;
         booking: {
             id: string;
             status: import(".prisma/client/client").$Enums.BookingStatus;
             paymentStatus: import(".prisma/client/client").$Enums.PaymentStatus;
         };
+        partner: {
+            id: string;
+            fullName: string;
+        } | null;
         customer: {
             id: string;
             fullName: string;
@@ -86,34 +136,34 @@ export declare class FinanceService {
     } & {
         id: string;
         updatedAt: Date;
+        partnerId: string | null;
         status: import(".prisma/client/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
-        partnerId: string | null;
+        bookingId: string;
+        currency: string;
         invoiceNumber: string;
+        customerId: string;
         serviceName: string;
         subtotal: number;
-        currency: string;
         issuedAt: Date;
         settledAt: Date | null;
-        bookingId: string;
-        customerId: string;
     })[]>;
     getInvoice(invoiceId: string, userId: string, isAdmin?: boolean): Promise<{
-        partner: {
-            id: string;
-            email: string;
-            fullName: string;
-            phone: string | null;
-        } | null;
         booking: {
             id: string;
             scheduledAt: Date;
             status: import(".prisma/client/client").$Enums.BookingStatus;
             paymentStatus: import(".prisma/client/client").$Enums.PaymentStatus;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         customer: {
             id: string;
             email: string;
@@ -123,20 +173,20 @@ export declare class FinanceService {
     } & {
         id: string;
         updatedAt: Date;
+        partnerId: string | null;
         status: import(".prisma/client/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
-        partnerId: string | null;
+        bookingId: string;
+        currency: string;
         invoiceNumber: string;
+        customerId: string;
         serviceName: string;
         subtotal: number;
-        currency: string;
         issuedAt: Date;
         settledAt: Date | null;
-        bookingId: string;
-        customerId: string;
     }>;
     holdBooking(bookingId: string, payerId: string): Promise<void>;
     releaseBooking(bookingId: string, options?: SettlementOptions): Promise<boolean>;

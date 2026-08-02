@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import bannerHangNgan from '../../assets/banner-hang-ngan-dich-vu.png';
 import bannerUyTin from '../../assets/banner-uy-tin-dam-bao.png';
 import type { IconName } from '../ui/icon';
 import { Icon } from '../ui/icon';
@@ -26,6 +27,13 @@ type ImageSlide = {
 type BannerSlide = ComposeSlide | ImageSlide;
 
 const banners: BannerSlide[] = [
+  {
+    kind: 'image',
+    src: bannerHangNgan,
+    alt: 'Hàng ngàn dịch vụ • Đặt lịch nhanh • Thanh toán an toàn',
+    href: '/nhom',
+    ctaLabel: 'Khám phá ngay',
+  },
   {
     kind: 'image',
     src: bannerUyTin,
@@ -132,7 +140,7 @@ export function HeroBanner() {
 
   return (
     <div className="relative overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
-      <div className="relative aspect-[16/6.4] min-h-[248px] w-full">
+      <div className="relative h-[500px] w-full">
         {banners.map((banner, index) => (
           <div
             key={slideKey(banner, index)}

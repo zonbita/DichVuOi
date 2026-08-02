@@ -34,10 +34,7 @@ function ensureDir(dir) {
         (0, fs_1.mkdirSync)(dir, { recursive: true });
     }
 }
-function safeExt(originalName, mime) {
-    const fromName = (0, path_1.extname)(originalName).toLowerCase();
-    if (fromName && fromName.length <= 5)
-        return fromName;
+function safeExt(_originalName, mime) {
     if (mime === 'image/png')
         return '.png';
     if (mime === 'image/webp')

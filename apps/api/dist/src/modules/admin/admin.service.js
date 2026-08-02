@@ -103,6 +103,127 @@ let AdminService = class AdminService {
             complaintsPending,
         };
     }
+    async financeOverview() {
+        const [walletAgg, walletsPositive, held, escrowAgg, commissionAgg, withdrawSum, recentTx,] = await Promise.all([
+            this.prisma.user.aggregate({ _sum: { walletBalance: true } }),
+            this.prisma.user.count({ where: { walletBalance: { gt: 0 } } }),
+            this.prisma.booking.count({
+                where: { paymentStatus: client_1.PaymentStatus.HELD },
+            }),
+            this.prisma.booking.aggregate({
+                where: { paymentStatus: client_1.PaymentStatus.HELD },
+                _sum: { totalPrice: true },
+            }),
+            this.prisma.booking.aggregate({
+                where: { paymentStatus: client_1.PaymentStatus.RELEASED },
+                _sum: { commissionAmount: true },
+            }),
+            this.prisma.walletTransaction.aggregate({
+                where: { type: client_1.WalletTransactionType.WITHDRAW },
+                _sum: { amount: true },
+            }),
+            this.prisma.walletTransaction.findMany({
+                take: 15,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: { select: { id: true, fullName: true, email: true } },
+                    booking: {
+                        select: { id: true, service: { select: { name: true } } },
+                    },
+                },
+            }),
+        ]);
+        return {
+            currency: 'VND',
+            totalWalletBalance: walletAgg._sum.walletBalance ?? 0,
+            walletsWithBalance: walletsPositive,
+            escrowHeldCount: held,
+            escrowHeldAmount: escrowAgg._sum.totalPrice ?? 0,
+            commissionEarned: commissionAgg._sum.commissionAmount ?? 0,
+            withdrawnTotal: Math.abs(withdrawSum._sum.amount ?? 0),
+            recentTransactions: recentTx,
+        };
+    }
+    async listFinanceWallets(query) {
+        const page = resolvePage(query);
+        const q = query.q?.trim();
+        const where = {
+            ...(query.positiveOnly ? { walletBalance: { gt: 0 } } : {}),
+            ...(q
+                ? {
+                    OR: [
+                        { fullName: { contains: q } },
+                        { email: { contains: q } },
+                        { phone: { contains: q } },
+                        { id: { contains: q } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await Promise.all([
+            this.prisma.user.findMany({
+                where,
+                skip: page.skip,
+                take: page.take,
+                orderBy: { walletBalance: 'desc' },
+                select: {
+                    id: true,
+                    email: true,
+                    fullName: true,
+                    phone: true,
+                    role: true,
+                    walletBalance: true,
+                    bankName: true,
+                    bankAccountNo: true,
+                    bankAccountName: true,
+                    updatedAt: true,
+                },
+            }),
+            this.prisma.user.count({ where }),
+        ]);
+        return paginated(items, total, page);
+    }
+    async listFinanceTransactions(query) {
+        const page = resolvePage(query);
+        const q = query.q?.trim();
+        const type = query.type?.trim();
+        const validType = type && Object.values(client_1.WalletTransactionType).includes(type)
+            ? type
+            : undefined;
+        const where = {
+            ...(validType ? { type: validType } : {}),
+            ...(query.userId ? { userId: query.userId } : {}),
+            ...(q
+                ? {
+                    OR: [
+                        { description: { contains: q } },
+                        { reference: { contains: q } },
+                        { user: { fullName: { contains: q } } },
+                        { user: { email: { contains: q } } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await Promise.all([
+            this.prisma.walletTransaction.findMany({
+                where,
+                skip: page.skip,
+                take: page.take,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: { select: { id: true, fullName: true, email: true } },
+                    booking: {
+                        select: { id: true, service: { select: { name: true } } },
+                    },
+                },
+            }),
+            this.prisma.walletTransaction.count({ where }),
+        ]);
+        return paginated(items, total, page);
+    }
+    async adjustWallet(userId, dto) {
+        return this.finance.adminAdjustBalance(userId, dto.amount, dto.reason);
+    }
     async listUsers(query) {
         const page = resolvePage(query);
         const q = query.q?.trim();

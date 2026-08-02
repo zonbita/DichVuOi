@@ -14,6 +14,7 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("../../database/prisma/client");
 const crypto_1 = require("crypto");
 const escrow_1 = require("../../common/escrow");
+const security_env_1 = require("../../common/security-env");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
 let FinanceService = class FinanceService {
     prisma;
@@ -23,14 +24,20 @@ let FinanceService = class FinanceService {
     vietQrBankId = process.env.VIETQR_BANK_ID ?? '970422';
     vietQrAccountNo = process.env.VIETQR_ACCOUNT_NO ?? '19002888';
     vietQrAccountName = process.env.VIETQR_ACCOUNT_NAME ?? 'DICH VU OI';
-    vietQrIntentSecret = process.env.VIETQR_INTENT_SECRET ?? 'dichvuoi-dev-vietqr-secret';
+    vietQrIntentSecret = (0, security_env_1.resolveVietQrIntentSecret)();
     vietQrIntentTtlMs = 15 * 60_000;
+    vietQrBanksCache = null;
     async getWallet(userId) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
                 id: true,
                 walletBalance: true,
+                bankBin: true,
+                bankCode: true,
+                bankName: true,
+                bankAccountNo: true,
+                bankAccountName: true,
                 walletTransactions: {
                     orderBy: { createdAt: 'desc' },
                     take: 100,
@@ -50,10 +57,120 @@ let FinanceService = class FinanceService {
         return {
             currency: 'VND',
             balance: user.walletBalance,
+            mockPaymentsEnabled: (0, security_env_1.allowMockPayments)(),
+            payout: {
+                bankBin: user.bankBin,
+                bankCode: user.bankCode,
+                bankName: user.bankName,
+                accountNo: user.bankAccountNo,
+                accountName: user.bankAccountName,
+            },
             transactions: user.walletTransactions,
         };
     }
+    assertMockPaymentsAllowed() {
+        if (!(0, security_env_1.allowMockPayments)()) {
+            throw new common_1.ForbiddenException('Thanh toán mô phỏng đã tắt. Bật ALLOW_MOCK_PAYMENTS=1 chỉ khi cần demo.');
+        }
+    }
+    async listVietQrBanks() {
+        const ttlMs = 24 * 60 * 60_000;
+        if (this.vietQrBanksCache &&
+            Date.now() - this.vietQrBanksCache.at < ttlMs) {
+            return this.vietQrBanksCache.banks;
+        }
+        try {
+            const res = await fetch('https://api.vietqr.io/v2/banks');
+            const json = (await res.json());
+            if (json.code !== '00' || !Array.isArray(json.data)) {
+                throw new Error(json.code ?? 'vietqr_banks_failed');
+            }
+            const banks = json.data.map((b) => ({
+                id: b.id,
+                name: b.name,
+                code: b.code,
+                bin: b.bin,
+                shortName: b.shortName,
+                logo: b.logo,
+                transferSupported: b.transferSupported ?? 0,
+            }));
+            this.vietQrBanksCache = { at: Date.now(), banks };
+            return banks;
+        }
+        catch (err) {
+            if (this.vietQrBanksCache?.banks.length) {
+                return this.vietQrBanksCache.banks;
+            }
+            throw new common_1.BadRequestException(`Không tải được danh sách ngân hàng VietQR: ${err.message}`);
+        }
+    }
+    async withdraw(userId, dto) {
+        const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
+        const accountName = dto.accountName.trim().toUpperCase();
+        const bankBin = dto.bankBin.trim();
+        const bankName = dto.bankName.trim();
+        const bankCode = (dto.bankCode ?? '').trim() || null;
+        return this.prisma.$transaction(async (tx) => {
+            const updated = await tx.user.updateMany({
+                where: { id: userId, walletBalance: { gte: dto.amount } },
+                data: {
+                    walletBalance: { decrement: dto.amount },
+                    bankBin,
+                    bankCode,
+                    bankName,
+                    bankAccountNo: accountNo,
+                    bankAccountName: accountName,
+                },
+            });
+            if (updated.count === 0) {
+                const current = await tx.user.findUnique({
+                    where: { id: userId },
+                    select: { walletBalance: true },
+                });
+                if (!current)
+                    throw new common_1.NotFoundException('Không tìm thấy tài khoản');
+                throw new common_1.BadRequestException(`Số dư không đủ. Khả dụng ${current.walletBalance.toLocaleString('vi-VN')} VNĐ`);
+            }
+            const user = await tx.user.findUniqueOrThrow({
+                where: { id: userId },
+                select: {
+                    walletBalance: true,
+                    bankBin: true,
+                    bankCode: true,
+                    bankName: true,
+                    bankAccountNo: true,
+                    bankAccountName: true,
+                },
+            });
+            const reference = `withdraw:${userId}:${(0, crypto_1.randomUUID)()}`;
+            await tx.walletTransaction.create({
+                data: {
+                    userId,
+                    type: client_1.WalletTransactionType.WITHDRAW,
+                    amount: -dto.amount,
+                    balanceAfter: user.walletBalance,
+                    description: `Rút về ${bankName} · ${accountNo} · ${accountName} (mock)`,
+                    reference,
+                },
+            });
+            return {
+                currency: 'VND',
+                balance: user.walletBalance,
+                amount: dto.amount,
+                status: 'COMPLETED_MOCK',
+                payout: {
+                    bankBin: user.bankBin,
+                    bankCode: user.bankCode,
+                    bankName: user.bankName,
+                    accountNo: user.bankAccountNo,
+                    accountName: user.bankAccountName,
+                },
+                message: 'Đã trừ ví (mock). Production sẽ chuyển khoản thật qua cổng payout.',
+            };
+        });
+    }
     async topUp(userId, amount) {
+        this.assertMockPaymentsAllowed();
         return this.prisma.$transaction(async (tx) => {
             const user = await tx.user.update({
                 where: { id: userId },
@@ -73,6 +190,61 @@ let FinanceService = class FinanceService {
             return {
                 currency: 'VND',
                 balance: user.walletBalance,
+            };
+        });
+    }
+    async adminAdjustBalance(userId, amount, reason) {
+        if (!Number.isInteger(amount) || amount === 0) {
+            throw new common_1.BadRequestException('Số tiền điều chỉnh phải là số nguyên khác 0');
+        }
+        const note = reason.trim();
+        if (note.length < 3) {
+            throw new common_1.BadRequestException('Ghi chú điều chỉnh tối thiểu 3 ký tự');
+        }
+        return this.prisma.$transaction(async (tx) => {
+            if (amount < 0) {
+                const updated = await tx.user.updateMany({
+                    where: { id: userId, walletBalance: { gte: -amount } },
+                    data: { walletBalance: { increment: amount } },
+                });
+                if (updated.count === 0) {
+                    const exists = await tx.user.findUnique({
+                        where: { id: userId },
+                        select: { walletBalance: true },
+                    });
+                    if (!exists)
+                        throw new common_1.NotFoundException('Không tìm thấy tài khoản');
+                    throw new common_1.BadRequestException(`Số dư không đủ để trừ ${(-amount).toLocaleString('vi-VN')} VNĐ`);
+                }
+            }
+            else {
+                const exists = await tx.user.updateMany({
+                    where: { id: userId },
+                    data: { walletBalance: { increment: amount } },
+                });
+                if (exists.count === 0) {
+                    throw new common_1.NotFoundException('Không tìm thấy tài khoản');
+                }
+            }
+            const user = await tx.user.findUniqueOrThrow({
+                where: { id: userId },
+                select: { walletBalance: true, fullName: true, email: true },
+            });
+            await tx.walletTransaction.create({
+                data: {
+                    userId,
+                    type: client_1.WalletTransactionType.ADMIN_ADJUSTMENT,
+                    amount,
+                    balanceAfter: user.walletBalance,
+                    description: `Admin điều chỉnh: ${note}`,
+                    reference: `admin-adj:${userId}:${(0, crypto_1.randomUUID)()}`,
+                },
+            });
+            return {
+                currency: 'VND',
+                balance: user.walletBalance,
+                amount,
+                user: { id: userId, fullName: user.fullName, email: user.email },
             };
         });
     }
@@ -116,6 +288,7 @@ let FinanceService = class FinanceService {
         };
     }
     async confirmVietQrIntentMock(userId, intentId) {
+        this.assertMockPaymentsAllowed();
         const payload = this.verifyVietQrIntent(intentId);
         if (payload.u !== userId) {
             throw new common_1.ForbiddenException('Lệnh nạp không thuộc tài khoản hiện tại');
@@ -500,9 +673,10 @@ let FinanceService = class FinanceService {
             });
             if (!booking)
                 throw new common_1.NotFoundException('Không tìm thấy đơn');
-            const amount = options.amount ?? (0, escrow_1.computeApplyDeposit)(booking.totalPrice);
+            const amount = options.amount ??
+                (0, escrow_1.computeApplyDeposit)(booking.totalPrice, booking.applyDepositBps);
             if (amount <= 0) {
-                throw new common_1.BadRequestException('Số tiền cọc ứng tuyển không hợp lệ');
+                return { amount: 0 };
             }
             const reference = `apply-hold:${applicationId}`;
             const existing = await tx.walletTransaction.findUnique({
@@ -626,7 +800,10 @@ let FinanceService = class FinanceService {
         const expect = (0, crypto_1.createHmac)('sha256', this.vietQrIntentSecret)
             .update(data)
             .digest('base64url');
-        if (sig !== expect) {
+        const sigBuf = Buffer.from(sig);
+        const expectBuf = Buffer.from(expect);
+        if (sigBuf.length !== expectBuf.length ||
+            !(0, crypto_1.timingSafeEqual)(sigBuf, expectBuf)) {
             throw new common_1.BadRequestException('Mã VietQR sai chữ ký');
         }
         const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));

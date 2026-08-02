@@ -11,12 +11,16 @@ import {
   Prisma,
   WalletTransactionType,
 } from '../../database/prisma/client';
-import { createHmac, randomUUID } from 'crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
 import {
   computeEscrowSplit,
   DEFAULT_COMMISSION_BPS,
   computeApplyDeposit,
 } from '../../common/escrow';
+import {
+  allowMockPayments,
+  resolveVietQrIntentSecret,
+} from '../../common/security-env';
 import { PrismaService } from '../../database/prisma/prisma.service';
 
 type SettlementOptions = {
@@ -51,9 +55,20 @@ export class FinanceService {
     process.env.VIETQR_ACCOUNT_NO ?? '19002888';
   private readonly vietQrAccountName =
     process.env.VIETQR_ACCOUNT_NAME ?? 'DICH VU OI';
-  private readonly vietQrIntentSecret =
-    process.env.VIETQR_INTENT_SECRET ?? 'dichvuoi-dev-vietqr-secret';
+  private readonly vietQrIntentSecret = resolveVietQrIntentSecret();
   private readonly vietQrIntentTtlMs = 15 * 60_000;
+  private vietQrBanksCache: {
+    at: number;
+    banks: Array<{
+      id: number;
+      name: string;
+      code: string;
+      bin: string;
+      shortName: string;
+      logo: string;
+      transferSupported: number;
+    }>;
+  } | null = null;
 
   async getWallet(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -61,6 +76,11 @@ export class FinanceService {
       select: {
         id: true,
         walletBalance: true,
+        bankBin: true,
+        bankCode: true,
+        bankName: true,
+        bankAccountNo: true,
+        bankAccountName: true,
         walletTransactions: {
           orderBy: { createdAt: 'desc' },
           take: 100,
@@ -79,11 +99,161 @@ export class FinanceService {
     return {
       currency: 'VND',
       balance: user.walletBalance,
+      mockPaymentsEnabled: allowMockPayments(),
+      payout: {
+        bankBin: user.bankBin,
+        bankCode: user.bankCode,
+        bankName: user.bankName,
+        accountNo: user.bankAccountNo,
+        accountName: user.bankAccountName,
+      },
       transactions: user.walletTransactions,
     };
   }
 
+  private assertMockPaymentsAllowed() {
+    if (!allowMockPayments()) {
+      throw new ForbiddenException(
+        'Thanh toán mô phỏng đã tắt. Bật ALLOW_MOCK_PAYMENTS=1 chỉ khi cần demo.',
+      );
+    }
+  }
+
+  /** Danh sách ngân hàng VietQR (cache 24h). */
+  async listVietQrBanks() {
+    const ttlMs = 24 * 60 * 60_000;
+    if (
+      this.vietQrBanksCache &&
+      Date.now() - this.vietQrBanksCache.at < ttlMs
+    ) {
+      return this.vietQrBanksCache.banks;
+    }
+
+    try {
+      const res = await fetch('https://api.vietqr.io/v2/banks');
+      const json = (await res.json()) as {
+        code?: string;
+        data?: Array<{
+          id: number;
+          name: string;
+          code: string;
+          bin: string;
+          shortName: string;
+          logo: string;
+          transferSupported?: number;
+        }>;
+      };
+      if (json.code !== '00' || !Array.isArray(json.data)) {
+        throw new Error(json.code ?? 'vietqr_banks_failed');
+      }
+      const banks = json.data.map((b) => ({
+        id: b.id,
+        name: b.name,
+        code: b.code,
+        bin: b.bin,
+        shortName: b.shortName,
+        logo: b.logo,
+        transferSupported: b.transferSupported ?? 0,
+      }));
+      this.vietQrBanksCache = { at: Date.now(), banks };
+      return banks;
+    } catch (err) {
+      if (this.vietQrBanksCache?.banks.length) {
+        return this.vietQrBanksCache.banks;
+      }
+      throw new BadRequestException(
+        `Không tải được danh sách ngân hàng VietQR: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Rút ví về STK user (mock trừ ví ngay — production nối payout gateway sau).
+   */
+  async withdraw(
+    userId: string,
+    dto: {
+      amount: number;
+      bankBin: string;
+      bankCode?: string;
+      bankName: string;
+      accountNo: string;
+      accountName: string;
+    },
+  ) {
+    const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
+    const accountName = dto.accountName.trim().toUpperCase();
+    const bankBin = dto.bankBin.trim();
+    const bankName = dto.bankName.trim();
+    const bankCode = (dto.bankCode ?? '').trim() || null;
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.user.updateMany({
+        where: { id: userId, walletBalance: { gte: dto.amount } },
+        data: {
+          walletBalance: { decrement: dto.amount },
+          bankBin,
+          bankCode,
+          bankName,
+          bankAccountNo: accountNo,
+          bankAccountName: accountName,
+        },
+      });
+      if (updated.count === 0) {
+        const current = await tx.user.findUnique({
+          where: { id: userId },
+          select: { walletBalance: true },
+        });
+        if (!current) throw new NotFoundException('Không tìm thấy tài khoản');
+        throw new BadRequestException(
+          `Số dư không đủ. Khả dụng ${current.walletBalance.toLocaleString('vi-VN')} VNĐ`,
+        );
+      }
+
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: {
+          walletBalance: true,
+          bankBin: true,
+          bankCode: true,
+          bankName: true,
+          bankAccountNo: true,
+          bankAccountName: true,
+        },
+      });
+
+      const reference = `withdraw:${userId}:${randomUUID()}`;
+      await tx.walletTransaction.create({
+        data: {
+          userId,
+          type: WalletTransactionType.WITHDRAW,
+          amount: -dto.amount,
+          balanceAfter: user.walletBalance,
+          description: `Rút về ${bankName} · ${accountNo} · ${accountName} (mock)`,
+          reference,
+        },
+      });
+
+      return {
+        currency: 'VND',
+        balance: user.walletBalance,
+        amount: dto.amount,
+        status: 'COMPLETED_MOCK',
+        payout: {
+          bankBin: user.bankBin,
+          bankCode: user.bankCode,
+          bankName: user.bankName,
+          accountNo: user.bankAccountNo,
+          accountName: user.bankAccountName,
+        },
+        message:
+          'Đã trừ ví (mock). Production sẽ chuyển khoản thật qua cổng payout.',
+      };
+    });
+  }
+
   async topUp(userId: string, amount: number) {
+    this.assertMockPaymentsAllowed();
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.update({
         where: { id: userId },
@@ -103,6 +273,69 @@ export class FinanceService {
       return {
         currency: 'VND',
         balance: user.walletBalance,
+      };
+    });
+  }
+
+  /** Admin cộng/trừ ví (ADMIN_ADJUSTMENT). amount âm = trừ. */
+  async adminAdjustBalance(
+    userId: string,
+    amount: number,
+    reason: string,
+  ) {
+    if (!Number.isInteger(amount) || amount === 0) {
+      throw new BadRequestException('Số tiền điều chỉnh phải là số nguyên khác 0');
+    }
+    const note = reason.trim();
+    if (note.length < 3) {
+      throw new BadRequestException('Ghi chú điều chỉnh tối thiểu 3 ký tự');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (amount < 0) {
+        const updated = await tx.user.updateMany({
+          where: { id: userId, walletBalance: { gte: -amount } },
+          data: { walletBalance: { increment: amount } },
+        });
+        if (updated.count === 0) {
+          const exists = await tx.user.findUnique({
+            where: { id: userId },
+            select: { walletBalance: true },
+          });
+          if (!exists) throw new NotFoundException('Không tìm thấy tài khoản');
+          throw new BadRequestException(
+            `Số dư không đủ để trừ ${(-amount).toLocaleString('vi-VN')} VNĐ`,
+          );
+        }
+      } else {
+        const exists = await tx.user.updateMany({
+          where: { id: userId },
+          data: { walletBalance: { increment: amount } },
+        });
+        if (exists.count === 0) {
+          throw new NotFoundException('Không tìm thấy tài khoản');
+        }
+      }
+
+      const user = await tx.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { walletBalance: true, fullName: true, email: true },
+      });
+      await tx.walletTransaction.create({
+        data: {
+          userId,
+          type: WalletTransactionType.ADMIN_ADJUSTMENT,
+          amount,
+          balanceAfter: user.walletBalance,
+          description: `Admin điều chỉnh: ${note}`,
+          reference: `admin-adj:${userId}:${randomUUID()}`,
+        },
+      });
+      return {
+        currency: 'VND',
+        balance: user.walletBalance,
+        amount,
+        user: { id: userId, fullName: user.fullName, email: user.email },
       };
     });
   }
@@ -150,6 +383,7 @@ export class FinanceService {
 
   /** Local/dev mock: xác nhận đã chuyển khoản VietQR rồi cộng ví (idempotent). */
   async confirmVietQrIntentMock(userId: string, intentId: string) {
+    this.assertMockPaymentsAllowed();
     const payload = this.verifyVietQrIntent(intentId);
     if (payload.u !== userId) {
       throw new ForbiddenException('Lệnh nạp không thuộc tài khoản hiện tại');
@@ -580,7 +814,7 @@ export class FinanceService {
     });
   }
 
-  /** Người làm đặt cọc ứng tuyển (10% totalPrice) — debit ví. */
+  /** Người làm đặt cọc ứng tuyển (theo applyDepositBps của đơn) — debit ví. */
   async holdApplyDeposit(
     bookingId: string,
     partnerId: string,
@@ -595,9 +829,10 @@ export class FinanceService {
       if (!booking) throw new NotFoundException('Không tìm thấy đơn');
 
       const amount =
-        options.amount ?? computeApplyDeposit(booking.totalPrice);
+        options.amount ??
+        computeApplyDeposit(booking.totalPrice, booking.applyDepositBps);
       if (amount <= 0) {
-        throw new BadRequestException('Số tiền cọc ứng tuyển không hợp lệ');
+        return { amount: 0 };
       }
 
       const reference = `apply-hold:${applicationId}`;
@@ -764,7 +999,12 @@ export class FinanceService {
     const expect = createHmac('sha256', this.vietQrIntentSecret)
       .update(data)
       .digest('base64url');
-    if (sig !== expect) {
+    const sigBuf = Buffer.from(sig);
+    const expectBuf = Buffer.from(expect);
+    if (
+      sigBuf.length !== expectBuf.length ||
+      !timingSafeEqual(sigBuf, expectBuf)
+    ) {
       throw new BadRequestException('Mã VietQR sai chữ ký');
     }
     const payload = JSON.parse(

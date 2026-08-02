@@ -18,9 +18,10 @@ const partner_work_hours_1 = require("../../common/partner-work-hours");
 const partner_level_1 = require("../../common/partner-level");
 const recalculate_partner_level_1 = require("../../common/recalculate-partner-level");
 const reputation_service_1 = require("../../common/reputation.service");
+const security_env_1 = require("../../common/security-env");
 const portrait_avatar_1 = require("../../common/portrait-avatar");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
-const OTP_TTL_MS = 5 * 60 * 1000;
+const auth_service_1 = require("../auth/auth.service");
 const BANK_VERIFY_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_VIETQR_BIN = process.env.VIETQR_BANK_ID ?? '970436';
 const userPublicSelect = {
@@ -33,6 +34,7 @@ const userPrivateSelect = {
     email: true,
     fullName: true,
     phone: true,
+    phoneVerified: true,
     role: true,
 };
 const offeringInclude = {
@@ -58,9 +60,11 @@ const offeringInclude = {
 let PartnersService = class PartnersService {
     prisma;
     reputation;
-    constructor(prisma, reputation) {
+    authService;
+    constructor(prisma, reputation, authService) {
         this.prisma = prisma;
         this.reputation = reputation;
+        this.authService = authService;
     }
     shapePublic(profile, completedJobs, reviews = [], hoursByServiceId = new Map()) {
         const reviewedBySlug = new Map();
@@ -222,11 +226,38 @@ let PartnersService = class PartnersService {
     async getPublicProfile(userId) {
         const profile = await this.prisma.partnerProfile.findUnique({
             where: { userId },
-            include: {
+            select: {
+                id: true,
+                userId: true,
+                headline: true,
+                bio: true,
+                city: true,
+                districts: true,
+                skillsJson: true,
+                acceptingJobs: true,
+                workModes: true,
+                responseMinutes: true,
+                ratingAvg: true,
+                ratingCount: true,
+                level: true,
+                isVerified: true,
+                phoneVerified: true,
+                bankVerified: true,
+                avatarUrl: true,
+                galleryJson: true,
                 user: { select: userPublicSelect },
                 offerings: {
                     where: { isActive: true },
-                    include: {
+                    take: 40,
+                    select: {
+                        id: true,
+                        serviceId: true,
+                        price: true,
+                        headline: true,
+                        experienceYears: true,
+                        includes: true,
+                        excludes: true,
+                        coverageNote: true,
                         service: {
                             select: {
                                 id: true,
@@ -239,29 +270,31 @@ let PartnersService = class PartnersService {
                                         id: true,
                                         name: true,
                                         slug: true,
-                                        group: {
-                                            select: { id: true, name: true, slug: true },
-                                        },
+                                        group: { select: { id: true, name: true, slug: true } },
                                     },
                                 },
                             },
                         },
                     },
-                    take: 40,
                 },
             },
         });
         if (!profile)
             throw new common_1.NotFoundException('Không tìm thấy hồ sơ người làm');
-        const [completedJobs, reviews, hoursByServiceId] = await Promise.all([
+        const offeringServiceIds = profile.offerings.map((o) => o.serviceId);
+        const [completedJobs, reviews, hoursByServiceId, reputation] = await Promise.all([
             this.prisma.booking.count({
                 where: { partnerId: userId, status: 'COMPLETED' },
             }),
             this.prisma.review.findMany({
                 where: { toUserId: userId },
                 orderBy: { createdAt: 'desc' },
-                take: 50,
-                include: {
+                take: 24,
+                select: {
+                    id: true,
+                    rating: true,
+                    comment: true,
+                    createdAt: true,
                     fromUser: { select: { id: true, fullName: true } },
                     booking: {
                         select: {
@@ -271,12 +304,7 @@ let PartnersService = class PartnersService {
                                     slug: true,
                                     category: {
                                         select: {
-                                            id: true,
-                                            name: true,
-                                            slug: true,
-                                            group: {
-                                                select: { id: true, name: true, slug: true },
-                                            },
+                                            group: { select: { slug: true, name: true } },
                                         },
                                     },
                                 },
@@ -285,10 +313,10 @@ let PartnersService = class PartnersService {
                     },
                 },
             }),
-            (0, partner_work_hours_1.hoursWorkedByServiceIds)(this.prisma, userId, profile.offerings.map((o) => o.serviceId)),
+            (0, partner_work_hours_1.hoursWorkedByServiceIds)(this.prisma, userId, offeringServiceIds),
+            this.reputation.getSnapshot(userId),
         ]);
         const shaped = this.shapePublic(profile, completedJobs, reviews, hoursByServiceId);
-        const reputation = await this.reputation.getSnapshot(userId);
         return { ...shaped, reputation };
     }
     async getMine(userId) {
@@ -309,6 +337,8 @@ let PartnersService = class PartnersService {
         const { phoneOtpCode: _otp, phoneOtpExpiresAt: _otpExp, bankVerifyIntentId: _bIntent, bankVerifyExpiresAt: _bExp, ...safeProfile } = profile;
         return {
             ...safeProfile,
+            phoneVerified: Boolean(profile.user.phoneVerified ??
+                profile.phoneVerified),
             skills: (0, partner_profile_fields_1.parseSkills)(profile.skillsJson),
             gallery: (0, partner_profile_fields_1.parseGallery)(profile.galleryJson),
             districtsList: (0, partner_profile_fields_1.parseDistricts)(profile.districts),
@@ -671,53 +701,15 @@ let PartnersService = class PartnersService {
     }
     async requestPhoneOtp(userId, dto) {
         await this.requireOrCreateProfile(userId);
-        const phone = dto.phone.replace(/\s|-/g, '').trim();
-        const code = String(Math.floor(100000 + Math.random() * 900000));
-        const expiresAt = new Date(Date.now() + OTP_TTL_MS);
-        await this.prisma.user.update({
-            where: { id: userId },
-            data: { phone },
-        });
-        await this.prisma.partnerProfile.update({
-            where: { userId },
-            data: {
-                phoneVerified: false,
-                phoneOtpCode: code,
-                phoneOtpExpiresAt: expiresAt,
-            },
-        });
+        const result = await this.authService.requestPhoneOtp(userId, dto);
         return {
-            ok: true,
-            phone,
-            expiresAt: expiresAt.toISOString(),
-            debugCode: code,
-            channel: 'sms_mock',
-            message: `Đã gửi OTP mock tới ${phone}. Dùng mã debugCode để xác minh.`,
+            ...result,
+            debugCode: 'key' in result ? result.key : undefined,
         };
     }
     async confirmPhoneOtp(userId, dto) {
-        const profile = await this.prisma.partnerProfile.findUnique({
-            where: { userId },
-        });
-        if (!profile)
-            throw new common_1.NotFoundException('Chưa có hồ sơ đối tác');
-        if (!profile.phoneOtpCode || !profile.phoneOtpExpiresAt) {
-            throw new common_1.BadRequestException('Chưa yêu cầu OTP. Bấm gửi mã trước.');
-        }
-        if (profile.phoneOtpExpiresAt.getTime() < Date.now()) {
-            throw new common_1.BadRequestException('OTP đã hết hạn. Gửi lại mã mới.');
-        }
-        if (dto.code.trim() !== profile.phoneOtpCode) {
-            throw new common_1.BadRequestException('Mã OTP không đúng.');
-        }
-        await this.prisma.partnerProfile.update({
-            where: { userId },
-            data: {
-                phoneVerified: true,
-                phoneOtpCode: null,
-                phoneOtpExpiresAt: null,
-            },
-        });
+        await this.requireOrCreateProfile(userId);
+        await this.authService.confirmPhoneOtp(userId, { key: dto.code });
         return this.getMine(userId);
     }
     async linkBankAccount(userId, dto) {
@@ -748,10 +740,16 @@ let PartnersService = class PartnersService {
             bankName: dto.bankName.trim(),
             accountNo: dto.accountNo.trim(),
             accountName: dto.accountName.trim().toUpperCase(),
-            message: 'Quét VietQR (mock) hoặc bấm xác nhận đã chuyển để hoàn tất xác minh NH.',
+            mockConfirmEnabled: (0, security_env_1.allowMockPayments)(),
+            message: (0, security_env_1.allowMockPayments)()
+                ? 'Quét VietQR (mock) hoặc bấm xác nhận đã chuyển để hoàn tất xác minh NH.'
+                : 'Đã tạo yêu cầu xác minh. Production cần webhook/micro-deposit — mock confirm đã tắt.',
         };
     }
     async confirmBankVerify(userId, dto) {
+        if (!(0, security_env_1.allowMockPayments)()) {
+            throw new common_1.ForbiddenException('Xác minh ngân hàng mô phỏng đã tắt. Production cần webhook/micro-deposit thật.');
+        }
         const profile = await this.prisma.partnerProfile.findUnique({
             where: { userId },
         });
@@ -784,6 +782,7 @@ exports.PartnersService = PartnersService;
 exports.PartnersService = PartnersService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        reputation_service_1.ReputationService])
+        reputation_service_1.ReputationService,
+        auth_service_1.AuthService])
 ], PartnersService);
 //# sourceMappingURL=partners.service.js.map

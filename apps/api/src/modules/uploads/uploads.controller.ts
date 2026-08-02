@@ -11,7 +11,7 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync } from 'fs';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { join } from 'path';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { resolveUploadsRoot } from '../../common/uploads-root';
 
@@ -29,9 +29,8 @@ function ensureDir(dir: string) {
   }
 }
 
-function safeExt(originalName: string, mime: string) {
-  const fromName = extname(originalName).toLowerCase();
-  if (fromName && fromName.length <= 5) return fromName;
+/** Extension chỉ theo MIME server nhận (không tin tên file client). */
+function safeExt(_originalName: string, mime: string) {
   if (mime === 'image/png') return '.png';
   if (mime === 'image/webp') return '.webp';
   if (mime === 'image/gif') return '.gif';

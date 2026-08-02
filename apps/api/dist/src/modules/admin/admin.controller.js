@@ -29,6 +29,18 @@ let AdminController = class AdminController {
     stats() {
         return this.adminService.stats();
     }
+    financeOverview() {
+        return this.adminService.financeOverview();
+    }
+    listFinanceWallets(query) {
+        return this.adminService.listFinanceWallets(query);
+    }
+    listFinanceTransactions(query) {
+        return this.adminService.listFinanceTransactions(query);
+    }
+    adjustWallet(userId, dto) {
+        return this.adminService.adjustWallet(userId, dto);
+    }
     listUsers(query) {
         return this.adminService.listUsers(query);
     }
@@ -82,6 +94,34 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "stats", null);
+__decorate([
+    (0, common_1.Get)('finance/overview'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "financeOverview", null);
+__decorate([
+    (0, common_1.Get)('finance/wallets'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_dto_1.AdminFinanceWalletQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "listFinanceWallets", null);
+__decorate([
+    (0, common_1.Get)('finance/transactions'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_dto_1.AdminFinanceTxQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "listFinanceTransactions", null);
+__decorate([
+    (0, common_1.Post)('finance/wallets/:userId/adjust'),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, admin_dto_1.AdminAdjustWalletDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "adjustWallet", null);
 __decorate([
     (0, common_1.Get)('users'),
     __param(0, (0, common_1.Query)()),

@@ -20,6 +20,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { to: '/admin', label: 'Tổng quan', icon: 'home', end: true, adminOnly: true },
   { to: '/admin/support', label: 'Chat với khách', icon: 'headset' },
+  { to: '/admin/finance', label: 'Tiền', icon: 'wallet', adminOnly: true },
   { to: '/admin/bookings', label: 'Đơn hàng', icon: 'calendar', adminOnly: true },
   { to: '/admin/catalog', label: 'Dịch vụ', icon: 'sparkles', adminOnly: true },
   {

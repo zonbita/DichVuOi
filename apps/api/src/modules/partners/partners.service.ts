@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -23,8 +24,10 @@ import {
 } from '../../common/partner-level';
 import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
 import { ReputationService } from '../../common/reputation.service';
+import { allowMockPayments } from '../../common/security-env';
 import { portraitAvatarUrl } from '../../common/portrait-avatar';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
 import {
   ConfirmBankVerifyDto,
   ConfirmPhoneOtpDto,
@@ -37,7 +40,6 @@ import {
   UpdatePartnerProfileDto,
 } from './dto/update-partner-profile.dto';
 
-const OTP_TTL_MS = 5 * 60 * 1000;
 const BANK_VERIFY_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_VIETQR_BIN = process.env.VIETQR_BANK_ID ?? '970436';
 
@@ -52,6 +54,7 @@ const userPrivateSelect = {
   email: true,
   fullName: true,
   phone: true,
+  phoneVerified: true,
   role: true,
 } as const;
 
@@ -81,6 +84,7 @@ export class PartnersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reputation: ReputationService,
+    private readonly authService: AuthService,
   ) {}
 
   private shapePublic(
@@ -139,10 +143,7 @@ export class PartnersService {
           name: string;
           slug: string;
           category?: {
-            id: string;
-            name: string;
-            slug: string;
-            group: { id: string; name: string; slug: string };
+            group: { name: string; slug: string };
           } | null;
         };
       };
@@ -347,11 +348,38 @@ export class PartnersService {
   async getPublicProfile(userId: string) {
     const profile = await this.prisma.partnerProfile.findUnique({
       where: { userId },
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        headline: true,
+        bio: true,
+        city: true,
+        districts: true,
+        skillsJson: true,
+        acceptingJobs: true,
+        workModes: true,
+        responseMinutes: true,
+        ratingAvg: true,
+        ratingCount: true,
+        level: true,
+        isVerified: true,
+        phoneVerified: true,
+        bankVerified: true,
+        avatarUrl: true,
+        galleryJson: true,
         user: { select: userPublicSelect },
         offerings: {
           where: { isActive: true },
-          include: {
+          take: 40,
+          select: {
+            id: true,
+            serviceId: true,
+            price: true,
+            headline: true,
+            experienceYears: true,
+            includes: true,
+            excludes: true,
+            coverageNote: true,
             service: {
               select: {
                 id: true,
@@ -364,43 +392,43 @@ export class PartnersService {
                     id: true,
                     name: true,
                     slug: true,
-                    group: {
-                      select: { id: true, name: true, slug: true },
-                    },
+                    group: { select: { id: true, name: true, slug: true } },
                   },
                 },
               },
             },
           },
-          take: 40,
         },
       },
     });
     if (!profile) throw new NotFoundException('Không tìm thấy hồ sơ người làm');
 
-    const [completedJobs, reviews, hoursByServiceId] = await Promise.all([
-      this.prisma.booking.count({
-        where: { partnerId: userId, status: 'COMPLETED' },
-      }),
-      this.prisma.review.findMany({
-        where: { toUserId: userId },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-        include: {
-          fromUser: { select: { id: true, fullName: true } },
-          booking: {
-            select: {
-              service: {
-                select: {
-                  name: true,
-                  slug: true,
-                  category: {
-                    select: {
-                      id: true,
-                      name: true,
-                      slug: true,
-                      group: {
-                        select: { id: true, name: true, slug: true },
+    const offeringServiceIds = profile.offerings.map((o) => o.serviceId);
+
+    const [completedJobs, reviews, hoursByServiceId, reputation] =
+      await Promise.all([
+        this.prisma.booking.count({
+          where: { partnerId: userId, status: 'COMPLETED' },
+        }),
+        this.prisma.review.findMany({
+          where: { toUserId: userId },
+          orderBy: { createdAt: 'desc' },
+          take: 24,
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            fromUser: { select: { id: true, fullName: true } },
+            booking: {
+              select: {
+                service: {
+                  select: {
+                    name: true,
+                    slug: true,
+                    category: {
+                      select: {
+                        group: { select: { slug: true, name: true } },
                       },
                     },
                   },
@@ -408,17 +436,17 @@ export class PartnersService {
               },
             },
           },
-        },
-      }),
-      hoursWorkedByServiceIds(
-        this.prisma,
-        userId,
-        profile.offerings.map((o) => o.serviceId),
-      ),
-    ]);
+        }),
+        hoursWorkedByServiceIds(this.prisma, userId, offeringServiceIds),
+        this.reputation.getSnapshot(userId),
+      ]);
 
-    const shaped = this.shapePublic(profile, completedJobs, reviews, hoursByServiceId);
-    const reputation = await this.reputation.getSnapshot(userId);
+    const shaped = this.shapePublic(
+      profile,
+      completedJobs,
+      reviews,
+      hoursByServiceId,
+    );
     return { ...shaped, reputation };
   }
 
@@ -452,6 +480,10 @@ export class PartnersService {
 
     return {
       ...safeProfile,
+      phoneVerified: Boolean(
+        (profile.user as { phoneVerified?: boolean }).phoneVerified ??
+          profile.phoneVerified,
+      ),
       skills: parseSkills(profile.skillsJson),
       gallery: parseGallery(profile.galleryJson),
       districtsList: parseDistricts(profile.districts),
@@ -851,60 +883,20 @@ export class PartnersService {
     return { partnerUserId, saved: false };
   }
 
-  /** Gửi OTP SMS mock — trả debugCode để test (không tích hợp nhà mạng). */
+  /** OTP key một lần — ủy quyền AuthService (eSMS hoặc mock). */
   async requestPhoneOtp(userId: string, dto: RequestPhoneOtpDto) {
     await this.requireOrCreateProfile(userId);
-    const phone = dto.phone.replace(/\s|-/g, '').trim();
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + OTP_TTL_MS);
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { phone },
-    });
-    await this.prisma.partnerProfile.update({
-      where: { userId },
-      data: {
-        phoneVerified: false,
-        phoneOtpCode: code,
-        phoneOtpExpiresAt: expiresAt,
-      },
-    });
-
+    const result = await this.authService.requestPhoneOtp(userId, dto);
     return {
-      ok: true,
-      phone,
-      expiresAt: expiresAt.toISOString(),
-      /** Dev/mock only — production sẽ gửi SMS, không trả mã. */
-      debugCode: code,
-      channel: 'sms_mock',
-      message: `Đã gửi OTP mock tới ${phone}. Dùng mã debugCode để xác minh.`,
+      ...result,
+      /** Alias tương thích UI cũ (chỉ có khi mock). */
+      debugCode: 'key' in result ? result.key : undefined,
     };
   }
 
   async confirmPhoneOtp(userId: string, dto: ConfirmPhoneOtpDto) {
-    const profile = await this.prisma.partnerProfile.findUnique({
-      where: { userId },
-    });
-    if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
-    if (!profile.phoneOtpCode || !profile.phoneOtpExpiresAt) {
-      throw new BadRequestException('Chưa yêu cầu OTP. Bấm gửi mã trước.');
-    }
-    if (profile.phoneOtpExpiresAt.getTime() < Date.now()) {
-      throw new BadRequestException('OTP đã hết hạn. Gửi lại mã mới.');
-    }
-    if (dto.code.trim() !== profile.phoneOtpCode) {
-      throw new BadRequestException('Mã OTP không đúng.');
-    }
-
-    await this.prisma.partnerProfile.update({
-      where: { userId },
-      data: {
-        phoneVerified: true,
-        phoneOtpCode: null,
-        phoneOtpExpiresAt: null,
-      },
-    });
+    await this.requireOrCreateProfile(userId);
+    await this.authService.confirmPhoneOtp(userId, { key: dto.code });
     return this.getMine(userId);
   }
 
@@ -942,12 +934,19 @@ export class PartnersService {
       bankName: dto.bankName.trim(),
       accountNo: dto.accountNo.trim(),
       accountName: dto.accountName.trim().toUpperCase(),
-      message:
-        'Quét VietQR (mock) hoặc bấm xác nhận đã chuyển để hoàn tất xác minh NH.',
+      mockConfirmEnabled: allowMockPayments(),
+      message: allowMockPayments()
+        ? 'Quét VietQR (mock) hoặc bấm xác nhận đã chuyển để hoàn tất xác minh NH.'
+        : 'Đã tạo yêu cầu xác minh. Production cần webhook/micro-deposit — mock confirm đã tắt.',
     };
   }
 
   async confirmBankVerify(userId: string, dto: ConfirmBankVerifyDto) {
+    if (!allowMockPayments()) {
+      throw new ForbiddenException(
+        'Xác minh ngân hàng mô phỏng đã tắt. Production cần webhook/micro-deposit thật.',
+      );
+    }
     const profile = await this.prisma.partnerProfile.findUnique({
       where: { userId },
     });

@@ -17,6 +17,9 @@ import { AdminService } from './admin.service';
 import {
   AdminBookingQueryDto,
   AdminCreateServiceDto,
+  AdminAdjustWalletDto,
+  AdminFinanceTxQueryDto,
+  AdminFinanceWalletQueryDto,
   AdminPageQueryDto,
   AdminPartnerQueryDto,
   AdminServiceQueryDto,
@@ -39,6 +42,29 @@ export class AdminController {
   @Get('stats')
   stats() {
     return this.adminService.stats();
+  }
+
+  @Get('finance/overview')
+  financeOverview() {
+    return this.adminService.financeOverview();
+  }
+
+  @Get('finance/wallets')
+  listFinanceWallets(@Query() query: AdminFinanceWalletQueryDto) {
+    return this.adminService.listFinanceWallets(query);
+  }
+
+  @Get('finance/transactions')
+  listFinanceTransactions(@Query() query: AdminFinanceTxQueryDto) {
+    return this.adminService.listFinanceTransactions(query);
+  }
+
+  @Post('finance/wallets/:userId/adjust')
+  adjustWallet(
+    @Param('userId') userId: string,
+    @Body() dto: AdminAdjustWalletDto,
+  ) {
+    return this.adminService.adjustWallet(userId, dto);
   }
 
   @Get('users')

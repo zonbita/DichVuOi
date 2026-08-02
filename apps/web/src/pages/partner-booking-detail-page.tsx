@@ -83,6 +83,7 @@ export function PartnerBookingDetailPage() {
       <PartnerBookingCard
         booking={booking}
         currentUserId={user.id}
+        showChecklist={false}
         statusPending={statusMutation.isPending}
         settlementPending={approveSettlementMutation.isPending}
         statusError={

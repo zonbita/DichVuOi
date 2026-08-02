@@ -1,6 +1,6 @@
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { ConfirmPhoneOtpDto, GoogleLoginDto, LoginDto, RegisterDto, RequestPhoneOtpDto } from './dto/auth.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -11,6 +11,7 @@ export declare class AuthController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
             walletBalance: number;
             partnerProfile: {} | null;
@@ -23,6 +24,20 @@ export declare class AuthController {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
+            role: import("@prisma/client").$Enums.Role;
+            walletBalance: number;
+            partnerProfile: {} | null;
+        };
+    }>;
+    loginWithGoogle(dto: GoogleLoginDto): Promise<{
+        accessToken: string;
+        user: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
             walletBalance: number;
             partnerProfile: {} | null;
@@ -33,6 +48,34 @@ export declare class AuthController {
         email: string;
         fullName: string;
         phone: string | null;
+        phoneVerified: boolean;
+        role: import("@prisma/client").$Enums.Role;
+        walletBalance: number;
+        partnerProfile: {} | null;
+    }>;
+    requestPhoneOtp(user: AuthUser, dto: RequestPhoneOtpDto): Promise<{
+        ok: boolean;
+        phone: string;
+        expiresAt: string;
+        oneTime: boolean;
+        channel: string;
+        message: string;
+        key?: undefined;
+    } | {
+        ok: boolean;
+        phone: string;
+        key: string;
+        expiresAt: string;
+        oneTime: boolean;
+        channel: string;
+        message: string;
+    }>;
+    confirmPhoneOtp(user: AuthUser, dto: ConfirmPhoneOtpDto): Promise<{
+        id: string;
+        email: string;
+        fullName: string;
+        phone: string | null;
+        phoneVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
         walletBalance: number;
         partnerProfile: {} | null;

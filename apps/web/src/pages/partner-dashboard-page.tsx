@@ -2,17 +2,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { PartnerAvatarUpload } from '../components/partner/partner-avatar-upload';
 import { PartnerIncomingList } from '../components/partner/partner-incoming-list';
 import { PartnerJobsList } from '../components/partner/partner-jobs-list';
 import { PartnerLevelPanel } from '../components/partner/partner-level-panel';
-import { PartnerProfessionTabs } from '../components/partner/partner-profession-tabs';
 import { PartnerScheduleBoard } from '../components/partner/partner-schedule-board';
 import { PartnerStatsBar } from '../components/partner/partner-stats-bar';
 import { PartnerVerificationPanel } from '../components/partner/partner-verification-panel';
-import { LevelBadgeGold, VerificationBadge } from '../components/ui/partner-badges';
 import { ProfessionTagsInput } from '../components/ui/profession-tags-input';
 import type { ProfessionOption } from '../components/ui/profession-tags-input';
 import { ProvinceSelect } from '../components/ui/province-select';
@@ -47,16 +45,19 @@ export function PartnerDashboardPage() {
   const { user, loading, canOffer, applySession, setMode, refreshMe } = useAuth();
   const queryClient = useQueryClient();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const legacyTab = searchParams.get('tab');
   const tab =
-    pathname.endsWith('/viec') || legacyTab === 'jobs'
-      ? 'jobs'
-      : pathname.endsWith('/ho-so') || legacyTab === 'profile'
-        ? 'profile'
-        : pathname.endsWith('/cap-do') || legacyTab === 'level'
-          ? 'level'
-          : 'overview';
+    pathname.endsWith('/don-thue') || legacyTab === 'incoming'
+      ? 'incoming'
+      : pathname.endsWith('/viec') || legacyTab === 'jobs'
+        ? 'jobs'
+        : pathname.endsWith('/ho-so') || legacyTab === 'profile'
+          ? 'profile'
+          : pathname.endsWith('/cap-do') || legacyTab === 'level'
+            ? 'level'
+            : 'overview';
   const [profileServiceIds, setProfileServiceIds] = useState<string[]>([]);
   /** Lọc Việc của tôi theo nghề — `'all'` = mọi nghề. */
   const [jobsProfessionId, setJobsProfessionId] = useState('all');
@@ -164,13 +165,14 @@ export function PartnerDashboardPage() {
 
   const acceptMutation = useMutation({
     mutationFn: (id: string) => api.applyBooking(id),
-    onSuccess: (_, id) => {
+    onSuccess: async (_, id) => {
       setAppliedBookingIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
-      void queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      await queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      await queryClient.invalidateQueries({ queryKey: ['wallet'] });
       toast.success('Đã ứng tuyển', {
-        description: 'Chờ chủ đơn chọn người làm',
+        description: 'Đơn đã vào Việc của tôi — chờ chủ đơn chọn',
       });
+      navigate('/doi-tac/viec');
     },
     onError: (err) => {
       const message = (err as Error).message || 'Không ứng tuyển được';
@@ -300,6 +302,9 @@ export function PartnerDashboardPage() {
   if (pathname === '/doi-tac' && legacyTab === 'jobs') {
     return <Navigate to="/doi-tac/viec" replace />;
   }
+  if (pathname === '/doi-tac' && legacyTab === 'incoming') {
+    return <Navigate to="/doi-tac/don-thue" replace />;
+  }
   if (pathname === '/doi-tac' && legacyTab === 'profile') {
     return <Navigate to="/doi-tac/ho-so" replace />;
   }
@@ -312,11 +317,13 @@ export function PartnerDashboardPage() {
     return (
       <div className="w-full rounded-2xl border border-[var(--color-line)] bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-extrabold">
-          {tab === 'jobs'
-            ? 'Việc của tôi'
-            : tab === 'level'
-              ? 'Cấp độ'
-              : 'Tổng quan'}
+          {tab === 'incoming'
+            ? 'Đơn thuê realtime'
+            : tab === 'jobs'
+              ? 'Việc của tôi'
+              : tab === 'level'
+                ? 'Cấp độ'
+                : 'Tổng quan'}
         </h1>
         <p className="mt-2 text-[15px] text-[var(--color-muted)]">
           Điền hồ sơ người làm (SĐT, nghề, ảnh) rồi lưu — sau đó nhận việc bình thường.
@@ -348,78 +355,27 @@ export function PartnerDashboardPage() {
       const tb = new Date(b.createdAt ?? b.scheduledAt).getTime();
       return tb - ta;
     });
-  const filteredMineBookings =
-    jobsProfessionId === 'all'
-      ? mineBookings
-      : mineBookings.filter((b) => b.service?.id === jobsProfessionId);
-
   return (
-    <div className="space-y-1 pb-6">
-      {tab !== 'overview' ? (
+    <div
+      className={
+        tab === 'incoming'
+          ? 'flex h-full min-h-0 flex-col overflow-hidden'
+          : 'space-y-1 pb-6'
+      }
+    >
+      {tab === 'level' ? (
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2">
-              {tab !== 'profile' ? (
-                <h1 className="text-2xl font-extrabold sm:text-3xl">
-                  {tab === 'jobs'
-                    ? 'Việc của tôi'
-                    : tab === 'level'
-                      ? 'Cấp độ'
-                      : 'Nhận việc'}
-                </h1>
-              ) : null}
-              {tab === 'jobs' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                  </span>
-                  Live
-                </span>
-              ) : null}
-            </div>
-            {tab === 'jobs' ? (
-              <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-                Đơn mở realtime và việc đã nhận.
-              </p>
-            ) : tab === 'level' ? (
-              <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-                Cấp merit 1–100 từ giờ online, đơn, đánh giá và hồ sơ.
-              </p>
-            ) : null}
+            <h1 className="text-2xl font-extrabold sm:text-3xl">Cấp độ</h1>
+            <p className="mt-2 text-[15px] text-[var(--color-muted)]">
+              Cấp merit 1–100 từ giờ online, đơn, đánh giá và hồ sơ.
+            </p>
           </div>
-          {tab === 'jobs' ? (
-            <div className="w-full md:w-[360px]">
-              <PartnerProfessionTabs
-                tabs={jobsProfessionTabs}
-                value={jobsProfessionId}
-                onChange={setJobsProfessionId}
-                orientation="vertical"
-              />
-            </div>
-          ) : null}
         </header>
       ) : null}
 
       {(tab === 'overview' || !tab) && (
         <>
-          {user.partnerProfile ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <LevelBadgeGold level={levelQuery.data?.level ?? user.partnerProfile.level ?? 1} />
-              <VerificationBadge
-                verified={Boolean(
-                  levelQuery.data?.inputs.isVerified ?? user.partnerProfile.isVerified,
-                )}
-              />
-              <Link
-                to={`/user/${user.id}`}
-                className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
-              >
-                Xem hồ sơ công khai ›
-              </Link>
-            </div>
-          ) : null}
-
           <PartnerStatsBar
             mine={mineQuery.data ?? []}
             openCount={openCount}
@@ -450,43 +406,49 @@ export function PartnerDashboardPage() {
         </>
       )}
 
+      {tab === 'incoming' && (
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+          <PartnerIncomingList
+            bookings={filteredOpenBookings}
+            loading={openQuery.isLoading}
+            applyingId={acceptMutation.isPending ? (acceptMutation.variables ?? null) : null}
+            appliedIds={appliedBookingIds}
+            onApply={(id) => acceptMutation.mutate(id)}
+            professionTabs={jobsProfessionTabs}
+            professionId={jobsProfessionId}
+            onProfessionChange={setJobsProfessionId}
+            emptyHint={
+              jobsProfessionId !== 'all' && openBookings.length > 0
+                ? 'Không có đơn mở thuộc nghề đang chọn.'
+                : undefined
+            }
+          />
+        </div>
+      )}
+
       {tab === 'jobs' && (
-        <div className="min-w-0 space-y-5">
-          <div className="min-w-0 space-y-8">
-            <PartnerIncomingList
-              bookings={filteredOpenBookings}
-              loading={openQuery.isLoading}
-              applyingId={acceptMutation.isPending ? (acceptMutation.variables ?? null) : null}
-              appliedIds={appliedBookingIds}
-              onApply={(id) => acceptMutation.mutate(id)}
-              emptyHint={
-                jobsProfessionId !== 'all' && openBookings.length > 0
-                  ? 'Không có đơn mở thuộc nghề đang chọn.'
-                  : undefined
-              }
-            />
-            <PartnerJobsList
-              bookings={filteredMineBookings}
-              sourceTotal={mineBookings.length}
-              loading={mineQuery.isLoading}
-              currentUserId={user.id}
-              statusPending={statusMutation.isPending}
-              statusVariables={statusMutation.variables ?? null}
-              statusError={statusMutation.isError ? (statusMutation.error as Error) : null}
-              settlementPending={approveSettlementMutation.isPending}
-              settlementBookingId={approveSettlementMutation.variables ?? null}
-              settlementError={
-                approveSettlementMutation.isError
-                  ? (approveSettlementMutation.error as Error)
-                  : null
-              }
-              onStart={(id) => statusMutation.mutate({ id, status: 'IN_PROGRESS' })}
-              onComplete={(id) =>
-                statusMutation.mutate({ id, status: 'AWAITING_CONFIRM' })
-              }
-              onApproveSettlement={(id) => approveSettlementMutation.mutate(id)}
-            />
-          </div>
+        <div className="min-w-0">
+          <PartnerJobsList
+            bookings={mineBookings}
+            sourceTotal={mineBookings.length}
+            loading={mineQuery.isLoading}
+            currentUserId={user.id}
+            statusPending={statusMutation.isPending}
+            statusVariables={statusMutation.variables ?? null}
+            statusError={statusMutation.isError ? (statusMutation.error as Error) : null}
+            settlementPending={approveSettlementMutation.isPending}
+            settlementBookingId={approveSettlementMutation.variables ?? null}
+            settlementError={
+              approveSettlementMutation.isError
+                ? (approveSettlementMutation.error as Error)
+                : null
+            }
+            onStart={(id) => statusMutation.mutate({ id, status: 'IN_PROGRESS' })}
+            onComplete={(id) =>
+              statusMutation.mutate({ id, status: 'AWAITING_CONFIRM' })
+            }
+            onApproveSettlement={(id) => approveSettlementMutation.mutate(id)}
+          />
         </div>
       )}
 

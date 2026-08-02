@@ -1,7 +1,15 @@
-import { formatPrice } from '../../services/api';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Booking } from '../../types/catalog';
 import { OpenJobCard, openJobRoomTone } from '../common/open-job-card';
+import { ListPagination } from '../ui/list-pagination';
 import { Icon } from '../ui/icon';
+import {
+  PartnerProfessionTabs,
+  type ProfessionTab,
+} from './partner-profession-tabs';
+
+const PAGE_SIZE = 3;
 
 type Props = {
   bookings: Booking[];
@@ -10,9 +18,12 @@ type Props = {
   applyingId?: string | null;
   appliedIds?: string[];
   emptyHint?: string;
+  professionTabs?: ProfessionTab[];
+  professionId?: string;
+  onProfessionChange?: (id: string) => void;
 };
 
-/** Danh sách đơn mở — partner ứng tuyển (cọc 10%), chủ đơn chọn sau. */
+/** Danh sách đơn mở — partner ứng tuyển (cọc theo % chủ thuê set). */
 export function PartnerIncomingList({
   bookings,
   loading,
@@ -20,27 +31,56 @@ export function PartnerIncomingList({
   applyingId,
   appliedIds = [],
   emptyHint,
+  professionTabs,
+  professionId = 'all',
+  onProfessionChange,
 }: Props) {
+  const [page, setPage] = useState(1);
+  const showProfessionFilter =
+    Boolean(professionTabs?.length) && Boolean(onProfessionChange);
+
+  const pageCount = Math.max(1, Math.ceil(bookings.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+
+  useEffect(() => {
+    setPage(1);
+  }, [professionId]);
+
+  useEffect(() => {
+    if (page !== safePage) setPage(safePage);
+  }, [page, safePage]);
+
+  const paged = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return bookings.slice(start, start + PAGE_SIZE);
+  }, [bookings, safePage]);
+
   return (
-    <section className="surface-card flex h-full min-h-[320px] flex-col p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-2">
-        <div>
+    <section className="surface-card flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5">
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 flex-1">
           <h2 className="text-lg font-extrabold">Đơn thuê realtime</h2>
-          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-            Khách đặt cọc 100% → ứng tuyển (cọc 10% ví) → chờ chủ đơn chọn.
-          </p>
+          <Link
+            to="/doi-tac/ho-so"
+            className="mt-0.5 inline-block text-xs font-semibold text-[var(--color-brand)] underline-offset-2 hover:underline"
+          >
+            Thêm nghề (Bấm vào để sang hồ sơ)
+          </Link>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-          </span>
-          Live
-        </span>
+        {showProfessionFilter ? (
+          <div className="w-full max-w-[360px] shrink-0 sm:ml-auto">
+            <PartnerProfessionTabs
+              tabs={professionTabs!}
+              value={professionId}
+              onChange={onProfessionChange!}
+              orientation="vertical"
+            />
+          </div>
+        ) : null}
       </div>
 
-      <div className="mt-3 flex-1 space-y-2 overflow-y-auto pr-0.5">
-        {bookings.map((booking) => {
+      <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-0.5">
+        {paged.map((booking) => {
           const isApplying = applyingId === booking.id;
           const isApplied =
             appliedIds.includes(booking.id) ||
@@ -48,9 +88,6 @@ export function PartnerIncomingList({
               ['APPLIED', 'SELECTED'].includes(application.status),
             ) ??
               false);
-          const deposit =
-            booking.applyDepositAmount ??
-            Math.max(1, Math.round(booking.totalPrice * 0.1));
           const tone = isApplied
             ? {
                 label: 'Đã vào phòng',
@@ -64,20 +101,12 @@ export function PartnerIncomingList({
               key={booking.id}
               booking={booking}
               footerLeft={
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span
-                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-extrabold tracking-wide uppercase ${tone.badge}`}
-                  >
-                    <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
-                    {tone.label}
-                  </span>
-                  <p className="text-sm font-semibold text-[var(--color-ink)]">
-                    Cọc{' '}
-                    <span className="text-[var(--color-brand)]">
-                      {formatPrice(deposit)}
-                    </span>
-                  </p>
-                </div>
+                <span
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-extrabold tracking-wide uppercase ${tone.badge}`}
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
+                  {tone.label}
+                </span>
               }
               footerRight={
                 <button
@@ -116,6 +145,17 @@ export function PartnerIncomingList({
               'Chưa có đơn mở. Khi khách đặt cọc, đơn sẽ hiện tại đây.'}
           </p>
         ) : null}
+      </div>
+
+      <div className="mt-3 shrink-0">
+        <ListPagination
+          page={safePage}
+          pageCount={pageCount}
+          total={bookings.length}
+          unitLabel="đơn"
+          onChange={setPage}
+          ariaLabel="Phân trang đơn thuê realtime"
+        />
       </div>
     </section>
   );

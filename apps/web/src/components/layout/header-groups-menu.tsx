@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { catalogQueries } from '../../lib/catalog-queries';
+import { CATALOG_MENU_DARK } from '../../utils/catalog-colors';
 import { Icon } from '../ui/icon';
 import {
   CatalogMobileDrawer,
@@ -99,20 +100,25 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
         <div
           id={menuId}
           role="menu"
-          className="absolute top-[calc(100%+8px)] left-0 z-[9990] flex overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-[var(--shadow-hover)]"
+          className="absolute top-[calc(100%+8px)] left-0 z-[9990] flex overflow-hidden border border-[color-mix(in_srgb,#5eb8e8_45%,transparent)] bg-transparent shadow-[0_18px_48px_rgba(2,22,36,0.42)]"
           onMouseLeave={() => setActiveSlug(groups[0]?.slug ?? null)}
           onClick={(event) => {
             if ((event.target as HTMLElement).closest('a')) close();
           }}
         >
-          <div className="w-[240px] shrink-0 border-r border-[var(--color-line)] bg-white">
-            <p className="flex items-center gap-2.5 px-3 py-3 text-base font-bold text-[var(--color-navy)]">
-              <Icon name="menu" className="h-5 w-5 text-[var(--color-brand)]" />
-              NHÓM DỊCH VỤ
+          <div
+            className={`w-[240px] shrink-0 border-r border-[color-mix(in_srgb,#5eb8e8_35%,transparent)] ${CATALOG_MENU_DARK.surfaceClass}`}
+          >
+            <p
+              className="flex items-center gap-2.5 border-b px-3 py-3 text-[13px] font-bold tracking-wide text-white uppercase"
+              style={{ borderColor: CATALOG_MENU_DARK.border }}
+            >
+              <Icon name="menu" className="h-5 w-5 text-white" />
+              nhóm dịch vụ
             </p>
-            <ul className="max-h-[min(70vh,560px)] overflow-y-auto pb-2">
+            <ul className="max-h-[min(70vh,560px)] overflow-y-auto py-1.5">
               {treeQuery.isLoading ? (
-                <li className="px-3 py-2 text-sm text-[var(--color-muted)]">Đang tải...</li>
+                <li className="px-3 py-2 text-sm text-white/50">Đang tải...</li>
               ) : null}
               {groups.map((group) => (
                 <li key={group.id}>
@@ -121,17 +127,19 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
                     active={activeSlug === group.slug}
                     onEnter={() => setActiveSlug(group.slug)}
                     onClick={close}
+                    tone="dark"
                   />
                 </li>
               ))}
-              <li>
+              <li className="mt-1 border-t pt-1" style={{ borderColor: CATALOG_MENU_DARK.border }}>
                 <Link
                   to="/nhom"
                   onClick={close}
-                  className="flex items-center justify-between px-3 py-2.5 text-[15px] font-semibold text-[var(--color-brand)] hover:bg-[var(--color-brand-soft)]"
+                  className="mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-[14.5px] font-medium lowercase hover:bg-white/[0.06]"
+                  style={{ color: '#fff' }}
                 >
-                  Xem tất cả danh mục
-                  <Icon name="chevronRight" className="h-4 w-4" />
+                  <Icon name="grid" className="h-5 w-5 shrink-0" style={{ color: '#fff' }} />
+                  xem tất cả danh mục
                 </Link>
               </li>
             </ul>

@@ -89,6 +89,8 @@ export type AuthUser = {
   email: string;
   fullName: string;
   phone: string | null;
+  /** Đã xác minh SĐT bằng key OTP một lần. */
+  phoneVerified?: boolean;
   role: UserRole;
   /** Số dư ví nội bộ (VNĐ). */
   walletBalance?: number;

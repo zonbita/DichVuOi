@@ -20,6 +20,10 @@ import type {
   AdminBookingDetail,
   AdminCatalogGroup,
   AdminCategoryOption,
+  AdminFinanceAdjustResult,
+  AdminFinanceOverview,
+  AdminFinanceTransaction,
+  AdminFinanceWallet,
   AdminFlaggedMessage,
   AdminPartner,
   AdminReview,
@@ -34,6 +38,7 @@ import type { ChatbotReply, ChatbotStats } from '../types/chatbot';
 import type { SupportMessage, SupportThread, SupportThreadDetail } from '../types/support';
 import type {
   Invoice,
+  VietQrBank,
   VietQrTopUpIntent,
   VietQrTopUpStatus,
   WalletSummary,
@@ -146,6 +151,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  loginWithGoogle: (payload: { idToken: string }) =>
+    request<AuthResponse>('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   me: (token?: string | null) => request<AuthUser>('/api/auth/me', { token }),
 
   createBooking: (payload: CreateBookingInput) =>
@@ -242,6 +252,32 @@ export const api = {
   payBooking: (id: string) =>
     request<Booking>(`/api/bookings/${id}/pay`, { method: 'POST' }),
   getWallet: () => request<WalletSummary>('/api/wallet'),
+  getVietQrBanks: () => request<VietQrBank[]>('/api/wallet/vietqr/banks'),
+  withdrawWallet: (payload: {
+    amount: number;
+    bankBin: string;
+    bankCode?: string;
+    bankName: string;
+    accountNo: string;
+    accountName: string;
+  }) =>
+    request<{
+      currency: string;
+      balance: number;
+      amount: number;
+      status: string;
+      message: string;
+      payout: {
+        bankBin: string | null;
+        bankCode: string | null;
+        bankName: string | null;
+        accountNo: string | null;
+        accountName: string | null;
+      };
+    }>('/api/wallet/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   topUpWallet: (amount: number) =>
     request<{ currency: string; balance: number }>('/api/wallet/top-up', {
       method: 'POST',
@@ -334,6 +370,35 @@ export const api = {
   listMyComplaints: () => request<Complaint[]>('/api/complaints/mine'),
 
   adminStats: () => request<AdminStats>('/api/admin/stats'),
+  adminFinanceOverview: () =>
+    request<AdminFinanceOverview>('/api/admin/finance/overview'),
+  adminFinanceWallets: (query: {
+    q?: string;
+    page?: number;
+    pageSize?: number;
+    positiveOnly?: boolean;
+  } = {}) =>
+    request<Paginated<AdminFinanceWallet>>(
+      `/api/admin/finance/wallets${queryString(query)}`,
+    ),
+  adminFinanceTransactions: (query: {
+    q?: string;
+    type?: string;
+    userId?: string;
+    page?: number;
+    pageSize?: number;
+  } = {}) =>
+    request<Paginated<AdminFinanceTransaction>>(
+      `/api/admin/finance/transactions${queryString(query)}`,
+    ),
+  adminAdjustWallet: (userId: string, payload: { amount: number; reason: string }) =>
+    request<AdminFinanceAdjustResult>(
+      `/api/admin/finance/wallets/${userId}/adjust`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
   adminUsers: (query: AdminUserQuery = {}) =>
     request<Paginated<AdminUser>>(`/api/admin/users${queryString(query)}`),
   adminUpdateUser: (id: string, role: string) =>
@@ -483,6 +548,7 @@ export const api = {
       phone: string;
       expiresAt: string;
       debugCode: string;
+      key?: string;
       channel: string;
       message: string;
     }>('/api/partners/me/verify-phone/request', {
@@ -493,6 +559,26 @@ export const api = {
     request<PartnerProfile>('/api/partners/me/verify-phone/confirm', {
       method: 'POST',
       body: JSON.stringify({ code }),
+    }),
+
+  requestPhoneOtpKey: (phone: string) =>
+    request<{
+      ok: boolean;
+      phone: string;
+      /** Chỉ có khi channel = web_key_mock. */
+      key?: string;
+      expiresAt: string;
+      oneTime: boolean;
+      channel: string;
+      message: string;
+    }>('/api/auth/verify-phone/request', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    }),
+  confirmPhoneOtpKey: (key: string) =>
+    request<AuthUser>('/api/auth/verify-phone/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ key }),
     }),
   linkPartnerBank: (payload: {
     bankName: string;
@@ -510,6 +596,7 @@ export const api = {
       accountNo: string;
       accountName: string;
       message: string;
+      mockConfirmEnabled?: boolean;
     }>('/api/partners/me/verify-bank/link', {
       method: 'POST',
       body: JSON.stringify(payload),

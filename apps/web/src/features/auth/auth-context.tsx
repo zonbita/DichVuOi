@@ -23,6 +23,7 @@ type AuthContextValue = {
   mode: AppMode;
   setMode: (mode: AppMode) => void;
   login: (email: string, password: string) => Promise<AuthResponse>;
+  loginWithGoogle: (idToken: string) => Promise<AuthResponse>;
   register: (input: {
     email: string;
     password: string;
@@ -103,6 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login: async (email, password) => {
         const session = await api.login({ email, password });
         applySession(session);
+        return session;
+      },
+      loginWithGoogle: async (idToken) => {
+        const session = await api.loginWithGoogle({ idToken });
+        applySession(session);
+        setMode('hire');
         return session;
       },
       register: async (input) => {

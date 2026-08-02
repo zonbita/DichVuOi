@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { catalogQueries } from '../../lib/catalog-queries';
-import { groupColor } from '../../utils/catalog-colors';
+import { CATALOG_MENU_DARK, groupColor } from '../../utils/catalog-colors';
 import { groupIcon } from '../../utils/catalog-display';
 import { Icon } from '../ui/icon';
 import {
@@ -145,14 +145,19 @@ export function CatalogMenu({
           }
         }}
       >
-        <div className="overflow-hidden rounded-[14px] border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-[var(--shadow-card)]">
-          <p className="flex items-center gap-2.5 border-b border-[var(--color-sidebar-border)] px-4 py-3.5 text-[13px] font-bold tracking-wide text-[var(--color-ink)] uppercase">
-            <Icon name="menu" className="h-5 w-5 text-[var(--color-brand)]" />
-            NHÓM DỊCH VỤ
+        <div
+          className={`overflow-hidden ${CATALOG_MENU_DARK.surfaceClass}`}
+        >
+          <p
+            className="flex items-center gap-2.5 border-b px-4 py-3.5 text-[13px] font-bold tracking-wide text-white uppercase"
+            style={{ borderColor: CATALOG_MENU_DARK.border }}
+          >
+            <Icon name="menu" className="h-5 w-5 text-white" />
+            nhóm dịch vụ
           </p>
           <ul className="space-y-0.5 py-2">
             {treeQuery.isLoading ? (
-              <li className="px-4 py-2 text-sm text-[var(--color-muted)]">Đang tải...</li>
+              <li className="px-4 py-2 text-sm text-white/50">Đang tải...</li>
             ) : null}
             {groups.map((group) => (
               <li key={group.id}>
@@ -160,17 +165,22 @@ export function CatalogMenu({
                   group={group}
                   active={activeSlug === group.slug}
                   onEnter={(anchor) => handleItemEnter(group.slug, anchor)}
+                  tone="dark"
                 />
               </li>
             ))}
             {!pickerMode ? (
-              <li className="mt-1 border-t border-[var(--color-sidebar-border)] pt-1">
+              <li
+                className="mt-1 border-t pt-1"
+                style={{ borderColor: CATALOG_MENU_DARK.border }}
+              >
                 <Link
                   to="/nhom"
-                  className="mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[10px] text-[14.5px] font-semibold text-[var(--color-brand-deep)] transition-[background] duration-[180ms] ease-in-out hover:bg-[var(--color-brand-soft)]"
+                  className="mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[10px] text-[14.5px] font-medium lowercase transition-[background] duration-[180ms] ease-in-out hover:bg-white/[0.06]"
+                  style={{ color: '#fff' }}
                 >
-                  <Icon name="grid" className="h-5 w-5 text-[var(--color-brand)]" />
-                  Xem tất cả danh mục
+                  <Icon name="grid" className="h-5 w-5 shrink-0" style={{ color: '#fff' }} />
+                  xem tất cả danh mục
                 </Link>
               </li>
             ) : null}

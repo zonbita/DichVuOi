@@ -20,6 +20,7 @@ const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const finance_service_1 = require("./finance.service");
 const create_vietqr_intent_dto_1 = require("./dto/create-vietqr-intent.dto");
 const top_up_dto_1 = require("./dto/top-up.dto");
+const withdraw_dto_1 = require("./dto/withdraw.dto");
 let FinanceController = class FinanceController {
     finance;
     constructor(finance) {
@@ -27,6 +28,12 @@ let FinanceController = class FinanceController {
     }
     getWallet(user) {
         return this.finance.getWallet(user.id);
+    }
+    listVietQrBanks() {
+        return this.finance.listVietQrBanks();
+    }
+    withdraw(user, dto) {
+        return this.finance.withdraw(user.id, dto);
     }
     topUp(user, dto) {
         return this.finance.topUp(user.id, dto.amount);
@@ -55,6 +62,20 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], FinanceController.prototype, "getWallet", null);
+__decorate([
+    (0, common_1.Get)('wallet/vietqr/banks'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "listVietQrBanks", null);
+__decorate([
+    (0, common_1.Post)('wallet/withdraw'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, withdraw_dto_1.WithdrawDto]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "withdraw", null);
 __decorate([
     (0, common_1.Post)('wallet/top-up'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

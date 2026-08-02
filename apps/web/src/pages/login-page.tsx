@@ -3,6 +3,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
+import {
+  AuthDivider,
+  GoogleSignInButton,
+} from '../components/auth/google-sign-in-button';
 import { useAuth } from '../features/auth/auth-context';
 
 const schema = z.object({
@@ -13,7 +17,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function LoginPage() {
-  const { login, setMode } = useAuth();
+  const { login, loginWithGoogle, setMode } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [error, setError] = useState('');
@@ -26,20 +30,30 @@ export function LoginPage() {
     defaultValues: { email: '', password: '' },
   });
 
+  function afterAuth() {
+    const redirect = params.get('redirect');
+    if (redirect) {
+      navigate(redirect);
+      return;
+    }
+    setMode('hire');
+    navigate('/don-cua-toi');
+  }
+
   async function onSubmit(values: FormValues) {
     setError('');
     try {
       await login(values.email, values.password);
-      const redirect = params.get('redirect');
-      if (redirect) {
-        navigate(redirect);
-        return;
-      }
-      setMode('hire');
-      navigate('/don-cua-toi');
+      afterAuth();
     } catch (err) {
       setError((err as Error).message || 'Đăng nhập thất bại');
     }
+  }
+
+  async function onGoogle(idToken: string) {
+    setError('');
+    await loginWithGoogle(idToken);
+    afterAuth();
   }
 
   return (
@@ -48,7 +62,18 @@ export function LoginPage() {
       <p className="mt-2 text-[15px] text-[var(--color-muted)]">
         Một tài khoản — khách thuê và người làm trên cùng nền tảng.
       </p>
-      <form className="mt-6 space-y-3" onSubmit={handleSubmit(onSubmit)} noValidate>
+
+      <div className="mt-6">
+        <GoogleSignInButton
+          mode="signin"
+          disabled={isSubmitting}
+          onCredential={onGoogle}
+          onError={setError}
+        />
+        <AuthDivider />
+      </div>
+
+      <form className="space-y-3" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div>
           <input
             {...register('email')}

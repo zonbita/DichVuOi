@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Max,
   Min,
   MinLength,
 } from 'class-validator';
@@ -59,4 +60,15 @@ export class CreateBookingDto {
   @IsInt()
   @Min(0)
   budgetMax?: number;
+
+  @ApiPropertyOptional({
+    example: 10,
+    description:
+      'Mức cọc ứng tuyển người làm (% tổng giá đơn). ≤5tr: 0–50% (mặc định 10%). >5tr: 50–100% (mặc định 50%).',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  applyDepositPercent?: number;
 }

@@ -66,3 +66,14 @@ export declare class AdminUpdateServiceDto {
 export declare class AdminUpdateGroupDto {
     isFeatured?: boolean;
 }
+export declare class AdminFinanceTxQueryDto extends AdminPageQueryDto {
+    type?: string;
+    userId?: string;
+}
+export declare class AdminFinanceWalletQueryDto extends AdminPageQueryDto {
+    positiveOnly?: boolean;
+}
+export declare class AdminAdjustWalletDto {
+    amount: number;
+    reason: string;
+}

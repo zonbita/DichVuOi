@@ -1,11 +1,13 @@
 import { ReputationService } from '../../common/reputation.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
 import { ConfirmBankVerifyDto, ConfirmPhoneOtpDto, LinkBankAccountDto, RequestPhoneOtpDto } from './dto/partner-verify.dto';
 import { EnablePartnerDto, SyncPartnerOfferingsDto, UpdatePartnerProfileDto } from './dto/update-partner-profile.dto';
 export declare class PartnersService {
     private readonly prisma;
     private readonly reputation;
-    constructor(prisma: PrismaService, reputation: ReputationService);
+    private readonly authService;
+    constructor(prisma: PrismaService, reputation: ReputationService, authService: AuthService);
     private shapePublic;
     searchPublic(q: string, limit?: number): Promise<{
         userId: string;
@@ -87,6 +89,7 @@ export declare class PartnersService {
         }[];
     }>;
     getMine(userId: string): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -131,9 +134,14 @@ export declare class PartnersService {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -147,11 +155,6 @@ export declare class PartnersService {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -160,6 +163,7 @@ export declare class PartnersService {
         responseMinutes: number;
     }>;
     enableOffering(userId: string, dto: EnablePartnerDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -204,9 +208,14 @@ export declare class PartnersService {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -220,11 +229,6 @@ export declare class PartnersService {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -234,6 +238,7 @@ export declare class PartnersService {
     }>;
     private requireOrCreateProfile;
     updateMine(userId: string, dto: UpdatePartnerProfileDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -278,9 +283,14 @@ export declare class PartnersService {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -294,11 +304,6 @@ export declare class PartnersService {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -307,6 +312,7 @@ export declare class PartnersService {
         responseMinutes: number;
     }>;
     syncOfferings(userId: string, dto: SyncPartnerOfferingsDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -351,9 +357,14 @@ export declare class PartnersService {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -367,11 +378,6 @@ export declare class PartnersService {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -465,14 +471,26 @@ export declare class PartnersService {
         saved: boolean;
     }>;
     requestPhoneOtp(userId: string, dto: RequestPhoneOtpDto): Promise<{
+        debugCode: string | undefined;
         ok: boolean;
         phone: string;
         expiresAt: string;
-        debugCode: string;
+        oneTime: boolean;
+        channel: string;
+        message: string;
+        key?: undefined;
+    } | {
+        debugCode: string | undefined;
+        ok: boolean;
+        phone: string;
+        key: string;
+        expiresAt: string;
+        oneTime: boolean;
         channel: string;
         message: string;
     }>;
     confirmPhoneOtp(userId: string, dto: ConfirmPhoneOtpDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -517,9 +535,14 @@ export declare class PartnersService {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -533,11 +556,6 @@ export declare class PartnersService {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;
@@ -554,9 +572,11 @@ export declare class PartnersService {
         bankName: string;
         accountNo: string;
         accountName: string;
+        mockConfirmEnabled: boolean;
         message: string;
     }>;
     confirmBankVerify(userId: string, dto: ConfirmBankVerifyDto): Promise<{
+        phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
@@ -601,9 +621,14 @@ export declare class PartnersService {
             email: string;
             fullName: string;
             phone: string | null;
+            phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
         id: string;
+        bankName: string | null;
+        bankAccountNo: string | null;
+        bankAccountName: string | null;
+        bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
         userId: string;
@@ -617,11 +642,6 @@ export declare class PartnersService {
         onlineSeconds: number;
         lastOnlineAt: Date | null;
         isVerified: boolean;
-        phoneVerified: boolean;
-        bankVerified: boolean;
-        bankName: string | null;
-        bankAccountNo: string | null;
-        bankAccountName: string | null;
         avatarUrl: string | null;
         galleryJson: string | null;
         skillsJson: string | null;

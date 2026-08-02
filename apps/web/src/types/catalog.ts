@@ -136,6 +136,7 @@ export type Booking = {
   address: string;
   scheduledAt: string;
   createdAt?: string;
+  updatedAt?: string;
   totalPrice: number;
   customerName: string;
   customerPhone: string;
@@ -166,7 +167,12 @@ export type Booking = {
   requirements?: BookingRequirement[];
   applications?: BookingApplication[];
   applicationCount?: number;
+  /** Cọc ứng tuyển yêu cầu (₫) — theo applyDepositBps × totalPrice. */
   applyDepositAmount?: number;
+  /** Basis points cọc ứng tuyển (0–10000). */
+  applyDepositBps?: number;
+  /** % cọc ứng tuyển (0–100). */
+  applyDepositPercent?: number;
   service: Service;
   partner?: {
     id: string;
@@ -212,6 +218,8 @@ export type CreateBookingInput = {
   note?: string;
   budgetMin?: number;
   budgetMax?: number;
+  /** % cọc ứng tuyển người làm (0–100). Mặc định API = 10. */
+  applyDepositPercent?: number;
 };
 
 export type ServiceProvider = {

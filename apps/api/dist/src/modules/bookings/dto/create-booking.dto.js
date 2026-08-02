@@ -23,6 +23,7 @@ class CreateBookingDto {
     note;
     budgetMin;
     budgetMax;
+    applyDepositPercent;
 }
 exports.CreateBookingDto = CreateBookingDto;
 __decorate([
@@ -85,4 +86,15 @@ __decorate([
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
 ], CreateBookingDto.prototype, "budgetMax", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 10,
+        description: 'Mức cọc ứng tuyển người làm (% tổng giá đơn). ≤5tr: 0–50% (mặc định 10%). >5tr: 50–100% (mặc định 50%).',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(100),
+    __metadata("design:type", Number)
+], CreateBookingDto.prototype, "applyDepositPercent", void 0);
 //# sourceMappingURL=create-booking.dto.js.map

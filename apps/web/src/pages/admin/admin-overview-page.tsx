@@ -83,6 +83,14 @@ export function AdminOverviewPage() {
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-[var(--color-muted)]">
             Dòng tiền
           </h2>
+          <div className="mb-3">
+            <Link
+              to="/admin/finance"
+              className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
+            >
+              Mở menu Tiền →
+            </Link>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
               label="GMV hoàn thành"
