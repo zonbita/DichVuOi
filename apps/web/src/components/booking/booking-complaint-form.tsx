@@ -249,7 +249,7 @@ export function BookingComplaintForm({
           ) : null}
           {mutation.isSuccess ? (
             <p className="text-sm font-semibold text-[var(--color-brand-deep)]">
-              Đã gửi — đơn chuyển tranh chấp; Admin xử lý escrow.
+              Đã gửi — đơn chuyển tranh chấp; Admin xử lý cọc giữ chỗ.
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2">

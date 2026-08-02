@@ -20,7 +20,7 @@ export const aboutPage: DocContent = {
     {
       heading: 'Vì sao chọn Dịch Vụ Ơi?',
       bullets: [
-        'Đặt cọc escrow — giảm rủi ro “đặt rồi bỏ” hoặc không nhận được dịch vụ.',
+        'Đặt cọc giữ chỗ — giảm rủi ro “đặt rồi bỏ” hoặc không nhận được dịch vụ.',
         'Che thông tin liên hệ trước khi cọc; chat trong app sau khi giữ chỗ.',
         'Cấp độ đối tác, đánh giá hai chiều sau khi hoàn thành.',
         'Hỗ trợ khiếu nại theo quy trình công bố.',
@@ -64,7 +64,7 @@ export const termsPage: DocContent = {
       paragraphs: [
         'Dịch Vụ Ơi là sàn kết nối thương mại điện tử. Người làm là đối tác độc lập, không phải nhân viên của công ty vận hành sàn. Sàn không tuyển dụng, không trả lương và không điều hành trực tiếp việc thực hiện dịch vụ tại hiện trường.',
         'Việc thực hiện dịch vụ và mọi thiệt hại phát sinh trong quá trình làm việc thuộc trách nhiệm của các bên trên đơn (khách thuê và người làm), trừ khi pháp luật hoặc cam kết vận hành đã công bố quy định khác. Badge «Đã xác thực» phản ánh bước xác minh vận hành của sàn (khi có), không phải bảo lãnh tuyệt đối mọi hành vi của người làm.',
-        'Chúng tôi hỗ trợ khiếu nại theo chính sách, giữ escrow theo quy trình, và hợp tác với cơ quan có thẩm quyền khi có yêu cầu hợp pháp. Sàn không quảng cáo «đảm bảo an toàn 100%» hay «thợ uy tín tuyệt đối».',
+        'Chúng tôi hỗ trợ khiếu nại theo chính sách, giữ cọc theo quy trình, và hợp tác với cơ quan có thẩm quyền khi có yêu cầu hợp pháp. Sàn không quảng cáo «đảm bảo an toàn 100%» hay «thợ uy tín tuyệt đối».',
       ],
     },
     {
@@ -79,7 +79,7 @@ export const termsPage: DocContent = {
       heading: '5. Hành vi bị cấm',
       bullets: [
         'Gian lận đánh giá, spam, lừa đảo, đe dọa.',
-        'Đưa giao dịch ra ngoài sàn nhằm tránh phí / né bảo vệ escrow (trừ khi hai bên đã hoàn tất đúng quy trình và được phép).',
+        'Đưa giao dịch ra ngoài sàn nhằm tránh phí / né bảo vệ cọc trên sàn (trừ khi hai bên đã hoàn tất đúng quy trình và được phép).',
         'Đăng nội dung bất hợp pháp, khiêu dâm trẻ em, hoặc xâm phạm quyền người khác.',
       ],
     },
@@ -109,7 +109,7 @@ export const privacyPage: DocContent = {
     {
       heading: '2. Mục đích sử dụng',
       bullets: [
-        'Vận hành đặt lịch, thanh toán escrow, thông báo trạng thái đơn.',
+        'Vận hành đặt lịch, thanh toán và giữ cọc trên sàn, thông báo trạng thái đơn.',
         'Xác minh đối tác, tính cấp độ, xử lý khiếu nại.',
         'Cải thiện sản phẩm, chống gian lận.',
         'Gửi thông báo dịch vụ (có thể tắt marketing nếu có tùy chọn).',
@@ -256,7 +256,7 @@ export const refundPage: DocContent = {
     {
       heading: 'Nguyên tắc',
       paragraphs: [
-        'Tiền đặt cọc được giữ trên sàn (escrow) đến khi đơn hoàn thành hoặc bị hủy theo quy tắc. Mức hoàn phụ thuộc bên hủy, thời điểm hủy và kết quả xác minh khiếu nại.',
+        'Tiền đặt cọc được giữ trên sàn đến khi đơn hoàn thành hoặc bị hủy theo quy tắc. Mức hoàn phụ thuộc bên hủy, thời điểm hủy và kết quả xác minh khiếu nại.',
       ],
     },
     {
@@ -338,7 +338,7 @@ export const partnerProcessPage: DocContent = {
       bullets: [
         'Chỉ chat và trao đổi qua kênh trên nền tảng khi đơn đang hiệu lực.',
         'Đúng giờ theo lịch đã nhận; báo sớm nếu sự cố để khách được hỗ trợ.',
-        'Không yêu cầu thanh toán ngoài escrow cho phần đã cọc trên đơn.',
+        'Không yêu cầu thanh toán ngoài sàn cho phần đã cọc trên đơn.',
       ],
     },
     {

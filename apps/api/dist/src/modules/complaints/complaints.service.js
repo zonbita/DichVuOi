@@ -113,7 +113,7 @@ let ComplaintsService = class ComplaintsService {
             throw new common_1.BadRequestException('Chỉ khiếu nại khi đơn đang chờ xác nhận hoặc đang tranh chấp');
         }
         if (booking.paymentStatus !== client_1.PaymentStatus.HELD) {
-            throw new common_1.BadRequestException('Escrow không còn giữ — không mở khiếu nại');
+            throw new common_1.BadRequestException('Cọc không còn đang giữ — không mở khiếu nại');
         }
         const existing = await this.prisma.complaint.findFirst({
             where: {

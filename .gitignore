@@ -11,3 +11,5 @@ coverage
 apps/*/.env
 apps/*/.env.*
 !apps/*/.env.example
+.vercel
+.env*

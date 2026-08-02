@@ -577,7 +577,7 @@ export class FinanceService {
       if (!booking) throw new NotFoundException('Không tìm thấy đơn');
       if (booking.paymentStatus === PaymentStatus.RELEASED) return false;
       if (booking.paymentStatus !== PaymentStatus.HELD) {
-        throw new BadRequestException('Escrow không ở trạng thái đang giữ');
+        throw new BadRequestException('Cọc không ở trạng thái đang giữ');
       }
       if (!booking.partnerId) {
         throw new BadRequestException('Đơn chưa có người làm để giải ngân');
@@ -657,7 +657,7 @@ export class FinanceService {
       if (!booking) throw new NotFoundException('Không tìm thấy đơn');
       if (booking.paymentStatus === PaymentStatus.REFUNDED) return false;
       if (booking.paymentStatus !== PaymentStatus.HELD) {
-        throw new BadRequestException('Escrow không ở trạng thái đang giữ');
+        throw new BadRequestException('Cọc không ở trạng thái đang giữ');
       }
 
       const refundedAt = new Date();
@@ -720,7 +720,7 @@ export class FinanceService {
       if (!booking) throw new NotFoundException('Không tìm thấy đơn');
       if (booking.paymentStatus === PaymentStatus.RELEASED) return false;
       if (booking.paymentStatus !== PaymentStatus.HELD) {
-        throw new BadRequestException('Escrow không ở trạng thái đang giữ');
+        throw new BadRequestException('Cọc không ở trạng thái đang giữ');
       }
       if (!booking.partnerId) {
         throw new BadRequestException('Đơn chưa có người làm để giải ngân');

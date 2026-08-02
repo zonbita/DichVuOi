@@ -26,8 +26,8 @@ import {
 const TX_TYPE_OPTIONS = [
   { value: 'TOP_UP', label: 'Nạp' },
   { value: 'WITHDRAW', label: 'Rút' },
-  { value: 'ESCROW_HOLD', label: 'Escrow giữ' },
-  { value: 'ESCROW_REFUND', label: 'Escrow hoàn' },
+  { value: 'ESCROW_HOLD', label: 'Giữ cọc' },
+  { value: 'ESCROW_REFUND', label: 'Hoàn cọc' },
   { value: 'PARTNER_PAYOUT', label: 'Trả đối tác' },
   { value: 'ADMIN_ADJUSTMENT', label: 'Admin điều chỉnh' },
   { value: 'APPLY_DEPOSIT', label: 'Cọc ứng tuyển' },
@@ -111,7 +111,7 @@ export function AdminFinancePage() {
     <div>
       <PageHeader
         title="Tiền"
-        description="Tổng ví, escrow, lịch sử giao dịch và điều chỉnh số dư (admin)."
+        description="Tổng ví, cọc đang giữ, lịch sử giao dịch và điều chỉnh số dư (admin)."
       />
 
       {overviewQuery.isLoading ? (
@@ -126,7 +126,7 @@ export function AdminFinancePage() {
             hint={`${overview.walletsWithBalance} tài khoản có số dư`}
           />
           <StatCard
-            label="Escrow đang giữ"
+            label="Cọc đang giữ"
             value={formatPrice(overview.escrowHeldAmount)}
             hint={`${overview.escrowHeldCount} đơn`}
           />

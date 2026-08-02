@@ -462,7 +462,7 @@ let FinanceService = class FinanceService {
         if (booking.paymentStatus === client_1.PaymentStatus.RELEASED)
             return false;
         if (booking.paymentStatus !== client_1.PaymentStatus.HELD) {
-            throw new common_1.BadRequestException('Escrow không ở trạng thái đang giữ');
+            throw new common_1.BadRequestException('Cọc không ở trạng thái đang giữ');
         }
         if (!booking.partnerId) {
             throw new common_1.BadRequestException('Đơn chưa có người làm để giải ngân');
@@ -529,7 +529,7 @@ let FinanceService = class FinanceService {
         if (booking.paymentStatus === client_1.PaymentStatus.REFUNDED)
             return false;
         if (booking.paymentStatus !== client_1.PaymentStatus.HELD) {
-            throw new common_1.BadRequestException('Escrow không ở trạng thái đang giữ');
+            throw new common_1.BadRequestException('Cọc không ở trạng thái đang giữ');
         }
         const refundedAt = new Date();
         const updated = await tx.booking.updateMany({
@@ -582,7 +582,7 @@ let FinanceService = class FinanceService {
             if (booking.paymentStatus === client_1.PaymentStatus.RELEASED)
                 return false;
             if (booking.paymentStatus !== client_1.PaymentStatus.HELD) {
-                throw new common_1.BadRequestException('Escrow không ở trạng thái đang giữ');
+                throw new common_1.BadRequestException('Cọc không ở trạng thái đang giữ');
             }
             if (!booking.partnerId) {
                 throw new common_1.BadRequestException('Đơn chưa có người làm để giải ngân');

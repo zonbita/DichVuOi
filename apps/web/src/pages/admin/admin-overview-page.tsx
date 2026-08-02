@@ -23,7 +23,7 @@ export function AdminOverviewPage() {
     <div>
       <PageHeader
         title="Tổng quan"
-        description="Theo dõi người dùng, đơn hàng, escrow và chất lượng vận hành."
+        description="Theo dõi người dùng, đơn hàng, cọc giữ chỗ và chất lượng vận hành."
       />
 
       {stats.partnersPendingVerify > 0 || stats.escrowHeldCount > 0 ? (
@@ -41,7 +41,7 @@ export function AdminOverviewPage() {
               to="/admin/bookings?paymentStatus=HELD"
               className="rounded-full bg-sky-100 px-3.5 py-1.5 text-sm font-semibold text-sky-900 hover:bg-sky-200"
             >
-              {stats.escrowHeldCount} đơn đang giữ escrow →
+              {stats.escrowHeldCount} đơn đang giữ cọc →
             </Link>
           ) : null}
         </div>
@@ -97,7 +97,7 @@ export function AdminOverviewPage() {
               value={formatPrice(stats.gmvCompleted)}
             />
             <StatCard
-              label="Escrow đang giữ"
+              label="Cọc đang giữ"
               value={formatPrice(stats.escrowHeldAmount)}
               hint={`${stats.escrowHeldCount} đơn`}
             />

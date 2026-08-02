@@ -176,11 +176,11 @@ export function CatalogMenu({
               >
                 <Link
                   to="/nhom"
-                  className="mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[10px] text-[14.5px] font-medium lowercase transition-[background] duration-[180ms] ease-in-out hover:bg-white/[0.06]"
+                  className="mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[10px] text-[14.5px] font-medium transition-[background] duration-[180ms] ease-in-out hover:bg-white/[0.06]"
                   style={{ color: '#fff' }}
                 >
                   <Icon name="grid" className="h-5 w-5 shrink-0" style={{ color: '#fff' }} />
-                  xem tất cả danh mục
+                  Xem tất cả danh mục
                 </Link>
               </li>
             ) : null}

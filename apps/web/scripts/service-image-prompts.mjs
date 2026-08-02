@@ -154,6 +154,22 @@ export const SCENE_PROMPTS = {
     'Graphic designer sketching logo concepts on tablet with stylus',
   'viet-content':
     'Content writer typing blog post on laptop in cafe with notebook',
+  'seo-specialist':
+    'SEO specialist analyzing organic traffic charts and keyword rankings on dual monitors in coworking desk',
+  'chay-ads-facebook':
+    'Digital marketer managing social ads campaign dashboard with creatives and CPC metrics on dual screens',
+  'chay-ads-google':
+    'PPC specialist optimizing search ads bids and shopping product ads on ultrawide monitor',
+  'chay-ads-tiktok':
+    'Creator editing short-form vertical video ads on laptop with phone stand showing draft clip',
+  'email-marketing':
+    'Email marketer designing newsletter template with open-rate analytics on secondary screen',
+  'affiliate-marketing':
+    'Affiliate marketer reviewing partner commission dashboard and referral tracking table on laptop',
+  'nghien-cuu-tu-khoa':
+    'SEO researcher clustering keyword sticky notes with volume difficulty spreadsheet on laptop',
+  'toi-uu-ty-le-chuyen-doi':
+    'CRO specialist comparing landing page heatmap and A/B test variants on large monitor',
   'chup-quay-su-kien':
     'Event photographer with DSLR capturing wedding toast in banquet hall',
   'tam-cat-thu-cung':

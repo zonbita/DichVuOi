@@ -69,7 +69,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         enum: client_1.ComplaintResolutionAction,
-        description: 'REFUND=chấp nhận khách; RELEASE=giải ngân; RETRY_*=làm lại; NONE=không đổi escrow',
+        description: 'REFUND=chấp nhận khách; RELEASE=giải ngân; RETRY_*=làm lại; NONE=không đổi cọc giữ chỗ',
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEnum)(client_1.ComplaintResolutionAction),

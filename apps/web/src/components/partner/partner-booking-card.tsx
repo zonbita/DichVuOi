@@ -246,7 +246,7 @@ export function PartnerBookingCard({
           {booking.status === 'AWAITING_CONFIRM' ? (
             <div className="mt-3 max-w-[14rem] space-y-1.5 text-left">
               <p className="text-xs text-orange-800">
-                Đang chờ khách xác nhận / report. Escrow vẫn giữ.
+                Đang chờ khách xác nhận / report. Cọc vẫn đang giữ trên sàn.
               </p>
               {booking.settlementPercent ? (
                 <p className="text-xs text-[var(--color-muted)]">

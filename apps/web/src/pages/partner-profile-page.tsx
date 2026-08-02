@@ -9,7 +9,6 @@ import { publicPartnerQueryOptions } from '../lib/query-client';
 import { api, formatPrice, formatWorkHours } from '../services/api';
 import type { PublicPartnerProfile } from '../types/auth';
 import { offeringColor } from '../utils/catalog-colors';
-import { groupIcon } from '../utils/catalog-display';
 
 type PartnerOffering = PublicPartnerProfile['offerings'][number];
 
@@ -98,7 +97,6 @@ function OfferingNavColumn({
           const selected = offering.id === activeId;
           const groupSlug = offering.service.category?.group.slug;
           const chipColor = offeringColor(groupSlug);
-          const iconName = groupIcon(groupSlug ?? offering.service.slug);
 
           return (
             <li key={offering.id} className="shrink-0 lg:shrink">
@@ -106,7 +104,7 @@ function OfferingNavColumn({
                 type="button"
                 aria-current={selected ? 'true' : undefined}
                 onClick={() => onChange(offering.id)}
-                className={`flex w-full min-w-[11rem] items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-sm transition-[color,background-color,box-shadow,border-color] duration-[180ms] ease-in-out lg:min-w-0 ${
+                className={`w-full min-w-[11rem] rounded-xl px-2.5 py-2.5 text-left text-sm transition-[color,background-color,box-shadow,border-color] duration-[180ms] ease-in-out lg:min-w-0 ${
                   selected
                     ? 'font-semibold shadow-sm'
                     : 'border border-[var(--color-line)] bg-white hover:bg-[var(--color-canvas)]'
@@ -121,29 +119,9 @@ function OfferingNavColumn({
                     : { color: 'var(--color-ink)' }
                 }
               >
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
-                  style={
-                    selected
-                      ? {
-                          borderColor: `color-mix(in srgb, ${chipColor.main} 28%, transparent)`,
-                          backgroundColor: `color-mix(in srgb, ${chipColor.main} 10%, white)`,
-                          color: chipColor.main,
-                        }
-                      : {
-                          borderColor: 'var(--color-line)',
-                          backgroundColor: 'var(--color-canvas)',
-                          color: 'var(--color-muted)',
-                        }
-                  }
-                >
-                  <Icon name={iconName} className="h-4 w-4" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold leading-snug">{offering.service.name}</span>
-                  <span className="mt-1 block text-[var(--color-muted)]">
-                    <OfferingRatingInline offering={offering} />
-                  </span>
+                <span className="block font-semibold leading-snug">{offering.service.name}</span>
+                <span className="mt-1 block text-[var(--color-muted)]">
+                  <OfferingRatingInline offering={offering} />
                 </span>
               </button>
             </li>
@@ -437,8 +415,16 @@ function ProfileSidebar({
           <p className="flex items-start gap-2 text-sm text-[var(--color-muted)]">
             <Icon name="pin" className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              {data.city}
-              {data.districts.length ? ` · ${data.districts.join(', ')}` : ''}
+              {[
+                data.city,
+                ...data.districts.filter(
+                  (d) =>
+                    d.trim().toLocaleLowerCase('vi') !==
+                    (data.city ?? '').trim().toLocaleLowerCase('vi'),
+                ),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
           </p>
           <p className="flex items-start gap-2 text-sm text-[var(--color-muted)]">

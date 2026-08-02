@@ -1116,7 +1116,7 @@ export class BookingsService {
       throw new BadRequestException('Đơn đã có người làm hoặc không còn mở');
     }
     if (!isDepositHeld(booking.paymentStatus)) {
-      throw new BadRequestException('Escrow chưa HELD');
+      throw new BadRequestException('Chưa đặt cọc giữ chỗ');
     }
 
     const selected = booking.applications.find((a) => a.id === applicationId);
@@ -1362,7 +1362,7 @@ export class BookingsService {
     if (status === BookingStatus.IN_PROGRESS) {
       if (raw.paymentStatus !== PaymentStatus.HELD) {
         throw new BadRequestException(
-          'Khách chưa đặt cọc giữ chỗ (escrow). Không thể bắt đầu làm.',
+          'Khách chưa đặt cọc giữ chỗ. Không thể bắt đầu làm.',
         );
       }
     }
@@ -1393,10 +1393,10 @@ export class BookingsService {
         settledByFinance = true;
       } else if (raw.paymentStatus === PaymentStatus.UNPAID) {
         throw new BadRequestException(
-          'Không hoàn thành khi chưa thanh toán escrow',
+          'Không hoàn thành khi chưa đặt cọc giữ chỗ',
         );
       } else if (raw.paymentStatus !== PaymentStatus.RELEASED) {
-        throw new BadRequestException('Escrow đã hoàn — không thể hoàn thành');
+        throw new BadRequestException('Cọc đã hoàn — không thể hoàn thành');
       }
       data.confirmDeadlineAt = null;
       data.responseDeadlineAt = null;
@@ -1743,7 +1743,7 @@ export class BookingsService {
       );
     }
     if (booking.paymentStatus !== PaymentStatus.HELD) {
-      throw new BadRequestException('Escrow không còn giữ để thương lượng nghiệm thu');
+      throw new BadRequestException('Cọc không còn đang giữ để thương lượng nghiệm thu');
     }
     if (!booking.partnerId) {
       throw new BadRequestException('Đơn chưa có người làm');

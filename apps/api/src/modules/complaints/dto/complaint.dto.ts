@@ -53,7 +53,7 @@ export class AdminResolveComplaintDto {
   @ApiPropertyOptional({
     enum: ComplaintResolutionAction,
     description:
-      'REFUND=chấp nhận khách; RELEASE=giải ngân; RETRY_*=làm lại; NONE=không đổi escrow',
+      'REFUND=chấp nhận khách; RELEASE=giải ngân; RETRY_*=làm lại; NONE=không đổi cọc giữ chỗ',
   })
   @IsOptional()
   @IsEnum(ComplaintResolutionAction)

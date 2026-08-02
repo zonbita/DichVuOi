@@ -72,8 +72,8 @@ export function BookingSuccessPage() {
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm">
           <p className="font-semibold text-amber-950">Bắt buộc đặt cọc giữ chỗ</p>
           <p className="mt-1 text-amber-900/80">
-            Đơn chỉ vào hàng chờ / mở chat / lộ địa chỉ cho người làm sau khi đặt cọc (escrow mock
-            — cổng thật sau). Hoa hồng sàn trừ khi hoàn thành.
+            Đơn chỉ vào hàng chờ / mở chat / lộ địa chỉ cho người làm sau khi đặt cọc giữ chỗ
+            (thanh toán mock — cổng thật sau). Hoa hồng sàn trừ khi hoàn thành.
           </p>
           <button
             type="button"

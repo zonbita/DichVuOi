@@ -60,7 +60,7 @@ export function AdminBookingsPage() {
     <div>
       <PageHeader
         title="Đơn hàng"
-        description="Lọc theo trạng thái, escrow và khoảng ngày — mở chi tiết để xử lý."
+        description="Lọc theo trạng thái, cọc giữ chỗ và khoảng ngày — mở chi tiết để xử lý."
       />
       <FilterBar>
         <SearchInput

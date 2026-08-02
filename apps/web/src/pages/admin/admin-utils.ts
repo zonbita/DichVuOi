@@ -84,7 +84,7 @@ export const BOOKING_STATUS_OPTIONS = [
 
 export const PAYMENT_STATUS_OPTIONS = [
     { value: 'UNPAID', label: 'Chưa đặt cọc' },
-    { value: 'HELD', label: 'Đã đặt cọc (escrow)' },
+    { value: 'HELD', label: 'Đã đặt cọc' },
   { value: 'RELEASED', label: 'Đã giải ngân' },
   { value: 'REFUNDED', label: 'Đã hoàn tiền' },
 ];

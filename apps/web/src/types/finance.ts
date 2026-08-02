@@ -122,7 +122,7 @@ export const WALLET_TX_LABELS: Record<WalletTransactionType, string> = {
 };
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
-  PAID: 'Đã thanh toán (escrow)',
+  PAID: 'Đã giữ cọc trên sàn',
   SETTLED: 'Đã quyết toán',
   REFUNDED: 'Đã hoàn',
 };

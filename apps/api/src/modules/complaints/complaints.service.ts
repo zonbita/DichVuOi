@@ -154,7 +154,7 @@ export class ComplaintsService {
     }
 
     if (booking.paymentStatus !== PaymentStatus.HELD) {
-      throw new BadRequestException('Escrow không còn giữ — không mở khiếu nại');
+      throw new BadRequestException('Cọc không còn đang giữ — không mở khiếu nại');
     }
 
     const existing = await this.prisma.complaint.findFirst({

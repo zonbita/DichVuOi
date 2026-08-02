@@ -865,7 +865,7 @@ let BookingsService = class BookingsService {
             throw new common_1.BadRequestException('Đơn đã có người làm hoặc không còn mở');
         }
         if (!(0, contact_privacy_1.isDepositHeld)(booking.paymentStatus)) {
-            throw new common_1.BadRequestException('Escrow chưa HELD');
+            throw new common_1.BadRequestException('Chưa đặt cọc giữ chỗ');
         }
         const selected = booking.applications.find((a) => a.id === applicationId);
         if (!selected || selected.status !== client_1.ApplicationStatus.APPLIED) {
@@ -1041,7 +1041,7 @@ let BookingsService = class BookingsService {
         }
         if (status === client_1.BookingStatus.IN_PROGRESS) {
             if (raw.paymentStatus !== client_1.PaymentStatus.HELD) {
-                throw new common_1.BadRequestException('Khách chưa đặt cọc giữ chỗ (escrow). Không thể bắt đầu làm.');
+                throw new common_1.BadRequestException('Khách chưa đặt cọc giữ chỗ. Không thể bắt đầu làm.');
             }
         }
         const data = { status };
@@ -1060,10 +1060,10 @@ let BookingsService = class BookingsService {
                 settledByFinance = true;
             }
             else if (raw.paymentStatus === client_1.PaymentStatus.UNPAID) {
-                throw new common_1.BadRequestException('Không hoàn thành khi chưa thanh toán escrow');
+                throw new common_1.BadRequestException('Không hoàn thành khi chưa đặt cọc giữ chỗ');
             }
             else if (raw.paymentStatus !== client_1.PaymentStatus.RELEASED) {
-                throw new common_1.BadRequestException('Escrow đã hoàn — không thể hoàn thành');
+                throw new common_1.BadRequestException('Cọc đã hoàn — không thể hoàn thành');
             }
             data.confirmDeadlineAt = null;
             data.responseDeadlineAt = null;
@@ -1303,7 +1303,7 @@ let BookingsService = class BookingsService {
             throw new common_1.BadRequestException('Chỉ thương lượng nghiệm thu khi đơn đang chờ xác nhận');
         }
         if (booking.paymentStatus !== client_1.PaymentStatus.HELD) {
-            throw new common_1.BadRequestException('Escrow không còn giữ để thương lượng nghiệm thu');
+            throw new common_1.BadRequestException('Cọc không còn đang giữ để thương lượng nghiệm thu');
         }
         if (!booking.partnerId) {
             throw new common_1.BadRequestException('Đơn chưa có người làm');

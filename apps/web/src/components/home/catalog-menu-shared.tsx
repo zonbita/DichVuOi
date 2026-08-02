@@ -161,7 +161,7 @@ export function GroupListItem({
         tint={color.main}
       />
       <span
-        className={`min-w-0 flex-1 truncate ${isDark ? 'lowercase' : ''}`}
+        className="min-w-0 flex-1 truncate"
         style={
           isDark
             ? { color: active ? '#fff' : 'rgba(255,255,255,0.9)' }
@@ -243,7 +243,7 @@ export function CatalogMobileDrawer({
                     <button
                       type="button"
                       onClick={() => onExpandedChange(isExpanded ? null : group.slug)}
-                      className="mx-2 flex min-w-0 flex-1 items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-left text-[14.5px] font-medium text-white/90 lowercase hover:bg-white/[0.06]"
+                      className="mx-2 flex min-w-0 flex-1 items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-left text-[14.5px] font-medium text-white/90 hover:bg-white/[0.06]"
                     >
                       <GroupCatalogIcon
                         slug={group.slug}
@@ -257,7 +257,7 @@ export function CatalogMobileDrawer({
                     <Link
                       to={`/nhom/${group.slug}`}
                       onClick={onClose}
-                      className="mx-2 flex min-w-0 flex-1 items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-[14.5px] font-medium text-white/90 lowercase hover:bg-white/[0.06]"
+                      className="mx-2 flex min-w-0 flex-1 items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-[14.5px] font-medium text-white/90 hover:bg-white/[0.06]"
                     >
                       <GroupCatalogIcon
                         slug={group.slug}
@@ -350,11 +350,11 @@ export function CatalogMobileDrawer({
             <Link
               to="/nhom"
               onClick={onClose}
-              className="flex w-full items-center justify-center gap-2.5 rounded-[11px] px-4 py-3 text-[14.5px] font-medium lowercase hover:bg-white/[0.06]"
+              className="flex w-full items-center justify-center gap-2.5 rounded-[11px] px-4 py-3 text-[14.5px] font-medium hover:bg-white/[0.06]"
               style={{ color: '#fff' }}
             >
               <Icon name="grid" className="h-5 w-5 shrink-0" style={{ color: '#fff' }} />
-              xem tất cả danh mục
+              Xem tất cả danh mục
             </Link>
           </div>
         ) : null}

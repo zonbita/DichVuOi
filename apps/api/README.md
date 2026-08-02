@@ -25,11 +25,12 @@ DB local / production: **PostgreSQL** (`DATABASE_URL` trong `.env`). Local có t
 3. Env:
    - `DATABASE_URL` = Neon URL (`?sslmode=require`)
    - `CORS_ORIGIN` = `https://dich-vu-oi.vercel.app` (hoặc để trống)
-   - `JWT_SECRET` = chuỗi mạnh
+   - `JWT_SECRET` = chuỗi mạnh **≥16 ký tự** (bắt buộc — thiếu thì API crash 500)
+   - `VIETQR_INTENT_SECRET` = chuỗi mạnh **≥16 ký tự** (bắt buộc production)
 4. Sau deploy: chạy `prisma db push` / seed từ máy local trỏ cùng `DATABASE_URL`.
 5. Project Web: set `VITE_API_URL=https://dich-vu-oi-api.vercel.app` rồi **Redeploy**.
 
-> Upload ảnh trên Vercel ghi vào `/tmp` (ephemeral). Realtime Socket.IO có thể hạn chế trên serverless — REST vẫn hoạt động.
+> Thiếu `JWT_SECRET` / `VIETQR_INTENT_SECRET` đạt chuẩn → mọi request trả `FUNCTION_INVOCATION_FAILED` / 500.
 
 ### Tài khoản seed
 

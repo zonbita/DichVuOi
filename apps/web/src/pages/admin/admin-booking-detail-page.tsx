@@ -102,7 +102,7 @@ export function AdminBookingDetailPage() {
   }> = [
     { label: 'Tạo đơn', at: booking.createdAt, icon: 'check', tone: 'green' },
     { label: 'Lịch hẹn', at: booking.scheduledAt, icon: 'calendar', tone: 'green' },
-    { label: 'Giữ tiền (escrow)', at: booking.paidAt, icon: 'lock', tone: 'amber' },
+    { label: 'Giữ cọc trên sàn', at: booking.paidAt, icon: 'lock', tone: 'amber' },
     {
       label: 'Giải ngân cho partner',
       at: booking.releasedAt,
@@ -205,7 +205,7 @@ export function AdminBookingDetailPage() {
               onClick={() => mutation.mutate({ paymentStatus: 'HELD' })}
             >
               <Icon name="lock" className="h-4 w-4" />
-              Force giữ escrow
+              Ép giữ cọc
             </button>
           ) : null}
 
@@ -271,7 +271,7 @@ export function AdminBookingDetailPage() {
         <BookingChecklist booking={booking as never} mode="admin" embedded />
       </section>
 
-      {/* 2 cột: Các bên | Escrow + Timeline */}
+      {/* 2 cột: Các bên | Cọc giữ chỗ + Timeline */}
       <div className="grid gap-4 lg:grid-cols-[1fr_1.15fr]">
         <section className="admin-card p-5">
           <h2 className="text-[15px] font-extrabold">Các bên</h2>
@@ -338,7 +338,7 @@ export function AdminBookingDetailPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <section className="admin-card p-5">
-            <h2 className="text-[15px] font-extrabold">Escrow</h2>
+            <h2 className="text-[15px] font-extrabold">Cọc giữ chỗ</h2>
             <dl className="mt-4 space-y-3.5 text-sm">
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-[var(--color-muted)]">Tổng tiền đơn</dt>

@@ -153,7 +153,6 @@ export function PartnerDashboardPage() {
       phone,
       bio: v.bio,
       city,
-      districts: city,
       serviceIds: profileServiceIds,
     });
     applySession(session);

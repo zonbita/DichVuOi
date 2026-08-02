@@ -24,7 +24,7 @@ const scopes: Array<{ icon: IconName; title: string; body: string }> = [
   {
     icon: 'shield',
     title: 'Thanh toán an toàn',
-    body: 'Đặt cọc giữ chỗ (escrow) trên sàn, giải ngân theo trạng thái đơn; hoa hồng minh bạch theo đơn hoàn thành.',
+    body: 'Đặt cọc giữ chỗ trên sàn, giải ngân theo trạng thái đơn; hoa hồng minh bạch theo đơn hoàn thành.',
   },
   {
     icon: 'headset',
