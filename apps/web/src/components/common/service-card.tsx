@@ -22,6 +22,7 @@ export function ServiceCard({ service }: { service: Service }) {
           alt={service.name}
           className="catalog-photo h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
+          decoding="async"
         />
         <span
           className="absolute bottom-3 left-3 inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-sm"

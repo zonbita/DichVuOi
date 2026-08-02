@@ -96,6 +96,8 @@ export function OpenJobCard({
             src={serviceImage(booking.service)}
             alt={booking.service.name}
             className="h-full w-full rounded-[12px] object-cover shadow-sm ring-1 ring-black/5"
+            loading="lazy"
+            decoding="async"
           />
           <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
             <Icon name="briefcase" className="h-3.5 w-3.5" />

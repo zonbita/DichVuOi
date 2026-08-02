@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import logo from '../../assets/logo-icon.png';
+import logo from '../../assets/logo-icon.webp';
 import { Icon } from '../../components/ui/icon';
 import type { IconName } from '../../components/ui/icon';
 import { useAuth } from '../../features/auth/auth-context';

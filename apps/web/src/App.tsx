@@ -1,127 +1,303 @@
+import { Suspense, lazy, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { SiteLayout } from './components/layout/site-layout';
 import { UserDashboardLayout } from './components/layout/user-dashboard-layout';
-import { AdminBookingDetailPage } from './pages/admin/admin-booking-detail-page';
-import { AdminBookingsPage } from './pages/admin/admin-bookings-page';
-import { AdminCatalogPage } from './pages/admin/admin-catalog-page';
-import { AdminComplaintsPage } from './pages/admin/admin-complaints-page';
-import { AdminFlaggedPage } from './pages/admin/admin-flagged-page';
-import { AdminFinancePage } from './pages/admin/admin-finance-page';
-import { AdminLayout } from './pages/admin/admin-layout';
-import { AdminOverviewPage } from './pages/admin/admin-overview-page';
-import { AdminPartnersPage } from './pages/admin/admin-partners-page';
-import { AdminReviewsPage } from './pages/admin/admin-reviews-page';
-import { AdminSupportChatPage } from './pages/admin/admin-support-chat-page';
-import { AdminUsersPage } from './pages/admin/admin-users-page';
-import { BookingSuccessPage } from './pages/booking-success-page';
-import { CompanyInfoPage } from './pages/company-info-page';
-import { CustomerBookingDetailPage } from './pages/customer-booking-detail-page';
-import { GroupDetailPage } from './pages/group-detail-page';
-import { GroupsPage } from './pages/groups-page';
-import { HireServicePage } from './pages/hire-service-page';
-import { HomePage } from './pages/home-page';
-import { InvoiceDetailPage, InvoicesPage } from './pages/invoices-page';
-import { LoginPage } from './pages/login-page';
-import { MyBookingsPage } from './pages/my-bookings-page';
-import { PartnerBookingDetailPage } from './pages/partner-booking-detail-page';
-import { PartnerDashboardPage } from './pages/partner-dashboard-page';
-import { PartnerProfilePage } from './pages/partner-profile-page';
-import { RegisterPage } from './pages/register-page';
-import { ServiceDetailPage } from './pages/service-detail-page';
-import { WalletPage } from './pages/wallet-page';
-import { WithdrawPage } from './pages/withdraw-page';
-import {
-  AboutPage,
-  BookingGuidePage,
-  ComplaintPage,
-  HelpCenterPage,
-  PartnerPolicyPage,
-  PartnerProcessPage,
-  PrivacyPage,
-  RefundPage,
-  TermsPage,
-  WarrantyPage,
-} from './pages/static-site-pages';
+
+const HomePage = lazy(() =>
+  import('./pages/home-page').then((m) => ({ default: m.HomePage })),
+);
+const CompanyInfoPage = lazy(() =>
+  import('./pages/company-info-page').then((m) => ({
+    default: m.CompanyInfoPage,
+  })),
+);
+const GroupsPage = lazy(() =>
+  import('./pages/groups-page').then((m) => ({ default: m.GroupsPage })),
+);
+const GroupDetailPage = lazy(() =>
+  import('./pages/group-detail-page').then((m) => ({
+    default: m.GroupDetailPage,
+  })),
+);
+const ServiceDetailPage = lazy(() =>
+  import('./pages/service-detail-page').then((m) => ({
+    default: m.ServiceDetailPage,
+  })),
+);
+const PartnerProfilePage = lazy(() =>
+  import('./pages/partner-profile-page').then((m) => ({
+    default: m.PartnerProfilePage,
+  })),
+);
+const BookingSuccessPage = lazy(() =>
+  import('./pages/booking-success-page').then((m) => ({
+    default: m.BookingSuccessPage,
+  })),
+);
+const LoginPage = lazy(() =>
+  import('./pages/login-page').then((m) => ({ default: m.LoginPage })),
+);
+const RegisterPage = lazy(() =>
+  import('./pages/register-page').then((m) => ({ default: m.RegisterPage })),
+);
+const MyBookingsPage = lazy(() =>
+  import('./pages/my-bookings-page').then((m) => ({
+    default: m.MyBookingsPage,
+  })),
+);
+const CustomerBookingDetailPage = lazy(() =>
+  import('./pages/customer-booking-detail-page').then((m) => ({
+    default: m.CustomerBookingDetailPage,
+  })),
+);
+const HireServicePage = lazy(() =>
+  import('./pages/hire-service-page').then((m) => ({
+    default: m.HireServicePage,
+  })),
+);
+const PartnerDashboardPage = lazy(() =>
+  import('./pages/partner-dashboard-page').then((m) => ({
+    default: m.PartnerDashboardPage,
+  })),
+);
+const PartnerBookingDetailPage = lazy(() =>
+  import('./pages/partner-booking-detail-page').then((m) => ({
+    default: m.PartnerBookingDetailPage,
+  })),
+);
+const WalletPage = lazy(() =>
+  import('./pages/wallet-page').then((m) => ({ default: m.WalletPage })),
+);
+const WithdrawPage = lazy(() =>
+  import('./pages/withdraw-page').then((m) => ({ default: m.WithdrawPage })),
+);
+const InvoicesPage = lazy(() =>
+  import('./pages/invoices-page').then((m) => ({ default: m.InvoicesPage })),
+);
+const InvoiceDetailPage = lazy(() =>
+  import('./pages/invoices-page').then((m) => ({
+    default: m.InvoiceDetailPage,
+  })),
+);
+
+const AboutPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({ default: m.AboutPage })),
+);
+const TermsPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({ default: m.TermsPage })),
+);
+const PrivacyPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({ default: m.PrivacyPage })),
+);
+const HelpCenterPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({
+    default: m.HelpCenterPage,
+  })),
+);
+const BookingGuidePage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({
+    default: m.BookingGuidePage,
+  })),
+);
+const WarrantyPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({
+    default: m.WarrantyPage,
+  })),
+);
+const RefundPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({ default: m.RefundPage })),
+);
+const ComplaintPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({
+    default: m.ComplaintPage,
+  })),
+);
+const PartnerProcessPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({
+    default: m.PartnerProcessPage,
+  })),
+);
+const PartnerPolicyPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({
+    default: m.PartnerPolicyPage,
+  })),
+);
+
+const AdminLayout = lazy(() =>
+  import('./pages/admin/admin-layout').then((m) => ({
+    default: m.AdminLayout,
+  })),
+);
+const AdminOverviewPage = lazy(() =>
+  import('./pages/admin/admin-overview-page').then((m) => ({
+    default: m.AdminOverviewPage,
+  })),
+);
+const AdminSupportChatPage = lazy(() =>
+  import('./pages/admin/admin-support-chat-page').then((m) => ({
+    default: m.AdminSupportChatPage,
+  })),
+);
+const AdminUsersPage = lazy(() =>
+  import('./pages/admin/admin-users-page').then((m) => ({
+    default: m.AdminUsersPage,
+  })),
+);
+const AdminPartnersPage = lazy(() =>
+  import('./pages/admin/admin-partners-page').then((m) => ({
+    default: m.AdminPartnersPage,
+  })),
+);
+const AdminBookingsPage = lazy(() =>
+  import('./pages/admin/admin-bookings-page').then((m) => ({
+    default: m.AdminBookingsPage,
+  })),
+);
+const AdminBookingDetailPage = lazy(() =>
+  import('./pages/admin/admin-booking-detail-page').then((m) => ({
+    default: m.AdminBookingDetailPage,
+  })),
+);
+const AdminReviewsPage = lazy(() =>
+  import('./pages/admin/admin-reviews-page').then((m) => ({
+    default: m.AdminReviewsPage,
+  })),
+);
+const AdminComplaintsPage = lazy(() =>
+  import('./pages/admin/admin-complaints-page').then((m) => ({
+    default: m.AdminComplaintsPage,
+  })),
+);
+const AdminFlaggedPage = lazy(() =>
+  import('./pages/admin/admin-flagged-page').then((m) => ({
+    default: m.AdminFlaggedPage,
+  })),
+);
+const AdminFinancePage = lazy(() =>
+  import('./pages/admin/admin-finance-page').then((m) => ({
+    default: m.AdminFinancePage,
+  })),
+);
+const AdminCatalogPage = lazy(() =>
+  import('./pages/admin/admin-catalog-page').then((m) => ({
+    default: m.AdminCatalogPage,
+  })),
+);
 
 function RedirectNguoiToUser() {
   const { userId = '' } = useParams();
   return <Navigate to={`/user/${userId}`} replace />;
 }
 
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--color-muted)]">
+      Đang tải trang…
+    </div>
+  );
+}
+
+function Lazy({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <SiteLayout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/thong-tin-cong-ty" element={<CompanyInfoPage />} />
-          <Route path="/gioi-thieu" element={<AboutPage />} />
-          <Route path="/dieu-khoan" element={<TermsPage />} />
-          <Route path="/chinh-sach-bao-mat" element={<PrivacyPage />} />
-          <Route path="/tro-giup" element={<HelpCenterPage />} />
-          <Route path="/huong-dan-dat-dich-vu" element={<BookingGuidePage />} />
-          <Route path="/chinh-sach-bao-hanh" element={<WarrantyPage />} />
-          <Route path="/chinh-sach-hoan-tien" element={<RefundPage />} />
-          <Route path="/khieu-nai" element={<ComplaintPage />} />
-          <Route path="/quy-trinh-doi-tac" element={<PartnerProcessPage />} />
-          <Route path="/chinh-sach-doi-tac" element={<PartnerPolicyPage />} />
-          <Route path="/nhom" element={<GroupsPage />} />
-          <Route path="/nhom/:slug" element={<GroupDetailPage />} />
-          <Route path="/dich-vu/:slug" element={<ServiceDetailPage />} />
-          <Route path="/user/:userId" element={<PartnerProfilePage />} />
-          <Route path="/nguoi/:userId" element={<RedirectNguoiToUser />} />
-          <Route path="/dat-lich/:id" element={<BookingSuccessPage />} />
-          <Route path="/dang-nhap" element={<LoginPage />} />
-          <Route path="/dang-ky" element={<RegisterPage />} />
-          <Route element={<UserDashboardLayout />}>
-            <Route path="/don-cua-toi" element={<MyBookingsPage />} />
-            <Route path="/don-cua-toi/don/:id" element={<CustomerBookingDetailPage />} />
-            <Route path="/don-cua-toi/thue" element={<HireServicePage />} />
-            <Route path="/don-cua-toi/ho-so" element={<PartnerDashboardPage />} />
-            <Route path="/don-cua-toi/vi" element={<WalletPage basePath="/don-cua-toi" />} />
-            <Route
-              path="/don-cua-toi/rut-tien"
-              element={<WithdrawPage basePath="/don-cua-toi" />}
-            />
-            <Route
-              path="/don-cua-toi/hoa-don"
-              element={<InvoicesPage basePath="/don-cua-toi" />}
-            />
-            <Route
-              path="/don-cua-toi/hoa-don/:id"
-              element={<InvoiceDetailPage basePath="/don-cua-toi" />}
-            />
-            <Route path="/don-cua-toi/tro-giup" element={<HelpCenterPage />} />
-            <Route path="/don-cua-toi/khieu-nai" element={<ComplaintPage />} />
-            <Route path="/doi-tac" element={<PartnerDashboardPage />} />
-            <Route path="/doi-tac/don-thue" element={<PartnerDashboardPage />} />
-            <Route path="/doi-tac/viec" element={<PartnerDashboardPage />} />
-            <Route path="/doi-tac/viec/:id" element={<PartnerBookingDetailPage />} />
-            <Route path="/doi-tac/vi" element={<WalletPage basePath="/doi-tac" />} />
-            <Route path="/doi-tac/rut-tien" element={<WithdrawPage basePath="/doi-tac" />} />
-            <Route path="/doi-tac/hoa-don" element={<InvoicesPage basePath="/doi-tac" />} />
-            <Route
-              path="/doi-tac/hoa-don/:id"
-              element={<InvoiceDetailPage basePath="/doi-tac" />}
-            />
-            <Route path="/doi-tac/ho-so" element={<PartnerDashboardPage />} />
-            <Route path="/doi-tac/cap-do" element={<PartnerDashboardPage />} />
-            <Route path="/doi-tac/quy-trinh" element={<PartnerProcessPage />} />
-          </Route>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminOverviewPage />} />
-            <Route path="support" element={<AdminSupportChatPage />} />
-            <Route path="users" element={<AdminUsersPage />} />
-            <Route path="partners" element={<AdminPartnersPage />} />
-            <Route path="bookings" element={<AdminBookingsPage />} />
-            <Route path="bookings/:id" element={<AdminBookingDetailPage />} />
-            <Route path="reviews" element={<AdminReviewsPage />} />
-            <Route path="complaints" element={<AdminComplaintsPage />} />
-            <Route path="flagged" element={<AdminFlaggedPage />} />
-            <Route path="finance" element={<AdminFinancePage />} />
-            <Route path="catalog" element={<AdminCatalogPage />} />
-          </Route>
-        </Routes>
+        <Lazy>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/thong-tin-cong-ty" element={<CompanyInfoPage />} />
+            <Route path="/gioi-thieu" element={<AboutPage />} />
+            <Route path="/dieu-khoan" element={<TermsPage />} />
+            <Route path="/chinh-sach-bao-mat" element={<PrivacyPage />} />
+            <Route path="/tro-giup" element={<HelpCenterPage />} />
+            <Route path="/huong-dan-dat-dich-vu" element={<BookingGuidePage />} />
+            <Route path="/chinh-sach-bao-hanh" element={<WarrantyPage />} />
+            <Route path="/chinh-sach-hoan-tien" element={<RefundPage />} />
+            <Route path="/khieu-nai" element={<ComplaintPage />} />
+            <Route path="/quy-trinh-doi-tac" element={<PartnerProcessPage />} />
+            <Route path="/chinh-sach-doi-tac" element={<PartnerPolicyPage />} />
+            <Route path="/nhom" element={<GroupsPage />} />
+            <Route path="/nhom/:slug" element={<GroupDetailPage />} />
+            <Route path="/dich-vu/:slug" element={<ServiceDetailPage />} />
+            <Route path="/user/:userId" element={<PartnerProfilePage />} />
+            <Route path="/nguoi/:userId" element={<RedirectNguoiToUser />} />
+            <Route path="/dat-lich/:id" element={<BookingSuccessPage />} />
+            <Route path="/dang-nhap" element={<LoginPage />} />
+            <Route path="/dang-ky" element={<RegisterPage />} />
+            <Route element={<UserDashboardLayout />}>
+              <Route path="/don-cua-toi" element={<MyBookingsPage />} />
+              <Route
+                path="/don-cua-toi/don/:id"
+                element={<CustomerBookingDetailPage />}
+              />
+              <Route path="/don-cua-toi/thue" element={<HireServicePage />} />
+              <Route
+                path="/don-cua-toi/ho-so"
+                element={<PartnerDashboardPage />}
+              />
+              <Route
+                path="/don-cua-toi/vi"
+                element={<WalletPage basePath="/don-cua-toi" />}
+              />
+              <Route
+                path="/don-cua-toi/rut-tien"
+                element={<WithdrawPage basePath="/don-cua-toi" />}
+              />
+              <Route
+                path="/don-cua-toi/hoa-don"
+                element={<InvoicesPage basePath="/don-cua-toi" />}
+              />
+              <Route
+                path="/don-cua-toi/hoa-don/:id"
+                element={<InvoiceDetailPage basePath="/don-cua-toi" />}
+              />
+              <Route path="/don-cua-toi/tro-giup" element={<HelpCenterPage />} />
+              <Route path="/don-cua-toi/khieu-nai" element={<ComplaintPage />} />
+              <Route path="/doi-tac" element={<PartnerDashboardPage />} />
+              <Route path="/doi-tac/don-thue" element={<PartnerDashboardPage />} />
+              <Route path="/doi-tac/viec" element={<PartnerDashboardPage />} />
+              <Route
+                path="/doi-tac/viec/:id"
+                element={<PartnerBookingDetailPage />}
+              />
+              <Route
+                path="/doi-tac/vi"
+                element={<WalletPage basePath="/doi-tac" />}
+              />
+              <Route
+                path="/doi-tac/rut-tien"
+                element={<WithdrawPage basePath="/doi-tac" />}
+              />
+              <Route
+                path="/doi-tac/hoa-don"
+                element={<InvoicesPage basePath="/doi-tac" />}
+              />
+              <Route
+                path="/doi-tac/hoa-don/:id"
+                element={<InvoiceDetailPage basePath="/doi-tac" />}
+              />
+              <Route path="/doi-tac/ho-so" element={<PartnerDashboardPage />} />
+              <Route path="/doi-tac/cap-do" element={<PartnerDashboardPage />} />
+              <Route path="/doi-tac/quy-trinh" element={<PartnerProcessPage />} />
+            </Route>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverviewPage />} />
+              <Route path="support" element={<AdminSupportChatPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="partners" element={<AdminPartnersPage />} />
+              <Route path="bookings" element={<AdminBookingsPage />} />
+              <Route path="bookings/:id" element={<AdminBookingDetailPage />} />
+              <Route path="reviews" element={<AdminReviewsPage />} />
+              <Route path="complaints" element={<AdminComplaintsPage />} />
+              <Route path="flagged" element={<AdminFlaggedPage />} />
+              <Route path="finance" element={<AdminFinancePage />} />
+              <Route path="catalog" element={<AdminCatalogPage />} />
+            </Route>
+          </Routes>
+        </Lazy>
       </SiteLayout>
     </BrowserRouter>
   );

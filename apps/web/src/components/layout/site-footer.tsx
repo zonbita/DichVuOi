@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import logo from '../../assets/logo-icon.png';
+import logo from '../../assets/logo-icon.webp';
 import { Icon } from '../ui/icon';
 import type { IconName } from '../ui/icon';
 

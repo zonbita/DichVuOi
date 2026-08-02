@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import bannerHangNgan from '../../assets/banner-hang-ngan-dich-vu.png';
-import bannerUyTin from '../../assets/banner-uy-tin-dam-bao.png';
+import bannerHangNgan from '../../assets/banner-hang-ngan-dich-vu.webp';
+import bannerUyTin from '../../assets/banner-uy-tin-dam-bao.webp';
 import type { IconName } from '../ui/icon';
 import { Icon } from '../ui/icon';
 
@@ -155,6 +155,9 @@ export function HeroBanner() {
                   alt={banner.alt}
                   className="absolute inset-0 h-full w-full object-cover object-center"
                   draggable={false}
+                  decoding="async"
+                  fetchPriority={index === 0 ? 'high' : 'low'}
+                  loading={index === 0 ? 'eager' : 'lazy'}
                 />
                 {/* Hit-area CTA — nút trên ảnh chỉ là art */}
                 <Link

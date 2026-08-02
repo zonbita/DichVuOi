@@ -4,29 +4,51 @@ const serviceImageMap = serviceImageMapData as {
   assignments: Record<string, string>;
 };
 
-/** Banner hero trang nhóm — ảnh chụp landscape, mỗi nhóm một file. */
-const rootBannerModules = import.meta.glob<{ default: string }>(
-  '../assets/banner-*.jpg',
-  { eager: true },
+/**
+ * Eager URL map (query ?url) — chỉ chuỗi URL hashed, không nhúng binary vào JS.
+ * Ảnh đã nén (~30–100KB); browser chỉ tải khi <img src> dùng.
+ */
+function toUrlMap(modules: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(modules).map(([path, url]) => [path.split('/').pop()!, url]),
+  );
+}
+
+const rootBannersByFile = toUrlMap(
+  import.meta.glob<string>('../assets/banner-*.jpg', {
+    eager: true,
+    query: '?url',
+    import: 'default',
+  }),
 );
-const groupBannerModules = import.meta.glob<{ default: string }>(
-  '../assets/banners/*.jpg',
-  { eager: true },
+const groupBannersByFile = toUrlMap(
+  import.meta.glob<string>('../assets/banners/*.jpg', {
+    eager: true,
+    query: '?url',
+    import: 'default',
+  }),
 );
-const rootBannersByFile: Record<string, string> = Object.fromEntries(
-  Object.entries(rootBannerModules).map(([path, module]) => [
-    path.split('/').pop()!,
-    module.default,
+const generatedServiceImages = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>('../assets/services/by-service/*.jpg', {
+      eager: true,
+      query: '?url',
+      import: 'default',
+    }),
+  ).map(([path, url]) => [
+    path.split('/').pop()!.replace(/\.jpg$/, ''),
+    url,
   ]),
 );
-const groupBannersByFile: Record<string, string> = Object.fromEntries(
-  Object.entries(groupBannerModules).map(([path, module]) => [
-    path.split('/').pop()!,
-    module.default,
-  ]),
+const stockImagesByFile = toUrlMap(
+  import.meta.glob<string>('../assets/services/svc-*.jpg', {
+    eager: true,
+    query: '?url',
+    import: 'default',
+  }),
 );
 
-/** slug nhóm → tên file banner (banner-{slug}.jpg hoặc ảnh by-service). */
+/** slug nhóm → tên file banner. */
 const GROUP_BANNER_FILES: Record<string, string> = {
   'hoc-tap': 'banner-gia-su.jpg',
   game: 'banner-game.jpg',
@@ -43,31 +65,6 @@ const GROUP_BANNER_FILES: Record<string, string> = {
   'giai-tri': 'banner-giai-tri.jpg',
 };
 
-/** Ảnh do AI tạo riêng theo từng Service; tên file phải trùng service.slug. */
-const perServiceModules = import.meta.glob<{ default: string }>(
-  '../assets/services/by-service/*.jpg',
-  { eager: true },
-);
-const generatedServiceImages: Record<string, string> = Object.fromEntries(
-  Object.entries(perServiceModules).map(([path, module]) => [
-    path.split('/').pop()!.replace(/\.jpg$/, ''),
-    module.default,
-  ]),
-);
-
-/** Ảnh stock svc-* — tra theo tên file trong map sinh tự động. */
-const stockModules = import.meta.glob<{ default: string }>(
-  '../assets/services/svc-*.jpg',
-  { eager: true },
-);
-const stockImagesByFile: Record<string, string> = Object.fromEntries(
-  Object.entries(stockModules).map(([path, module]) => [
-    path.split('/').pop()!,
-    module.default,
-  ]),
-);
-
-/** Ảnh đại diện nhóm (trang nhóm / tile). */
 const groupImages: Record<string, string> = {
   'nha-cua': stockImagesByFile['svc-nha-cua.jpg'] ?? '',
   'sua-chua': stockImagesByFile['svc-sua-chua.jpg'] ?? '',
@@ -94,7 +91,9 @@ const groupImages: Record<string, string> = {
 };
 
 const fallbackGroupImage =
-  stockImagesByFile['svc-nha-cua.jpg'] ?? Object.values(stockImagesByFile)[0] ?? '';
+  stockImagesByFile['svc-nha-cua.jpg'] ??
+  Object.values(stockImagesByFile)[0] ??
+  '';
 
 function resolveImageFile(filename: string): string | undefined {
   const slug = filename.replace(/\.jpg$/, '');
@@ -114,7 +113,6 @@ function resolveBannerFile(filename: string): string | undefined {
   );
 }
 
-/** Banner hero nhóm — ưu tiên ảnh chụp banner riêng, fallback tile. */
 export function groupBanner(slug: string | null | undefined): string {
   const key = slug ?? '';
   const mapped = GROUP_BANNER_FILES[key];
@@ -133,7 +131,6 @@ type ServiceImageInput = {
   };
 };
 
-/** Ảnh thẻ / chi tiết nghề — map sinh tự động, ưu tiên ảnh riêng by-service. */
 export function serviceImage(service: ServiceImageInput): string {
   const mappedFile = serviceImageMap.assignments[service.slug];
   if (mappedFile) {

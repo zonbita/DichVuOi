@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "images:map": "node scripts/generate-service-image-map.mjs",
-    "images:audit": "node scripts/audit-service-images.mjs"
+    "images:audit": "node scripts/audit-service-images.mjs",
+    "images:optimize": "node scripts/optimize-images.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.3",
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
+    "sharp": "^0.35.3",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"

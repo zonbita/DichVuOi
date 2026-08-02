@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../../assets/logo-icon.png';
+import logo from '../../assets/logo-icon.webp';
 import { useAuth } from '../../features/auth/auth-context';
 import { Icon } from '../ui/icon';
 import { HeaderGroupsMenu } from './header-groups-menu';
@@ -58,6 +58,10 @@ export function SiteHeader() {
                     src={logo}
                     alt="Dịch Vụ Ơi"
                     className="h-9 w-9 rounded-xl ring-1 ring-white/15 sm:h-10 sm:w-10"
+                    width={40}
+                    height={40}
+                    decoding="async"
+                    fetchPriority="high"
                   />
                   <span className="whitespace-nowrap text-[1.35rem] font-bold leading-none tracking-tight sm:text-[1.5rem]">
                     Dịch Vụ <span className="text-[var(--color-brand)]">Ơi</span>
