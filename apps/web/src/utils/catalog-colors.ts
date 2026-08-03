@@ -13,16 +13,18 @@ export type GroupColor = {
 };
 
 /**
- * Token menu nhóm — dark navy bubble glass + viền xanh (`.catalog-menu-glass`).
+ * Token menu nhóm — dark navy glass + viền xanh nhạt (`.catalog-menu-glass`).
  */
 export const CATALOG_MENU_DARK = {
-  /** Class CSS dark gradient bubble glass (index.css). */
+  /** Class CSS dark gradient glass (index.css). */
   surfaceClass: 'catalog-menu-glass',
-  border: 'color-mix(in srgb, #5eb8e8 45%, transparent)',
-  text: 'rgba(255,255,255,0.92)',
-  muted: 'rgba(255,255,255,0.45)',
-  hover: 'rgba(94,184,232,0.1)',
-  active: 'rgba(94,184,232,0.16)',
+  border: 'color-mix(in srgb, #7eb6d9 42%, transparent)',
+  text: 'rgba(255,255,255,0.95)',
+  muted: 'rgba(148, 163, 184, 0.85)',
+  hover: 'rgba(56, 189, 248, 0.1)',
+  active: 'rgba(56, 189, 248, 0.16)',
+  indicator: '#22d3ee',
+  separator: 'rgba(148, 163, 184, 0.12)',
 } as const;
 
 const GROUP_COLORS: Record<string, GroupColor> = {
@@ -33,34 +35,34 @@ const GROUP_COLORS: Record<string, GroupColor> = {
   'lam-dep': { main: '#c026d3', soft: '#fbe8fe', ink: '#a21caf' },
   'bep-doi-song': { main: '#ea580c', soft: '#ffeade', ink: '#c2410c' },
   xe: { main: '#0e7490', soft: '#dff4f9', ink: '#155e75' },
-  /** Học tập — xanh lá (sách), khớp menu tối. */
-  'hoc-tap': { main: '#22c55e', soft: '#e3f7e9', ink: '#15803d' },
-  /** Game — tím controller. */
-  game: { main: '#a855f7', soft: '#eee8fe', ink: '#7e22ce' },
+  /** Học tập — cyan sách. */
+  'hoc-tap': { main: '#22d3ee', soft: '#e0f7fa', ink: '#0e7490' },
+  /** Game — lavender controller. */
+  game: { main: '#c084fc', soft: '#f3e8ff', ink: '#7e22ce' },
   /** Lập trình — xanh dương brackets. */
-  'lap-trinh': { main: '#3b82f6', soft: '#e0f2fe', ink: '#1d4ed8' },
-  /** Thiết kế — hồng / magenta. */
-  'thiet-ke': { main: '#ec4899', soft: '#fde8f1', ink: '#be185d' },
-  /** Sự kiện — hồng camera. */
+  'lap-trinh': { main: '#38bdf8', soft: '#e0f2fe', ink: '#0284c7' },
+  /** Thiết kế — violet pencil. */
+  'thiet-ke': { main: '#a78bfa', soft: '#ede9fe', ink: '#6d28d9' },
+  /** Sự kiện — hồng calendar. */
   'su-kien': { main: '#f472b6', soft: '#fce7f3', ink: '#db2777' },
   'thu-cung': { main: '#d97706', soft: '#fef1d9', ink: '#b45309' },
   /** Thể thao — lime tạ. */
-  'the-thao': { main: '#84cc16', soft: '#ecfccb', ink: '#4d7c0f' },
+  'the-thao': { main: '#a3e635', soft: '#ecfccb', ink: '#4d7c0f' },
   /** Doanh nghiệp — nâu / tan cặp. */
   'doanh-nghiep': { main: '#c4a484', soft: '#f5efe8', ink: '#8b6914' },
   /** Tài chính — teal cân. */
   'tai-chinh': { main: '#2dd4bf', soft: '#e0f2f0', ink: '#0f766e' },
   'san-vuon': { main: '#65a30d', soft: '#eef8dc', ink: '#4d7c0f' },
-  /** Marketing — đỏ biểu đồ. */
-  'marketing-online': { main: '#ef4444', soft: '#fee7e7', ink: '#b91c1c' },
+  /** Marketing — salmon biểu đồ. */
+  'marketing-online': { main: '#fb7185', soft: '#ffe4e6', ink: '#be123c' },
   /** Dịch thuật — cam chữ A. */
   'ngon-ngu': { main: '#f59e0b', soft: '#fef3c7', ink: '#b45309' },
-  /** Trợ lý từ xa — bạc / xám đồng hồ. */
-  'tro-ly-tu-xa': { main: '#a8a29e', soft: '#f1efed', ink: '#57534e' },
-  /** Tư vấn — xanh dương nhạt nhóm người. */
-  'tu-van-phat-trien': { main: '#38bdf8', soft: '#e0f2fe', ink: '#0284c7' },
-  /** Giải trí — cam sparkles. */
-  'giai-tri': { main: '#fb923c', soft: '#ffedd5', ink: '#c2410c' },
+  /** Trợ lý từ xa — xanh dương đồng hồ. */
+  'tro-ly-tu-xa': { main: '#60a5fa', soft: '#dbeafe', ink: '#1d4ed8' },
+  /** Tư vấn — cyan nhóm người. */
+  'tu-van-phat-trien': { main: '#22d3ee', soft: '#e0f2fe', ink: '#0284c7' },
+  /** Giải trí — vàng sao. */
+  'giai-tri': { main: '#fbbf24', soft: '#fef3c7', ink: '#b45309' },
 };
 
 const FALLBACK: GroupColor = { main: '#0f9d8a', soft: '#e6f6f3', ink: '#0a7a6b' };

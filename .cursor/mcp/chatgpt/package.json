@@ -1,0 +1,16 @@
+{
+  "name": "chatgpt-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server so Cursor Agent can talk to OpenAI ChatGPT",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "openai": "^7.3.0",
+    "zod": "^4.4.3"
+  }
+}

@@ -6,14 +6,90 @@ import { useAuth } from '../features/auth/auth-context';
 import { toast } from '../lib/notify';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import type { VietQrBank } from '../types/finance';
+import { Icon } from '../components/ui/icon';
 
 type Props = {
   basePath: '/don-cua-toi' | '/doi-tac';
 };
 
+const AMOUNT_PRESETS = [100_000, 500_000, 1_000_000] as const;
+
+const POPULAR_BANK_HINTS = [
+  ['ICB', 'vietinbank', 'ctg'],
+  ['VCB', 'vietcombank'],
+  ['BIDV', 'bidv'],
+  ['VBA', 'agribank', 'agr'],
+] as const;
+
 function parseAmount(raw: string) {
   const digits = raw.replace(/\D/g, '');
   return digits ? Number(digits) : 0;
+}
+
+function bankMatchesQuery(bank: VietQrBank, q: string) {
+  return (
+    bank.shortName.toLowerCase().includes(q) ||
+    bank.name.toLowerCase().includes(q) ||
+    bank.code.toLowerCase().includes(q) ||
+    bank.bin.includes(q)
+  );
+}
+
+function popularBanks(banks: VietQrBank[]) {
+  const picks: VietQrBank[] = [];
+  for (const hints of POPULAR_BANK_HINTS) {
+    const found = banks.find((b) => {
+      const code = b.code.toUpperCase();
+      const short = b.shortName.toLowerCase();
+      const name = b.name.toLowerCase();
+      return hints.some(
+        (h) =>
+          code === h.toUpperCase() ||
+          short.includes(h) ||
+          name.includes(h),
+      );
+    });
+    if (found && !picks.some((p) => p.bin === found.bin)) picks.push(found);
+  }
+  if (picks.length >= 4) return picks.slice(0, 4);
+  return [...picks, ...banks.filter((b) => !picks.some((p) => p.bin === b.bin))].slice(
+    0,
+    4,
+  );
+}
+
+function WalletVerifiedIcon({ className = 'h-11 w-11' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect
+        x="5"
+        y="15"
+        width="32"
+        height="22"
+        rx="5"
+        fill="var(--color-brand)"
+      />
+      <path
+        d="M11 15V11.5A3.5 3.5 0 0 1 14.5 8h11A3.5 3.5 0 0 1 29 11.5V15"
+        fill="var(--color-brand-deep)"
+      />
+      <rect x="12" y="24.5" width="18" height="2.5" rx="1.25" fill="#fff" />
+      <circle cx="35" cy="34" r="9" fill="#fff" />
+      <circle cx="35" cy="34" r="7.25" fill="var(--color-brand)" />
+      <path
+        d="M31.8 34.1 34.1 36.4 38.4 31.8"
+        stroke="#fff"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 export function WithdrawPage({ basePath }: Props) {
@@ -52,16 +128,12 @@ export function WithdrawPage({ basePath }: Props) {
     (b) => b.bin === selectedBin,
   );
 
+  const featuredBanks = useMemo(() => popularBanks(banks), [banks]);
+
   const filteredBanks = useMemo(() => {
     const q = bankQuery.trim().toLowerCase();
-    if (!q) return banks;
-    return banks.filter(
-      (b) =>
-        b.shortName.toLowerCase().includes(q) ||
-        b.name.toLowerCase().includes(q) ||
-        b.code.toLowerCase().includes(q) ||
-        b.bin.includes(q),
-    );
+    if (!q) return [];
+    return banks.filter((b) => bankMatchesQuery(b, q)).slice(0, 12);
   }, [banks, bankQuery]);
 
   const withdrawMutation = useMutation({
@@ -104,77 +176,137 @@ export function WithdrawPage({ basePath }: Props) {
     withdrawMutation.mutate();
   }
 
+  function selectBank(bank: VietQrBank) {
+    setSelectedBin(bank.bin);
+    setBankQuery('');
+  }
+
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain pb-4">
       <header className="flex shrink-0 flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Rút tiền</h1>
+          <h1 className="text-2xl font-extrabold text-[var(--color-navy)] sm:text-3xl">
+            Rút tiền
+          </h1>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Chọn ngân hàng VietQR, nhập STK nhận — trừ ví ngay (mock chuyển khoản).
+            Chọn ngân hàng VietQR, nhập STK nhận — trừ Ví ngay (mock chuyển khoản).
           </p>
         </div>
         <Link
           to={`${basePath}/vi`}
-          className="rounded-full border border-[var(--color-line)] px-4 py-2 text-sm font-semibold"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-[var(--color-brand-deep)] transition hover:bg-[var(--color-brand-soft)]"
         >
+          <Icon name="chevronLeft" className="h-4 w-4" />
           Về Ví VNĐ
         </Link>
       </header>
 
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+      <div className="flex shrink-0 flex-wrap items-center gap-4 rounded-2xl border border-[var(--color-brand)]/20 bg-gradient-to-r from-[var(--color-brand-soft)] via-[#f0faf9] to-white px-4 py-4 sm:px-5">
+        <WalletVerifiedIcon className="h-12 w-12 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
+            Số dư khả dụng
+          </p>
+          <p className="mt-0.5 text-2xl font-extrabold tabular-nums text-[#F59E0B] sm:text-[28px]">
+            {formatPrice(balance)}
+          </p>
+        </div>
+        <div className="flex items-start gap-2 text-sm text-[var(--color-brand-deep)]">
+          <Icon name="shield" className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="leading-snug">
+            <span className="font-semibold">Rút tiền nhanh chóng</span>
+            <br />
+            <span className="text-[var(--color-muted)]">An toàn &amp; bảo mật</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
         <form
           onSubmit={onSubmit}
-          className="surface-card flex min-h-0 flex-col gap-3 overflow-hidden p-4 sm:p-5"
+          className="flex flex-col gap-5 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5"
         >
-          <div className="shrink-0 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-              Số dư khả dụng
-            </p>
-            <p className="mt-1 text-2xl font-extrabold text-[var(--color-gold)]">
-              {formatPrice(balance)}
-            </p>
+          <div className="space-y-2.5">
+            <label className="block text-sm font-semibold text-[var(--color-ink)]">
+              Số tiền rút (tối thiểu 20.000)
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={amount > 0 ? formatPriceNumber(amount) : ''}
+                onChange={(e) => setAmount(parseAmount(e.target.value))}
+                className="field-input w-full pr-14"
+              />
+              <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-sm font-semibold text-[var(--color-muted)]">
+                VNĐ
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {AMOUNT_PRESETS.map((preset) => {
+                const active = amount === preset;
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(preset)}
+                    className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
+                      active
+                        ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
+                        : 'border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)]/40'
+                    }`}
+                  >
+                    {formatPriceNumber(preset)}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setAmount(balance)}
+                className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
+                  amount === balance && balance > 0
+                    ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
+                    : 'border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)]/40'
+                }`}
+              >
+                Tất cả
+              </button>
+            </div>
           </div>
 
-          <label className="block shrink-0 space-y-1.5">
-            <span className="text-sm font-semibold">Số tiền rút (tối thiểu 20.000)</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={amount > 0 ? formatPriceNumber(amount) : ''}
-              onChange={(e) => setAmount(parseAmount(e.target.value))}
-              className="field-input w-full"
-            />
-          </label>
-
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
-            <label className="block shrink-0 text-sm font-semibold" htmlFor="bank-search">
-              Ngân hàng (VietQR — {banks.length || '…'} ngân hàng)
+          <div className="space-y-2.5">
+            <label className="block text-sm font-semibold" htmlFor="bank-search">
+              Ngân hàng (VietQR – {banks.length || '…'} ngân hàng)
             </label>
-            <input
-              id="bank-search"
-              value={bankQuery}
-              onChange={(e) => setBankQuery(e.target.value)}
-              className="field-input w-full shrink-0 text-sm"
-              placeholder="Tìm Vietcombank, MB, 970436…"
-            />
+            <div className="relative">
+              <input
+                id="bank-search"
+                value={bankQuery}
+                onChange={(e) => setBankQuery(e.target.value)}
+                className="field-input w-full pr-10 text-sm"
+                placeholder="Tìm ngân hàng (VietQR)..."
+              />
+              <Icon
+                name="search"
+                className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
+              />
+            </div>
+
             {banksQuery.isLoading ? (
               <p className="text-sm text-[var(--color-muted)]">Đang tải danh sách NH…</p>
             ) : banksQuery.isError ? (
               <p className="text-sm text-red-600">
                 {(banksQuery.error as Error).message}
               </p>
-            ) : (
-              <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain rounded-xl border border-[var(--color-line)] p-1.5">
+            ) : bankQuery.trim() ? (
+              <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-[var(--color-line)] p-1.5">
                 {filteredBanks.map((bank) => {
                   const active = bank.bin === selectedBin;
                   return (
                     <li key={`${bank.bin}-${bank.code}`}>
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelectedBin(bank.bin);
-                          setBankQuery(bank.shortName);
-                        }}
+                        onClick={() => selectBank(bank)}
                         className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition ${
                           active
                             ? 'bg-[var(--color-brand-soft)] ring-1 ring-[var(--color-brand)]'
@@ -188,18 +320,11 @@ export function WithdrawPage({ basePath }: Props) {
                           loading="lazy"
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="block font-semibold text-[var(--color-ink)]">
-                            {bank.shortName}
-                          </span>
+                          <span className="block font-semibold">{bank.shortName}</span>
                           <span className="block truncate text-xs text-[var(--color-muted)]">
-                            {bank.name} · BIN {bank.bin}
+                            {bank.name}
                           </span>
                         </span>
-                        {bank.transferSupported ? (
-                          <span className="shrink-0 text-[10px] font-bold uppercase text-emerald-700">
-                            CK
-                          </span>
-                        ) : null}
                       </button>
                     </li>
                   );
@@ -210,34 +335,68 @@ export function WithdrawPage({ basePath }: Props) {
                   </li>
                 ) : null}
               </ul>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {featuredBanks.map((bank) => {
+                  const active = bank.bin === selectedBin;
+                  return (
+                    <button
+                      key={bank.bin}
+                      type="button"
+                      onClick={() => selectBank(bank)}
+                      className={`relative flex flex-col items-center gap-2 rounded-xl border bg-white px-2 py-3 text-center transition ${
+                        active
+                          ? 'border-[var(--color-brand)] shadow-[0_0_0_1px_var(--color-brand)]'
+                          : 'border-[var(--color-line)] hover:border-[var(--color-brand)]/40'
+                      }`}
+                    >
+                      {active ? (
+                        <span className="absolute top-1.5 right-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-brand)] text-white">
+                          <Icon name="check" className="h-2.5 w-2.5" />
+                        </span>
+                      ) : null}
+                      <img
+                        src={bank.logo}
+                        alt=""
+                        className="h-9 w-9 object-contain"
+                        loading="lazy"
+                      />
+                      <span className="truncate text-xs font-semibold text-[var(--color-ink)]">
+                        {bank.shortName}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          <label className="block shrink-0 space-y-1.5">
-            <span className="text-sm font-semibold">Số tài khoản</span>
-            <input
-              value={accountNo}
-              onChange={(e) => setAccountNo(e.target.value.replace(/\D/g, ''))}
-              className="field-input w-full"
-              inputMode="numeric"
-              placeholder="Chỉ chữ số"
-            />
-          </label>
-
-          <label className="block shrink-0 space-y-1.5">
-            <span className="text-sm font-semibold">Tên chủ tài khoản</span>
-            <input
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value.toUpperCase())}
-              className="field-input w-full"
-              placeholder="NGUYEN VAN A"
-            />
-          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block space-y-1.5">
+              <span className="text-sm font-semibold">Số tài khoản</span>
+              <input
+                value={accountNo}
+                onChange={(e) => setAccountNo(e.target.value.replace(/\D/g, ''))}
+                className="field-input w-full"
+                inputMode="numeric"
+                placeholder="Chỉ chữ số"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-sm font-semibold">Tên chủ tài khoản</span>
+              <input
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value.toUpperCase())}
+                className="field-input w-full"
+                placeholder="NGUYEN VAN A"
+              />
+            </label>
+          </div>
 
           <button
             type="submit"
             disabled={!canSubmit || withdrawMutation.isPending}
-            className="btn-primary w-full shrink-0 py-2.5 text-sm !text-white disabled:opacity-50"
+            className="btn-primary w-full py-3 text-[15px] font-bold uppercase tracking-wide !text-white disabled:opacity-50"
           >
             {withdrawMutation.isPending
               ? 'Đang xử lý…'
@@ -245,44 +404,64 @@ export function WithdrawPage({ basePath }: Props) {
           </button>
         </form>
 
-        <aside className="surface-card flex shrink-0 flex-col gap-3 overflow-y-auto p-4 sm:p-5 lg:min-h-0 lg:overflow-y-auto">
-          <h2 className="font-extrabold text-[var(--color-navy)]">Xác nhận</h2>
+        <aside className="flex h-fit flex-col gap-4 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5">
+          <h2 className="text-lg font-extrabold text-[var(--color-navy)]">Xác nhận</h2>
+
           {selectedBank ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/60 p-3">
               <img
                 src={selectedBank.logo}
                 alt=""
-                className="h-12 w-12 rounded-lg border border-[var(--color-line)] bg-white object-contain p-1"
+                className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain p-1"
               />
-              <div>
-                <p className="font-bold">{selectedBank.shortName}</p>
-                <p className="text-xs text-[var(--color-muted)]">
-                  {selectedBank.code} · {selectedBank.bin}
+              <div className="min-w-0">
+                <p className="font-bold text-[var(--color-ink)]">
+                  {selectedBank.shortName}
+                </p>
+                <p className="truncate text-xs text-[var(--color-muted)]">
+                  {selectedBank.name}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                  · BIN {selectedBank.bin}
                 </p>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[var(--color-muted)]">Chưa chọn ngân hàng</p>
+            <p className="rounded-xl border border-dashed border-[var(--color-line)] px-3 py-4 text-center text-sm text-[var(--color-muted)]">
+              Chưa chọn ngân hàng
+            </p>
           )}
-          <dl className="space-y-1.5 text-sm">
+
+          <dl className="space-y-2.5 text-sm">
             <div className="flex justify-between gap-2">
               <dt className="text-[var(--color-muted)]">STK</dt>
-              <dd className="font-semibold">{accountNo || '—'}</dd>
+              <dd className="font-semibold tabular-nums">{accountNo || '—'}</dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-[var(--color-muted)]">Chủ TK</dt>
-              <dd className="text-right font-semibold">{accountName || '—'}</dd>
+              <dd className="max-w-[60%] truncate text-right font-semibold">
+                {accountName || '—'}
+              </dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-[var(--color-muted)]">Số tiền</dt>
-              <dd className="font-extrabold text-[var(--color-gold)]">
+              <dd className="font-extrabold tabular-nums text-[#F59E0B]">
                 {formatPrice(amount)}
               </dd>
             </div>
           </dl>
-          <p className="text-xs text-[var(--color-muted)]">
-            Mock: trừ số dư ví ngay, chưa chuyển khoản ngân hàng thật. Lưu STK làm mặc định lần sau.
-          </p>
+
+          <div className="border-t border-dashed border-[var(--color-line)] pt-4">
+            <div className="flex gap-2.5">
+              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+                <Icon name="shield" className="h-4 w-4" />
+              </span>
+              <p className="text-xs leading-relaxed text-[var(--color-muted)]">
+                Mock: trừ số dư ví ngay, chưa chuyển khoản ngân hàng thật. Lưu STK
+                làm mặc định lần sau.
+              </p>
+            </div>
+          </div>
         </aside>
       </div>
     </div>

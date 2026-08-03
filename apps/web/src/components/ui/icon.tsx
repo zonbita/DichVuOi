@@ -31,6 +31,13 @@ const shapes = {
       <path d="M4 20a2.5 2.5 0 0 1 2.5-2.5H20V21H6.5A2.5 2.5 0 0 1 4 20z" />
     </>
   ),
+  bookOpen: (
+    <>
+      <path d="M12 7c-2-1.6-4.6-2.4-8-2.4v14.2c3.4 0 6 0.8 8 2.4" />
+      <path d="M12 7c2-1.6 4.6-2.4 8-2.4v14.2c-3.4 0-6 0.8-8 2.4" />
+      <path d="M12 7v14.2" />
+    </>
+  ),
   graduation: (
     <>
       <path d="m12 4.5 9 4-9 4-9-4z" />
@@ -43,9 +50,27 @@ const shapes = {
       <path d="m17.5 14.5.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" />
     </>
   ),
+  star: (
+    <>
+      <path d="m12 3.6 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
+    </>
+  ),
+  pencil: (
+    <>
+      <path d="M12 20.5h8.5" />
+      <path d="M16.4 3.9a2.1 2.1 0 0 1 3 3l.7.7a2.1 2.1 0 0 1 0 3L9.2 18.5 4.5 19.5l1-4.7z" />
+    </>
+  ),
+  languages: (
+    <>
+      <path d="M5 8h8M9 8c0 5-2.5 8.5-6 10" />
+      <path d="M12.5 8c-.4 2.2-1.4 4.2-2.8 5.8" />
+      <path d="M13.5 14h7M17 14l3 6M14.5 20l3-6" />
+    </>
+  ),
   code: (
     <>
-      <path d="m9 8-5 4 5 4M15 8l5 4-5 4" />
+      <path d="m9 8-5 4 5 4M15 8l5 4-5 4M13.2 6.5 10.8 17.5" />
     </>
   ),
   game: (
@@ -223,6 +248,37 @@ const shapes = {
       <path d="m5.5 9 6.5 6.5L18.5 9" />
     </>
   ),
+  swap: (
+    <>
+      <path d="M7 8h12M16 5l3 3-3 3" />
+      <path d="M17 16H5M8 13l-3 3 3 3" />
+    </>
+  ),
+  eye: (
+    <>
+      <path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </>
+  ),
+  upload: (
+    <>
+      <path d="M12 4.5v10" />
+      <path d="m8 8 4-3.5L16 8" />
+      <path d="M5 16.5v2a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-2" />
+    </>
+  ),
+  save: (
+    <>
+      <path d="M5 4.5h11.5L19.5 7.5V19.5H5z" />
+      <path d="M8 4.5v5h7v-5M8 19.5v-6h8v6" />
+    </>
+  ),
+  rotateCcw: (
+    <>
+      <path d="M4.5 10.5A7.5 7.5 0 1 0 7 6.2" />
+      <path d="M4.5 5.5v5h5" />
+    </>
+  ),
   trash: (
     <>
       <path d="M4 7h16" />
@@ -316,6 +372,11 @@ const shapes = {
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof shapes;
+
+/** Path geometry only — dùng khi cần layer soft-3D / gradient riêng. */
+export function IconShape({ name }: { name: IconName }) {
+  return <>{shapes[name]}</>;
+}
 
 export function Icon({
   name,

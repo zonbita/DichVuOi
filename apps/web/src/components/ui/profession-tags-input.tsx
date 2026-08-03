@@ -130,7 +130,7 @@ export function ProfessionTagsInput({
   return (
     <div ref={rootRef} className="relative">
       <div
-        className={`field-input flex min-h-[48px] flex-wrap items-center gap-1.5 py-2 ${
+        className={`flex min-h-[48px] flex-wrap items-center gap-1.5 rounded-[12px] border border-[#DCE6EC] bg-white px-3 py-2 outline-none transition focus-within:border-[#079A9A] focus-within:ring-2 focus-within:ring-[#13B8B0]/25 ${
           disabled ? 'opacity-60' : 'cursor-text'
         }`}
         onClick={() => {
@@ -189,7 +189,7 @@ export function ProfessionTagsInput({
           value={query}
           disabled={disabled || value.length >= max}
           placeholder={selected.length ? '' : placeholder}
-          className="min-w-[140px] flex-1 border-0 bg-transparent py-1 text-sm outline-none placeholder:text-[var(--color-muted)]"
+          className="min-w-[140px] flex-1 border-0 bg-transparent py-1 text-sm text-[#0F2F4A] outline-none placeholder:text-[#64748B]"
           role="combobox"
           aria-expanded={open}
           aria-controls={listId}
@@ -203,7 +203,7 @@ export function ProfessionTagsInput({
         />
       </div>
 
-      <p className="mt-1.5 text-xs text-[var(--color-muted)]">
+      <p className="mt-2 text-xs text-[#64748B]">
         {value.length}/{max} nghề · Enter để thêm · Backspace để gỡ tag cuối
       </p>
 

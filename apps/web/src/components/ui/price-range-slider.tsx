@@ -10,7 +10,9 @@ type Props = {
   max: number;
   onChange: (next: { min: number; max: number }) => void;
   className?: string;
-  layout?: 'stacked' | 'split';
+  layout?: 'stacked' | 'split' | 'vertical';
+  /** Tiêu đề thẻ (layout vertical). */
+  title?: string;
   /** Tooltip giá trên 2 thumb — giống mockup đăng ký thuê. */
   showBubbles?: boolean;
   /** Trần chọn tối đa của slider (vd: số dư ví). */
@@ -40,6 +42,7 @@ export function PriceRangeSlider({
   onChange,
   className = '',
   layout = 'stacked',
+  title,
   showBubbles = false,
   maxSelectable = PRICE_SLIDER_MAX,
 }: Props) {
@@ -63,13 +66,17 @@ export function PriceRangeSlider({
   const range = hardMax - PRICE_SLIDER_MIN || 1;
   const leftPct = ((lo - PRICE_SLIDER_MIN) / range) * 100;
   const rightPct = ((hi - PRICE_SLIDER_MIN) / range) * 100;
-  const displayTicks = Array.from(new Set([
-    PRICE_SLIDER_MIN,
-    PRICE_SLIDER_MIN + range * 0.25,
-    PRICE_SLIDER_MIN + range * 0.5,
-    PRICE_SLIDER_MIN + range * 0.75,
-    hardMax,
-  ].map((tick) => Math.round(tick / STEP) * STEP)));
+  const displayTicks = Array.from(
+    new Set(
+      [
+        PRICE_SLIDER_MIN,
+        PRICE_SLIDER_MIN + range * 0.25,
+        PRICE_SLIDER_MIN + range * 0.5,
+        PRICE_SLIDER_MIN + range * 0.75,
+        hardMax,
+      ].map((tick) => Math.round(tick / STEP) * STEP),
+    ),
+  );
 
   function setMin(next: number) {
     const value = clamp(next, PRICE_SLIDER_MIN, hi);
@@ -88,30 +95,33 @@ export function PriceRangeSlider({
     else setMax(value);
   }
 
+  const isCard = layout === 'vertical';
+  const hideTicks = isCard;
+
   const slider = (
     <>
       <div
-        className={`price-range-wrap relative mb-1 ${showBubbles ? 'h-14 pt-7' : 'h-8'}`}
+        className={`price-range-wrap relative px-1 ${showBubbles ? (hideTicks ? 'h-9 pt-5' : 'h-11 pt-6') : 'h-8'} ${hideTicks ? 'mb-0' : 'mb-1'}`}
       >
         {showBubbles ? (
           <>
             <span
-              className="pointer-events-none absolute top-0 z-[4] -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--color-navy)] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm"
+              className="pointer-events-none absolute top-0 z-4 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#079A9A] px-2 py-0.5 text-[11px] font-bold leading-none text-white shadow-sm"
               style={{ left: `${leftPct}%` }}
             >
               {formatPriceNumber(lo)} VNĐ
             </span>
             <span
-              className="pointer-events-none absolute top-0 z-[4] -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--color-brand)] px-2 py-0.5 text-[11px] font-bold text-white shadow-sm"
+              className="pointer-events-none absolute top-0 z-4 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#079A9A] px-2 py-0.5 text-[11px] font-bold leading-none text-white shadow-sm"
               style={{ left: `${rightPct}%` }}
             >
               {formatPriceNumber(hi)} VNĐ
             </span>
           </>
         ) : null}
-        <div className="price-range-track absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[var(--color-line)]" />
+        <div className="price-range-track absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#DCE6EC]" />
         <div
-          className="price-range-fill absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[var(--color-brand)]"
+          className="price-range-fill absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#079A9A]"
           style={{ left: `${leftPct}%`, right: `${100 - rightPct}%` }}
         />
         <input
@@ -125,7 +135,7 @@ export function PriceRangeSlider({
           step={STEP}
           value={lo}
           onChange={(event) => setMin(Number(event.target.value))}
-          className="price-range-thumb absolute left-0 right-0 top-1/2 z-[2] w-full -translate-y-1/2 appearance-none bg-transparent"
+          className="price-range-thumb absolute left-0 right-0 top-1/2 z-2 w-full -translate-y-1/2 appearance-none bg-transparent"
         />
         <input
           type="range"
@@ -138,53 +148,70 @@ export function PriceRangeSlider({
           step={STEP}
           value={hi}
           onChange={(event) => setMax(Number(event.target.value))}
-          className="price-range-thumb absolute left-0 right-0 top-1/2 z-[3] w-full -translate-y-1/2 appearance-none bg-transparent"
+          className="price-range-thumb absolute left-0 right-0 top-1/2 z-3 w-full -translate-y-1/2 appearance-none bg-transparent"
         />
       </div>
 
-      <div className="price-range-ticks relative h-6" aria-hidden>
-        {displayTicks.map((tick) => {
-          const pct = ((tick - PRICE_SLIDER_MIN) / range) * 100;
-          return (
-            <button
-              key={tick}
-              type="button"
-              tabIndex={-1}
-              onClick={() => jumpToTick(tick)}
-              className="absolute top-0 flex flex-col items-center"
-              style={{
-                left: `${pct}%`,
-                transform:
-                  pct === 0
-                    ? 'translateX(0)'
-                    : pct === 100
-                      ? 'translateX(-100%)'
-                      : 'translateX(-50%)',
-              }}
-              title={formatPrice(tick)}
-            >
-              <span className="block h-2 w-px bg-[var(--color-line)]" />
-              <span className="mt-0.5 whitespace-nowrap text-[11px] font-semibold leading-none text-[var(--color-muted)]">
-                {formatTick(tick)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {hideTicks ? null : (
+        <div className="price-range-ticks relative h-6 px-1" aria-hidden>
+          {displayTicks.map((tick) => {
+            const pct = ((tick - PRICE_SLIDER_MIN) / range) * 100;
+            return (
+              <button
+                key={tick}
+                type="button"
+                tabIndex={-1}
+                onClick={() => jumpToTick(tick)}
+                className="absolute top-0 flex flex-col items-center"
+                style={{
+                  left: `${pct}%`,
+                  transform:
+                    pct === 0
+                      ? 'translateX(0)'
+                      : pct === 100
+                        ? 'translateX(-100%)'
+                        : 'translateX(-50%)',
+                }}
+                title={formatPrice(tick)}
+              >
+                <span className="block h-2 w-px bg-[#DCE6EC]" />
+                <span className="mt-0.5 whitespace-nowrap text-[11px] font-semibold leading-none text-[#64748B]">
+                  {formatTick(tick)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 
-  const fieldShell =
-    'flex min-w-0 items-stretch overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-white transition-[border-color,box-shadow] focus-within:border-[var(--color-brand)] focus-within:shadow-[0_0_0_3px_rgba(0,156,149,0.15)]';
+  const fieldShell = isCard
+    ? 'flex min-w-0 items-stretch overflow-hidden rounded-lg border border-[#DCE6EC] bg-white transition-[border-color,box-shadow] focus-within:border-[#079A9A] focus-within:shadow-[0_0_0_3px_rgba(7,154,154,0.15)]'
+    : 'flex min-w-0 items-stretch overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-white transition-[border-color,box-shadow] focus-within:border-[var(--color-brand)] focus-within:shadow-[0_0_0_3px_rgba(0,156,149,0.15)]';
+
+  const prefixClass = isCard
+    ? 'flex shrink-0 items-center bg-[#F4F8FA] px-2.5 text-sm font-semibold text-[#0F2F4A]'
+    : 'flex shrink-0 items-center px-3 text-sm font-semibold text-[var(--color-ink)]';
+
+  const dividerClass = isCard ? 'w-px shrink-0 bg-[#DCE6EC]' : 'w-px shrink-0 bg-[var(--color-line)]';
+
+  const inputTextClass = isCard
+    ? 'min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium tabular-nums text-[#0F2F4A] outline-none'
+    : 'min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[var(--color-ink)] outline-none';
+
+  const suffixClass = isCard
+    ? 'shrink-0 text-sm font-medium text-[#64748B]'
+    : 'shrink-0 text-sm font-medium text-[var(--color-ink)]';
+
+  const inputPadClass = isCard ? 'px-2 py-1.5' : 'px-3 py-2.5';
 
   const manualInputs = (
-    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+    <div className={`grid grid-cols-2 ${isCard ? 'gap-2' : 'gap-2.5 sm:gap-3'}`}>
       <label className={fieldShell} htmlFor={`${id}-min`}>
-        <span className="flex shrink-0 items-center px-3 text-sm font-semibold text-[var(--color-ink)]">
-          Từ
-        </span>
-        <span className="w-px shrink-0 bg-[var(--color-line)]" aria-hidden />
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 px-3 py-2.5">
+        <span className={prefixClass}>Từ</span>
+        <span className={dividerClass} aria-hidden />
+        <span className={`flex min-w-0 flex-1 items-center gap-1.5 ${inputPadClass}`}>
           <input
             id={`${id}-min`}
             type="text"
@@ -201,17 +228,15 @@ export function PriceRangeSlider({
               }
               setMin(parsed);
             }}
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[var(--color-ink)] outline-none"
+            className={inputTextClass}
           />
-          <span className="shrink-0 text-sm font-medium text-[var(--color-ink)]">VNĐ</span>
+          <span className={suffixClass}>VNĐ</span>
         </span>
       </label>
       <label className={fieldShell} htmlFor={`${id}-max`}>
-        <span className="flex shrink-0 items-center px-3 text-sm font-semibold text-[var(--color-ink)]">
-          Đến
-        </span>
-        <span className="w-px shrink-0 bg-[var(--color-line)]" aria-hidden />
-        <span className="flex min-w-0 flex-1 items-center gap-1.5 px-3 py-2.5">
+        <span className={prefixClass}>Đến</span>
+        <span className={dividerClass} aria-hidden />
+        <span className={`flex min-w-0 flex-1 items-center gap-1.5 ${inputPadClass}`}>
           <input
             id={`${id}-max`}
             type="text"
@@ -228,13 +253,29 @@ export function PriceRangeSlider({
               }
               setMax(parsed);
             }}
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[var(--color-ink)] outline-none"
+            className={inputTextClass}
           />
-          <span className="shrink-0 text-sm font-medium text-[var(--color-ink)]">VNĐ</span>
+          <span className={suffixClass}>VNĐ</span>
         </span>
       </label>
     </div>
   );
+
+  if (layout === 'vertical') {
+    return (
+      <div className={className}>
+        {title ? (
+          <h3 className="mb-1.5 text-[13px] font-bold leading-tight text-[#0F2F4A]">
+            {title}
+          </h3>
+        ) : null}
+        <div className="space-y-2">
+          <div className="min-w-0">{slider}</div>
+          <div className="min-w-0">{manualInputs}</div>
+        </div>
+      </div>
+    );
+  }
 
   if (layout === 'split') {
     return (

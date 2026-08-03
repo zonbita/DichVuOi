@@ -16,7 +16,7 @@ const perks: Array<{ icon: IconName; title: string; body: string }> = [
 export function HeroSection() {
   return (
     <section className="page-shell pt-5 pb-1">
-      <div className="section-container grid gap-4 overflow-visible lg:grid-cols-[268px_1fr] lg:gap-5">
+      <div className="section-container grid gap-4 overflow-visible lg:grid-cols-[360px_1fr] lg:gap-5">
         <CatalogMenu />
 
         <div className="animate-fade-in min-w-0">

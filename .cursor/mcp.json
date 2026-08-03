@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "chatgpt": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/.cursor/mcp/chatgpt/index.mjs"],
+      "envFile": "${workspaceFolder}/.cursor/mcp/chatgpt/.env"
+    }
+  }
+}

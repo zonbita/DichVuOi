@@ -7,6 +7,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AvatarLevelOverlay, LevelBadge, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { AddressMapPicker } from '../components/booking/address-map-picker';
+import { DatetimeLocalField } from '../components/ui/datetime-local-field';
 import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
 import { CatalogOverlayHero } from '../components/catalog/group-detail-hero';
 import {
@@ -606,7 +607,21 @@ export function ServiceDetailPage() {
                 />
               </div>
               <div>
-                <input {...register('scheduledAt')} type="datetime-local" className="field-input" />
+                <Controller
+                  name="scheduledAt"
+                  control={control}
+                  render={({ field }) => (
+                    <DatetimeLocalField
+                      id="service-booking-scheduled"
+                      name={field.name}
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      invalid={Boolean(errors.scheduledAt)}
+                    />
+                  )}
+                />
                 {errors.scheduledAt ? (
                   <p className="mt-1 text-sm text-red-600">{errors.scheduledAt.message}</p>
                 ) : null}

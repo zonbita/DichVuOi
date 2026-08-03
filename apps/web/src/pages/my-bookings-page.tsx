@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate } from 'react-router-dom';
-import { PhoneOtpVerifyCard } from '../components/auth/phone-otp-verify-card';
 import { CustomerBookingCard } from '../components/customer/customer-booking-card';
 import { useAuth } from '../features/auth/auth-context';
 import { useCustomerRealtime } from '../hooks/use-customer-realtime';
@@ -174,10 +173,6 @@ export function MyBookingsPage() {
           Thuê dịch vụ mới
         </Link>
       </header>
-
-      {!user.phoneVerified ? (
-        <PhoneOtpVerifyCard defaultPhone={user.phone ?? ''} />
-      ) : null}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">

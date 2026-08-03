@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/auth-context';
 import { api } from '../../services/api';
 import type { Booking } from '../../types/catalog';
@@ -174,7 +174,7 @@ function partnerNeedsAction(b: Booking, userId: string) {
  * Dùng cho /don-cua-toi/* và /doi-tac/*.
  */
 export function UserDashboardLayout() {
-  const { user, setMode, canOffer } = useAuth();
+  const { user, loading, setMode, canOffer } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -223,6 +223,19 @@ export function UserDashboardLayout() {
     };
   }, [hireQuery.data, openQuery.data, partnerMineQuery.data, user]);
 
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-[var(--color-muted)]">
+        Đang tải…
+      </div>
+    );
+  }
+
+  if (!user) {
+    const redirect = encodeURIComponent(pathname || '/don-cua-toi');
+    return <Navigate to={`/dang-nhap?redirect=${redirect}`} replace />;
+  }
+
   function badgeValue(kind?: NavItem['badge']) {
     if (!kind) return 0;
     return badges[kind] ?? 0;
@@ -241,17 +254,31 @@ export function UserDashboardLayout() {
 
   const sidebar = (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 px-5 py-5">
-        <p className="text-[15px] font-extrabold tracking-tight">{title}</p>
-        <p className="mt-0.5 truncate text-xs text-[var(--color-muted)]">
-          {user?.fullName ?? 'Tài khoản'}
-        </p>
-        {user ? (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[var(--color-gold)]">
-            <Icon name="wallet" className="h-3.5 w-3.5 shrink-0" />
-            Ví: {formatPrice(user.walletBalance ?? 0)}
-          </p>
-        ) : null}
+      <div className="shrink-0 px-4 py-4">
+        <div className="rounded-[20px] bg-white p-4 shadow-[0_10px_28px_rgba(0,156,149,0.1)]">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+              <Icon name="user" className="h-6 w-6" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[15px] font-extrabold tracking-tight text-[var(--color-navy)]">
+                {title}
+              </p>
+              <p className="mt-0.5 truncate text-sm text-[var(--color-muted)]">
+                {user?.fullName ?? 'Tài khoản'}
+              </p>
+            </div>
+          </div>
+          {user ? (
+            <>
+              <div className="my-3.5 h-px bg-[var(--color-line)]" />
+              <p className="flex items-center gap-2 text-sm font-semibold text-[#F59E0B]">
+                <Icon name="wallet" className="h-4 w-4 shrink-0" />
+                Ví: {formatPrice(user.walletBalance ?? 0)}
+              </p>
+            </>
+          ) : null}
+        </div>
       </div>
 
       <nav className="min-h-0 flex-1 space-y-0.5 overflow-hidden pb-2">
@@ -282,10 +309,8 @@ export function UserDashboardLayout() {
       <div className="shrink-0 border-t border-[var(--admin-border)] p-2">
         <button type="button" onClick={switchRole} className="admin-nav-link w-full text-left">
           <Icon
-            name={isOfferPath ? 'calendar' : 'briefcase'}
-            className={`h-[18px] w-[18px] shrink-0 ${
-              isOfferPath ? 'text-[var(--color-brand)]' : 'text-[var(--color-navy)]'
-            }`}
+            name="swap"
+            className="h-[18px] w-[18px] shrink-0 text-[var(--color-brand)]"
           />
           <span>{isOfferPath ? 'Sang Đơn thuê' : 'Sang Nhận việc'}</span>
         </button>

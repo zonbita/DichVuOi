@@ -20,7 +20,10 @@ export function ProvinceSelect({
 }: Props) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-semibold" htmlFor={id}>
+      <label
+        className="mb-2 block text-sm font-medium text-[#0F2F4A]"
+        htmlFor={id}
+      >
         {label}
       </label>
       <select
@@ -28,7 +31,7 @@ export function ProvinceSelect({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="field-input w-full"
+        className="h-11 w-full rounded-[12px] border border-[#DCE6EC] bg-white px-3 text-sm text-[#0F2F4A] outline-none transition focus:border-[#079A9A] focus:ring-2 focus:ring-[#13B8B0]/25 disabled:opacity-60"
       >
         <option value="">Chọn tỉnh / thành phố…</option>
         {PROVINCES.map((province) => (

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   defaultMapCenter,
-  geocodeAddress,
   getGoogleMapsApiKey,
   loadGoogleMaps,
   reverseGeocode,
@@ -15,7 +14,28 @@ type Props = {
   error?: string;
   placeholder?: string;
   disabled?: boolean;
+  /** Bản đồ thấp hơn — dùng trong form thuê gọn. */
+  compact?: boolean;
 };
+
+function MapStatusOverlay({
+  status,
+}: {
+  status: 'loading' | 'unavailable';
+}) {
+  if (status === 'loading') {
+    return (
+      <p className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-[var(--color-muted)]">
+        Đang tải bản đồ...
+      </p>
+    );
+  }
+  return (
+    <p className="absolute inset-0 flex items-center justify-center bg-white/90 px-4 text-center text-sm text-[var(--color-muted)]">
+      Không tải được Google Maps — hãy nhập địa chỉ bên dưới.
+    </p>
+  );
+}
 
 export function AddressMapPicker({
   id = 'address-map-picker',
@@ -23,22 +43,22 @@ export function AddressMapPicker({
   onChange,
   onBlur,
   error,
-  placeholder = 'Địa chỉ thực hiện',
+  placeholder = 'Số nhà, đường, phường / quận…',
   disabled = false,
+  compact = false,
 }: Props) {
   const apiKey = getGoogleMapsApiKey();
-  const inputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const geocodeTimerRef = useRef<number | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
   const [mapStatus, setMapStatus] = useState<'idle' | 'loading' | 'ready' | 'unavailable'>(
     apiKey ? 'idle' : 'unavailable',
   );
+
+  const showFallbackInput = !apiKey || mapStatus === 'unavailable';
 
   function setMarkerPosition(position: google.maps.LatLngLiteral, pan = true) {
     const map = mapInstanceRef.current;
@@ -72,11 +92,10 @@ export function AddressMapPicker({
 
     loadGoogleMaps(apiKey)
       .then(() => {
-        if (cancelled || !mapRef.current || !inputRef.current) return;
+        if (cancelled || !mapRef.current) return;
 
-        const center = defaultMapCenter();
         const map = new google.maps.Map(mapRef.current, {
-          center,
+          center: defaultMapCenter(),
           zoom: 13,
           mapTypeControl: false,
           streetViewControl: false,
@@ -92,21 +111,6 @@ export function AddressMapPicker({
           if (address) onChangeRef.current(address);
         });
 
-        const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: 'vn' },
-          fields: ['formatted_address', 'geometry'],
-        });
-        autocompleteRef.current = autocomplete;
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.formatted_address) onChangeRef.current(place.formatted_address);
-          const location = place.geometry?.location;
-          if (location) {
-            setMarkerPosition({ lat: location.lat(), lng: location.lng() });
-          }
-        });
-
         setMapStatus('ready');
       })
       .catch(() => {
@@ -118,55 +122,55 @@ export function AddressMapPicker({
     };
   }, [apiKey, disabled]);
 
-  useEffect(() => {
-    if (mapStatus !== 'ready' || !value.trim()) return;
-
-    if (geocodeTimerRef.current) window.clearTimeout(geocodeTimerRef.current);
-    geocodeTimerRef.current = window.setTimeout(async () => {
-      const location = await geocodeAddress(value.trim());
-      if (!location) return;
-      setMarkerPosition({ lat: location.lat(), lng: location.lng() }, false);
-    }, 700);
-
-    return () => {
-      if (geocodeTimerRef.current) window.clearTimeout(geocodeTimerRef.current);
-    };
-  }, [mapStatus, value]);
-
   return (
     <div>
-      <label htmlFor={id} className="mb-1.5 block text-sm font-semibold">
+      <p
+        className={`font-semibold text-[var(--color-ink)] ${
+          compact ? 'mb-0.5 text-[13px]' : 'mb-1.5 text-sm'
+        }`}
+      >
         Địa chỉ thực hiện
-      </label>
-      <input
-        id={id}
-        ref={inputRef}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onBlur={onBlur}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete="off"
-        className="field-input"
-      />
-      <p className="mt-1.5 text-xs text-[var(--color-muted)]">
-        Gõ địa chỉ thủ công hoặc chọn trên bản đồ — hệ thống tự điền ô trên.
       </p>
+      {compact ? null : (
+        <p className="mb-2 text-xs text-[var(--color-muted)]">
+          Chọn vị trí trên bản đồ (bấm hoặc kéo ghim).
+        </p>
+      )}
 
       {apiKey ? (
-        <div className="relative mt-3 overflow-hidden rounded-xl border border-[var(--color-line)]">
-          <div ref={mapRef} className="h-56 w-full bg-[var(--color-canvas)]" aria-hidden />
-          {mapStatus === 'loading' ? (
-            <p className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-[var(--color-muted)]">
-              Đang tải bản đồ...
-            </p>
-          ) : null}
-          {mapStatus === 'unavailable' ? (
-            <p className="absolute inset-0 flex items-center justify-center bg-white/90 px-4 text-center text-sm text-[var(--color-muted)]">
-              Không tải được Google Maps — bạn vẫn có thể gõ địa chỉ thủ công.
-            </p>
+        <div className="relative overflow-hidden rounded-xl border border-[var(--color-line)]">
+          <div
+            ref={mapRef}
+            className={`w-full bg-[var(--color-canvas)] ${compact ? 'h-32 sm:h-36' : 'h-56'}`}
+            aria-hidden
+          />
+          {mapStatus === 'loading' || mapStatus === 'unavailable' ? (
+            <MapStatusOverlay status={mapStatus} />
           ) : null}
         </div>
+      ) : null}
+
+      {value.trim() && mapStatus === 'ready' ? (
+        <p
+          className={`text-[var(--color-ink)] ${
+            compact ? 'mt-1 line-clamp-1 text-xs' : 'mt-2 text-sm'
+          }`}
+        >
+          <span className="font-semibold">Đã chọn:</span> {value}
+        </p>
+      ) : null}
+
+      {showFallbackInput ? (
+        <input
+          id={id}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete="street-address"
+          className={`field-input ${apiKey ? 'mt-3' : ''}`}
+        />
       ) : null}
 
       {error ? <p className="mt-1 text-sm text-red-600">{error}</p> : null}

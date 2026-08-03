@@ -40,12 +40,12 @@ export declare class FinanceService {
                 };
             } | null;
         } & {
+            type: import(".prisma/client/client").$Enums.WalletTransactionType;
+            description: string;
             id: string;
             createdAt: Date;
             userId: string;
-            description: string;
             bookingId: string | null;
-            type: import(".prisma/client/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -126,12 +126,12 @@ export declare class FinanceService {
             paymentStatus: import(".prisma/client/client").$Enums.PaymentStatus;
         };
         partner: {
-            id: string;
             fullName: string;
+            id: string;
         } | null;
         customer: {
-            id: string;
             fullName: string;
+            id: string;
         };
     } & {
         id: string;
@@ -159,16 +159,16 @@ export declare class FinanceService {
             paymentStatus: import(".prisma/client/client").$Enums.PaymentStatus;
         };
         partner: {
-            id: string;
             email: string;
             fullName: string;
             phone: string | null;
+            id: string;
         } | null;
         customer: {
-            id: string;
             email: string;
             fullName: string;
             phone: string | null;
+            id: string;
         };
     } & {
         id: string;

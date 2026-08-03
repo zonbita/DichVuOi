@@ -102,6 +102,9 @@ export function MegaPanel({
   );
 }
 
+const itemTransition =
+  'transition-[background,color,border-color,box-shadow,transform] duration-200 ease-out';
+
 export function GroupListItem({
   group,
   active,
@@ -109,6 +112,7 @@ export function GroupListItem({
   onClick,
   showChevron = true,
   tone = 'dark',
+  showSeparator = false,
 }: {
   group: ServiceGroupTree;
   active: boolean;
@@ -117,6 +121,7 @@ export function GroupListItem({
   showChevron?: boolean;
   /** dark = sidebar menu nhóm (mặc định, khớp UI hình). */
   tone?: 'dark' | 'light';
+  showSeparator?: boolean;
 }) {
   const color = groupColor(group.slug);
   const isDark = tone === 'dark';
@@ -127,44 +132,50 @@ export function GroupListItem({
       onMouseEnter={(event) => onEnter?.(event.currentTarget)}
       onFocus={(event) => onEnter?.(event.currentTarget)}
       onClick={onClick}
-      className={`relative mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-[14.5px] font-medium transition-[background,color] duration-[180ms] ease-in-out ${
+      className={`relative mx-2.5 flex min-h-[48px] items-center gap-3.5 rounded-[14px] px-3.5 text-[15px] font-semibold outline-none ${itemTransition} focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#061a30] ${
         isDark
           ? active
-            ? 'font-semibold text-white'
-            : 'text-white/85 hover:bg-white/[0.06] hover:text-white'
+            ? 'catalog-menu-item-active text-white'
+            : 'border border-transparent text-white/90 hover:bg-[rgba(56,189,248,0.1)] hover:text-white'
           : active
             ? 'font-semibold'
             : 'text-[var(--color-muted)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]'
-      }`}
+      } ${showSeparator && !active ? 'after:absolute after:right-3 after:bottom-0 after:left-3 after:h-px after:bg-[rgba(148,163,184,0.12)]' : ''}`}
       style={
         isDark
-          ? active
-            ? { backgroundColor: CATALOG_MENU_DARK.active }
-            : undefined
+          ? undefined
           : active
             ? { backgroundColor: color.soft, color: color.ink }
             : { color: 'var(--color-muted)' }
       }
     >
-      {active && !isDark ? (
+      {active ? (
         <span
           aria-hidden
-          className="absolute top-1/2 left-0 h-5 w-[3px] -translate-y-1/2 rounded-r-full"
-          style={{ backgroundColor: color.main }}
+          className="absolute top-1/2 left-0 h-8 w-1 -translate-y-1/2 rounded-r-full"
+          style={{
+            backgroundColor: isDark ? CATALOG_MENU_DARK.indicator : color.main,
+          }}
         />
       ) : null}
       <GroupCatalogIcon
         slug={group.slug}
         icon={group.icon}
-        className="h-[20px] w-[20px] shrink-0"
+        className="h-6 w-6 shrink-0"
         active={active}
-        tint={color.main}
+        tint={
+          isDark
+            ? active
+              ? '#e0f2fe'
+              : color.main
+            : color.main
+        }
       />
       <span
-        className="min-w-0 flex-1 truncate"
+        className="min-w-0 flex-1 truncate leading-snug"
         style={
           isDark
-            ? { color: active ? '#fff' : 'rgba(255,255,255,0.9)' }
+            ? { color: active ? '#fff' : 'rgba(255,255,255,0.92)' }
             : { color: active ? color.ink : undefined }
         }
       >
@@ -176,7 +187,7 @@ export function GroupListItem({
           className="h-4 w-4 shrink-0"
           style={{
             color: isDark
-              ? 'rgba(255,255,255,0.35)'
+              ? 'rgba(148, 163, 184, 0.7)'
               : active
                 ? color.main
                 : 'var(--color-muted)',
@@ -185,6 +196,71 @@ export function GroupListItem({
         />
       ) : null}
     </Link>
+  );
+}
+
+export function CatalogAllCategoriesLink({
+  onClick,
+  className = '',
+}: {
+  onClick?: () => void;
+  className?: string;
+}) {
+  return (
+    <Link
+      to="/nhom"
+      onClick={onClick}
+      className={`relative mx-2.5 flex min-h-[48px] items-center gap-3.5 rounded-[14px] border border-transparent px-3.5 text-[15px] font-semibold text-white/90 outline-none ${itemTransition} hover:bg-[rgba(56,189,248,0.1)] hover:text-white focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#061a30] ${className}`}
+    >
+      <Icon
+        name="grid"
+        className="h-6 w-6 shrink-0"
+        style={{ color: 'rgba(148, 163, 184, 0.9)' }}
+      />
+      <span className="min-w-0 flex-1 truncate leading-snug">
+        Xem tất cả danh mục
+      </span>
+      <Icon
+        name="chevronRight"
+        className="h-4 w-4 shrink-0"
+        style={{ color: 'rgba(148, 163, 184, 0.7)' }}
+      />
+    </Link>
+  );
+}
+
+export function CatalogMenuHeader({
+  onClose,
+  size = 'lg',
+}: {
+  onClose?: () => void;
+  size?: 'sm' | 'lg';
+}) {
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-between border-b ${
+        size === 'lg' ? 'px-5 py-4' : 'px-4 py-3.5'
+      }`}
+      style={{ borderColor: CATALOG_MENU_DARK.border }}
+    >
+      <p
+        className={`flex items-center gap-3 font-bold tracking-[0.04em] text-white uppercase ${
+          size === 'lg' ? 'text-[18px]' : 'text-[16px]'
+        }`}
+      >
+        <Icon name="menu" className="h-5 w-5 shrink-0 text-white" />
+        NHÓM DỊCH VỤ
+      </p>
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg px-2 py-1 text-[14px] font-semibold text-white/55 outline-none transition hover:text-white focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60"
+        >
+          Đóng
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -210,30 +286,15 @@ export function CatalogMobileDrawer({
       <button
         type="button"
         aria-label="Đóng menu"
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/50 transition-opacity duration-200"
         onClick={onClose}
       />
       <div
-        className={`absolute inset-y-0 left-0 flex w-[min(100%,360px)] flex-col ${CATALOG_MENU_DARK.surfaceClass}`}
+        className={`absolute inset-y-0 left-0 flex w-[min(100%,360px)] flex-col overflow-hidden shadow-2xl ${CATALOG_MENU_DARK.surfaceClass}`}
       >
-        <div
-          className="flex items-center justify-between border-b px-4 py-3.5"
-          style={{ borderColor: CATALOG_MENU_DARK.border }}
-        >
-          <p className="flex items-center gap-2.5 text-[15px] font-bold tracking-wide text-white uppercase">
-            <Icon name="menu" className="h-5 w-5 text-white" />
-            nhóm dịch vụ
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-2 py-1 text-[15px] font-semibold text-white/50 hover:text-white"
-          >
-            Đóng
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto py-1.5">
-          {groups.map((group) => {
+        <CatalogMenuHeader onClose={onClose} size="sm" />
+        <div className="flex-1 overflow-y-auto py-2">
+          {groups.map((group, index) => {
             const isExpanded = expanded === group.slug;
             const color = groupColor(group.slug);
             return (
@@ -243,12 +304,12 @@ export function CatalogMobileDrawer({
                     <button
                       type="button"
                       onClick={() => onExpandedChange(isExpanded ? null : group.slug)}
-                      className="mx-2 flex min-w-0 flex-1 items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-left text-[14.5px] font-medium text-white/90 hover:bg-white/[0.06]"
+                      className={`relative mx-2.5 flex min-h-[48px] min-w-0 flex-1 items-center gap-3.5 rounded-[14px] px-3.5 text-left text-[15px] font-semibold text-white/90 outline-none ${itemTransition} hover:bg-[rgba(56,189,248,0.1)] focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60`}
                     >
                       <GroupCatalogIcon
                         slug={group.slug}
                         icon={group.icon}
-                        className="h-5 w-5 shrink-0"
+                        className="h-6 w-6 shrink-0"
                         tint={color.main}
                       />
                       <span className="truncate">{group.name}</span>
@@ -257,12 +318,12 @@ export function CatalogMobileDrawer({
                     <Link
                       to={`/nhom/${group.slug}`}
                       onClick={onClose}
-                      className="mx-2 flex min-w-0 flex-1 items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-[14.5px] font-medium text-white/90 hover:bg-white/[0.06]"
+                      className={`relative mx-2.5 flex min-h-[48px] min-w-0 flex-1 items-center gap-3.5 rounded-[14px] px-3.5 text-[15px] font-semibold text-white/90 outline-none ${itemTransition} hover:bg-[rgba(56,189,248,0.1)] focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60`}
                     >
                       <GroupCatalogIcon
                         slug={group.slug}
                         icon={group.icon}
-                        className="h-5 w-5 shrink-0"
+                        className="h-6 w-6 shrink-0"
                         tint={color.main}
                       />
                       <span className="truncate">{group.name}</span>
@@ -273,17 +334,23 @@ export function CatalogMobileDrawer({
                     aria-expanded={isExpanded}
                     aria-label={isExpanded ? 'Thu gọn' : 'Mở danh mục'}
                     onClick={() => onExpandedChange(isExpanded ? null : group.slug)}
-                    className="px-3 text-white/35"
+                    className="px-3 text-[rgba(148,163,184,0.75)] outline-none focus-visible:text-white"
                   >
                     <Icon
                       name="chevronRight"
-                      className={`h-4 w-4 transition ${isExpanded ? 'rotate-90' : ''}`}
+                      className={`h-4 w-4 transition duration-200 ${isExpanded ? 'rotate-90' : ''}`}
                     />
                   </button>
                 </div>
+                {index < groups.length - 1 && !isExpanded ? (
+                  <div
+                    className="mx-6 h-px"
+                    style={{ backgroundColor: CATALOG_MENU_DARK.separator }}
+                  />
+                ) : null}
                 {isExpanded ? (
                   <div
-                    className="mx-2 mb-1 rounded-[11px] px-3 py-2"
+                    className="mx-2.5 mb-1 rounded-[14px] px-3.5 py-2"
                     style={{ backgroundColor: CATALOG_MENU_DARK.active }}
                   >
                     {(group.categories ?? []).map((category) => (
@@ -346,16 +413,15 @@ export function CatalogMobileDrawer({
           })}
         </div>
         {!pickerMode ? (
-          <div className="border-t p-3" style={{ borderColor: CATALOG_MENU_DARK.border }}>
-            <Link
-              to="/nhom"
-              onClick={onClose}
-              className="flex w-full items-center justify-center gap-2.5 rounded-[11px] px-4 py-3 text-[14.5px] font-medium hover:bg-white/[0.06]"
-              style={{ color: '#fff' }}
-            >
-              <Icon name="grid" className="h-5 w-5 shrink-0" style={{ color: '#fff' }} />
-              Xem tất cả danh mục
-            </Link>
+          <div
+            className="shrink-0 border-t py-2"
+            style={{
+              borderColor: CATALOG_MENU_DARK.border,
+              background:
+                'linear-gradient(180deg, rgba(6,26,48,0.35) 0%, rgba(4,18,34,0.85) 100%)',
+            }}
+          >
+            <CatalogAllCategoriesLink onClick={onClose} />
           </div>
         ) : null}
       </div>

@@ -4,9 +4,11 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { catalogQueries } from '../../lib/catalog-queries';
 import { CATALOG_MENU_DARK, groupColor } from '../../utils/catalog-colors';
-import { groupIcon } from '../../utils/catalog-display';
+import { GroupCatalogIcon } from '../catalog/group-catalog-icon';
 import { Icon } from '../ui/icon';
 import {
+  CatalogAllCategoriesLink,
+  CatalogMenuHeader,
   CatalogMobileDrawer,
   GroupListItem,
   MegaPanel,
@@ -96,7 +98,7 @@ export function CatalogMenu({
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="flex w-full items-center justify-between gap-3 bg-white px-4 py-3.5 text-left shadow-sm"
+          className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
         >
           <span className="flex items-center gap-2.5 text-base font-bold">
             <Icon name="menu" className="h-5 w-5 text-[var(--color-brand)]" />
@@ -116,10 +118,11 @@ export function CatalogMenu({
                 className="flex shrink-0 items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-semibold shadow-sm"
                 style={{ borderBottom: `2px solid ${groupColor(group.slug).main}` }}
               >
-                <Icon
-                  name={groupIcon(group.icon)}
+                <GroupCatalogIcon
+                  slug={group.slug}
+                  icon={group.icon}
                   className="h-4 w-4"
-                  style={{ color: groupColor(group.slug).main }}
+                  tint={groupColor(group.slug).main}
                 />
                 {group.name.split('&')[0]?.trim() ?? group.name}
               </Link>
@@ -134,10 +137,10 @@ export function CatalogMenu({
         ) : null}
       </div>
 
-      {/* Desktop: sidebar + mega panel hover (panel nằm ngoài overflow-hidden để không bị cắt) */}
+      {/* Desktop: sidebar + mega panel hover */}
       <aside
         ref={asideRef}
-        className="relative z-[100] hidden lg:block"
+        className="relative z-[100] hidden w-full max-w-[360px] lg:block"
         onMouseLeave={() => {
           if (!pickerMode) {
             setActiveSlug(null);
@@ -146,50 +149,44 @@ export function CatalogMenu({
         }}
       >
         <div
-          className={`overflow-hidden ${CATALOG_MENU_DARK.surfaceClass}`}
+          className={`flex max-h-[min(860px,calc(100vh-7.5rem))] flex-col overflow-hidden ${CATALOG_MENU_DARK.surfaceClass}`}
         >
-          <p
-            className="flex items-center gap-2.5 border-b px-4 py-3.5 text-[13px] font-bold tracking-wide text-white uppercase"
-            style={{ borderColor: CATALOG_MENU_DARK.border }}
-          >
-            <Icon name="menu" className="h-5 w-5 text-white" />
-            nhóm dịch vụ
-          </p>
-          <ul className="space-y-0.5 py-2">
+          <CatalogMenuHeader size="lg" />
+
+          <ul className="flex-1 overflow-y-auto py-2">
             {treeQuery.isLoading ? (
-              <li className="px-4 py-2 text-sm text-white/50">Đang tải...</li>
+              <li className="px-5 py-3 text-sm text-white/50">Đang tải...</li>
             ) : null}
-            {groups.map((group) => (
+            {groups.map((group, index) => (
               <li key={group.id}>
                 <GroupListItem
                   group={group}
                   active={activeSlug === group.slug}
                   onEnter={(anchor) => handleItemEnter(group.slug, anchor)}
                   tone="dark"
+                  showSeparator={index < groups.length - 1}
                 />
               </li>
             ))}
-            {!pickerMode ? (
-              <li
-                className="mt-1 border-t pt-1"
-                style={{ borderColor: CATALOG_MENU_DARK.border }}
-              >
-                <Link
-                  to="/nhom"
-                  className="mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[10px] text-[14.5px] font-medium transition-[background] duration-[180ms] ease-in-out hover:bg-white/[0.06]"
-                  style={{ color: '#fff' }}
-                >
-                  <Icon name="grid" className="h-5 w-5 shrink-0" style={{ color: '#fff' }} />
-                  Xem tất cả danh mục
-                </Link>
-              </li>
-            ) : null}
           </ul>
+
+          {!pickerMode ? (
+            <div
+              className="shrink-0 border-t py-2"
+              style={{
+                borderColor: CATALOG_MENU_DARK.border,
+                background:
+                  'linear-gradient(180deg, rgba(6,26,48,0.2) 0%, rgba(4,18,34,0.55) 100%)',
+              }}
+            >
+              <CatalogAllCategoriesLink />
+            </div>
+          ) : null}
         </div>
 
         <div
           ref={panelRef}
-          className={`absolute left-full z-[110] ml-px w-[min(720px,calc(100vw-300px))] overflow-hidden rounded-r-[16px] border border-[var(--color-line)] bg-white shadow-xl transition-[top,opacity,transform] duration-200 ease-out ${
+          className={`absolute left-full z-[110] ml-px w-[min(720px,calc(100vw-380px))] overflow-hidden rounded-r-[16px] border border-[var(--color-line)] bg-white shadow-xl transition-[top,opacity,transform] duration-200 ease-out ${
             activeSlug && activeGroup
               ? 'pointer-events-auto translate-x-0 opacity-100'
               : 'pointer-events-none translate-x-1 opacity-0'

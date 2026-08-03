@@ -21,6 +21,7 @@ import { HireServicePicker } from './hire-service-picker';
 import { HireTasksInput } from './hire-tasks-input';
 import type { CatalogServicePick } from '../home/catalog-menu-shared';
 import { PRICE_SLIDER_MIN, PriceRangeSlider } from '../ui/price-range-slider';
+import { DatetimeLocalField } from '../ui/datetime-local-field';
 import { Icon } from '../ui/icon';
 
 type ServiceOption = CatalogServicePick &
@@ -71,7 +72,7 @@ function FieldLabel({
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-1.5 block text-sm font-semibold text-[var(--color-ink)]"
+      className="mb-1 block text-[13px] font-semibold text-[var(--color-ink)]"
     >
       {children}
     </label>
@@ -80,15 +81,15 @@ function FieldLabel({
 
 function HireStepper({ activeStep }: { activeStep: 1 | 2 | 3 }) {
   return (
-    <ol className="flex items-center gap-1.5 sm:gap-2" aria-label="Tiến trình đăng ký">
+    <ol className="flex items-center gap-1 sm:gap-1.5" aria-label="Tiến trình đăng ký">
       {STEPS.map((step, index) => {
         const done = activeStep > step.id;
         const current = activeStep === step.id;
         return (
-          <li key={step.id} className="flex items-center gap-1.5 sm:gap-2">
+          <li key={step.id} className="flex items-center gap-1 sm:gap-1.5">
             {index > 0 ? (
               <span
-                className={`hidden h-px w-5 sm:block sm:w-8 ${
+                className={`hidden h-px w-4 sm:block sm:w-6 ${
                   activeStep >= step.id
                     ? 'bg-[var(--color-brand)]'
                     : 'bg-[var(--color-line)]'
@@ -96,22 +97,22 @@ function HireStepper({ activeStep }: { activeStep: 1 | 2 | 3 }) {
                 aria-hidden
               />
             ) : null}
-            <span className="flex items-center gap-1.5 sm:gap-2">
+            <span className="flex items-center gap-1 sm:gap-1.5">
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold sm:h-8 sm:w-8 sm:text-sm ${
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold sm:h-7 sm:w-7 sm:text-xs ${
                   done || current
                     ? 'bg-[var(--color-brand)] text-white'
                     : 'bg-[var(--color-canvas)] text-[var(--color-muted)] ring-1 ring-[var(--color-line)]'
                 }`}
               >
                 {done ? (
-                  <Icon name="check" className="h-3.5 w-3.5" />
+                  <Icon name="check" className="h-3 w-3" />
                 ) : (
                   step.id
                 )}
               </span>
               <span
-                className={`hidden text-xs font-semibold sm:inline md:text-sm ${
+                className={`hidden text-xs font-semibold sm:inline ${
                   current || done
                     ? 'text-[var(--color-ink)]'
                     : 'text-[var(--color-muted)]'
@@ -252,6 +253,18 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       ? 2
       : 3;
 
+  const depositPercent = Number.isFinite(applyDepositPercent)
+    ? clampApplyDepositPercent(applyDepositPercent, budgetMax || 0)
+    : depositBounds.defaultPercent;
+  const depositFillPct =
+    ((depositPercent - depositBounds.min) /
+      Math.max(1, depositBounds.max - depositBounds.min)) *
+    100;
+  const depositEstimate = Math.max(
+    depositPercent === 0 ? 0 : 1,
+    Math.round(((budgetMax || 0) * depositPercent) / 100),
+  );
+
   const bookingMutation = useMutation({
     mutationFn: api.createBooking,
     onSuccess: async (booking) => {
@@ -285,17 +298,17 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] bg-gradient-to-br from-white via-white to-[var(--color-brand-soft)]/60 px-5 py-5 sm:px-7 sm:py-6">
-        <div className="flex min-w-0 items-start gap-3.5">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-sm">
-            <Icon name="briefcase" className="h-5 w-5" />
+    <section className="hire-form overflow-hidden rounded-xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-line)] bg-gradient-to-br from-white via-white to-[var(--color-brand-soft)]/60 px-4 py-2.5 sm:px-5 sm:py-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-sm">
+            <Icon name="briefcase" className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <h1 className="text-xl font-extrabold tracking-tight text-[var(--color-navy)] sm:text-2xl">
+            <h1 className="text-base font-extrabold tracking-tight text-[var(--color-navy)] sm:text-lg">
               Đăng ký thuê dịch vụ
             </h1>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">
+            <p className="mt-0.5 hidden text-xs text-[var(--color-muted)] sm:block">
               Chọn nghề, điền thông tin rồi gửi yêu cầu — đặt cọc sau khi tạo đơn.
             </p>
           </div>
@@ -303,9 +316,9 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
         <HireStepper activeStep={activeStep} />
       </div>
 
-      <div className="px-5 py-5 sm:px-7 sm:py-6">
+      <div className="px-4 py-3 sm:px-5 sm:py-3.5">
         {!user ? (
-          <div className="mb-5 rounded-xl bg-[var(--color-brand-soft)] px-4 py-3 text-sm">
+          <div className="mb-3 rounded-lg bg-[var(--color-brand-soft)] px-3 py-2 text-sm">
             <Link
               to="/dang-nhap?redirect=/don-cua-toi/thue"
               className="font-semibold text-[var(--color-brand-deep)] hover:underline"
@@ -317,7 +330,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
         ) : null}
 
         <form
-          className="grid gap-5 sm:grid-cols-2"
+          className="grid gap-3 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-3"
           onSubmit={handleSubmit(onSubmit)}
           noValidate
         >
@@ -347,7 +360,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
 
           {activeService && activeColor ? (
             <div
-              className="flex flex-wrap items-center gap-2.5 self-end rounded-xl px-4 py-3.5"
+              className="flex flex-wrap items-center gap-2 self-end rounded-lg px-3 py-2"
               style={{
                 backgroundColor: activeColor.soft,
                 color: activeColor.ink,
@@ -355,26 +368,26 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             >
               <Icon
                 name="briefcase"
-                className="h-4 w-4 shrink-0"
+                className="h-3.5 w-3.5 shrink-0"
                 style={{ color: activeColor.main }}
               />
               <div className="min-w-0 flex flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <p className="font-bold">{activeService.name}</p>
-                <p className="text-sm opacity-80">
+                <p className="text-sm font-bold">{activeService.name}</p>
+                <p className="text-xs opacity-80">
                   {activeService.groupName} · {activeService.categoryName}
                 </p>
               </div>
               <Link
                 to={`/dich-vu/${activeService.slug}`}
-                className="ml-auto shrink-0 text-sm font-semibold hover:underline"
+                className="ml-auto shrink-0 text-xs font-semibold hover:underline"
                 style={{ color: activeColor.ink }}
               >
                 Xem chi tiết ›
               </Link>
             </div>
           ) : (
-            <div className="flex items-start gap-2.5 self-end rounded-xl bg-[var(--color-brand-soft)] px-4 py-3.5 text-sm text-[var(--color-brand-deep)]">
-              <Icon name="briefcase" className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex items-start gap-2 self-end rounded-lg bg-[var(--color-brand-soft)] px-3 py-2 text-xs text-[var(--color-brand-deep)]">
+              <Icon name="briefcase" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <p>
                 <span className="font-semibold">Nghề / dịch vụ chưa được chọn.</span>{' '}
                 Chọn từ danh sách bên trái để tiếp tục.
@@ -382,123 +395,124 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             </div>
           )}
 
-          <div className="sm:col-span-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/50 p-4 sm:p-5">
-            <PriceRangeSlider
-              min={budgetMin}
-              max={budgetMax}
-              maxSelectable={walletBudgetCap ?? undefined}
-              showBubbles
-              onChange={({ min, max }) => {
-                setValue('budgetMin', min, { shouldValidate: true });
-                setValue('budgetMax', max, { shouldValidate: true });
-              }}
-            />
-            {errors.budgetMin ? (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.budgetMin.message}
-              </p>
-            ) : null}
-            {errors.budgetMax ? (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.budgetMax.message}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="sm:col-span-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/50 p-4 sm:p-5">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div className="min-w-0">
-                <FieldLabel htmlFor="hire-apply-deposit">
-                  Mức cọc ứng tuyển người làm
-                </FieldLabel>
-                <p className="text-xs text-[var(--color-muted)]">
-                  {(budgetMax || 0) > APPLY_DEPOSIT_BUDGET_THRESHOLD
-                    ? 'Ngân sách trên 5 triệu: chọn từ 50% đến 100%.'
-                    : 'Ngân sách từ 5 triệu trở xuống: chọn từ 0% đến 50%.'}{' '}
-                  Cọc giữ chỗ của bạn vẫn theo ngân sách đơn.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  id="hire-apply-deposit"
-                  type="number"
-                  min={depositBounds.min}
-                  max={depositBounds.max}
-                  step={1}
-                  {...register('applyDepositPercent', { valueAsNumber: true })}
-                  className="field-input w-24 text-center font-bold tabular-nums"
+          <div className="sm:col-span-2 overflow-hidden rounded-xl border border-[#DCE6EC] bg-white">
+            <div className="grid lg:grid-cols-2">
+              <div className="px-3 py-2.5 sm:px-4 sm:py-3">
+                <PriceRangeSlider
+                  layout="vertical"
+                  title="Ngân sách dự kiến"
+                  min={budgetMin}
+                  max={budgetMax}
+                  maxSelectable={walletBudgetCap ?? undefined}
+                  showBubbles
+                  onChange={({ min, max }) => {
+                    setValue('budgetMin', min, { shouldValidate: true });
+                    setValue('budgetMax', max, { shouldValidate: true });
+                  }}
                 />
-                <span className="text-sm font-bold text-[var(--color-ink)]">%</span>
+                {errors.budgetMin ? (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.budgetMin.message}
+                  </p>
+                ) : null}
+                {errors.budgetMax ? (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.budgetMax.message}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="border-t border-[#DCE6EC] px-3 py-2.5 sm:px-4 sm:py-3 lg:border-t-0 lg:border-l">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-[13px] font-bold leading-tight text-[#0F2F4A]">
+                      Mức cọc ứng tuyển người làm
+                    </h3>
+                    <p className="mt-0.5 text-[10px] leading-snug text-[#64748B] line-clamp-2">
+                      {(budgetMax || 0) > APPLY_DEPOSIT_BUDGET_THRESHOLD
+                        ? 'Ngân sách trên 5 triệu: chọn từ 50% đến 100%.'
+                        : 'Ngân sách từ 5 triệu trở xuống: chọn từ 0% đến 50%.'}{' '}
+                      Cọc giữ chỗ của bạn vẫn theo ngân sách đơn.
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <input
+                      id="hire-apply-deposit"
+                      type="number"
+                      min={depositBounds.min}
+                      max={depositBounds.max}
+                      step={1}
+                      {...register('applyDepositPercent', { valueAsNumber: true })}
+                      className="w-11 rounded-md border border-[#DCE6EC] bg-white px-1 py-1 text-center text-sm font-bold tabular-nums text-[#0F2F4A] outline-none transition focus:border-[#079A9A] focus:shadow-[0_0_0_3px_rgba(7,154,154,0.15)]"
+                    />
+                    <span className="text-sm font-bold text-[#0F2F4A]">%</span>
+                  </div>
+                </div>
+
+                <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5.75rem] items-end gap-2">
+                  <div className="min-w-0">
+                    <div className="price-range-wrap relative h-9 px-1 pt-5">
+                      <span
+                        className="pointer-events-none absolute top-0 z-4 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#079A9A] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm"
+                        style={{ left: `${depositFillPct}%` }}
+                      >
+                        {depositPercent}%
+                      </span>
+                      <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#DCE6EC]" />
+                      <div
+                        className="absolute left-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#079A9A]"
+                        style={{ width: `${depositFillPct}%` }}
+                      />
+                      <input
+                        type="range"
+                        min={depositBounds.min}
+                        max={depositBounds.max}
+                        step={1}
+                        value={depositPercent}
+                        onChange={(e) =>
+                          setValue(
+                            'applyDepositPercent',
+                            clampApplyDepositPercent(
+                              Number(e.target.value),
+                              budgetMax || 0,
+                            ),
+                            { shouldValidate: true },
+                          )
+                        }
+                        className="price-range-thumb absolute left-0 right-0 top-1/2 z-2 w-full -translate-y-1/2 appearance-none bg-transparent"
+                        aria-label="Mức cọc ứng tuyển %"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col justify-center rounded-lg bg-[#E8F7F6] px-2 py-1.5 text-center">
+                    <p className="text-[10px] font-semibold text-[#079A9A]">
+                      Ước tính
+                    </p>
+                    <p className="mt-0.5 text-base font-extrabold tabular-nums leading-none text-[#079A9A]">
+                      {depositEstimate.toLocaleString('vi-VN')}
+                    </p>
+                    <p className="mt-0.5 text-[10px] font-semibold text-[#079A9A]">
+                      VNĐ
+                    </p>
+                  </div>
+                </div>
+
+                {errors.applyDepositPercent ? (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.applyDepositPercent.message}
+                  </p>
+                ) : null}
               </div>
             </div>
-            <input
-              type="range"
-              min={depositBounds.min}
-              max={depositBounds.max}
-              step={1}
-              value={
-                Number.isFinite(applyDepositPercent)
-                  ? clampApplyDepositPercent(applyDepositPercent, budgetMax || 0)
-                  : depositBounds.defaultPercent
-              }
-              onChange={(e) =>
-                setValue(
-                  'applyDepositPercent',
-                  clampApplyDepositPercent(Number(e.target.value), budgetMax || 0),
-                  { shouldValidate: true },
-                )
-              }
-              className="mt-4 w-full accent-[var(--color-brand)]"
-              aria-label="Mức cọc ứng tuyển %"
-            />
-            <p className="mt-2 text-sm font-semibold text-[var(--color-brand-deep)]">
-              {Number.isFinite(applyDepositPercent)
-                ? applyDepositPercent
-                : depositBounds.defaultPercent}
-              % · ước tính{' '}
-              {Math.max(
-                applyDepositPercent === 0 ? 0 : 1,
-                Math.round(
-                  ((budgetMax || 0) *
-                    (Number.isFinite(applyDepositPercent)
-                      ? applyDepositPercent
-                      : depositBounds.defaultPercent)) /
-                    100,
-                ),
-              ).toLocaleString('vi-VN')}{' '}
-              VNĐ
-              <span className="ml-1 font-medium text-[var(--color-muted)]">
-                ({depositBounds.min}–{depositBounds.max}%)
-              </span>
-            </p>
-            {errors.applyDepositPercent ? (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.applyDepositPercent.message}
-              </p>
-            ) : null}
           </div>
 
-          <div>
-            <FieldLabel htmlFor="hire-name">Họ và tên</FieldLabel>
-            <input
-              id="hire-name"
-              {...register('customerName')}
-              placeholder="Nguyễn Văn A"
-              className="field-input"
-            />
-            {errors.customerName ? (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.customerName.message}
-              </p>
-            ) : null}
-          </div>
           <div>
             <FieldLabel htmlFor="hire-phone">Số điện thoại</FieldLabel>
             <input
               id="hire-phone"
               {...register('customerPhone')}
               placeholder="09xx xxx xxx"
-              className="field-input"
+              className="field-input hire-field-input"
             />
             {errors.customerPhone ? (
               <p className="mt-1 text-sm text-red-600">
@@ -507,29 +521,23 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             ) : null}
           </div>
           <div>
-            <FieldLabel htmlFor="hire-email">Email</FieldLabel>
-            <input
-              id="hire-email"
-              {...register('customerEmail')}
-              type="email"
-              placeholder="email@example.com (tuỳ chọn)"
-              className="field-input"
-            />
-          </div>
-          <div>
             <FieldLabel htmlFor="hire-scheduled">Thời gian mong muốn</FieldLabel>
-            <div className="relative">
-              <Icon
-                name="calendar"
-                className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-[var(--color-muted)]"
-              />
-              <input
-                id="hire-scheduled"
-                {...register('scheduledAt')}
-                type="datetime-local"
-                className="field-input bg-[var(--color-canvas)] pl-10"
-              />
-            </div>
+            <Controller
+              name="scheduledAt"
+              control={control}
+              render={({ field }) => (
+                <DatetimeLocalField
+                  id="hire-scheduled"
+                  name={field.name}
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  invalid={Boolean(errors.scheduledAt)}
+                  className="is-compact"
+                />
+              )}
+            />
             {errors.scheduledAt ? (
               <p className="mt-1 text-sm text-red-600">
                 {errors.scheduledAt.message}
@@ -550,6 +558,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
                   error={errors.address?.message}
                   disabled={!user}
                   placeholder="Số nhà, đường, phường / quận…"
+                  compact
                 />
               )}
             />
@@ -557,9 +566,8 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
 
           <div className="sm:col-span-2">
             <FieldLabel htmlFor="hire-task-draft">Công việc cần làm</FieldLabel>
-            <p className="mb-2 text-xs text-[var(--color-muted)]">
-              Thêm từng mục trước khi gửi. Sau khi đăng đơn, danh sách bị khóa —
-              không thêm được nữa.
+            <p className="mb-1.5 text-[11px] text-[var(--color-muted)]">
+              Thêm từng mục trước khi gửi. Sau khi đăng đơn danh sách bị khóa.
             </p>
             <HireTasksInput
               value={tasks}
@@ -575,11 +583,11 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             </p>
           ) : null}
 
-          <div className="sm:col-span-2 flex flex-col gap-4 border-t border-[var(--color-line)] pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-2.5 text-sm text-[var(--color-muted)]">
+          <div className="sm:col-span-2 flex flex-col gap-2.5 border-t border-[var(--color-line)] pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2 text-xs text-[var(--color-muted)]">
               <Icon
                 name="shield"
-                className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600"
               />
               <p>
                 Sau khi gửi, bạn cần{' '}
@@ -590,7 +598,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             <button
               type="submit"
               disabled={bookingMutation.isPending || !user}
-              className="btn-primary inline-flex shrink-0 items-center justify-center gap-2 px-5 py-3 text-[15px] disabled:opacity-60"
+              className="btn-primary inline-flex shrink-0 items-center justify-center gap-2 px-4 py-2.5 text-sm disabled:opacity-60"
             >
               <Icon name="send" className="h-4 w-4" />
               {bookingMutation.isPending

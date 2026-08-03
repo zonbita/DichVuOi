@@ -50,7 +50,10 @@ type OpenJobCardProps = {
   footerRight: ReactNode;
 };
 
-/** Card đơn mở — ảnh | tiêu đề + chip ngang rộng | giá + CTA. */
+const metaPill =
+  '!gap-1.5 !rounded-xl !border-transparent !px-3 !py-1.5 text-[13px] leading-none';
+
+/** Card đơn mở — ~668×178: ảnh | tiêu đề + meta | giá + CTA. */
 export function OpenJobCard({
   booking,
   footerLeft,
@@ -65,7 +68,7 @@ export function OpenJobCard({
       : '0 ứng viên';
   const budgetLabel =
     booking.budgetMin != null && booking.budgetMax != null
-      ? `${formatPriceNumber(booking.budgetMin)} – ${formatPriceNumber(booking.budgetMax)} VNĐ`
+      ? `${formatPriceNumber(booking.budgetMin)} - ${formatPriceNumber(booking.budgetMax)} VNĐ`
       : formatPrice(booking.totalPrice);
   const matchingDeadlineLabel = booking.matchingDeadlineAt
     ? formatRemainingTime(booking.matchingDeadlineAt)
@@ -89,13 +92,13 @@ export function OpenJobCard({
     Math.round((booking.applyDepositBps ?? 1000) / 100);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-gradient-to-br from-white via-white to-emerald-50/40 shadow-[0_10px_24px_rgba(24,49,63,0.08)]">
-      <div className="flex flex-col gap-3.5 p-4 sm:flex-row sm:items-stretch sm:gap-4 sm:p-5">
-        <div className="relative h-[88px] w-[88px] shrink-0 self-start sm:h-[104px] sm:w-[104px]">
+    <article className="w-full max-w-[668px] overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[0_4px_14px_rgba(24,49,63,0.07)]">
+      <div className="flex flex-col gap-3.5 p-4 sm:h-[178px] sm:flex-row sm:items-stretch sm:gap-4 sm:px-5 sm:py-[18px]">
+        <div className="relative h-[100px] w-[100px] shrink-0 self-start sm:h-[142px] sm:w-[142px] sm:self-center">
           <img
             src={serviceImage(booking.service)}
             alt={booking.service.name}
-            className="h-full w-full rounded-[12px] object-cover shadow-sm ring-1 ring-black/5"
+            className="h-full w-full rounded-[14px] object-cover"
             loading="lazy"
             decoding="async"
           />
@@ -104,12 +107,12 @@ export function OpenJobCard({
           </span>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-lg font-extrabold tracking-tight text-[var(--color-navy)] sm:text-xl">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3">
+          <div className="flex min-w-0 flex-1 flex-col justify-center">
+            <h3 className="truncate text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]">
               {booking.service.name}
             </h3>
-            <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
+            <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
               <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
               <span className="truncate">
                 {booking.customerName}
@@ -123,8 +126,8 @@ export function OpenJobCard({
               {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
                 <JobMetaPill
                   icon="clock"
-                  iconClassName="text-[#E11D48]"
-                  className="!border-transparent !bg-[#FFF1F2] !px-3 !py-1.5"
+                  iconClassName="!h-3.5 !w-3.5 text-[#E11D48]"
+                  className={`${metaPill} !bg-[#FFF1F2]`}
                   title={new Date(
                     booking.matchingDeadlineAt,
                   ).toLocaleString('vi-VN')}
@@ -137,14 +140,14 @@ export function OpenJobCard({
 
               <ScheduleTimePill
                 date={booking.scheduledAt}
-                className="!border-transparent !bg-[#EFF6FF] !px-3 !py-1.5"
+                className={`${metaPill} !bg-[#EFF6FF] [&_svg]:!h-3.5 [&_svg]:!w-3.5`}
               />
 
               {durationLabel ? (
                 <JobMetaPill
                   icon="clock"
-                  iconClassName="text-[#7C3AED]"
-                  className="!border-transparent !bg-[#F5F3FF] !px-3 !py-1.5"
+                  iconClassName="!h-3.5 !w-3.5 text-[#7C3AED]"
+                  className={`${metaPill} !bg-[#F5F3FF]`}
                 >
                   <span className="font-semibold text-[#6D28D9]">
                     {durationLabel}
@@ -154,8 +157,8 @@ export function OpenJobCard({
 
               <JobMetaPill
                 icon="users"
-                iconClassName="text-[#059669]"
-                className="!border-transparent !bg-[#ECFDF5] !px-3 !py-1.5"
+                iconClassName="!h-3.5 !w-3.5 text-[#059669]"
+                className={`${metaPill} !bg-[#ECFDF5]`}
               >
                 <span className="font-semibold text-[#047857]">
                   {applicationsLabel}
@@ -164,10 +167,10 @@ export function OpenJobCard({
 
               <JobMetaPill
                 icon="shield"
-                iconClassName="text-[#0F766E]"
-                className="!border-transparent !bg-[#F0FDFA] !px-3 !py-1.5"
+                iconClassName="!h-3.5 !w-3.5 text-[#0F766E]"
+                className={`${metaPill} !bg-[#F0FDFA]`}
               >
-                <span className="font-semibold text-[#0F766E]">
+                <span className="whitespace-nowrap font-semibold text-[#0F766E]">
                   {depositAmount <= 0
                     ? `Cọc 0% · miễn`
                     : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
@@ -176,10 +179,18 @@ export function OpenJobCard({
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col items-stretch justify-between gap-2.5 sm:w-[min(100%,220px)] sm:items-end">
-            <p className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3.5 py-2.5 text-[13px] font-extrabold text-[#C2410C] sm:justify-start">
-              <Icon name="wallet" className="h-4 w-4 shrink-0 text-[#EA580C]" />
-              <span className="min-w-0 leading-snug">{budgetLabel}</span>
+          <div className="flex shrink-0 flex-col items-stretch justify-between gap-2.5 sm:w-[210px] sm:items-end sm:py-0.5">
+            <p
+              className="inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[#FFF7ED] px-3.5 py-2.5 text-[13px] font-extrabold text-[#C2410C] sm:justify-start"
+              title={budgetLabel}
+            >
+              <Icon
+                name="wallet"
+                className="h-4 w-4 shrink-0 text-[#EA580C]"
+              />
+              <span className="min-w-0 truncate tabular-nums leading-snug">
+                {budgetLabel}
+              </span>
             </p>
 
             <div

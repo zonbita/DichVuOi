@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
 import { catalogQueries } from '../../lib/catalog-queries';
 import { CATALOG_MENU_DARK } from '../../utils/catalog-colors';
 import { Icon } from '../ui/icon';
 import {
+  CatalogAllCategoriesLink,
+  CatalogMenuHeader,
   CatalogMobileDrawer,
   GroupListItem,
   MegaPanel,
@@ -100,27 +101,21 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
         <div
           id={menuId}
           role="menu"
-          className="absolute top-[calc(100%+8px)] left-0 z-[9990] flex overflow-hidden border border-[color-mix(in_srgb,#5eb8e8_45%,transparent)] bg-transparent shadow-[0_18px_48px_rgba(2,22,36,0.42)]"
+          className="absolute top-[calc(100%+8px)] left-0 z-[9990] flex overflow-hidden rounded-[16px] border border-[color-mix(in_srgb,#7eb6d9_42%,transparent)] bg-transparent shadow-[0_14px_36px_rgba(2,18,32,0.38)]"
           onMouseLeave={() => setActiveSlug(groups[0]?.slug ?? null)}
           onClick={(event) => {
             if ((event.target as HTMLElement).closest('a')) close();
           }}
         >
           <div
-            className={`w-[240px] shrink-0 border-r border-[color-mix(in_srgb,#5eb8e8_35%,transparent)] ${CATALOG_MENU_DARK.surfaceClass}`}
+            className={`flex w-[320px] shrink-0 flex-col border-r border-[color-mix(in_srgb,#7eb6d9_35%,transparent)] ${CATALOG_MENU_DARK.surfaceClass}`}
           >
-            <p
-              className="flex items-center gap-2.5 border-b px-3 py-3 text-[13px] font-bold tracking-wide text-white uppercase"
-              style={{ borderColor: CATALOG_MENU_DARK.border }}
-            >
-              <Icon name="menu" className="h-5 w-5 text-white" />
-              nhóm dịch vụ
-            </p>
-            <ul className="max-h-[min(70vh,560px)] overflow-y-auto py-1.5">
+            <CatalogMenuHeader size="sm" />
+            <ul className="max-h-[min(70vh,640px)] flex-1 overflow-y-auto py-2">
               {treeQuery.isLoading ? (
-                <li className="px-3 py-2 text-sm text-white/50">Đang tải...</li>
+                <li className="px-4 py-2 text-sm text-white/50">Đang tải...</li>
               ) : null}
-              {groups.map((group) => (
+              {groups.map((group, index) => (
                 <li key={group.id}>
                   <GroupListItem
                     group={group}
@@ -128,24 +123,24 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
                     onEnter={() => setActiveSlug(group.slug)}
                     onClick={close}
                     tone="dark"
+                    showSeparator={index < groups.length - 1}
                   />
                 </li>
               ))}
-              <li className="mt-1 border-t pt-1" style={{ borderColor: CATALOG_MENU_DARK.border }}>
-                <Link
-                  to="/nhom"
-                  onClick={close}
-                  className="mx-2 flex items-center gap-2.5 rounded-[11px] px-2.5 py-[9px] text-[14.5px] font-medium lowercase hover:bg-white/[0.06]"
-                  style={{ color: '#fff' }}
-                >
-                  <Icon name="grid" className="h-5 w-5 shrink-0" style={{ color: '#fff' }} />
-                  xem tất cả danh mục
-                </Link>
-              </li>
             </ul>
+            <div
+              className="shrink-0 border-t py-2"
+              style={{
+                borderColor: CATALOG_MENU_DARK.border,
+                background:
+                  'linear-gradient(180deg, rgba(6,26,48,0.2) 0%, rgba(4,18,34,0.55) 100%)',
+              }}
+            >
+              <CatalogAllCategoriesLink onClick={close} />
+            </div>
           </div>
 
-          <div className="w-[min(720px,calc(100vw-280px))] max-w-[720px]">
+          <div className="w-[min(720px,calc(100vw-340px))] max-w-[720px] bg-white">
             {activeGroup ? <MegaPanel group={activeGroup} /> : null}
           </div>
         </div>

@@ -14,6 +14,7 @@ import { PartnerVerificationPanel } from '../components/partner/partner-verifica
 import { ProfessionTagsInput } from '../components/ui/profession-tags-input';
 import type { ProfessionOption } from '../components/ui/profession-tags-input';
 import { ProvinceSelect } from '../components/ui/province-select';
+import { Icon } from '../components/ui/icon';
 import { useAuth } from '../features/auth/auth-context';
 import { usePartnerRealtime } from '../hooks/use-partner-realtime';
 import { catalogQueries } from '../lib/catalog-queries';
@@ -464,99 +465,151 @@ export function PartnerDashboardPage() {
       ) : null}
 
       {tab === 'profile' && (
-      <section className="space-y-4">
-      <div className="surface-card p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <PartnerAvatarUpload
-            name={user?.fullName ?? 'Người làm'}
-            avatarUrl={profileQuery.data?.avatarUrl}
-            ensureProfile={() => ensurePartnerProfile()}
-          />
-          <Link
-            to={`/user/${user.id}`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand)]/15 bg-[var(--color-brand-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--color-brand-deep)] shadow-[0_10px_24px_rgba(0,156,149,0.18)] ring-1 ring-white/70 transition hover:-translate-y-0.5 hover:bg-[#f2fbfa]"
-          >
-            Xem hồ sơ công khai
-            <span aria-hidden>›</span>
-          </Link>
-        </div>
-        <form
-          className="mt-4 space-y-3"
-          onSubmit={handleSubmit(async (values) => {
-            await profileMutation.mutateAsync(values);
-            reset(values);
-          })}
-        >
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold" htmlFor="profile-phone">
-              Số điện thoại
-            </label>
-            <input
-              id="profile-phone"
-              {...register('phone')}
-              placeholder="0901234567"
-              className="field-input w-full"
-              inputMode="tel"
-              autoComplete="tel"
-            />
-            {errors.phone ? (
-              <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
-            ) : null}
+        <section className="space-y-4 rounded-[18px] bg-[#F4F8FA] p-4 sm:space-y-5 sm:p-5">
+          <header className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-[32px] font-bold tracking-tight text-[#0F2F4A] sm:text-[34px]">
+                Hồ sơ cá nhân
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#64748B] sm:text-[15px]">
+                Cập nhật thông tin để hồ sơ của bạn đầy đủ và chuyên nghiệp hơn.
+              </p>
+            </div>
+            <Link
+              to={`/user/${user.id}`}
+              className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#DCE6EC] bg-[rgba(255,255,255,0.92)] px-4 text-sm font-semibold text-[#0F2F4A] shadow-[0_1px_2px_rgba(15,47,74,0.04)] transition hover:border-[#13B8B0]/50 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#13B8B0]/35"
+            >
+              <Icon name="eye" className="h-4 w-4 text-[#079A9A]" />
+              Xem hồ sơ công khai
+              <Icon name="chevronRight" className="h-4 w-4 text-[#64748B]" />
+            </Link>
+          </header>
+
+          <div className="overflow-hidden rounded-[18px] border border-[#DCE6EC] bg-[rgba(255,255,255,0.92)] shadow-[0_4px_16px_rgba(15,47,74,0.05)]">
+            <form
+              className="grid gap-0 lg:grid-cols-[minmax(240px,30%)_1fr]"
+              onSubmit={handleSubmit(async (values) => {
+                await profileMutation.mutateAsync(values);
+                reset(values);
+              })}
+            >
+              <div className="border-b border-[#DCE6EC] p-4 sm:p-5 lg:border-r lg:border-b-0">
+                <PartnerAvatarUpload
+                  name={user?.fullName ?? 'Người làm'}
+                  avatarUrl={profileQuery.data?.avatarUrl}
+                  ensureProfile={() => ensurePartnerProfile()}
+                />
+              </div>
+
+              <div className="flex min-w-0 flex-col p-4 sm:p-5 lg:p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      className="mb-2 block text-sm font-medium text-[#0F2F4A]"
+                      htmlFor="profile-phone"
+                    >
+                      Số điện thoại
+                    </label>
+                    <input
+                      id="profile-phone"
+                      {...register('phone')}
+                      placeholder="0901234567"
+                      className="h-11 w-full rounded-[12px] border border-[#DCE6EC] bg-white px-3 text-sm text-[#0F2F4A] outline-none transition placeholder:text-[#64748B] focus:border-[#079A9A] focus:ring-2 focus:ring-[#13B8B0]/25"
+                      inputMode="tel"
+                      autoComplete="tel"
+                    />
+                    {errors.phone ? (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.phone.message}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <Controller
+                    name="city"
+                    control={control}
+                    render={({ field }) => (
+                      <ProvinceSelect
+                        id="profile-city"
+                        value={field.value}
+                        onChange={field.onChange}
+                        error={errors.city?.message}
+                      />
+                    )}
+                  />
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-[#0F2F4A]">
+                      Nghề bạn làm
+                    </label>
+                    <ProfessionTagsInput
+                      value={profileServiceIds}
+                      onChange={setProfileServiceIds}
+                      options={professionOptions}
+                      hoursByServiceId={hoursByServiceId}
+                      placeholder="Gõ tên nghề để gắn / gỡ tag..."
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="mb-2 block text-sm font-medium text-[#0F2F4A]"
+                      htmlFor="profile-bio"
+                    >
+                      Giới thiệu kỹ năng, kinh nghiệm
+                    </label>
+                    <textarea
+                      id="profile-bio"
+                      {...register('bio')}
+                      rows={5}
+                      placeholder="Giới thiệu kỹ năng, kinh nghiệm..."
+                      className="min-h-[120px] w-full resize-y rounded-[12px] border border-[#DCE6EC] bg-white px-3 py-2.5 text-sm text-[#0F2F4A] outline-none transition placeholder:text-[#64748B] focus:border-[#079A9A] focus:ring-2 focus:ring-[#13B8B0]/25"
+                    />
+                  </div>
+
+                  {profileMutation.isError ? (
+                    <p className="text-sm text-red-600">
+                      {(profileMutation.error as Error).message}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-6 flex flex-col gap-3 border-t border-[#DCE6EC] pt-5 sm:flex-row sm:items-center">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || profileMutation.isPending}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#079A9A] px-5 text-sm font-bold !text-white shadow-[0_2px_8px_rgba(7,154,154,0.22)] transition hover:bg-[#068787] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#13B8B0]/40 focus-visible:ring-offset-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    <Icon name="save" className="h-4 w-4 !text-white" />
+                    {profileMutation.isPending ? 'Đang lưu…' : 'Lưu hồ sơ'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isSubmitting || profileMutation.isPending}
+                    onClick={() => {
+                      reset();
+                      setProfileServiceIds(
+                        profileQuery.data?.offerings?.map((o) => o.serviceId) ??
+                          [],
+                      );
+                    }}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[#DCE6EC] bg-white px-5 text-sm font-semibold text-[#0F2F4A] transition hover:bg-[#F4F8FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#13B8B0]/30 focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto"
+                  >
+                    <Icon name="rotateCcw" className="h-4 w-4 text-[#64748B]" />
+                    Khôi phục
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
 
-          <Controller
-            name="city"
-            control={control}
-            render={({ field }) => (
-              <ProvinceSelect
-                id="profile-city"
-                value={field.value}
-                onChange={field.onChange}
-                error={errors.city?.message}
-              />
-            )}
-          />
-
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold">
-              Nghề bạn làm
-            </label>
-            <ProfessionTagsInput
-              value={profileServiceIds}
-              onChange={setProfileServiceIds}
-              options={professionOptions}
-              hoursByServiceId={hoursByServiceId}
-              placeholder="Gõ tên nghề để gắn / gỡ tag…"
+          {profileQuery.data ? (
+            <PartnerVerificationPanel
+              profile={profileQuery.data}
+              defaultPhone={profileQuery.data.user?.phone ?? user?.phone ?? ''}
             />
-          </div>
-
-          <textarea
-            {...register('bio')}
-            rows={4}
-            placeholder="Giới thiệu kỹ năng, kinh nghiệm..."
-            className="field-input w-full"
-          />
-          {profileMutation.isError ? (
-            <p className="text-sm text-red-600">
-              {(profileMutation.error as Error).message}
-            </p>
           ) : null}
-          <button
-            type="submit"
-            disabled={isSubmitting || profileMutation.isPending}
-            className="btn-primary px-5 py-2.5 text-[15px] disabled:opacity-60"
-          >
-            {profileMutation.isPending ? 'Đang lưu…' : 'Lưu hồ sơ'}
-          </button>
-        </form>
-      </div>
-      {profileQuery.data ? (
-        <PartnerVerificationPanel
-          profile={profileQuery.data}
-          defaultPhone={profileQuery.data.user?.phone ?? user?.phone ?? ''}
-        />
-      ) : null}
-      </section>
+        </section>
       )}
     </div>
   );

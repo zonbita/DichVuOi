@@ -30,9 +30,9 @@ export declare class AdminController {
         withdrawnTotal: number;
         recentTransactions: ({
             user: {
-                id: string;
                 email: string;
                 fullName: string;
+                id: string;
             };
             booking: {
                 id: string;
@@ -41,12 +41,12 @@ export declare class AdminController {
                 };
             } | null;
         } & {
+            type: import("@prisma/client").$Enums.WalletTransactionType;
+            description: string;
             id: string;
             createdAt: Date;
             userId: string;
-            description: string;
             bookingId: string | null;
-            type: import("@prisma/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -54,10 +54,10 @@ export declare class AdminController {
     }>;
     listFinanceWallets(query: AdminFinanceWalletQueryDto): Promise<{
         items: {
-            id: string;
             email: string;
             fullName: string;
             phone: string | null;
+            id: string;
             role: import("@prisma/client").$Enums.Role;
             walletBalance: number;
             bankName: string | null;
@@ -73,9 +73,9 @@ export declare class AdminController {
     listFinanceTransactions(query: AdminFinanceTxQueryDto): Promise<{
         items: ({
             user: {
-                id: string;
                 email: string;
                 fullName: string;
+                id: string;
             };
             booking: {
                 id: string;
@@ -84,12 +84,12 @@ export declare class AdminController {
                 };
             } | null;
         } & {
+            type: import("@prisma/client").$Enums.WalletTransactionType;
+            description: string;
             id: string;
             createdAt: Date;
             userId: string;
-            description: string;
             bookingId: string | null;
-            type: import("@prisma/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -111,18 +111,18 @@ export declare class AdminController {
     }>;
     listUsers(query: AdminUserQueryDto): Promise<{
         items: {
-            id: string;
             email: string;
             fullName: string;
             phone: string | null;
+            id: string;
             role: import("@prisma/client").$Enums.Role;
             createdAt: Date;
             partnerProfile: {
                 id: string;
-                isVerified: boolean;
                 ratingAvg: number;
                 ratingCount: number;
                 level: number;
+                isVerified: boolean;
                 acceptingJobs: boolean;
             } | null;
             _count: {
@@ -136,20 +136,20 @@ export declare class AdminController {
         pageCount: number;
     }>;
     updateUser(id: string, dto: AdminUpdateUserDto): Promise<{
-        id: string;
         email: string;
         fullName: string;
         phone: string | null;
+        id: string;
         role: import("@prisma/client").$Enums.Role;
         createdAt: Date;
     }>;
     listPartners(query: AdminPartnerQueryDto): Promise<{
         items: ({
             user: {
-                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
+                id: string;
                 role: import("@prisma/client").$Enums.Role;
             };
             _count: {
@@ -165,8 +165,6 @@ export declare class AdminController {
             bankVerified: boolean;
             createdAt: Date;
             updatedAt: Date;
-            userId: string;
-            isVerified: boolean;
             headline: string | null;
             bio: string | null;
             city: string | null;
@@ -176,6 +174,7 @@ export declare class AdminController {
             level: number;
             onlineSeconds: number;
             lastOnlineAt: Date | null;
+            isVerified: boolean;
             phoneOtpCode: string | null;
             bankVerifyIntentId: string | null;
             bankVerifyExpiresAt: Date | null;
@@ -185,6 +184,7 @@ export declare class AdminController {
             acceptingJobs: boolean;
             workModes: string | null;
             responseMinutes: number;
+            userId: string;
         })[];
         total: number;
         page: number;
@@ -193,10 +193,10 @@ export declare class AdminController {
     }>;
     updatePartner(userId: string, dto: AdminUpdatePartnerDto): Promise<{
         user: {
-            id: string;
             email: string;
             fullName: string;
             phone: string | null;
+            id: string;
             role: import("@prisma/client").$Enums.Role;
         };
         _count: {
@@ -212,8 +212,6 @@ export declare class AdminController {
         bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
-        isVerified: boolean;
         headline: string | null;
         bio: string | null;
         city: string | null;
@@ -223,6 +221,7 @@ export declare class AdminController {
         level: number;
         onlineSeconds: number;
         lastOnlineAt: Date | null;
+        isVerified: boolean;
         phoneOtpCode: string | null;
         bankVerifyIntentId: string | null;
         bankVerifyExpiresAt: Date | null;
@@ -232,27 +231,28 @@ export declare class AdminController {
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
+        userId: string;
     }>;
     listBookings(query: AdminBookingQueryDto): Promise<{
         items: ({
             user: {
-                id: string;
                 email: string;
                 fullName: string;
+                id: string;
             };
             _count: {
                 messages: number;
                 reviews: number;
             };
             partner: {
-                id: string;
                 email: string;
                 fullName: string;
+                id: string;
             } | null;
             service: {
                 id: string;
-                slug: string;
                 name: string;
+                slug: string;
             };
         } & {
             id: string;
@@ -295,75 +295,75 @@ export declare class AdminController {
     }>;
     getBooking(id: string): Promise<{
         user: {
-            id: string;
             email: string;
             fullName: string;
             phone: string | null;
+            id: string;
         };
         partner: {
-            id: string;
             email: string;
             fullName: string;
             phone: string | null;
+            id: string;
         } | null;
         service: {
             id: string;
-            slug: string;
             name: string;
+            slug: string;
             basePrice: number;
             unit: string;
         };
         messages: ({
             sender: {
-                id: string;
                 email: string;
                 fullName: string;
+                id: string;
             };
         } & {
             id: string;
             createdAt: Date;
             bookingId: string;
             redacted: boolean;
-            body: string;
             senderId: string;
+            body: string;
         })[];
         reviews: ({
-            toUser: {
-                id: string;
-                fullName: string;
-            };
             fromUser: {
-                id: string;
                 fullName: string;
+                id: string;
+            };
+            toUser: {
+                fullName: string;
+                id: string;
             };
         } & {
             id: string;
             createdAt: Date;
             bookingId: string;
-            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
+            comment: string | null;
         })[];
         complaints: ({
             reporter: {
-                id: string;
                 fullName: string;
+                id: string;
             };
             against: {
-                id: string;
                 fullName: string;
+                id: string;
             } | null;
             resolvedBy: {
-                id: string;
                 fullName: string;
+                id: string;
             } | null;
         } & {
+            description: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             status: import("@prisma/client").$Enums.ComplaintStatus;
-            description: string;
             category: string;
             bookingId: string;
             reporterUserId: string;
@@ -382,8 +382,8 @@ export declare class AdminController {
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            content: string;
             sortOrder: number;
+            content: string;
             source: import("@prisma/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -427,23 +427,23 @@ export declare class AdminController {
     }>;
     updateBooking(id: string, dto: AdminUpdateBookingDto): Promise<{
         user: {
-            id: string;
             email: string;
             fullName: string;
+            id: string;
         };
         _count: {
             messages: number;
             reviews: number;
         };
         partner: {
-            id: string;
             email: string;
             fullName: string;
+            id: string;
         } | null;
         service: {
             id: string;
-            slug: string;
             name: string;
+            slug: string;
         };
     } & {
         id: string;
@@ -488,24 +488,24 @@ export declare class AdminController {
                     name: string;
                 };
             };
-            toUser: {
-                id: string;
-                email: string;
-                fullName: string;
-            };
             fromUser: {
-                id: string;
                 email: string;
                 fullName: string;
+                id: string;
+            };
+            toUser: {
+                email: string;
+                fullName: string;
+                id: string;
             };
         } & {
             id: string;
             createdAt: Date;
             bookingId: string;
-            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
+            comment: string | null;
         })[];
         total: number;
         page: number;
@@ -522,17 +522,17 @@ export declare class AdminController {
                 };
             };
             sender: {
-                id: string;
                 email: string;
                 fullName: string;
+                id: string;
             };
         } & {
             id: string;
             createdAt: Date;
             bookingId: string;
             redacted: boolean;
-            body: string;
             senderId: string;
+            body: string;
         })[];
         total: number;
         page: number;
@@ -541,28 +541,28 @@ export declare class AdminController {
     }>;
     catalog(): import("@prisma/client").Prisma.PrismaPromise<{
         id: string;
+        name: string;
         _count: {
             categories: number;
         };
         slug: string;
-        name: string;
         isFeatured: boolean;
         categories: {
             id: string;
+            name: string;
             _count: {
                 services: number;
             };
-            name: string;
         }[];
     }[]>;
     categories(): Promise<{
         id: string;
-        slug: string;
         name: string;
+        slug: string;
         group: {
             id: string;
-            slug: string;
             name: string;
+            slug: string;
         };
     }[]>;
     listServices(query: AdminServiceQueryDto): Promise<{
@@ -573,21 +573,21 @@ export declare class AdminController {
             };
             category: {
                 id: string;
-                slug: string;
                 name: string;
+                slug: string;
                 group: {
                     id: string;
-                    slug: string;
                     name: string;
+                    slug: string;
                 };
             };
         } & {
+            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            slug: string;
             name: string;
-            description: string | null;
+            slug: string;
             basePrice: number;
             priceMin: number;
             priceMax: number;
@@ -609,21 +609,21 @@ export declare class AdminController {
         };
         category: {
             id: string;
-            slug: string;
             name: string;
+            slug: string;
             group: {
                 id: string;
-                slug: string;
                 name: string;
+                slug: string;
             };
         };
     } & {
+        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         name: string;
-        description: string | null;
+        slug: string;
         basePrice: number;
         priceMin: number;
         priceMax: number;
@@ -640,21 +640,21 @@ export declare class AdminController {
         };
         category: {
             id: string;
-            slug: string;
             name: string;
+            slug: string;
             group: {
                 id: string;
-                slug: string;
                 name: string;
+                slug: string;
             };
         };
     } & {
+        description: string | null;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        slug: string;
         name: string;
-        description: string | null;
+        slug: string;
         basePrice: number;
         priceMin: number;
         priceMax: number;
@@ -666,8 +666,8 @@ export declare class AdminController {
     }>;
     updateGroup(id: string, dto: AdminUpdateGroupDto): Promise<{
         id: string;
-        slug: string;
         name: string;
+        slug: string;
         isFeatured: boolean;
     }>;
 }

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { Booking } from '../../types/catalog';
+import { Icon } from '../ui/icon';
 import { ListPagination } from '../ui/list-pagination';
 import { PartnerBookingCard } from './partner-booking-card';
 
@@ -52,7 +54,6 @@ function matchesTab(b: Booking, tab: TabId, userId: string) {
     case 'applied':
       return isAppliedWaiting(b, userId);
     case 'action':
-      // Cần bắt đầu làm việc
       return (
         b.status === 'CONFIRMED' ||
         (b.status === 'PENDING' && Boolean(b.partnerId))
@@ -80,6 +81,150 @@ function sortJobsNewestFirst(bookings: Booking[]) {
   return bookings
     .slice()
     .sort((a, b) => bookingRecency(b) - bookingRecency(a));
+}
+
+function emptyCopy(tab: TabId, poolSize: number, filteredPool: number) {
+  if (poolSize === 0) {
+    return {
+      title: 'Chưa nhận việc nào',
+      body: 'Ứng tuyển tại Đơn thuê realtime để bắt đầu nhận việc.',
+      showCta: true,
+    };
+  }
+  if (filteredPool === 0) {
+    return {
+      title: 'Không có đơn thuộc nghề đang chọn',
+      body: 'Đổi bộ lọc nghề hoặc tìm việc mới tại Đơn thuê realtime.',
+      showCta: true,
+    };
+  }
+  const byTab: Record<TabId, { title: string; body: string }> = {
+    all: {
+      title: 'Chưa có việc',
+      body: 'Ứng tuyển tại Đơn thuê realtime để bắt đầu nhận việc.',
+    },
+    applied: {
+      title: 'Chưa có đơn chờ chọn',
+      body: 'Ứng tuyển việc mới — khách sẽ chọn người làm từ danh sách.',
+    },
+    action: {
+      title: 'Chưa có công việc cần làm',
+      body: 'Ứng tuyển tại Đơn thuê realtime để bắt đầu nhận việc.',
+    },
+    active: {
+      title: 'Chưa có việc đang diễn ra',
+      body: 'Khi bắt đầu làm, đơn sẽ hiện ở mục này.',
+    },
+    awaiting: {
+      title: 'Chưa có đơn chờ xác nhận',
+      body: 'Sau khi bạn báo hoàn thành, đơn chờ khách xác nhận.',
+    },
+    dispute: {
+      title: 'Không có khiếu nại',
+      body: 'Đơn đang tranh chấp sẽ hiện tại đây.',
+    },
+    done: {
+      title: 'Chưa có việc hoàn thành',
+      body: 'Các đơn đã xong sẽ được liệt kê trong mục này.',
+    },
+    cancelled: {
+      title: 'Không có đơn đã hủy',
+      body: 'Đơn bị hủy sẽ hiện tại đây.',
+    },
+  };
+  return { ...byTab[tab], showCta: tab === 'action' || tab === 'all' || tab === 'applied' };
+}
+
+/** Icon briefcase trong ô teal — header. */
+function JobsHeaderIcon() {
+  return (
+    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[var(--color-brand)] text-white shadow-[0_8px_18px_rgba(0,156,149,0.28)]">
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+        <rect
+          x="3"
+          y="7"
+          width="18"
+          height="13"
+          rx="2.5"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <path
+          d="M9 7V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8V7"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M3 12h18"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </span>
+  );
+}
+
+/** Empty state: cặp mở + badge check, tone xanh nhạt. */
+function EmptyBriefcaseArt() {
+  return (
+    <svg
+      viewBox="0 0 160 120"
+      className="mx-auto h-[120px] w-[160px]"
+      fill="none"
+      aria-hidden
+    >
+      <ellipse cx="80" cy="102" rx="48" ry="8" fill="#E8F4FB" />
+      <path
+        d="M28 58c8-18 28-28 52-28s44 10 52 28"
+        stroke="#B8D4EA"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        opacity="0.7"
+      />
+      <path
+        d="M36 64c6-12 20-18 44-18s38 6 44 18"
+        stroke="#C9DFF0"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        opacity="0.55"
+      />
+      <path d="M48 58h64l6 28H42z" fill="#D7EAF7" stroke="#7EB6D4" strokeWidth="1.8" />
+      <path
+        d="M58 58V48.5A6.5 6.5 0 0 1 64.5 42h31A6.5 6.5 0 0 1 102 48.5V58"
+        stroke="#7EB6D4"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M42 86h76l-4 12H46z"
+        fill="#EAF5FB"
+        stroke="#7EB6D4"
+        strokeWidth="1.8"
+      />
+      <path d="M68 70h24" stroke="#9BC6DE" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="28" cy="42" r="2" fill="#B8D4EA" />
+      <circle cx="128" cy="48" r="1.5" fill="#B8D4EA" />
+      <path
+        d="M118 36l1.2 2.6 2.8.4-2 2.1.5 2.8-2.5-1.3-2.5 1.3.5-2.8-2-2.1 2.8-.4z"
+        fill="#B8D4EA"
+      />
+      <path
+        d="M40 34l.9 1.9 2.1.3-1.5 1.5.4 2.1-1.9-1-1.9 1 .4-2.1-1.5-1.5 2.1-.3z"
+        fill="#C9DFF0"
+      />
+      <circle cx="112" cy="88" r="14" fill="#fff" stroke="#7EB6D4" strokeWidth="1.6" />
+      <circle cx="112" cy="88" r="10.5" fill="#E8F7F5" />
+      <path
+        d="M106.5 88.2 110.2 91.8 118 83.5"
+        stroke="var(--color-brand)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 type Props = {
@@ -163,49 +308,98 @@ export function PartnerJobsList({
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, safePage]);
 
+  const empty = emptyCopy(tab, poolSize, bookings.length);
+
   return (
-    <section>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-extrabold">Việc của tôi</h2>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
+    <section className="space-y-4">
+      <header className="flex items-start gap-3.5">
+        <JobsHeaderIcon />
+        <div className="min-w-0">
+          <h2 className="text-2xl font-extrabold tracking-tight text-[var(--color-navy)]">
+            Việc của tôi
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">
             Đơn đã ứng tuyển và việc đã được chọn. Chat / địa chỉ khi khách đã
             cọc. Hoa hồng 15% khi giải ngân.
           </p>
         </div>
-      </div>
+      </header>
 
-      <div className="mt-4 flex flex-wrap gap-2 border-b border-[var(--color-line)] pb-3">
-        {TABS.map((item) => {
-          const count = tabCounts[item.id];
-          const activeTab = tab === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              className={`px-3 py-2 text-sm font-bold transition ${
-                activeTab
-                  ? 'bg-[var(--color-ink)] text-white'
-                  : 'bg-[var(--color-canvas)] text-[var(--color-ink)] hover:bg-[var(--color-brand-soft)]'
-              }`}
-            >
-              {item.label}
-              <span
-                className={`ml-1.5 text-xs ${activeTab ? 'text-white/80' : 'text-[var(--color-muted)]'}`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+      <div className="overflow-x-auto rounded-2xl border border-[var(--color-line)] bg-white shadow-[0_4px_16px_rgba(24,49,63,0.05)]">
+        <div className="flex min-w-max items-stretch px-1.5 py-1.5 sm:min-w-0 sm:flex-wrap">
+          {TABS.map((item, index) => {
+            const count = tabCounts[item.id];
+            const activeTab = tab === item.id;
+            return (
+              <div key={item.id} className="flex items-stretch">
+                {index > 0 ? (
+                  <span
+                    aria-hidden
+                    className="my-2 w-px shrink-0 bg-[var(--color-line)]"
+                  />
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setTab(item.id)}
+                  className={`mx-0.5 flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+                    activeTab
+                      ? 'bg-[var(--color-navy)] text-white shadow-[0_6px_16px_rgba(7,59,92,0.28)]'
+                      : 'text-[var(--color-ink)] hover:bg-[var(--color-canvas)]'
+                  }`}
+                >
+                  <span className="whitespace-nowrap">{item.label}</span>
+                  <span
+                    className={`inline-flex min-w-[1.35rem] items-center justify-center rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums ${
+                      activeTab
+                        ? 'bg-[var(--color-brand)] text-white'
+                        : 'bg-[var(--color-canvas)] text-[var(--color-muted)]'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {loading ? (
-        <p className="mt-4 text-sm text-[var(--color-muted)]">Đang tải…</p>
+        <p className="text-sm text-[var(--color-muted)]">Đang tải…</p>
       ) : null}
 
-      <div className="mt-4 space-y-3">
+      {!loading && filtered.length === 0 ? (
+        <div className="rounded-2xl border border-[var(--color-line)] bg-white px-6 py-12 text-center shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:py-14">
+          <EmptyBriefcaseArt />
+          <h3 className="mt-5 text-lg font-extrabold text-[var(--color-navy)]">
+            {empty.title}
+          </h3>
+          <p className="mx-auto mt-2 max-w-md text-sm text-[var(--color-muted)]">
+            {empty.body}
+          </p>
+          {empty.showCta ? (
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <Link
+                to="/doi-tac/don-thue"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-navy)] px-5 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-navy-deep)]"
+              >
+                Tìm việc phù hợp
+                <Icon name="chevronRight" className="h-4 w-4 !text-white" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setTab('applied')}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-brand)] transition hover:text-[var(--color-brand-deep)]"
+              >
+                Xem đơn đã ứng tuyển
+                <Icon name="chevronRight" className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="space-y-3">
         {paged.map((booking) => (
           <PartnerBookingCard
             key={booking.id}
@@ -234,17 +428,7 @@ export function PartnerJobsList({
         ))}
       </div>
 
-      {!loading && filtered.length === 0 ? (
-        <p className="mt-4 border border-dashed border-[var(--color-line)] bg-white px-4 py-8 text-center text-[var(--color-muted)]">
-          {poolSize === 0
-            ? 'Chưa nhận việc nào. Ứng tuyển tại Đơn thuê realtime.'
-            : bookings.length === 0
-              ? 'Không có đơn thuộc nghề đang chọn.'
-              : 'Không có đơn trong mục này.'}
-        </p>
-      ) : null}
-
-      <div className="mt-4">
+      {filtered.length > 0 ? (
         <ListPagination
           page={safePage}
           pageCount={pageCount}
@@ -253,7 +437,7 @@ export function PartnerJobsList({
           onChange={setPage}
           ariaLabel="Phân trang việc của tôi"
         />
-      </div>
+      ) : null}
     </section>
   );
 }
