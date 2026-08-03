@@ -6,10 +6,12 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import {
+  ConfirmEmailOtpDto,
   ConfirmPhoneOtpDto,
   GoogleLoginDto,
   LoginDto,
   RegisterDto,
+  RequestEmailOtpDto,
   RequestPhoneOtpDto,
 } from './dto/auth.dto';
 
@@ -65,5 +67,28 @@ export class AuthController {
     @Body() dto: ConfirmPhoneOtpDto,
   ) {
     return this.authService.confirmPhoneOtp(user.id, dto);
+  }
+
+  /** OTP email (Gmail) — user tự nhập email, OTP, rồi mới nhập NH. */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-email/request')
+  requestEmailOtp(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RequestEmailOtpDto,
+  ) {
+    return this.authService.requestEmailOtp(user.id, dto);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-email/confirm')
+  confirmEmailOtp(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ConfirmEmailOtpDto,
+  ) {
+    return this.authService.confirmEmailOtp(user.id, dto);
   }
 }

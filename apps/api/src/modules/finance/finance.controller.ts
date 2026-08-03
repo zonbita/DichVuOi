@@ -7,6 +7,10 @@ import { FinanceService } from './finance.service';
 import { CreateVietQrIntentDto } from './dto/create-vietqr-intent.dto';
 import { TopUpDto } from './dto/top-up.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
+import {
+  ConfirmBankVerifyDto,
+  RequestBankVerifyDto,
+} from './dto/bank-verify.dto';
 
 @ApiTags('wallet')
 @ApiBearerAuth()
@@ -28,6 +32,23 @@ export class FinanceController {
   @Post('wallet/withdraw')
   withdraw(@CurrentUser() user: AuthUser, @Body() dto: WithdrawDto) {
     return this.finance.withdraw(user.id, dto);
+  }
+
+  /** OTP email xác minh STK trước khi rút. */
+  @Post('wallet/verify-bank/request')
+  requestBankVerify(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: RequestBankVerifyDto,
+  ) {
+    return this.finance.requestBankVerify(user.id, dto);
+  }
+
+  @Post('wallet/verify-bank/confirm')
+  confirmBankVerify(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: ConfirmBankVerifyDto,
+  ) {
+    return this.finance.confirmBankVerify(user.id, dto);
   }
 
   @Post('wallet/top-up')

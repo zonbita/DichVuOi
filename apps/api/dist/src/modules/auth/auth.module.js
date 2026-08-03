@@ -15,6 +15,7 @@ const security_env_1 = require("../../common/security-env");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
 const sms_module_1 = require("../sms/sms.module");
+const mail_module_1 = require("../mail/mail.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -22,6 +23,7 @@ exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
             sms_module_1.SmsModule,
+            mail_module_1.MailModule,
             jwt_1.JwtModule.register({
                 global: true,
                 secret: (0, security_env_1.resolveJwtSecret)(),

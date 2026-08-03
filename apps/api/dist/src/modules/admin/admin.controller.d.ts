@@ -324,15 +324,15 @@ export declare class AdminController {
             createdAt: Date;
             bookingId: string;
             redacted: boolean;
-            senderId: string;
             body: string;
+            senderId: string;
         })[];
         reviews: ({
-            fromUser: {
+            toUser: {
                 fullName: string;
                 id: string;
             };
-            toUser: {
+            fromUser: {
                 fullName: string;
                 id: string;
             };
@@ -340,10 +340,10 @@ export declare class AdminController {
             id: string;
             createdAt: Date;
             bookingId: string;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         })[];
         complaints: ({
             reporter: {
@@ -382,8 +382,8 @@ export declare class AdminController {
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import("@prisma/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -488,12 +488,12 @@ export declare class AdminController {
                     name: string;
                 };
             };
-            fromUser: {
+            toUser: {
                 email: string;
                 fullName: string;
                 id: string;
             };
-            toUser: {
+            fromUser: {
                 email: string;
                 fullName: string;
                 id: string;
@@ -502,10 +502,10 @@ export declare class AdminController {
             id: string;
             createdAt: Date;
             bookingId: string;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         })[];
         total: number;
         page: number;
@@ -531,8 +531,8 @@ export declare class AdminController {
             createdAt: Date;
             bookingId: string;
             redacted: boolean;
-            senderId: string;
             body: string;
+            senderId: string;
         })[];
         total: number;
         page: number;

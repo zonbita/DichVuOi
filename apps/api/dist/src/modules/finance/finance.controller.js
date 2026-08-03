@@ -21,6 +21,7 @@ const finance_service_1 = require("./finance.service");
 const create_vietqr_intent_dto_1 = require("./dto/create-vietqr-intent.dto");
 const top_up_dto_1 = require("./dto/top-up.dto");
 const withdraw_dto_1 = require("./dto/withdraw.dto");
+const bank_verify_dto_1 = require("./dto/bank-verify.dto");
 let FinanceController = class FinanceController {
     finance;
     constructor(finance) {
@@ -34,6 +35,12 @@ let FinanceController = class FinanceController {
     }
     withdraw(user, dto) {
         return this.finance.withdraw(user.id, dto);
+    }
+    requestBankVerify(user, dto) {
+        return this.finance.requestBankVerify(user.id, dto);
+    }
+    confirmBankVerify(user, dto) {
+        return this.finance.confirmBankVerify(user.id, dto);
     }
     topUp(user, dto) {
         return this.finance.topUp(user.id, dto.amount);
@@ -76,6 +83,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, withdraw_dto_1.WithdrawDto]),
     __metadata("design:returntype", void 0)
 ], FinanceController.prototype, "withdraw", null);
+__decorate([
+    (0, common_1.Post)('wallet/verify-bank/request'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, bank_verify_dto_1.RequestBankVerifyDto]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "requestBankVerify", null);
+__decorate([
+    (0, common_1.Post)('wallet/verify-bank/confirm'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, bank_verify_dto_1.ConfirmBankVerifyDto]),
+    __metadata("design:returntype", void 0)
+], FinanceController.prototype, "confirmBankVerify", null);
 __decorate([
     (0, common_1.Post)('wallet/top-up'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

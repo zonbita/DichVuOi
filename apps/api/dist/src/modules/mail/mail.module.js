@@ -6,20 +6,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FinanceModule = void 0;
+exports.MailModule = void 0;
 const common_1 = require("@nestjs/common");
-const finance_controller_1 = require("./finance.controller");
-const finance_service_1 = require("./finance.service");
-const mail_module_1 = require("../mail/mail.module");
-let FinanceModule = class FinanceModule {
+const mail_service_1 = require("./mail.service");
+let MailModule = class MailModule {
 };
-exports.FinanceModule = FinanceModule;
-exports.FinanceModule = FinanceModule = __decorate([
+exports.MailModule = MailModule;
+exports.MailModule = MailModule = __decorate([
     (0, common_1.Module)({
-        imports: [mail_module_1.MailModule],
-        controllers: [finance_controller_1.FinanceController],
-        providers: [finance_service_1.FinanceService],
-        exports: [finance_service_1.FinanceService],
+        providers: [mail_service_1.MailService],
+        exports: [mail_service_1.MailService],
     })
-], FinanceModule);
-//# sourceMappingURL=finance.module.js.map
+], MailModule);
+//# sourceMappingURL=mail.module.js.map

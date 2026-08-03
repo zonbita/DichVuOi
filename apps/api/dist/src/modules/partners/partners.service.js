@@ -775,6 +775,15 @@ let PartnersService = class PartnersService {
                 bankVerifyExpiresAt: null,
             },
         });
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                bankVerified: true,
+                bankName: profile.bankName,
+                bankAccountNo: profile.bankAccountNo,
+                bankAccountName: profile.bankAccountName,
+            },
+        });
         return this.getMine(userId);
     }
 };

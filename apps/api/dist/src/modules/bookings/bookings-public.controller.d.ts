@@ -26,9 +26,9 @@ export declare class BookingsPublicController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -58,18 +58,18 @@ export declare class BookingsPublicController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import("@prisma/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -175,9 +175,9 @@ export declare class BookingsPublicController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -207,18 +207,18 @@ export declare class BookingsPublicController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import("@prisma/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;

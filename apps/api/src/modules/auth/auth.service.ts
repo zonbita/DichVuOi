@@ -11,17 +11,21 @@ import { randomInt } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { portraitAvatarUrl } from '../../common/portrait-avatar';
+import { MailService } from '../mail/mail.service';
 import { SmsService, normalizeVnPhone } from '../sms/sms.service';
 import {
+  ConfirmEmailOtpDto,
   ConfirmPhoneOtpDto,
   GoogleLoginDto,
   LoginDto,
   RegisterDto,
+  RequestEmailOtpDto,
   RequestPhoneOtpDto,
 } from './dto/auth.dto';
 
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
+const EMAIL_OTP_TTL_MS = 10 * 60 * 1000;
 
 /** In-memory OTP fail counters (per user) — reset on success / new request. */
 const otpFailCounts = new Map<string, number>();
@@ -54,6 +58,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly sms: SmsService,
+    private readonly mail: MailService,
   ) {}
 
   private sanitize(user: {
@@ -62,6 +67,8 @@ export class AuthService {
     fullName: string;
     phone: string | null;
     phoneVerified?: boolean;
+    emailVerified?: boolean;
+    bankVerified?: boolean;
     role: Role;
     walletBalance?: number;
     partnerProfile?: unknown;
@@ -72,6 +79,8 @@ export class AuthService {
       fullName: user.fullName,
       phone: user.phone,
       phoneVerified: Boolean(user.phoneVerified),
+      emailVerified: Boolean(user.emailVerified),
+      bankVerified: Boolean(user.bankVerified),
       role: user.role,
       walletBalance: user.walletBalance ?? 0,
       partnerProfile: user.partnerProfile ?? null,
@@ -201,9 +210,17 @@ export class AuthService {
       include: { partnerProfile: true },
     });
     if (byGoogle) {
+      const refreshed =
+        byGoogle.emailVerified
+          ? byGoogle
+          : await this.prisma.user.update({
+              where: { id: byGoogle.id },
+              data: { emailVerified: true },
+              include: { partnerProfile: true },
+            });
       return {
-        accessToken: this.sign(byGoogle),
-        user: this.sanitize(byGoogle),
+        accessToken: this.sign(refreshed),
+        user: this.sanitize(refreshed),
       };
     }
 
@@ -217,7 +234,7 @@ export class AuthService {
       }
       const linked = await this.prisma.user.update({
         where: { id: byEmail.id },
-        data: { googleId },
+        data: { googleId, emailVerified: true },
         include: { partnerProfile: true },
       });
       return {
@@ -233,6 +250,7 @@ export class AuthService {
         fullName,
         passwordHash: null,
         role: Role.CUSTOMER,
+        emailVerified: true,
       },
       include: { partnerProfile: true },
     });
@@ -394,6 +412,105 @@ export class AuthService {
       },
     });
 
+    return this.me(userId);
+  }
+
+  /** OTP email (Gmail) — user nhập email (có thể gắn mới) → OTP → set email + verified. */
+  async requestEmailOtp(userId: string, dto: RequestEmailOtpDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+    if (user.emailVerified) {
+      return {
+        ok: true,
+        alreadyVerified: true,
+        channel: this.mail.isConfigured() ? 'mail' : 'mock',
+        message: 'Email đã được xác minh.',
+      };
+    }
+
+    const typed = dto.email.toLowerCase().trim();
+    if (!typed.includes('@')) {
+      throw new BadRequestException('Email không hợp lệ');
+    }
+
+    const taken = await this.prisma.user.findUnique({
+      where: { email: typed },
+      select: { id: true },
+    });
+    if (taken && taken.id !== userId) {
+      throw new ConflictException('Email này đã được tài khoản khác sử dụng');
+    }
+
+    const code = String(randomInt(100000, 999999));
+    const expiresAt = new Date(Date.now() + EMAIL_OTP_TTL_MS);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailPending: typed,
+        emailOtpCode: code,
+        emailOtpExpiresAt: expiresAt,
+      },
+    });
+
+    const sent = await this.mail.send({
+      to: typed,
+      subject: 'Mã xác minh email — DichVuOi',
+      text: `Ma xac minh DichVuOi: ${code}. Het han 10 phut. Khong chia se ma nay.`,
+      html: `<p>Mã xác minh DichVuOi: <strong>${code}</strong></p><p>Hết hạn trong 10 phút. Không chia sẻ mã này.</p>`,
+    });
+
+    return {
+      ok: true,
+      alreadyVerified: false,
+      channel: sent.provider,
+      expiresAt: expiresAt.toISOString(),
+      code: sent.provider === 'mock' ? code : undefined,
+      message:
+        sent.provider === 'gmail'
+          ? `Đã gửi mã xác minh tới ${typed}`
+          : sent.mockReason ||
+            'Chưa gửi được mail thật. Dùng mã hiện trên màn hình.',
+    };
+  }
+
+  async confirmEmailOtp(userId: string, dto: ConfirmEmailOtpDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+    if (user.emailVerified) return this.me(userId);
+
+    const code = dto.code.trim();
+    if (
+      !user.emailOtpCode ||
+      !user.emailOtpExpiresAt ||
+      user.emailOtpExpiresAt.getTime() < Date.now()
+    ) {
+      throw new BadRequestException('Mã đã hết hạn. Gửi lại mã mới.');
+    }
+    if (user.emailOtpCode !== code) {
+      throw new BadRequestException('Mã xác minh không đúng.');
+    }
+
+    const nextEmail = (user.emailPending ?? user.email).toLowerCase().trim();
+    if (nextEmail !== user.email.toLowerCase()) {
+      const taken = await this.prisma.user.findUnique({
+        where: { email: nextEmail },
+        select: { id: true },
+      });
+      if (taken && taken.id !== userId) {
+        throw new ConflictException('Email này đã được tài khoản khác sử dụng');
+      }
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: nextEmail,
+        emailVerified: true,
+        emailPending: null,
+        emailOtpCode: null,
+        emailOtpExpiresAt: null,
+      },
+    });
     return this.me(userId);
   }
 }

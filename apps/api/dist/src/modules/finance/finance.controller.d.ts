@@ -3,6 +3,7 @@ import { FinanceService } from './finance.service';
 import { CreateVietQrIntentDto } from './dto/create-vietqr-intent.dto';
 import { TopUpDto } from './dto/top-up.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
+import { ConfirmBankVerifyDto, RequestBankVerifyDto } from './dto/bank-verify.dto';
 export declare class FinanceController {
     private readonly finance;
     constructor(finance: FinanceService);
@@ -10,6 +11,9 @@ export declare class FinanceController {
         currency: string;
         balance: number;
         mockPaymentsEnabled: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
+        canWithdraw: boolean;
         payout: {
             bankBin: string | null;
             bankCode: string | null;
@@ -58,6 +62,53 @@ export declare class FinanceController {
             accountName: string | null;
         };
         message: string;
+    }>;
+    requestBankVerify(user: AuthUser, dto: RequestBankVerifyDto): Promise<{
+        ok: boolean;
+        channel: "mock" | "gmail";
+        expiresAt: string;
+        code: string | undefined;
+        payout: {
+            bankBin: string;
+            bankCode: string | null;
+            bankName: string;
+            accountNo: string;
+            accountName: string;
+        };
+        message: string;
+    }>;
+    confirmBankVerify(user: AuthUser, dto: ConfirmBankVerifyDto): Promise<{
+        currency: string;
+        balance: number;
+        mockPaymentsEnabled: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
+        canWithdraw: boolean;
+        payout: {
+            bankBin: string | null;
+            bankCode: string | null;
+            bankName: string | null;
+            accountNo: string | null;
+            accountName: string | null;
+        };
+        transactions: ({
+            booking: {
+                id: string;
+                service: {
+                    name: string;
+                };
+            } | null;
+        } & {
+            type: import("@prisma/client").$Enums.WalletTransactionType;
+            description: string;
+            id: string;
+            createdAt: Date;
+            userId: string;
+            bookingId: string | null;
+            amount: number;
+            balanceAfter: number;
+            reference: string;
+        })[];
     }>;
     topUp(user: AuthUser, dto: TopUpDto): Promise<{
         currency: string;

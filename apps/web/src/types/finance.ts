@@ -32,6 +32,10 @@ export type WalletSummary = {
   balance: number;
   /** Dev/demo: mock top-up / VietQR confirm. Off in production unless ALLOW_MOCK_PAYMENTS. */
   mockPaymentsEnabled?: boolean;
+  emailVerified?: boolean;
+  bankVerified?: boolean;
+  /** emailVerified — điều kiện rút tiền (bắt buộc). */
+  canWithdraw?: boolean;
   payout?: {
     bankBin: string | null;
     bankCode: string | null;

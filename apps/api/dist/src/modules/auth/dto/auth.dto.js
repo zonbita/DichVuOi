@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConfirmPhoneOtpDto = exports.RequestPhoneOtpDto = exports.GoogleLoginDto = exports.LoginDto = exports.RegisterDto = void 0;
+exports.ConfirmEmailOtpDto = exports.RequestEmailOtpDto = exports.ConfirmPhoneOtpDto = exports.RequestPhoneOtpDto = exports.GoogleLoginDto = exports.LoginDto = exports.RegisterDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class RegisterDto {
@@ -106,4 +106,27 @@ __decorate([
     (0, class_validator_1.MaxLength)(64),
     __metadata("design:type", String)
 ], ConfirmPhoneOtpDto.prototype, "key", void 0);
+class RequestEmailOtpDto {
+    email;
+}
+exports.RequestEmailOtpDto = RequestEmailOtpDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: 'user@email.com',
+        description: 'Email user tự nhập — phải khớp email tài khoản đang đăng nhập',
+    }),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], RequestEmailOtpDto.prototype, "email", void 0);
+class ConfirmEmailOtpDto {
+    code;
+}
+exports.ConfirmEmailOtpDto = ConfirmEmailOtpDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: '482910', description: 'Mã 6 số gửi qua email (Gmail)' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(4),
+    (0, class_validator_1.MaxLength)(12),
+    __metadata("design:type", String)
+], ConfirmEmailOtpDto.prototype, "code", void 0);
 //# sourceMappingURL=auth.dto.js.map

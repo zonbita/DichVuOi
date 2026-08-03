@@ -18,3 +18,9 @@ export declare class RequestPhoneOtpDto {
 export declare class ConfirmPhoneOtpDto {
     key: string;
 }
+export declare class RequestEmailOtpDto {
+    email: string;
+}
+export declare class ConfirmEmailOtpDto {
+    code: string;
+}

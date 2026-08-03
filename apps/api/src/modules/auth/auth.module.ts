@@ -6,10 +6,12 @@ import { resolveJwtSecret } from '../../common/security-env';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { SmsModule } from '../sms/sms.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     SmsModule,
+    MailModule,
     JwtModule.register({
       global: true,
       secret: resolveJwtSecret(),

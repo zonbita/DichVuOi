@@ -111,7 +111,8 @@ Không miễn mọi trách nhiệm; giúp chứng minh sàn đã **quản lý r�
 | Điều khoản / chính sách phân định trách nhiệm các bên | **Có** — trang `/dieu-khoan`, `/chinh-sach-doi-tac`, khiếu nại / hoàn tiền |
 | Escrow giữ tiền trên sàn + lịch sử đơn / thanh toán | **Có** — ví nội bộ + VietQR nạp; tự giam cọc khi tạo đơn |
 | Xác minh SĐT (OTP key / eSMS Brandname) | **Có** — mock dev; production bật `SMS_PROVIDER=esms` |
-| Liên kết NH **người làm** (payout) | **Có** — `PartnerProfile` bank + VietQR xác minh mock |
+| Xác minh **email** trước khi rút ví | **Có** — bắt buộc `emailVerified` (OTP Gmail); Google → verified; liên kết STK tuỳ chọn (`bankVerified` khóa đúng TK) |
+| Liên kết NH **người làm** (payout) | **Có** — `PartnerProfile` bank + VietQR xác minh mock; đồng bộ `User.bankVerified` |
 | Chat in-app + lọc PII; che SĐT public | **Có** |
 | Đánh giá sau `COMPLETED`; badge verified admin | **Có** (verified = duyệt vận hành) |
 | Admin khóa / xử lý đơn, flagged PII, hàng đợi duyệt partner | **Có một phần** |
@@ -576,6 +577,21 @@ flowchart TD
 - P1: gallery portfolio 3–6 ảnh; % đúng hạn từ booking `COMPLETED`; **push/PWA nhắc lịch định kỳ**
 - P2: lịch trống (availability filter trên trang dịch vụ); intro video ngắn (ngành online); escrow thanh toán thật; đặt lịch định kỳ (dọn 2 tuần/lần, gia sư 3 buổi/tuần)
 
+### Chưa làm (ghi chú) — không SEO / không mở rộng `/admin` trong vòng này
+
+Các hạng mục sau **cố ý hoãn** (không implement cùng vòng xác minh rút tiền):
+
+| Hạng mục | Ghi chú |
+|---------|--------|
+| **Push / PWA nhắc lịch** | Nhắc booking định kỳ trên thiết bị |
+| **Gallery portfolio** (3–6 ảnh người làm) | Schema đã có `galleryJson`; UI upload/hiển thị còn thiếu |
+| **Admin: ban chat** | Cảnh cáo / khóa chat / ban từ tin bị lọc PII |
+| **Admin: audit log** | Nhật ký thao tác admin |
+| **Admin: biểu đồ GMV** | Funnel / GMV theo thời gian, export CSV |
+| SEO prerender/SSR catalog | SPA hiện tại; tách khỏi admin dashboard |
+
+> Không làm SEO kèm dashboard `/admin` trong cùng đợt. Ưu tiên ops tiền thật (webhook nạp) + email/NH rút.
+
 ## Tìm kiếm không dấu + gần đúng
 
 Tiện ích chung: `apps/web/src/utils/search.ts`.
@@ -831,9 +847,9 @@ Mọi endpoint list trả `{ items, total, page, pageSize, pageCount }` (mặc �
 ### Chưa có (roadmap admin)
 
 - ~~Module tranh chấp / khiếu nại riêng~~ → **đã có** `/admin/complaints` + trừ uy tín năm
-- Hành động trên tin bị lọc (cảnh cáo / khóa chat / ban) và ẩn review giả
-- Audit log cho mọi thao tác admin; role nội bộ `SUPPORT` tách khỏi `ADMIN`
-- Biểu đồ GMV / funnel theo thời gian, export CSV
+- Hành động trên tin bị lọc (cảnh cáo / khóa chat / ban) và ẩn review giả — **hoãn** (xem *Chưa làm*)
+- Audit log cho mọi thao tác admin; role nội bộ `SUPPORT` tách khỏi `ADMIN` — **hoãn**
+- Biểu đồ GMV / funnel theo thời gian, export CSV — **hoãn**
 
 ## Chống bỏ sàn (disintermediation)
 
@@ -933,6 +949,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - Ảnh dịch vụ trên R2/S3; Partner tự đăng gói dịch vụ  
 - MoMo/VNPay bổ sung kênh nạp  
 - Xác minh CCCD đối tác; workflow tạm khóa nhận việc khi khiếu nại nghiêm trọng  
+- **Hoãn (không SEO + admin):** Push/PWA nhắc lịch · gallery portfolio · admin ban chat · audit log · biểu đồ GMV — xem mục *Chưa làm (ghi chú)*  
 - Rà soát nghĩa vụ đăng ký sàn TMĐT VN khi scale thương mại  
 - Tái cấu trúc FE dần về `features/catalog`, mở rộng `features/booking`  
 
@@ -1049,7 +1066,14 @@ npm run dev:api    # http://localhost:3001
 npm run dev:web    # http://localhost:5173
 ```
 
-Production: cấu hình env trên Vercel (web `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, API `DATABASE_URL`, `CORS_ORIGIN`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `VIETQR_*`, tùy chọn `SMS_PROVIDER=esms` + `ESMS_*`). Chi tiết mẫu: `apps/api/.env.example`, `apps/web/.env.example`.
+Production: cấu hình env trên Vercel (web `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, API `DATABASE_URL`, `CORS_ORIGIN`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_FROM`, `VIETQR_*`, tùy chọn `SMS_PROVIDER=esms` + `ESMS_*`). Chi tiết mẫu: `apps/api/.env.example`, `apps/web/.env.example`.
+
+### Xác minh trước khi rút ví
+
+1. **Bước 1 (email/MK):** tự nhập email → OTP Gmail → `emailVerified`. Google login → bỏ bước này.
+2. **Bước 2:** mới cho nhập ngân hàng / STK → `POST /api/wallet/withdraw`.
+3. `withdraw` → `403` nếu chưa `emailVerified` (phòng rút sai NH).
+4. Env API: `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_FROM` — chi tiết `apps/api/README.md`.
 
 ### Google OAuth (đăng nhập)
 

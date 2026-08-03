@@ -77,3 +77,20 @@ export class ConfirmPhoneOtpDto {
   @MaxLength(64)
   key!: string;
 }
+
+export class RequestEmailOtpDto {
+  @ApiProperty({
+    example: 'user@email.com',
+    description: 'Email user tự nhập — phải khớp email tài khoản đang đăng nhập',
+  })
+  @IsEmail()
+  email!: string;
+}
+
+export class ConfirmEmailOtpDto {
+  @ApiProperty({ example: '482910', description: 'Mã 6 số gửi qua email (Gmail)' })
+  @IsString()
+  @MinLength(4)
+  @MaxLength(12)
+  code!: string;
+}

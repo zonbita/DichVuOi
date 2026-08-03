@@ -34,9 +34,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -66,18 +66,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -183,9 +183,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -215,18 +215,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -338,9 +338,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -370,18 +370,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -487,9 +487,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -519,18 +519,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -653,9 +653,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -685,18 +685,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -802,9 +802,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -834,18 +834,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -966,9 +966,9 @@ export declare class BookingsController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -998,18 +998,18 @@ export declare class BookingsController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -1149,9 +1149,9 @@ export declare class BookingsController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -1181,18 +1181,18 @@ export declare class BookingsController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -1231,9 +1231,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -1263,18 +1263,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1380,9 +1380,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -1412,18 +1412,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1522,8 +1522,8 @@ export declare class BookingsController {
         createdAt: Date;
         bookingId: string;
         redacted: boolean;
-        senderId: string;
         body: string;
+        senderId: string;
     })[]>;
     postMessage(user: AuthUser, id: string, dto: CreateBookingMessageDto): Promise<{
         sender: {
@@ -1535,15 +1535,15 @@ export declare class BookingsController {
         createdAt: Date;
         bookingId: string;
         redacted: boolean;
-        senderId: string;
         body: string;
+        senderId: string;
     }>;
     listReviews(user: AuthUser, id: string): Promise<({
-        fromUser: {
+        toUser: {
             fullName: string;
             id: string;
         };
-        toUser: {
+        fromUser: {
             fullName: string;
             id: string;
         };
@@ -1551,19 +1551,19 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         bookingId: string;
+        comment: string | null;
         fromUserId: string;
         toUserId: string;
         rating: number;
-        comment: string | null;
     })[]>;
     createReview(user: AuthUser, id: string, dto: CreateReviewDto): Promise<{
         id: string;
         createdAt: Date;
         bookingId: string;
+        comment: string | null;
         fromUserId: string;
         toUserId: string;
         rating: number;
-        comment: string | null;
     }>;
     payEscrow(user: AuthUser, id: string): Promise<({
         user: {
@@ -1588,9 +1588,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -1620,18 +1620,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1737,9 +1737,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -1769,18 +1769,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1893,9 +1893,9 @@ export declare class BookingsController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -1925,18 +1925,18 @@ export declare class BookingsController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -2042,9 +2042,9 @@ export declare class BookingsController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -2074,18 +2074,18 @@ export declare class BookingsController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -2273,9 +2273,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -2305,18 +2305,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2422,9 +2422,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -2454,18 +2454,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2666,9 +2666,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -2698,18 +2698,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2815,9 +2815,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -2847,18 +2847,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2971,9 +2971,9 @@ export declare class BookingsController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -3003,18 +3003,18 @@ export declare class BookingsController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -3120,9 +3120,9 @@ export declare class BookingsController {
                         name: string;
                         slug: string;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
                     description: string | null;
@@ -3152,18 +3152,18 @@ export declare class BookingsController {
             reviews: {
                 id: string;
                 createdAt: Date;
+                comment: string | null;
                 fromUserId: string;
                 toUserId: string;
                 rating: number;
-                comment: string | null;
             }[];
             requirements: {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -3314,9 +3314,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -3346,18 +3346,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -3463,9 +3463,9 @@ export declare class BookingsController {
                     name: string;
                     slug: string;
                     supportsOnline: boolean;
-                    isFeatured: boolean;
                     sortOrder: number;
                     icon: string | null;
+                    isFeatured: boolean;
                 };
             } & {
                 description: string | null;
@@ -3495,18 +3495,18 @@ export declare class BookingsController {
         reviews: {
             id: string;
             createdAt: Date;
+            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
-            comment: string | null;
         }[];
         requirements: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
             bookingId: string;
-            sortOrder: number;
             content: string;
+            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;

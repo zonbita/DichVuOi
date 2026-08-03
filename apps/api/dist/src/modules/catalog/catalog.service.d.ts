@@ -30,7 +30,7 @@ export declare class CatalogService {
             districts: string[];
             skills: string[];
             acceptingJobs: boolean;
-            workModes: ("onsite" | "online")[];
+            workModes: ("online" | "onsite")[];
             responseMinutes: number;
             bio: string | null;
             headline: string | null;

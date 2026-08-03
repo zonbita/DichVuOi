@@ -53,9 +53,11 @@ const crypto_1 = require("crypto");
 const google_auth_library_1 = require("google-auth-library");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
 const portrait_avatar_1 = require("../../common/portrait-avatar");
+const mail_service_1 = require("../mail/mail.service");
 const sms_service_1 = require("../sms/sms.service");
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
+const EMAIL_OTP_TTL_MS = 10 * 60 * 1000;
 const otpFailCounts = new Map();
 function otpNameSlug(fullName) {
     const slug = fullName
@@ -78,10 +80,12 @@ let AuthService = class AuthService {
     prisma;
     jwt;
     sms;
-    constructor(prisma, jwt, sms) {
+    mail;
+    constructor(prisma, jwt, sms, mail) {
         this.prisma = prisma;
         this.jwt = jwt;
         this.sms = sms;
+        this.mail = mail;
     }
     sanitize(user) {
         return {
@@ -90,6 +94,8 @@ let AuthService = class AuthService {
             fullName: user.fullName,
             phone: user.phone,
             phoneVerified: Boolean(user.phoneVerified),
+            emailVerified: Boolean(user.emailVerified),
+            bankVerified: Boolean(user.bankVerified),
             role: user.role,
             walletBalance: user.walletBalance ?? 0,
             partnerProfile: user.partnerProfile ?? null,
@@ -188,9 +194,16 @@ let AuthService = class AuthService {
             include: { partnerProfile: true },
         });
         if (byGoogle) {
+            const refreshed = byGoogle.emailVerified
+                ? byGoogle
+                : await this.prisma.user.update({
+                    where: { id: byGoogle.id },
+                    data: { emailVerified: true },
+                    include: { partnerProfile: true },
+                });
             return {
-                accessToken: this.sign(byGoogle),
-                user: this.sanitize(byGoogle),
+                accessToken: this.sign(refreshed),
+                user: this.sanitize(refreshed),
             };
         }
         const byEmail = await this.prisma.user.findUnique({
@@ -203,7 +216,7 @@ let AuthService = class AuthService {
             }
             const linked = await this.prisma.user.update({
                 where: { id: byEmail.id },
-                data: { googleId },
+                data: { googleId, emailVerified: true },
                 include: { partnerProfile: true },
             });
             return {
@@ -218,6 +231,7 @@ let AuthService = class AuthService {
                 fullName,
                 passwordHash: null,
                 role: client_1.Role.CUSTOMER,
+                emailVerified: true,
             },
             include: { partnerProfile: true },
         });
@@ -353,12 +367,101 @@ let AuthService = class AuthService {
         });
         return this.me(userId);
     }
+    async requestEmailOtp(userId, dto) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new common_1.UnauthorizedException();
+        if (user.emailVerified) {
+            return {
+                ok: true,
+                alreadyVerified: true,
+                channel: this.mail.isConfigured() ? 'mail' : 'mock',
+                message: 'Email đã được xác minh.',
+            };
+        }
+        const typed = dto.email.toLowerCase().trim();
+        if (!typed.includes('@')) {
+            throw new common_1.BadRequestException('Email không hợp lệ');
+        }
+        const taken = await this.prisma.user.findUnique({
+            where: { email: typed },
+            select: { id: true },
+        });
+        if (taken && taken.id !== userId) {
+            throw new common_1.ConflictException('Email này đã được tài khoản khác sử dụng');
+        }
+        const code = String((0, crypto_1.randomInt)(100000, 999999));
+        const expiresAt = new Date(Date.now() + EMAIL_OTP_TTL_MS);
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                emailPending: typed,
+                emailOtpCode: code,
+                emailOtpExpiresAt: expiresAt,
+            },
+        });
+        const sent = await this.mail.send({
+            to: typed,
+            subject: 'Mã xác minh email — DichVuOi',
+            text: `Ma xac minh DichVuOi: ${code}. Het han 10 phut. Khong chia se ma nay.`,
+            html: `<p>Mã xác minh DichVuOi: <strong>${code}</strong></p><p>Hết hạn trong 10 phút. Không chia sẻ mã này.</p>`,
+        });
+        return {
+            ok: true,
+            alreadyVerified: false,
+            channel: sent.provider,
+            expiresAt: expiresAt.toISOString(),
+            code: sent.provider === 'mock' ? code : undefined,
+            message: sent.provider === 'gmail'
+                ? `Đã gửi mã xác minh tới ${typed}`
+                : sent.mockReason ||
+                    'Chưa gửi được mail thật. Dùng mã hiện trên màn hình.',
+        };
+    }
+    async confirmEmailOtp(userId, dto) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new common_1.UnauthorizedException();
+        if (user.emailVerified)
+            return this.me(userId);
+        const code = dto.code.trim();
+        if (!user.emailOtpCode ||
+            !user.emailOtpExpiresAt ||
+            user.emailOtpExpiresAt.getTime() < Date.now()) {
+            throw new common_1.BadRequestException('Mã đã hết hạn. Gửi lại mã mới.');
+        }
+        if (user.emailOtpCode !== code) {
+            throw new common_1.BadRequestException('Mã xác minh không đúng.');
+        }
+        const nextEmail = (user.emailPending ?? user.email).toLowerCase().trim();
+        if (nextEmail !== user.email.toLowerCase()) {
+            const taken = await this.prisma.user.findUnique({
+                where: { email: nextEmail },
+                select: { id: true },
+            });
+            if (taken && taken.id !== userId) {
+                throw new common_1.ConflictException('Email này đã được tài khoản khác sử dụng');
+            }
+        }
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                email: nextEmail,
+                emailVerified: true,
+                emailPending: null,
+                emailOtpCode: null,
+                emailOtpExpiresAt: null,
+            },
+        });
+        return this.me(userId);
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
-        sms_service_1.SmsService])
+        sms_service_1.SmsService,
+        mail_service_1.MailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

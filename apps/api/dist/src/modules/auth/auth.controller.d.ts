@@ -1,6 +1,6 @@
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
-import { ConfirmPhoneOtpDto, GoogleLoginDto, LoginDto, RegisterDto, RequestPhoneOtpDto } from './dto/auth.dto';
+import { ConfirmEmailOtpDto, ConfirmPhoneOtpDto, GoogleLoginDto, LoginDto, RegisterDto, RequestEmailOtpDto, RequestPhoneOtpDto } from './dto/auth.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -12,6 +12,8 @@ export declare class AuthController {
             fullName: string;
             phone: string | null;
             phoneVerified: boolean;
+            emailVerified: boolean;
+            bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
             walletBalance: number;
             partnerProfile: {} | null;
@@ -25,6 +27,8 @@ export declare class AuthController {
             fullName: string;
             phone: string | null;
             phoneVerified: boolean;
+            emailVerified: boolean;
+            bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
             walletBalance: number;
             partnerProfile: {} | null;
@@ -38,6 +42,8 @@ export declare class AuthController {
             fullName: string;
             phone: string | null;
             phoneVerified: boolean;
+            emailVerified: boolean;
+            bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
             walletBalance: number;
             partnerProfile: {} | null;
@@ -49,6 +55,8 @@ export declare class AuthController {
         fullName: string;
         phone: string | null;
         phoneVerified: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
         walletBalance: number;
         partnerProfile: {} | null;
@@ -76,6 +84,35 @@ export declare class AuthController {
         fullName: string;
         phone: string | null;
         phoneVerified: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
+        role: import("@prisma/client").$Enums.Role;
+        walletBalance: number;
+        partnerProfile: {} | null;
+    }>;
+    requestEmailOtp(user: AuthUser, dto: RequestEmailOtpDto): Promise<{
+        ok: boolean;
+        alreadyVerified: boolean;
+        channel: string;
+        message: string;
+        expiresAt?: undefined;
+        code?: undefined;
+    } | {
+        ok: boolean;
+        alreadyVerified: boolean;
+        channel: "mock" | "gmail";
+        expiresAt: string;
+        code: string | undefined;
+        message: string;
+    }>;
+    confirmEmailOtp(user: AuthUser, dto: ConfirmEmailOtpDto): Promise<{
+        id: string;
+        email: string;
+        fullName: string;
+        phone: string | null;
+        phoneVerified: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
         walletBalance: number;
         partnerProfile: {} | null;

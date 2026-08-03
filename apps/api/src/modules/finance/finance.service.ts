@@ -11,7 +11,7 @@ import {
   Prisma,
   WalletTransactionType,
 } from '../../database/prisma/client';
-import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
+import { createHmac, randomInt, randomUUID, timingSafeEqual } from 'crypto';
 import {
   computeEscrowSplit,
   DEFAULT_COMMISSION_BPS,
@@ -22,6 +22,9 @@ import {
   resolveVietQrIntentSecret,
 } from '../../common/security-env';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
+
+const BANK_VERIFY_OTP_TTL_MS = 10 * 60 * 1000;
 
 type SettlementOptions = {
   status?: BookingStatus;
@@ -48,7 +51,10 @@ type VietQrIntentPayload = {
 
 @Injectable()
 export class FinanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mail: MailService,
+  ) {}
 
   private readonly vietQrBankId = process.env.VIETQR_BANK_ID ?? '970422';
   private readonly vietQrAccountNo =
@@ -76,6 +82,8 @@ export class FinanceService {
       select: {
         id: true,
         walletBalance: true,
+        emailVerified: true,
+        bankVerified: true,
         bankBin: true,
         bankCode: true,
         bankName: true,
@@ -100,6 +108,10 @@ export class FinanceService {
       currency: 'VND',
       balance: user.walletBalance,
       mockPaymentsEnabled: allowMockPayments(),
+      emailVerified: user.emailVerified,
+      bankVerified: user.bankVerified,
+      /** Rút tiền bắt buộc emailVerified (phòng rút sai NH). */
+      canWithdraw: user.emailVerified,
       payout: {
         bankBin: user.bankBin,
         bankCode: user.bankCode,
@@ -169,6 +181,8 @@ export class FinanceService {
 
   /**
    * Rút ví về STK user (mock trừ ví ngay — production nối payout gateway sau).
+   * Bắt buộc emailVerified (OTP Gmail / Google) — phòng rút nhầm tài khoản.
+   * Nếu đã bankVerified: STK phải khớp tài khoản đã liên kết.
    */
   async withdraw(
     userId: string,
@@ -186,6 +200,35 @@ export class FinanceService {
     const bankBin = dto.bankBin.trim();
     const bankName = dto.bankName.trim();
     const bankCode = (dto.bankCode ?? '').trim() || null;
+
+    const identity = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        emailVerified: true,
+        bankVerified: true,
+        bankBin: true,
+        bankAccountNo: true,
+      },
+    });
+    if (!identity) throw new NotFoundException('Không tìm thấy tài khoản');
+    if (!identity.emailVerified) {
+      throw new ForbiddenException(
+        'Cần xác minh email trước khi rút tiền (phòng rút sai ngân hàng).',
+      );
+    }
+    if (identity.bankVerified) {
+      const savedNo = (identity.bankAccountNo ?? '').replace(/\s|-/g, '');
+      if (savedNo && savedNo !== accountNo) {
+        throw new BadRequestException(
+          'STK khác tài khoản đã xác minh — xác minh lại NH hoặc dùng đúng STK đã liên kết.',
+        );
+      }
+      if (identity.bankBin && identity.bankBin !== bankBin) {
+        throw new BadRequestException(
+          'Ngân hàng khác tài khoản đã xác minh — xác minh lại NH hoặc dùng đúng NH đã liên kết.',
+        );
+      }
+    }
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.user.updateMany({
@@ -250,6 +293,110 @@ export class FinanceService {
           'Đã trừ ví (mock). Production sẽ chuyển khoản thật qua cổng payout.',
       };
     });
+  }
+
+  /** Liên kết STK + gửi OTP email để xác minh trước rút. */
+  async requestBankVerify(
+    userId: string,
+    dto: {
+      bankBin: string;
+      bankCode?: string;
+      bankName: string;
+      accountNo: string;
+      accountName: string;
+    },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+
+    const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
+    const accountName = dto.accountName.trim().toUpperCase();
+    const bankBin = dto.bankBin.trim();
+    const bankName = dto.bankName.trim();
+    const bankCode = (dto.bankCode ?? '').trim() || null;
+    const code = String(randomInt(100000, 999999));
+    const expiresAt = new Date(Date.now() + BANK_VERIFY_OTP_TTL_MS);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        bankBin,
+        bankCode,
+        bankName,
+        bankAccountNo: accountNo,
+        bankAccountName: accountName,
+        bankVerified: false,
+        bankVerifyOtpCode: code,
+        bankVerifyOtpExpiresAt: expiresAt,
+      },
+    });
+
+    const sent = await this.mail.send({
+      to: user.email,
+      subject: 'Xác minh tài khoản ngân hàng — DichVuOi',
+      text: `Ma xac minh lien ket STK ${accountNo} (${bankName}): ${code}. Het han 10 phut.`,
+      html: `<p>Mã xác minh liên kết STK <strong>${accountNo}</strong> (${bankName}): <strong>${code}</strong></p><p>Hết hạn 10 phút.</p>`,
+    });
+
+    return {
+      ok: true,
+      channel: sent.provider,
+      expiresAt: expiresAt.toISOString(),
+      code: sent.provider === 'mock' ? code : undefined,
+      payout: {
+        bankBin,
+        bankCode,
+        bankName,
+        accountNo,
+        accountName,
+      },
+      message:
+        sent.provider === 'gmail'
+          ? `Đã gửi mã xác minh STK tới ${user.email}`
+          : sent.mockReason ||
+            'Chưa gửi được mail thật — dùng mã hiện trên web.',
+    };
+  }
+
+  async confirmBankVerify(userId: string, dto: { code: string }) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+    const code = dto.code.trim();
+    if (
+      !user.bankVerifyOtpCode ||
+      !user.bankVerifyOtpExpiresAt ||
+      user.bankVerifyOtpExpiresAt.getTime() < Date.now()
+    ) {
+      throw new BadRequestException('Mã đã hết hạn. Gửi lại mã mới.');
+    }
+    if (user.bankVerifyOtpCode !== code) {
+      throw new BadRequestException('Mã xác minh không đúng.');
+    }
+    if (!user.bankAccountNo || !user.bankBin) {
+      throw new BadRequestException('Chưa có thông tin STK. Gửi lại yêu cầu.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        bankVerified: true,
+        bankVerifyOtpCode: null,
+        bankVerifyOtpExpiresAt: null,
+      },
+    });
+    await this.prisma.partnerProfile.updateMany({
+      where: { userId },
+      data: {
+        bankVerified: true,
+        bankName: user.bankName,
+        bankAccountNo: user.bankAccountNo,
+        bankAccountName: user.bankAccountName,
+        bankVerifyIntentId: null,
+        bankVerifyExpiresAt: null,
+      },
+    });
+
+    return this.getWallet(userId);
   }
 
   async topUp(userId: string, amount: number) {

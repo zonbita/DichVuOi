@@ -278,6 +278,35 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  requestBankVerify: (payload: {
+    bankBin: string;
+    bankCode?: string;
+    bankName: string;
+    accountNo: string;
+    accountName: string;
+  }) =>
+    request<{
+      ok: boolean;
+      channel: string;
+      expiresAt: string;
+      code?: string;
+      message: string;
+      payout: {
+        bankBin: string;
+        bankCode: string | null;
+        bankName: string;
+        accountNo: string;
+        accountName: string;
+      };
+    }>('/api/wallet/verify-bank/request', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  confirmBankVerify: (code: string) =>
+    request<WalletSummary>('/api/wallet/verify-bank/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
   topUpWallet: (amount: number) =>
     request<{ currency: string; balance: number }>('/api/wallet/top-up', {
       method: 'POST',
@@ -579,6 +608,23 @@ export const api = {
     request<AuthUser>('/api/auth/verify-phone/confirm', {
       method: 'POST',
       body: JSON.stringify({ key }),
+    }),
+  requestEmailOtp: (email: string) =>
+    request<{
+      ok: boolean;
+      alreadyVerified: boolean;
+      channel: string;
+      expiresAt?: string;
+      code?: string;
+      message: string;
+    }>('/api/auth/verify-email/request', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  confirmEmailOtp: (code: string) =>
+    request<AuthUser>('/api/auth/verify-email/confirm', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
     }),
   linkPartnerBank: (payload: {
     bankName: string;

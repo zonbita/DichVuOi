@@ -1,5 +1,6 @@
 import { BookingStatus, Prisma } from '../../database/prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 type SettlementOptions = {
     status?: BookingStatus;
     expectedStatus?: BookingStatus;
@@ -14,7 +15,8 @@ type ApplyDepositOptions = {
 };
 export declare class FinanceService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly mail;
+    constructor(prisma: PrismaService, mail: MailService);
     private readonly vietQrBankId;
     private readonly vietQrAccountNo;
     private readonly vietQrAccountName;
@@ -25,6 +27,9 @@ export declare class FinanceService {
         currency: string;
         balance: number;
         mockPaymentsEnabled: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
+        canWithdraw: boolean;
         payout: {
             bankBin: string | null;
             bankCode: string | null;
@@ -81,6 +86,61 @@ export declare class FinanceService {
             accountName: string | null;
         };
         message: string;
+    }>;
+    requestBankVerify(userId: string, dto: {
+        bankBin: string;
+        bankCode?: string;
+        bankName: string;
+        accountNo: string;
+        accountName: string;
+    }): Promise<{
+        ok: boolean;
+        channel: "mock" | "gmail";
+        expiresAt: string;
+        code: string | undefined;
+        payout: {
+            bankBin: string;
+            bankCode: string | null;
+            bankName: string;
+            accountNo: string;
+            accountName: string;
+        };
+        message: string;
+    }>;
+    confirmBankVerify(userId: string, dto: {
+        code: string;
+    }): Promise<{
+        currency: string;
+        balance: number;
+        mockPaymentsEnabled: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
+        canWithdraw: boolean;
+        payout: {
+            bankBin: string | null;
+            bankCode: string | null;
+            bankName: string | null;
+            accountNo: string | null;
+            accountName: string | null;
+        };
+        transactions: ({
+            booking: {
+                id: string;
+                service: {
+                    name: string;
+                };
+            } | null;
+        } & {
+            type: import(".prisma/client/client").$Enums.WalletTransactionType;
+            description: string;
+            id: string;
+            createdAt: Date;
+            userId: string;
+            bookingId: string | null;
+            amount: number;
+            balanceAfter: number;
+            reference: string;
+        })[];
     }>;
     topUp(userId: string, amount: number): Promise<{
         currency: string;

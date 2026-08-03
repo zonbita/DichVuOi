@@ -7,6 +7,7 @@ import { toast } from '../lib/notify';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import type { VietQrBank } from '../types/finance';
 import { Icon } from '../components/ui/icon';
+import { WithdrawEmailVerifyStep } from '../components/auth/withdraw-email-verify-step';
 
 type Props = {
   basePath: '/don-cua-toi' | '/doi-tac';
@@ -107,22 +108,25 @@ export function WithdrawPage({ basePath }: Props) {
     enabled: Boolean(user),
   });
 
+  const canEnterBank =
+    Boolean(user?.emailVerified) || Boolean(walletQuery.data?.canWithdraw);
+
   const banksQuery = useQuery({
     queryKey: ['vietqr', 'banks'],
     queryFn: () => api.getVietQrBanks(),
     staleTime: 24 * 60 * 60_000,
-    enabled: Boolean(user),
+    enabled: Boolean(user) && canEnterBank,
   });
 
   const payout = walletQuery.data?.payout;
   const banks = banksQuery.data ?? [];
 
   useEffect(() => {
-    if (!payout) return;
+    if (!payout || !canEnterBank) return;
     if (payout.bankBin) setSelectedBin((prev) => prev || payout.bankBin!);
     if (payout.accountNo) setAccountNo((prev) => prev || payout.accountNo!);
     if (payout.accountName) setAccountName((prev) => prev || payout.accountName!);
-  }, [payout]);
+  }, [payout, canEnterBank]);
 
   const selectedBank: VietQrBank | undefined = banks.find(
     (b) => b.bin === selectedBin,
@@ -165,6 +169,7 @@ export function WithdrawPage({ basePath }: Props) {
 
   const balance = walletQuery.data?.balance ?? user.walletBalance ?? 0;
   const canSubmit =
+    canEnterBank &&
     amount >= 20_000 &&
     amount <= balance &&
     Boolean(selectedBank) &&
@@ -181,6 +186,10 @@ export function WithdrawPage({ basePath }: Props) {
     setBankQuery('');
   }
 
+  function onEmailVerified() {
+    void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain pb-4">
       <header className="flex shrink-0 flex-wrap items-start justify-between gap-3">
@@ -189,7 +198,9 @@ export function WithdrawPage({ basePath }: Props) {
             Rút tiền
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Chọn ngân hàng VietQR, nhập STK nhận — trừ Ví ngay (mock chuyển khoản).
+            {canEnterBank
+              ? 'Bước 2: chọn ngân hàng và STK nhận — trừ Ví ngay (mock).'
+              : 'Bước 1: xác minh email tài khoản trước khi nhập ngân hàng.'}
           </p>
         </div>
         <Link
@@ -221,249 +232,259 @@ export function WithdrawPage({ basePath }: Props) {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
-        <form
-          onSubmit={onSubmit}
-          className="flex flex-col gap-5 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5"
-        >
-          <div className="space-y-2.5">
-            <label className="block text-sm font-semibold text-[var(--color-ink)]">
-              Số tiền rút (tối thiểu 20.000)
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="numeric"
-                value={amount > 0 ? formatPriceNumber(amount) : ''}
-                onChange={(e) => setAmount(parseAmount(e.target.value))}
-                className="field-input w-full pr-14"
-              />
-              <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-sm font-semibold text-[var(--color-muted)]">
-                VNĐ
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {AMOUNT_PRESETS.map((preset) => {
-                const active = amount === preset;
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setAmount(preset)}
-                    className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
-                      active
-                        ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
-                        : 'border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)]/40'
-                    }`}
-                  >
-                    {formatPriceNumber(preset)}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => setAmount(balance)}
-                className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
-                  amount === balance && balance > 0
-                    ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
-                    : 'border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)]/40'
-                }`}
-              >
-                Tất cả
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            <label className="block text-sm font-semibold" htmlFor="bank-search">
-              Ngân hàng (VietQR – {banks.length || '…'} ngân hàng)
-            </label>
-            <div className="relative">
-              <input
-                id="bank-search"
-                value={bankQuery}
-                onChange={(e) => setBankQuery(e.target.value)}
-                className="field-input w-full pr-10 text-sm"
-                placeholder="Tìm ngân hàng (VietQR)..."
-              />
-              <Icon
-                name="search"
-                className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
-              />
+      {!canEnterBank ? (
+        <div className="mx-auto w-full max-w-lg">
+          <WithdrawEmailVerifyStep onVerified={onEmailVerified} />
+        </div>
+      ) : (
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+          <form
+            onSubmit={onSubmit}
+            className="flex flex-col gap-5 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5"
+          >
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-sm text-emerald-800">
+              Email đã xác minh ({user.email}) — nhập ngân hàng bên dưới.
             </div>
 
-            {banksQuery.isLoading ? (
-              <p className="text-sm text-[var(--color-muted)]">Đang tải danh sách NH…</p>
-            ) : banksQuery.isError ? (
-              <p className="text-sm text-red-600">
-                {(banksQuery.error as Error).message}
-              </p>
-            ) : bankQuery.trim() ? (
-              <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-[var(--color-line)] p-1.5">
-                {filteredBanks.map((bank) => {
-                  const active = bank.bin === selectedBin;
-                  return (
-                    <li key={`${bank.bin}-${bank.code}`}>
-                      <button
-                        type="button"
-                        onClick={() => selectBank(bank)}
-                        className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition ${
-                          active
-                            ? 'bg-[var(--color-brand-soft)] ring-1 ring-[var(--color-brand)]'
-                            : 'hover:bg-[var(--color-canvas)]'
-                        }`}
-                      >
-                        <img
-                          src={bank.logo}
-                          alt=""
-                          className="h-8 w-8 shrink-0 rounded object-contain bg-white"
-                          loading="lazy"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-semibold">{bank.shortName}</span>
-                          <span className="block truncate text-xs text-[var(--color-muted)]">
-                            {bank.name}
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-                {filteredBanks.length === 0 ? (
-                  <li className="px-3 py-4 text-center text-sm text-[var(--color-muted)]">
-                    Không khớp ngân hàng
-                  </li>
-                ) : null}
-              </ul>
-            ) : (
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                {featuredBanks.map((bank) => {
-                  const active = bank.bin === selectedBin;
+            <div className="space-y-2.5">
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">
+                Số tiền rút (tối thiểu 20.000)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={amount > 0 ? formatPriceNumber(amount) : ''}
+                  onChange={(e) => setAmount(parseAmount(e.target.value))}
+                  className="field-input w-full pr-14"
+                />
+                <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-sm font-semibold text-[var(--color-muted)]">
+                  VNĐ
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {AMOUNT_PRESETS.map((preset) => {
+                  const active = amount === preset;
                   return (
                     <button
-                      key={bank.bin}
+                      key={preset}
                       type="button"
-                      onClick={() => selectBank(bank)}
-                      className={`relative flex flex-col items-center gap-2 rounded-xl border bg-white px-2 py-3 text-center transition ${
+                      onClick={() => setAmount(preset)}
+                      className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
                         active
-                          ? 'border-[var(--color-brand)] shadow-[0_0_0_1px_var(--color-brand)]'
-                          : 'border-[var(--color-line)] hover:border-[var(--color-brand)]/40'
+                          ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
+                          : 'border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)]/40'
                       }`}
                     >
-                      {active ? (
-                        <span className="absolute top-1.5 right-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-brand)] text-white">
-                          <Icon name="check" className="h-2.5 w-2.5" />
-                        </span>
-                      ) : null}
-                      <img
-                        src={bank.logo}
-                        alt=""
-                        className="h-9 w-9 object-contain"
-                        loading="lazy"
-                      />
-                      <span className="truncate text-xs font-semibold text-[var(--color-ink)]">
-                        {bank.shortName}
-                      </span>
+                      {formatPriceNumber(preset)}
                     </button>
                   );
                 })}
-              </div>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block space-y-1.5">
-              <span className="text-sm font-semibold">Số tài khoản</span>
-              <input
-                value={accountNo}
-                onChange={(e) => setAccountNo(e.target.value.replace(/\D/g, ''))}
-                className="field-input w-full"
-                inputMode="numeric"
-                placeholder="Chỉ chữ số"
-              />
-            </label>
-            <label className="block space-y-1.5">
-              <span className="text-sm font-semibold">Tên chủ tài khoản</span>
-              <input
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value.toUpperCase())}
-                className="field-input w-full"
-                placeholder="NGUYEN VAN A"
-              />
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={!canSubmit || withdrawMutation.isPending}
-            className="btn-primary w-full py-3 text-[15px] font-bold uppercase tracking-wide !text-white disabled:opacity-50"
-          >
-            {withdrawMutation.isPending
-              ? 'Đang xử lý…'
-              : `Rút ${formatPrice(amount)}`}
-          </button>
-        </form>
-
-        <aside className="flex h-fit flex-col gap-4 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5">
-          <h2 className="text-lg font-extrabold text-[var(--color-navy)]">Xác nhận</h2>
-
-          {selectedBank ? (
-            <div className="flex items-center gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/60 p-3">
-              <img
-                src={selectedBank.logo}
-                alt=""
-                className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain p-1"
-              />
-              <div className="min-w-0">
-                <p className="font-bold text-[var(--color-ink)]">
-                  {selectedBank.shortName}
-                </p>
-                <p className="truncate text-xs text-[var(--color-muted)]">
-                  {selectedBank.name}
-                </p>
-                <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-                  · BIN {selectedBank.bin}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setAmount(balance)}
+                  className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
+                    amount === balance && balance > 0
+                      ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
+                      : 'border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-brand)]/40'
+                  }`}
+                >
+                  Tất cả
+                </button>
               </div>
             </div>
-          ) : (
-            <p className="rounded-xl border border-dashed border-[var(--color-line)] px-3 py-4 text-center text-sm text-[var(--color-muted)]">
-              Chưa chọn ngân hàng
-            </p>
-          )}
 
-          <dl className="space-y-2.5 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-[var(--color-muted)]">STK</dt>
-              <dd className="font-semibold tabular-nums">{accountNo || '—'}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-[var(--color-muted)]">Chủ TK</dt>
-              <dd className="max-w-[60%] truncate text-right font-semibold">
-                {accountName || '—'}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-[var(--color-muted)]">Số tiền</dt>
-              <dd className="font-extrabold tabular-nums text-[#F59E0B]">
-                {formatPrice(amount)}
-              </dd>
-            </div>
-          </dl>
+            <div className="space-y-2.5">
+              <label className="block text-sm font-semibold" htmlFor="bank-search">
+                Ngân hàng (VietQR – {banks.length || '…'} ngân hàng)
+              </label>
+              <div className="relative">
+                <input
+                  id="bank-search"
+                  value={bankQuery}
+                  onChange={(e) => setBankQuery(e.target.value)}
+                  className="field-input w-full pr-10 text-sm"
+                  placeholder="Tìm ngân hàng (VietQR)..."
+                />
+                <Icon
+                  name="search"
+                  className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
+                />
+              </div>
 
-          <div className="border-t border-dashed border-[var(--color-line)] pt-4">
-            <div className="flex gap-2.5">
-              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
-                <Icon name="shield" className="h-4 w-4" />
-              </span>
-              <p className="text-xs leading-relaxed text-[var(--color-muted)]">
-                Mock: trừ số dư ví ngay, chưa chuyển khoản ngân hàng thật. Lưu STK
-                làm mặc định lần sau.
+              {banksQuery.isLoading ? (
+                <p className="text-sm text-[var(--color-muted)]">Đang tải danh sách NH…</p>
+              ) : banksQuery.isError ? (
+                <p className="text-sm text-red-600">
+                  {(banksQuery.error as Error).message}
+                </p>
+              ) : bankQuery.trim() ? (
+                <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-[var(--color-line)] p-1.5">
+                  {filteredBanks.map((bank) => {
+                    const active = bank.bin === selectedBin;
+                    return (
+                      <li key={`${bank.bin}-${bank.code}`}>
+                        <button
+                          type="button"
+                          onClick={() => selectBank(bank)}
+                          className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition ${
+                            active
+                              ? 'bg-[var(--color-brand-soft)] ring-1 ring-[var(--color-brand)]'
+                              : 'hover:bg-[var(--color-canvas)]'
+                          }`}
+                        >
+                          <img
+                            src={bank.logo}
+                            alt=""
+                            className="h-8 w-8 shrink-0 rounded object-contain bg-white"
+                            loading="lazy"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-semibold">{bank.shortName}</span>
+                            <span className="block truncate text-xs text-[var(--color-muted)]">
+                              {bank.name}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {filteredBanks.length === 0 ? (
+                    <li className="px-3 py-4 text-center text-sm text-[var(--color-muted)]">
+                      Không khớp ngân hàng
+                    </li>
+                  ) : null}
+                </ul>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                  {featuredBanks.map((bank) => {
+                    const active = bank.bin === selectedBin;
+                    return (
+                      <button
+                        key={bank.bin}
+                        type="button"
+                        onClick={() => selectBank(bank)}
+                        className={`relative flex flex-col items-center gap-2 rounded-xl border bg-white px-2 py-3 text-center transition ${
+                          active
+                            ? 'border-[var(--color-brand)] shadow-[0_0_0_1px_var(--color-brand)]'
+                            : 'border-[var(--color-line)] hover:border-[var(--color-brand)]/40'
+                        }`}
+                      >
+                        {active ? (
+                          <span className="absolute top-1.5 right-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-brand)] text-white">
+                            <Icon name="check" className="h-2.5 w-2.5" />
+                          </span>
+                        ) : null}
+                        <img
+                          src={bank.logo}
+                          alt=""
+                          className="h-9 w-9 object-contain"
+                          loading="lazy"
+                        />
+                        <span className="truncate text-xs font-semibold text-[var(--color-ink)]">
+                          {bank.shortName}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold">Số tài khoản</span>
+                <input
+                  value={accountNo}
+                  onChange={(e) => setAccountNo(e.target.value.replace(/\D/g, ''))}
+                  className="field-input w-full"
+                  inputMode="numeric"
+                  placeholder="Chỉ chữ số"
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-semibold">Tên chủ tài khoản</span>
+                <input
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value.toUpperCase())}
+                  className="field-input w-full"
+                  placeholder="NGUYEN VAN A"
+                />
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!canSubmit || withdrawMutation.isPending}
+              className="btn-primary w-full py-3 text-[15px] font-bold uppercase tracking-wide !text-white disabled:opacity-50"
+            >
+              {withdrawMutation.isPending
+                ? 'Đang xử lý…'
+                : `Rút ${formatPrice(amount)}`}
+            </button>
+          </form>
+
+          <aside className="flex h-fit flex-col gap-4 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5">
+            <h2 className="text-lg font-extrabold text-[var(--color-navy)]">Xác nhận</h2>
+
+            {selectedBank ? (
+              <div className="flex items-center gap-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/60 p-3">
+                <img
+                  src={selectedBank.logo}
+                  alt=""
+                  className="h-11 w-11 shrink-0 rounded-lg bg-white object-contain p-1"
+                />
+                <div className="min-w-0">
+                  <p className="font-bold text-[var(--color-ink)]">
+                    {selectedBank.shortName}
+                  </p>
+                  <p className="truncate text-xs text-[var(--color-muted)]">
+                    {selectedBank.name}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                    · BIN {selectedBank.bin}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-[var(--color-line)] px-3 py-4 text-center text-sm text-[var(--color-muted)]">
+                Chưa chọn ngân hàng
               </p>
+            )}
+
+            <dl className="space-y-2.5 text-sm">
+              <div className="flex justify-between gap-2">
+                <dt className="text-[var(--color-muted)]">STK</dt>
+                <dd className="font-semibold tabular-nums">{accountNo || '—'}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-[var(--color-muted)]">Chủ TK</dt>
+                <dd className="max-w-[60%] truncate text-right font-semibold">
+                  {accountName || '—'}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-[var(--color-muted)]">Số tiền</dt>
+                <dd className="font-extrabold tabular-nums text-[#F59E0B]">
+                  {formatPrice(amount)}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="border-t border-dashed border-[var(--color-line)] pt-4">
+              <div className="flex gap-2.5">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+                  <Icon name="shield" className="h-4 w-4" />
+                </span>
+                <p className="text-xs leading-relaxed text-[var(--color-muted)]">
+                  Mock: trừ số dư ví ngay, chưa chuyển khoản ngân hàng thật. Lưu STK
+                  làm mặc định lần sau.
+                </p>
+              </div>
             </div>
-          </div>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

@@ -84,6 +84,10 @@ export function GoogleSignInButton({
           auto_select: false,
           cancel_on_tap_outside: true,
           context: mode === 'signup' ? 'signup' : 'signin',
+          // FedCM + ITP: giảm lỗi "Failed to open popup / blocked by browser"
+          use_fedcm_for_button: true,
+          use_fedcm_for_prompt: true,
+          itp_support: true,
         });
 
         const width = Math.min(hostRef.current.offsetWidth || 320, 400);
@@ -127,10 +131,10 @@ export function GoogleSignInButton({
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full min-h-[44px]">
       <div
         ref={hostRef}
-        className={`flex w-full justify-center ${busy || disabled ? 'pointer-events-none opacity-60' : ''}`}
+        className={`flex w-full justify-center overflow-hidden rounded-xl ${busy || disabled ? 'pointer-events-none opacity-60' : ''} ${!ready ? 'invisible absolute inset-0' : ''}`}
       />
       {!ready ? (
         <button

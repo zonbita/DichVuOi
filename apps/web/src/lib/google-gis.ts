@@ -14,6 +14,10 @@ type GoogleAccountsId = {
     auto_select?: boolean;
     cancel_on_tap_outside?: boolean;
     context?: string;
+    /** FedCM — tránh popup bị trình duyệt chặn (Chrome 3PCD). */
+    use_fedcm_for_prompt?: boolean;
+    use_fedcm_for_button?: boolean;
+    itp_support?: boolean;
   }) => void;
   renderButton: (
     parent: HTMLElement,

@@ -100,10 +100,10 @@ export declare class PartnersService {
             service: {
                 id: string;
                 name: string;
+                isActive: boolean;
                 slug: string;
                 basePrice: number;
                 unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -120,9 +120,9 @@ export declare class PartnersService {
             updatedAt: Date;
             headline: string | null;
             includes: string | null;
-            serviceId: string;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -130,10 +130,10 @@ export declare class PartnersService {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -174,10 +174,10 @@ export declare class PartnersService {
             service: {
                 id: string;
                 name: string;
+                isActive: boolean;
                 slug: string;
                 basePrice: number;
                 unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -194,9 +194,9 @@ export declare class PartnersService {
             updatedAt: Date;
             headline: string | null;
             includes: string | null;
-            serviceId: string;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -204,10 +204,10 @@ export declare class PartnersService {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -249,10 +249,10 @@ export declare class PartnersService {
             service: {
                 id: string;
                 name: string;
+                isActive: boolean;
                 slug: string;
                 basePrice: number;
                 unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -269,9 +269,9 @@ export declare class PartnersService {
             updatedAt: Date;
             headline: string | null;
             includes: string | null;
-            serviceId: string;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -279,10 +279,10 @@ export declare class PartnersService {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -323,10 +323,10 @@ export declare class PartnersService {
             service: {
                 id: string;
                 name: string;
+                isActive: boolean;
                 slug: string;
                 basePrice: number;
                 unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -343,9 +343,9 @@ export declare class PartnersService {
             updatedAt: Date;
             headline: string | null;
             includes: string | null;
-            serviceId: string;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -353,10 +353,10 @@ export declare class PartnersService {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -501,10 +501,10 @@ export declare class PartnersService {
             service: {
                 id: string;
                 name: string;
+                isActive: boolean;
                 slug: string;
                 basePrice: number;
                 unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -521,9 +521,9 @@ export declare class PartnersService {
             updatedAt: Date;
             headline: string | null;
             includes: string | null;
-            serviceId: string;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -531,10 +531,10 @@ export declare class PartnersService {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -587,10 +587,10 @@ export declare class PartnersService {
             service: {
                 id: string;
                 name: string;
+                isActive: boolean;
                 slug: string;
                 basePrice: number;
                 unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -607,9 +607,9 @@ export declare class PartnersService {
             updatedAt: Date;
             headline: string | null;
             includes: string | null;
-            serviceId: string;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -617,10 +617,10 @@ export declare class PartnersService {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };

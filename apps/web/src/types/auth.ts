@@ -91,6 +91,10 @@ export type AuthUser = {
   phone: string | null;
   /** Đã xác minh SĐT bằng key OTP một lần. */
   phoneVerified?: boolean;
+  /** Đã xác minh email (OTP Gmail hoặc Google). */
+  emailVerified?: boolean;
+  /** Đã xác minh STK nhận khi rút ví. */
+  bankVerified?: boolean;
   role: UserRole;
   /** Số dư ví nội bộ (VNĐ). */
   walletBalance?: number;
