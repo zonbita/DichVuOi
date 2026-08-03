@@ -15,6 +15,7 @@ const client_1 = require("../../database/prisma/client");
 const crypto_1 = require("crypto");
 const escrow_1 = require("../../common/escrow");
 const security_env_1 = require("../../common/security-env");
+const email_otp_rate_1 = require("../../common/email-otp-rate");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
 const mail_service_1 = require("../mail/mail.service");
 const BANK_VERIFY_OTP_TTL_MS = 10 * 60 * 1000;
@@ -205,6 +206,7 @@ let FinanceService = class FinanceService {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user)
             throw new common_1.NotFoundException('Không tìm thấy tài khoản');
+        const rate = (0, email_otp_rate_1.takeEmailOtpSlot)(user);
         const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
         const accountName = dto.accountName.trim().toUpperCase();
         const bankBin = dto.bankBin.trim();
@@ -212,6 +214,7 @@ let FinanceService = class FinanceService {
         const bankCode = (dto.bankCode ?? '').trim() || null;
         const code = String((0, crypto_1.randomInt)(100000, 999999));
         const expiresAt = new Date(Date.now() + BANK_VERIFY_OTP_TTL_MS);
+        const mailReady = this.mail.isConfigured();
         await this.prisma.user.update({
             where: { id: userId },
             data: {
@@ -223,6 +226,8 @@ let FinanceService = class FinanceService {
                 bankVerified: false,
                 bankVerifyOtpCode: code,
                 bankVerifyOtpExpiresAt: expiresAt,
+                emailOtpSendCount: rate.emailOtpSendCount,
+                emailOtpWindowStartedAt: rate.emailOtpWindowStartedAt,
             },
         });
         const sent = await this.mail.send({
@@ -231,22 +236,41 @@ let FinanceService = class FinanceService {
             text: `Ma xac minh lien ket STK ${accountNo} (${bankName}): ${code}. Het han 10 phut.`,
             html: `<p>Mã xác minh liên kết STK <strong>${accountNo}</strong> (${bankName}): <strong>${code}</strong></p><p>Hết hạn 10 phút.</p>`,
         });
+        const payout = {
+            bankBin,
+            bankCode,
+            bankName,
+            accountNo,
+            accountName,
+        };
+        if (sent.provider === 'gmail') {
+            return {
+                ok: true,
+                channel: 'gmail',
+                expiresAt: expiresAt.toISOString(),
+                payout,
+                message: `Đã gửi mã xác minh STK tới ${user.email}`,
+            };
+        }
+        if (mailReady) {
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: {
+                    bankVerifyOtpCode: null,
+                    bankVerifyOtpExpiresAt: null,
+                },
+            });
+            throw new common_1.BadRequestException(sent.mockReason ||
+                'Không gửi được email. Kiểm tra Gmail App Password hoặc thử lại sau.');
+        }
         return {
             ok: true,
-            channel: sent.provider,
+            channel: 'mock',
             expiresAt: expiresAt.toISOString(),
-            code: sent.provider === 'mock' ? code : undefined,
-            payout: {
-                bankBin,
-                bankCode,
-                bankName,
-                accountNo,
-                accountName,
-            },
-            message: sent.provider === 'gmail'
-                ? `Đã gửi mã xác minh STK tới ${user.email}`
-                : sent.mockReason ||
-                    'Chưa gửi được mail thật — dùng mã hiện trên web.',
+            code,
+            payout,
+            message: sent.mockReason ||
+                'Chưa cấu hình Gmail — dùng mã hiện trên web (dev).',
         };
     }
     async confirmBankVerify(userId, dto) {

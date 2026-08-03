@@ -12,7 +12,7 @@ type Props = {
 /**
  * Bước 1 rút tiền (user email/MK, chưa Google):
  * ô email trống — user tự nhập → OTP Gmail → rồi mới nhập NH.
- * Thiếu Gmail config → hiện mã mock trên web.
+ * Chỉ hiện mã mock khi API chưa cấu hình Gmail (dev). Max 5 OTP/giờ.
  */
 export function WithdrawEmailVerifyStep({ onVerified }: Props) {
   const { refreshMe } = useAuth();
@@ -100,17 +100,8 @@ export function WithdrawEmailVerifyStep({ onVerified }: Props) {
         <div className="mt-3 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-amber-950">
           <p className="font-semibold">Chưa gửi được vào hộp thư</p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted)]">
-            Cần{' '}
-            <strong>Gmail App Password</strong> — tạo tại{' '}
-            <a
-              className="font-semibold underline"
-              href="https://myaccount.google.com/apppasswords"
-              target="_blank"
-              rel="noreferrer"
-            >
-              App passwords
-            </a>
-            .
+            Môi trường dev chưa cấu hình Gmail — dùng mã dưới đây. Production
+            (đã có App Password) sẽ chỉ gửi vào hộp thư, không hiện mã trên web.
           </p>
           <p className="mt-2 font-mono text-lg font-extrabold tracking-widest text-[var(--color-navy)]">
             {issuedEmailCode}

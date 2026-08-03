@@ -102,12 +102,15 @@ model User {
   /** Key OTP một lần: TenUser-123456 — xoá sau khi dùng. */
   phoneOtpKey    String?
   phoneOtpExpiresAt DateTime?
-  /** Đã xác minh email (OTP Resend) — hoặc Google email_verified. */
+  /** Đã xác minh email (OTP Gmail) — hoặc Google email_verified. */
   emailVerified  Boolean         @default(false)
   emailOtpCode   String?
   emailOtpExpiresAt DateTime?
   /** Email đang chờ OTP (cho phép gắn/đổi email khi xác minh rút tiền). */
   emailPending   String?
+  /** Rate limit OTP email: số lần gửi trong cửa sổ 1 giờ. */
+  emailOtpSendCount Int          @default(0)
+  emailOtpWindowStartedAt DateTime?
   role           Role            @default(CUSTOMER)
   /** Số dư ví nội bộ, đơn vị VNĐ (số nguyên). */
   walletBalance  Int             @default(0)

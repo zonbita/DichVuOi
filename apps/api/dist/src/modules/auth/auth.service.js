@@ -55,6 +55,7 @@ const prisma_service_1 = require("../../database/prisma/prisma.service");
 const portrait_avatar_1 = require("../../common/portrait-avatar");
 const mail_service_1 = require("../mail/mail.service");
 const sms_service_1 = require("../sms/sms.service");
+const email_otp_rate_1 = require("../../common/email-otp-rate");
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 const EMAIL_OTP_TTL_MS = 10 * 60 * 1000;
@@ -390,14 +391,18 @@ let AuthService = class AuthService {
         if (taken && taken.id !== userId) {
             throw new common_1.ConflictException('Email này đã được tài khoản khác sử dụng');
         }
+        const rate = (0, email_otp_rate_1.takeEmailOtpSlot)(user);
         const code = String((0, crypto_1.randomInt)(100000, 999999));
         const expiresAt = new Date(Date.now() + EMAIL_OTP_TTL_MS);
+        const mailReady = this.mail.isConfigured();
         await this.prisma.user.update({
             where: { id: userId },
             data: {
                 emailPending: typed,
                 emailOtpCode: code,
                 emailOtpExpiresAt: expiresAt,
+                emailOtpSendCount: rate.emailOtpSendCount,
+                emailOtpWindowStartedAt: rate.emailOtpWindowStartedAt,
             },
         });
         const sent = await this.mail.send({
@@ -406,16 +411,35 @@ let AuthService = class AuthService {
             text: `Ma xac minh DichVuOi: ${code}. Het han 10 phut. Khong chia se ma nay.`,
             html: `<p>Mã xác minh DichVuOi: <strong>${code}</strong></p><p>Hết hạn trong 10 phút. Không chia sẻ mã này.</p>`,
         });
+        if (sent.provider === 'gmail') {
+            return {
+                ok: true,
+                alreadyVerified: false,
+                channel: 'gmail',
+                expiresAt: expiresAt.toISOString(),
+                message: `Đã gửi mã xác minh tới ${typed}`,
+            };
+        }
+        if (mailReady) {
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: {
+                    emailOtpCode: null,
+                    emailOtpExpiresAt: null,
+                    emailPending: typed,
+                },
+            });
+            throw new common_1.BadRequestException(sent.mockReason ||
+                'Không gửi được email. Kiểm tra Gmail App Password hoặc thử lại sau.');
+        }
         return {
             ok: true,
             alreadyVerified: false,
-            channel: sent.provider,
+            channel: 'mock',
             expiresAt: expiresAt.toISOString(),
-            code: sent.provider === 'mock' ? code : undefined,
-            message: sent.provider === 'gmail'
-                ? `Đã gửi mã xác minh tới ${typed}`
-                : sent.mockReason ||
-                    'Chưa gửi được mail thật. Dùng mã hiện trên màn hình.',
+            code,
+            message: sent.mockReason ||
+                'Chưa cấu hình Gmail — dùng mã hiện trên màn hình (dev).',
         };
     }
     async confirmEmailOtp(userId, dto) {

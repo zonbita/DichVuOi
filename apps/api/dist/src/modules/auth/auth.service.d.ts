@@ -124,9 +124,16 @@ export declare class AuthService {
     } | {
         ok: boolean;
         alreadyVerified: boolean;
-        channel: "mock" | "gmail";
+        channel: "gmail";
         expiresAt: string;
-        code: string | undefined;
+        message: string;
+        code?: undefined;
+    } | {
+        ok: boolean;
+        alreadyVerified: boolean;
+        channel: "mock";
+        expiresAt: string;
+        code: string;
         message: string;
     }>;
     confirmEmailOtp(userId: string, dto: ConfirmEmailOtpDto): Promise<{

@@ -21,6 +21,7 @@ import {
   allowMockPayments,
   resolveVietQrIntentSecret,
 } from '../../common/security-env';
+import { takeEmailOtpSlot } from '../../common/email-otp-rate';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 
@@ -309,6 +310,7 @@ export class FinanceService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
 
+    const rate = takeEmailOtpSlot(user);
     const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
     const accountName = dto.accountName.trim().toUpperCase();
     const bankBin = dto.bankBin.trim();
@@ -316,6 +318,7 @@ export class FinanceService {
     const bankCode = (dto.bankCode ?? '').trim() || null;
     const code = String(randomInt(100000, 999999));
     const expiresAt = new Date(Date.now() + BANK_VERIFY_OTP_TTL_MS);
+    const mailReady = this.mail.isConfigured();
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -328,6 +331,8 @@ export class FinanceService {
         bankVerified: false,
         bankVerifyOtpCode: code,
         bankVerifyOtpExpiresAt: expiresAt,
+        emailOtpSendCount: rate.emailOtpSendCount,
+        emailOtpWindowStartedAt: rate.emailOtpWindowStartedAt,
       },
     });
 
@@ -338,23 +343,47 @@ export class FinanceService {
       html: `<p>Mã xác minh liên kết STK <strong>${accountNo}</strong> (${bankName}): <strong>${code}</strong></p><p>Hết hạn 10 phút.</p>`,
     });
 
+    const payout = {
+      bankBin,
+      bankCode,
+      bankName,
+      accountNo,
+      accountName,
+    };
+
+    if (sent.provider === 'gmail') {
+      return {
+        ok: true,
+        channel: 'gmail' as const,
+        expiresAt: expiresAt.toISOString(),
+        payout,
+        message: `Đã gửi mã xác minh STK tới ${user.email}`,
+      };
+    }
+
+    if (mailReady) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          bankVerifyOtpCode: null,
+          bankVerifyOtpExpiresAt: null,
+        },
+      });
+      throw new BadRequestException(
+        sent.mockReason ||
+          'Không gửi được email. Kiểm tra Gmail App Password hoặc thử lại sau.',
+      );
+    }
+
     return {
       ok: true,
-      channel: sent.provider,
+      channel: 'mock' as const,
       expiresAt: expiresAt.toISOString(),
-      code: sent.provider === 'mock' ? code : undefined,
-      payout: {
-        bankBin,
-        bankCode,
-        bankName,
-        accountNo,
-        accountName,
-      },
+      code,
+      payout,
       message:
-        sent.provider === 'gmail'
-          ? `Đã gửi mã xác minh STK tới ${user.email}`
-          : sent.mockReason ||
-            'Chưa gửi được mail thật — dùng mã hiện trên web.',
+        sent.mockReason ||
+        'Chưa cấu hình Gmail — dùng mã hiện trên web (dev).',
     };
   }
 

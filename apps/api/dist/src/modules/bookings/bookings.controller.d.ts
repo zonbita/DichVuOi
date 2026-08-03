@@ -13,56 +13,56 @@ export declare class BookingsController {
     constructor(bookingsService: BookingsService);
     create(user: AuthUser, dto: CreateBookingDto): Promise<({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -75,9 +75,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -87,10 +87,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -115,9 +115,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -127,7 +127,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -155,6 +154,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -162,56 +162,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -224,9 +224,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -236,10 +236,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -264,9 +264,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -276,7 +276,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -304,6 +303,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {
@@ -317,56 +317,56 @@ export declare class BookingsController {
     })>;
     listMine(user: AuthUser): Promise<(({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -379,9 +379,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -391,10 +391,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -419,9 +419,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -431,7 +431,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -459,6 +458,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -466,56 +466,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -528,9 +528,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -540,10 +540,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -568,9 +568,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -580,7 +580,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -608,6 +607,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {
@@ -632,56 +632,56 @@ export declare class BookingsController {
     }[]>;
     listPartnerMine(user: AuthUser): Promise<(({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -694,9 +694,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -706,10 +706,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -734,9 +734,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -746,7 +746,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -774,6 +773,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -781,56 +781,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -843,9 +843,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -855,10 +855,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -883,9 +883,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -895,7 +895,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -923,6 +922,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {
@@ -945,56 +945,56 @@ export declare class BookingsController {
             durationMin: number;
             durationHours: number;
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
-            partner: {
-                email: string;
-                fullName: string;
-                phone: string | null;
-                id: string;
-            } | null;
             service: {
                 category: {
                     group: {
-                        description: string | null;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         name: string;
                         slug: string;
-                        supportsOnline: boolean;
-                        sortOrder: number;
+                        description: string | null;
                         icon: string | null;
+                        sortOrder: number;
                         isFeatured: boolean;
+                        supportsOnline: boolean;
                     };
                 } & {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
+                    description: string | null;
                     groupId: string;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
+                supportsOnline: boolean;
                 basePrice: number;
                 priceMin: number;
                 priceMax: number;
                 unit: string;
                 durationMin: number;
-                supportsOnline: boolean;
                 isActive: boolean;
                 categoryId: string;
             };
+            partner: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            } | null;
             reviews: {
                 id: string;
                 createdAt: Date;
@@ -1007,9 +1007,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 bookingId: string;
                 content: string;
-                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -1019,10 +1019,10 @@ export declare class BookingsController {
             }[];
             applications: ({
                 partner: {
+                    id: string;
                     email: string;
                     fullName: string;
                     phone: string | null;
-                    id: string;
                     partnerProfile: {
                         phoneVerified: boolean;
                         bankVerified: boolean;
@@ -1047,9 +1047,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                partnerId: string;
                 note: string | null;
                 status: import(".prisma/client/client").$Enums.ApplicationStatus;
+                partnerId: string;
                 bookingId: string;
                 depositAmount: number;
                 depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -1060,7 +1060,6 @@ export declare class BookingsController {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
@@ -1088,6 +1087,7 @@ export declare class BookingsController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            partnerId: string | null;
             applicationCount?: number;
         } | {
             day: number;
@@ -1099,13 +1099,51 @@ export declare class BookingsController {
             createdAt: Date;
             updatedAt: Date;
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
             userId: string;
-            partnerId: string | null;
+            service: {
+                category: {
+                    group: {
+                        id: string;
+                        createdAt: Date;
+                        updatedAt: Date;
+                        name: string;
+                        slug: string;
+                        description: string | null;
+                        icon: string | null;
+                        sortOrder: number;
+                        isFeatured: boolean;
+                        supportsOnline: boolean;
+                    };
+                } & {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    name: string;
+                    slug: string;
+                    description: string | null;
+                    groupId: string;
+                };
+            } & {
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                name: string;
+                slug: string;
+                description: string | null;
+                supportsOnline: boolean;
+                basePrice: number;
+                priceMin: number;
+                priceMax: number;
+                unit: string;
+                durationMin: number;
+                isActive: boolean;
+                categoryId: string;
+            };
             serviceId: string;
             address: string;
             scheduledAt: Date;
@@ -1134,50 +1172,11 @@ export declare class BookingsController {
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             } | null;
-            service: {
-                category: {
-                    group: {
-                        description: string | null;
-                        id: string;
-                        createdAt: Date;
-                        updatedAt: Date;
-                        name: string;
-                        slug: string;
-                        supportsOnline: boolean;
-                        sortOrder: number;
-                        icon: string | null;
-                        isFeatured: boolean;
-                    };
-                } & {
-                    description: string | null;
-                    id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    name: string;
-                    slug: string;
-                    groupId: string;
-                };
-            } & {
-                description: string | null;
-                id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string;
-                slug: string;
-                basePrice: number;
-                priceMin: number;
-                priceMax: number;
-                unit: string;
-                durationMin: number;
-                supportsOnline: boolean;
-                isActive: boolean;
-                categoryId: string;
-            };
             reviews: {
                 id: string;
                 createdAt: Date;
@@ -1190,9 +1189,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 bookingId: string;
                 content: string;
-                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -1200,6 +1199,7 @@ export declare class BookingsController {
                 customerConfirmedAt: Date | null;
                 evidenceUrl: string | null;
             }[];
+            partnerId: string | null;
             applicationCount: number;
             applications: {
                 partnerId: string;
@@ -1210,56 +1210,56 @@ export declare class BookingsController {
     }>;
     listOpen(user: AuthUser): Promise<(({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -1272,9 +1272,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1284,10 +1284,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -1312,9 +1312,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -1324,7 +1324,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -1352,6 +1351,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -1359,56 +1359,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -1421,9 +1421,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1433,10 +1433,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -1461,9 +1461,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -1473,7 +1473,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -1501,6 +1500,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {
@@ -1514,8 +1514,8 @@ export declare class BookingsController {
     }))[]>;
     listMessages(user: AuthUser, id: string): Promise<({
         sender: {
-            fullName: string;
             id: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -1527,8 +1527,8 @@ export declare class BookingsController {
     })[]>;
     postMessage(user: AuthUser, id: string, dto: CreateBookingMessageDto): Promise<{
         sender: {
-            fullName: string;
             id: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -1540,12 +1540,12 @@ export declare class BookingsController {
     }>;
     listReviews(user: AuthUser, id: string): Promise<({
         toUser: {
-            fullName: string;
             id: string;
+            fullName: string;
         };
         fromUser: {
-            fullName: string;
             id: string;
+            fullName: string;
         };
     } & {
         id: string;
@@ -1567,56 +1567,56 @@ export declare class BookingsController {
     }>;
     payEscrow(user: AuthUser, id: string): Promise<({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -1629,9 +1629,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1641,10 +1641,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -1669,9 +1669,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -1681,7 +1681,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -1709,6 +1708,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -1716,56 +1716,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -1778,9 +1778,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -1790,10 +1790,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -1818,9 +1818,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -1830,7 +1830,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -1858,6 +1857,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {
@@ -1872,56 +1872,56 @@ export declare class BookingsController {
     apply(user: AuthUser, id: string, dto: ApplyBookingDto): Promise<{
         booking: ({
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
-            partner: {
-                email: string;
-                fullName: string;
-                phone: string | null;
-                id: string;
-            } | null;
             service: {
                 category: {
                     group: {
-                        description: string | null;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         name: string;
                         slug: string;
-                        supportsOnline: boolean;
-                        sortOrder: number;
+                        description: string | null;
                         icon: string | null;
+                        sortOrder: number;
                         isFeatured: boolean;
+                        supportsOnline: boolean;
                     };
                 } & {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
+                    description: string | null;
                     groupId: string;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
+                supportsOnline: boolean;
                 basePrice: number;
                 priceMin: number;
                 priceMax: number;
                 unit: string;
                 durationMin: number;
-                supportsOnline: boolean;
                 isActive: boolean;
                 categoryId: string;
             };
+            partner: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            } | null;
             reviews: {
                 id: string;
                 createdAt: Date;
@@ -1934,9 +1934,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 bookingId: string;
                 content: string;
-                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -1946,10 +1946,10 @@ export declare class BookingsController {
             }[];
             applications: ({
                 partner: {
+                    id: string;
                     email: string;
                     fullName: string;
                     phone: string | null;
-                    id: string;
                     partnerProfile: {
                         phoneVerified: boolean;
                         bankVerified: boolean;
@@ -1974,9 +1974,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                partnerId: string;
                 note: string | null;
                 status: import(".prisma/client/client").$Enums.ApplicationStatus;
+                partnerId: string;
                 bookingId: string;
                 depositAmount: number;
                 depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -1986,7 +1986,6 @@ export declare class BookingsController {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
@@ -2014,6 +2013,7 @@ export declare class BookingsController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            partnerId: string | null;
         } & {
             applications?: {
                 partnerId: string;
@@ -2021,56 +2021,56 @@ export declare class BookingsController {
             applicationCount?: number;
         }) | (Omit<{
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
-            partner: {
-                email: string;
-                fullName: string;
-                phone: string | null;
-                id: string;
-            } | null;
             service: {
                 category: {
                     group: {
-                        description: string | null;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         name: string;
                         slug: string;
-                        supportsOnline: boolean;
-                        sortOrder: number;
+                        description: string | null;
                         icon: string | null;
+                        sortOrder: number;
                         isFeatured: boolean;
+                        supportsOnline: boolean;
                     };
                 } & {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
+                    description: string | null;
                     groupId: string;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
+                supportsOnline: boolean;
                 basePrice: number;
                 priceMin: number;
                 priceMax: number;
                 unit: string;
                 durationMin: number;
-                supportsOnline: boolean;
                 isActive: boolean;
                 categoryId: string;
             };
+            partner: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            } | null;
             reviews: {
                 id: string;
                 createdAt: Date;
@@ -2083,9 +2083,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 bookingId: string;
                 content: string;
-                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -2095,10 +2095,10 @@ export declare class BookingsController {
             }[];
             applications: ({
                 partner: {
+                    id: string;
                     email: string;
                     fullName: string;
                     phone: string | null;
-                    id: string;
                     partnerProfile: {
                         phoneVerified: boolean;
                         bankVerified: boolean;
@@ -2123,9 +2123,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                partnerId: string;
                 note: string | null;
                 status: import(".prisma/client/client").$Enums.ApplicationStatus;
+                partnerId: string;
                 bookingId: string;
                 depositAmount: number;
                 depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -2135,7 +2135,6 @@ export declare class BookingsController {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
@@ -2163,6 +2162,7 @@ export declare class BookingsController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            partnerId: string | null;
         } & {
             applications?: unknown;
         }, "applications"> & {
@@ -2176,10 +2176,10 @@ export declare class BookingsController {
         });
         application: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -2204,9 +2204,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -2215,10 +2215,10 @@ export declare class BookingsController {
     }>;
     listApplications(user: AuthUser, id: string): Promise<({
         partner: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             partnerProfile: {
                 phoneVerified: boolean;
                 bankVerified: boolean;
@@ -2243,65 +2243,65 @@ export declare class BookingsController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        partnerId: string;
         note: string | null;
         status: import(".prisma/client/client").$Enums.ApplicationStatus;
+        partnerId: string;
         bookingId: string;
         depositAmount: number;
         depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
     })[]>;
     selectApplicant(user: AuthUser, id: string, applicationId: string): Promise<({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -2314,9 +2314,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2326,10 +2326,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -2354,9 +2354,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -2366,7 +2366,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -2394,6 +2393,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -2401,56 +2401,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -2463,9 +2463,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2475,10 +2475,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -2503,9 +2503,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -2515,7 +2515,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -2543,6 +2542,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {
@@ -2645,56 +2645,56 @@ export declare class BookingsController {
     })>;
     findOne(user: AuthUser, id: string): Promise<({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -2707,9 +2707,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2719,10 +2719,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -2747,9 +2747,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -2759,7 +2759,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -2787,6 +2786,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -2794,56 +2794,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -2856,9 +2856,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -2868,10 +2868,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -2896,9 +2896,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -2908,7 +2908,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -2936,6 +2935,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {
@@ -2950,56 +2950,56 @@ export declare class BookingsController {
     accept(user: AuthUser, id: string): Promise<{
         booking: ({
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
-            partner: {
-                email: string;
-                fullName: string;
-                phone: string | null;
-                id: string;
-            } | null;
             service: {
                 category: {
                     group: {
-                        description: string | null;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         name: string;
                         slug: string;
-                        supportsOnline: boolean;
-                        sortOrder: number;
+                        description: string | null;
                         icon: string | null;
+                        sortOrder: number;
                         isFeatured: boolean;
+                        supportsOnline: boolean;
                     };
                 } & {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
+                    description: string | null;
                     groupId: string;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
+                supportsOnline: boolean;
                 basePrice: number;
                 priceMin: number;
                 priceMax: number;
                 unit: string;
                 durationMin: number;
-                supportsOnline: boolean;
                 isActive: boolean;
                 categoryId: string;
             };
+            partner: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            } | null;
             reviews: {
                 id: string;
                 createdAt: Date;
@@ -3012,9 +3012,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 bookingId: string;
                 content: string;
-                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -3024,10 +3024,10 @@ export declare class BookingsController {
             }[];
             applications: ({
                 partner: {
+                    id: string;
                     email: string;
                     fullName: string;
                     phone: string | null;
-                    id: string;
                     partnerProfile: {
                         phoneVerified: boolean;
                         bankVerified: boolean;
@@ -3052,9 +3052,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                partnerId: string;
                 note: string | null;
                 status: import(".prisma/client/client").$Enums.ApplicationStatus;
+                partnerId: string;
                 bookingId: string;
                 depositAmount: number;
                 depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -3064,7 +3064,6 @@ export declare class BookingsController {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
@@ -3092,6 +3091,7 @@ export declare class BookingsController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            partnerId: string | null;
         } & {
             applications?: {
                 partnerId: string;
@@ -3099,56 +3099,56 @@ export declare class BookingsController {
             applicationCount?: number;
         }) | (Omit<{
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
-            partner: {
-                email: string;
-                fullName: string;
-                phone: string | null;
-                id: string;
-            } | null;
             service: {
                 category: {
                     group: {
-                        description: string | null;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         name: string;
                         slug: string;
-                        supportsOnline: boolean;
-                        sortOrder: number;
+                        description: string | null;
                         icon: string | null;
+                        sortOrder: number;
                         isFeatured: boolean;
+                        supportsOnline: boolean;
                     };
                 } & {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
+                    description: string | null;
                     groupId: string;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
+                supportsOnline: boolean;
                 basePrice: number;
                 priceMin: number;
                 priceMax: number;
                 unit: string;
                 durationMin: number;
-                supportsOnline: boolean;
                 isActive: boolean;
                 categoryId: string;
             };
+            partner: {
+                id: string;
+                email: string;
+                fullName: string;
+                phone: string | null;
+            } | null;
             reviews: {
                 id: string;
                 createdAt: Date;
@@ -3161,9 +3161,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 bookingId: string;
                 content: string;
-                sortOrder: number;
                 source: import(".prisma/client/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -3173,10 +3173,10 @@ export declare class BookingsController {
             }[];
             applications: ({
                 partner: {
+                    id: string;
                     email: string;
                     fullName: string;
                     phone: string | null;
-                    id: string;
                     partnerProfile: {
                         phoneVerified: boolean;
                         bankVerified: boolean;
@@ -3201,9 +3201,9 @@ export declare class BookingsController {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                partnerId: string;
                 note: string | null;
                 status: import(".prisma/client/client").$Enums.ApplicationStatus;
+                partnerId: string;
                 bookingId: string;
                 depositAmount: number;
                 depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -3213,7 +3213,6 @@ export declare class BookingsController {
             createdAt: Date;
             updatedAt: Date;
             userId: string;
-            partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
@@ -3241,6 +3240,7 @@ export declare class BookingsController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            partnerId: string | null;
         } & {
             applications?: unknown;
         }, "applications"> & {
@@ -3254,10 +3254,10 @@ export declare class BookingsController {
         });
         application: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -3282,9 +3282,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -3293,56 +3293,56 @@ export declare class BookingsController {
     }>;
     updateStatus(user: AuthUser, id: string, dto: UpdateBookingStatusDto): Promise<({
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -3355,9 +3355,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -3367,10 +3367,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -3395,9 +3395,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -3407,7 +3407,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -3435,6 +3434,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: {
             partnerId: string;
@@ -3442,56 +3442,56 @@ export declare class BookingsController {
         applicationCount?: number;
     }) | (Omit<{
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         service: {
             category: {
                 group: {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
-                    supportsOnline: boolean;
-                    sortOrder: number;
+                    description: string | null;
                     icon: string | null;
+                    sortOrder: number;
                     isFeatured: boolean;
+                    supportsOnline: boolean;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 groupId: string;
             };
         } & {
-            description: string | null;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             name: string;
             slug: string;
+            description: string | null;
+            supportsOnline: boolean;
             basePrice: number;
             priceMin: number;
             priceMax: number;
             unit: string;
             durationMin: number;
-            supportsOnline: boolean;
             isActive: boolean;
             categoryId: string;
         };
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         reviews: {
             id: string;
             createdAt: Date;
@@ -3504,9 +3504,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             bookingId: string;
             content: string;
-            sortOrder: number;
             source: import(".prisma/client/client").$Enums.RequirementSource;
             partnerDone: boolean;
             partnerDoneAt: Date | null;
@@ -3516,10 +3516,10 @@ export declare class BookingsController {
         }[];
         applications: ({
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
                 partnerProfile: {
                     phoneVerified: boolean;
                     bankVerified: boolean;
@@ -3544,9 +3544,9 @@ export declare class BookingsController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            partnerId: string;
             note: string | null;
             status: import(".prisma/client/client").$Enums.ApplicationStatus;
+            partnerId: string;
             bookingId: string;
             depositAmount: number;
             depositStatus: import(".prisma/client/client").$Enums.PaymentStatus;
@@ -3556,7 +3556,6 @@ export declare class BookingsController {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        partnerId: string | null;
         serviceId: string;
         address: string;
         scheduledAt: Date;
@@ -3584,6 +3583,7 @@ export declare class BookingsController {
         customerSettlementApprovedAt: Date | null;
         partnerSettlementApprovedAt: Date | null;
         settlementResolvedAt: Date | null;
+        partnerId: string | null;
     } & {
         applications?: unknown;
     }, "applications"> & {

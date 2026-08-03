@@ -100,9 +100,16 @@ export declare class AuthController {
     } | {
         ok: boolean;
         alreadyVerified: boolean;
-        channel: "mock" | "gmail";
+        channel: "gmail";
         expiresAt: string;
-        code: string | undefined;
+        message: string;
+        code?: undefined;
+    } | {
+        ok: boolean;
+        alreadyVerified: boolean;
+        channel: "mock";
+        expiresAt: string;
+        code: string;
         message: string;
     }>;
     confirmEmailOtp(user: AuthUser, dto: ConfirmEmailOtpDto): Promise<{

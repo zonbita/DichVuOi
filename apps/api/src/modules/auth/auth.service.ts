@@ -13,6 +13,7 @@ import { PrismaService } from '../../database/prisma/prisma.service';
 import { portraitAvatarUrl } from '../../common/portrait-avatar';
 import { MailService } from '../mail/mail.service';
 import { SmsService, normalizeVnPhone } from '../sms/sms.service';
+import { takeEmailOtpSlot } from '../../common/email-otp-rate';
 import {
   ConfirmEmailOtpDto,
   ConfirmPhoneOtpDto,
@@ -441,14 +442,19 @@ export class AuthService {
       throw new ConflictException('Email này đã được tài khoản khác sử dụng');
     }
 
+    const rate = takeEmailOtpSlot(user);
     const code = String(randomInt(100000, 999999));
     const expiresAt = new Date(Date.now() + EMAIL_OTP_TTL_MS);
+    const mailReady = this.mail.isConfigured();
+
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         emailPending: typed,
         emailOtpCode: code,
         emailOtpExpiresAt: expiresAt,
+        emailOtpSendCount: rate.emailOtpSendCount,
+        emailOtpWindowStartedAt: rate.emailOtpWindowStartedAt,
       },
     });
 
@@ -459,17 +465,42 @@ export class AuthService {
       html: `<p>Mã xác minh DichVuOi: <strong>${code}</strong></p><p>Hết hạn trong 10 phút. Không chia sẻ mã này.</p>`,
     });
 
+    if (sent.provider === 'gmail') {
+      return {
+        ok: true,
+        alreadyVerified: false,
+        channel: 'gmail' as const,
+        expiresAt: expiresAt.toISOString(),
+        message: `Đã gửi mã xác minh tới ${typed}`,
+      };
+    }
+
+    // Gmail đã cấu hình nhưng gửi fail → không lộ OTP trên API/UI (chống bot).
+    if (mailReady) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          emailOtpCode: null,
+          emailOtpExpiresAt: null,
+          emailPending: typed,
+        },
+      });
+      throw new BadRequestException(
+        sent.mockReason ||
+          'Không gửi được email. Kiểm tra Gmail App Password hoặc thử lại sau.',
+      );
+    }
+
+    // Dev: chưa cấu hình Gmail — cho hiện mã mock trên web.
     return {
       ok: true,
       alreadyVerified: false,
-      channel: sent.provider,
+      channel: 'mock' as const,
       expiresAt: expiresAt.toISOString(),
-      code: sent.provider === 'mock' ? code : undefined,
+      code,
       message:
-        sent.provider === 'gmail'
-          ? `Đã gửi mã xác minh tới ${typed}`
-          : sent.mockReason ||
-            'Chưa gửi được mail thật. Dùng mã hiện trên màn hình.',
+        sent.mockReason ||
+        'Chưa cấu hình Gmail — dùng mã hiện trên màn hình (dev).',
     };
   }
 

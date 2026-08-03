@@ -29,12 +29,12 @@ export declare class FinanceController {
                 };
             } | null;
         } & {
-            type: import("@prisma/client").$Enums.WalletTransactionType;
-            description: string;
             id: string;
             createdAt: Date;
             userId: string;
+            description: string;
             bookingId: string | null;
+            type: import("@prisma/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -65,9 +65,22 @@ export declare class FinanceController {
     }>;
     requestBankVerify(user: AuthUser, dto: RequestBankVerifyDto): Promise<{
         ok: boolean;
-        channel: "mock" | "gmail";
+        channel: "gmail";
         expiresAt: string;
-        code: string | undefined;
+        payout: {
+            bankBin: string;
+            bankCode: string | null;
+            bankName: string;
+            accountNo: string;
+            accountName: string;
+        };
+        message: string;
+        code?: undefined;
+    } | {
+        ok: boolean;
+        channel: "mock";
+        expiresAt: string;
+        code: string;
         payout: {
             bankBin: string;
             bankCode: string | null;
@@ -99,12 +112,12 @@ export declare class FinanceController {
                 };
             } | null;
         } & {
-            type: import("@prisma/client").$Enums.WalletTransactionType;
-            description: string;
             id: string;
             createdAt: Date;
             userId: string;
+            description: string;
             bookingId: string | null;
+            type: import("@prisma/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -138,28 +151,28 @@ export declare class FinanceController {
         amount: number;
     }>;
     listInvoices(user: AuthUser): Promise<({
+        partner: {
+            id: string;
+            fullName: string;
+        } | null;
         booking: {
             id: string;
             status: import("@prisma/client").$Enums.BookingStatus;
             paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
         };
-        partner: {
-            fullName: string;
-            id: string;
-        } | null;
         customer: {
-            fullName: string;
             id: string;
+            fullName: string;
         };
     } & {
         id: string;
         updatedAt: Date;
-        partnerId: string | null;
         status: import("@prisma/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
+        partnerId: string | null;
         bookingId: string;
         currency: string;
         invoiceNumber: string;
@@ -170,33 +183,33 @@ export declare class FinanceController {
         settledAt: Date | null;
     })[]>;
     getInvoice(user: AuthUser, id: string): Promise<{
+        partner: {
+            id: string;
+            email: string;
+            fullName: string;
+            phone: string | null;
+        } | null;
         booking: {
             id: string;
             scheduledAt: Date;
             status: import("@prisma/client").$Enums.BookingStatus;
             paymentStatus: import("@prisma/client").$Enums.PaymentStatus;
         };
-        partner: {
-            email: string;
-            fullName: string;
-            phone: string | null;
-            id: string;
-        } | null;
         customer: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
         };
     } & {
         id: string;
         updatedAt: Date;
-        partnerId: string | null;
         status: import("@prisma/client").$Enums.InvoiceStatus;
         customerName: string;
         commissionAmount: number;
         partnerPayout: number;
         refundedAt: Date | null;
+        partnerId: string | null;
         bookingId: string;
         currency: string;
         invoiceNumber: string;

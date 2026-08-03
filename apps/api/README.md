@@ -81,7 +81,7 @@ Mật khẩu chung: **`demo1234`**
 
 ### Mail — **Gmail App Password**
 
-Free ~100–500 mail/ngày — đủ OTP. Lỗi cấu hình → fallback mock (mã trên web).
+Free ~100–500 mail/ngày — đủ OTP. **Max 5 OTP email / user / giờ.** Gmail đã cấu hình: không trả mã trên API/UI (kể cả khi gửi fail). Chưa cấu hình Gmail (dev): mới hiện mã mock.
 
 ```env
 GMAIL_USER=you@gmail.com
