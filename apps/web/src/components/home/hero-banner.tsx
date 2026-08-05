@@ -140,7 +140,7 @@ export function HeroBanner() {
 
   return (
     <div className="relative overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
-      <div className="relative h-[500px] w-full">
+      <div className="relative h-[220px] w-full sm:h-[340px] md:h-[420px] lg:h-[500px]">
         {banners.map((banner, index) => (
           <div
             key={slideKey(banner, index)}
@@ -162,7 +162,7 @@ export function HeroBanner() {
                 {/* Hit-area CTA — nút trên ảnh chỉ là art */}
                 <Link
                   to={banner.href}
-                  className="absolute bottom-[18%] left-[8%] z-[1] inline-flex min-h-[44px] min-w-[7.5rem] items-center justify-center rounded-full px-6 py-3 text-[15px] font-bold text-transparent sm:left-[9%] sm:bottom-[16%]"
+                  className="absolute bottom-[14%] left-[6%] z-[1] inline-flex min-h-[44px] min-w-[6.5rem] items-center justify-center rounded-full px-5 py-2.5 text-[15px] font-bold text-transparent sm:bottom-[16%] sm:left-[9%] sm:min-w-[7.5rem] sm:px-6 sm:py-3"
                   aria-label={banner.ctaLabel}
                 >
                   {banner.ctaLabel}
@@ -186,20 +186,20 @@ export function HeroBanner() {
                 />
                 <ProfessionArt slide={banner} />
 
-                <div className="absolute inset-0 z-[1] flex flex-col justify-center gap-3 py-7 pl-14 pr-14 text-white sm:py-9 sm:pl-16 sm:pr-16 lg:pl-[4.5rem] lg:pr-[4.5rem]">
-                  <span className="hero-banner__tag w-fit rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-white">
+                <div className="absolute inset-0 z-[1] flex flex-col justify-center gap-2 px-5 py-5 text-white sm:gap-3 sm:px-10 sm:py-9 md:pl-16 md:pr-16 lg:pl-[4.5rem] lg:pr-[4.5rem]">
+                  <span className="hero-banner__tag w-fit rounded-full px-3 py-1 text-[12px] font-semibold text-white sm:px-3.5 sm:py-1.5 sm:text-[13px]">
                     {banner.tag}
                   </span>
-                  <h2 className="max-w-[28rem] text-[26px] font-extrabold uppercase leading-[1.15] tracking-tight sm:text-[30px] lg:text-[32px]">
+                  <h2 className="max-w-[28rem] text-[22px] font-extrabold uppercase leading-[1.15] tracking-tight sm:text-[30px] lg:text-[32px]">
                     {banner.title}
                   </h2>
-                  <p className="max-w-[28rem] text-[15px] leading-relaxed text-white/88 sm:text-base">
+                  <p className="max-w-[28rem] text-sm leading-relaxed text-white/88 sm:text-base">
                     {banner.subtitle}
                   </p>
-                  <div className="mt-1">
+                  <div className="mt-0.5 sm:mt-1">
                     <Link
                       to="/nhom"
-                      className="hero-banner__cta inline-flex items-center gap-1.5 rounded-full px-6 py-3 text-[15px] font-bold text-white"
+                      className="hero-banner__cta inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-white sm:px-6 sm:py-3 sm:text-[15px]"
                     >
                       Đặt ngay
                       <Icon name="chevronRight" className="h-4 w-4" />
@@ -216,7 +216,7 @@ export function HeroBanner() {
         type="button"
         onClick={() => move(-1)}
         aria-label="Banner trước"
-        className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl bg-white/95 text-[var(--color-muted)] shadow-md transition hover:bg-white"
+        className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-white/95 text-[var(--color-muted)] shadow-md transition hover:bg-white sm:left-3 sm:h-10 sm:w-10"
       >
         <Icon name="chevronLeft" className="h-5 w-5" />
       </button>
@@ -224,12 +224,12 @@ export function HeroBanner() {
         type="button"
         onClick={() => move(1)}
         aria-label="Banner kế tiếp"
-        className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl bg-white/95 text-[var(--color-muted)] shadow-md transition hover:bg-white"
+        className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-white/95 text-[var(--color-muted)] shadow-md transition hover:bg-white sm:right-3 sm:h-10 sm:w-10"
       >
         <Icon name="chevronRight" className="h-5 w-5" />
       </button>
 
-      <div className="absolute inset-x-0 bottom-4 z-10 flex justify-center gap-2">
+      <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center gap-2 sm:bottom-4">
         {banners.map((banner, index) => (
           <button
             key={slideKey(banner, index)}

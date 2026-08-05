@@ -105,12 +105,12 @@ export function AdminSupportChatPage() {
         </p>
       </div>
 
-      <div className="grid min-h-[560px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-sm lg:grid-cols-[280px_1fr]">
+      <div className="grid min-h-[min(70vh,560px)] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-sm lg:grid-cols-[280px_1fr]">
         <aside className="border-b border-[var(--admin-border)] lg:border-b-0 lg:border-r">
           <div className="border-b border-[var(--admin-border)] px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-[var(--color-muted)]">
             Hội thoại ({threads.length})
           </div>
-          <div className="max-h-[240px] overflow-y-auto lg:max-h-[520px]">
+          <div className="max-h-[36vh] overflow-y-auto lg:max-h-[520px]">
             {threadsQuery.isLoading ? (
               <p className="p-4 text-sm text-[var(--color-muted)]">Đang tải…</p>
             ) : null}

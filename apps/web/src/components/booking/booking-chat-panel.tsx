@@ -35,7 +35,7 @@ function ChatHeaderIcon() {
   );
 }
 
-/** Panel chat cố định phải: rộng 360px, cao full màn hình. */
+/** Panel chat cố định phải: full-width trên mobile, max 360px từ sm. */
 export function BookingChatPanel({
   bookingId,
   currentUserId,
@@ -68,7 +68,7 @@ export function BookingChatPanel({
         onClick={onClose}
       />
       <aside
-        className="fixed inset-y-0 right-0 z-[220] flex w-[360px] flex-col border-l border-[var(--color-line)] bg-white shadow-2xl"
+        className="fixed inset-y-0 right-0 z-[220] flex w-full max-w-[360px] flex-col border-l border-[var(--color-line)] bg-white shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-label={title}

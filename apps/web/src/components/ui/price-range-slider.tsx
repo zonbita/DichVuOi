@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, type CSSProperties } from 'react';
 import { formatPrice, formatPriceNumber } from '../../services/api';
 
 export const PRICE_SLIDER_MAX = 100_000_000;
@@ -34,6 +34,13 @@ function formatTick(value: number) {
   const tr = value / 1_000_000;
   const normalized = Number.isInteger(tr) ? String(tr) : tr.toFixed(1).replace(/\.0$/, '');
   return `${normalized}tr`;
+}
+
+/** Clamp bubble so edge thumbs don't overflow the track on narrow screens. */
+function bubbleStyle(pct: number): CSSProperties {
+  if (pct <= 8) return { left: 0, transform: 'none' };
+  if (pct >= 92) return { right: 0, left: 'auto', transform: 'none' };
+  return { left: `${pct}%`, transform: 'translateX(-50%)' };
 }
 
 export function PriceRangeSlider({
@@ -106,14 +113,14 @@ export function PriceRangeSlider({
         {showBubbles ? (
           <>
             <span
-              className="pointer-events-none absolute top-0 z-4 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#079A9A] px-2 py-0.5 text-[11px] font-bold leading-none text-white shadow-sm"
-              style={{ left: `${leftPct}%` }}
+              className="pointer-events-none absolute top-0 z-4 max-w-[46%] truncate rounded-full bg-[#079A9A] px-2 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:max-w-none sm:text-[11px]"
+              style={bubbleStyle(leftPct)}
             >
               {formatPriceNumber(lo)} VNĐ
             </span>
             <span
-              className="pointer-events-none absolute top-0 z-4 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#079A9A] px-2 py-0.5 text-[11px] font-bold leading-none text-white shadow-sm"
-              style={{ left: `${rightPct}%` }}
+              className="pointer-events-none absolute top-0 z-4 max-w-[46%] truncate rounded-full bg-[#079A9A] px-2 py-0.5 text-[10px] font-bold leading-none text-white shadow-sm sm:max-w-none sm:text-[11px]"
+              style={bubbleStyle(rightPct)}
             >
               {formatPriceNumber(hi)} VNĐ
             </span>

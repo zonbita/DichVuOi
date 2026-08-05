@@ -63,7 +63,7 @@ export function SiteHeader() {
                     decoding="async"
                     fetchPriority="high"
                   />
-                  <span className="whitespace-nowrap text-[1.35rem] font-bold leading-none tracking-tight sm:text-[1.5rem]">
+                  <span className="hidden whitespace-nowrap text-[1.35rem] font-bold leading-none tracking-tight min-[380px]:inline sm:text-[1.5rem]">
                     Dịch Vụ <span className="text-[var(--color-brand)]">Ơi</span>
                   </span>
                 </Link>

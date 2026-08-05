@@ -349,7 +349,7 @@ function ProfileSidebar({
         </AvatarLevelOverlay>
 
         {gallery.length > 0 ? (
-          <div className="grid grid-cols-5 gap-1 border-t border-[var(--color-line)] p-2">
+          <div className="grid grid-cols-3 gap-1 border-t border-[var(--color-line)] p-2 sm:grid-cols-4 md:grid-cols-5">
             {gallery.slice(0, 5).map((url) => (
               <a
                 key={url}

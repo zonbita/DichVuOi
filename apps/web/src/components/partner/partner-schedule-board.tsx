@@ -31,9 +31,212 @@ function formatTimeRange(slot: ScheduleSlot) {
   return `${fmt(start)}–${fmt(end)}`;
 }
 
+function dayLabel(year: number, month: number, day: number) {
+  return new Date(year, month - 1, day).toLocaleDateString('vi-VN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 type Props = {
   enabled: boolean;
 };
+
+function ScheduleSelectedDetail({ selected }: { selected: ScheduleSlot }) {
+  return (
+    <div className="border-t border-[var(--color-line)] bg-[var(--color-canvas)]/50 px-4 py-3 sm:px-5">
+      <p className="text-sm font-extrabold">
+        {selected.service.name} · {formatBookingStatus(selected.status)}
+      </p>
+      <p className="mt-1 text-sm text-[var(--color-muted)]">
+        Khách thuê:{' '}
+        <strong className="text-[var(--color-ink)]">{selected.customerName}</strong>
+        {' · '}
+        {formatTimeRange(selected)} ({selected.durationHours} giờ)
+        {' · '}
+        {formatPrice(selected.totalPrice)}
+      </p>
+      <p className="mt-1 text-xs text-[var(--color-muted)]">{selected.address}</p>
+    </div>
+  );
+}
+
+function MobileAgendaList({
+  year,
+  month,
+  itemsByDay,
+  days,
+  selectedId,
+  onSelect,
+}: {
+  year: number;
+  month: number;
+  itemsByDay: Map<number, ScheduleSlot[]>;
+  days: number[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const daysWithSlots = days.filter((day) => (itemsByDay.get(day) ?? []).length > 0);
+
+  if (daysWithSlots.length === 0) {
+    return (
+      <p className="px-4 py-4 text-sm text-[var(--color-muted)] md:hidden">
+        Tháng này chưa có đơn trên lịch.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="divide-y divide-[var(--color-line)] md:hidden">
+      {daysWithSlots.map((day) => {
+        const slots = [...(itemsByDay.get(day) ?? [])].sort(
+          (a, b) => a.startHour - b.startHour,
+        );
+        return (
+          <li key={day} className="px-4 py-3">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--color-muted)]">
+              {dayLabel(year, month, day)}
+            </p>
+            <ul className="mt-2 space-y-2">
+              {slots.map((slot) => (
+                <li key={slot.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(slot.id)}
+                    className={`flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
+                      selectedId === slot.id
+                        ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)]'
+                        : 'border-[var(--color-line)] bg-white hover:border-[var(--color-brand)]/40'
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 shrink-0 rounded-md px-2 py-1 text-[11px] font-bold ${statusTone(slot.status)}`}
+                    >
+                      {formatTimeRange(slot)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-[var(--color-ink)]">
+                        {slot.service.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-xs text-[var(--color-muted)]">
+                        {slot.customerName} · {formatPrice(slot.totalPrice)}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function DesktopMonthGrid({
+  daysInMonth,
+  days,
+  now,
+  year,
+  month,
+  itemsByDay,
+  selectedId,
+  onSelect,
+}: {
+  daysInMonth: number;
+  days: number[];
+  now: Date;
+  year: number;
+  month: number;
+  itemsByDay: Map<number, ScheduleSlot[]>;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="hidden max-h-[min(70vh,720px)] overflow-auto md:block">
+      <div
+        className="relative grid min-w-[720px]"
+        style={{
+          gridTemplateColumns: `52px repeat(${daysInMonth}, minmax(40px, 1fr))`,
+        }}
+      >
+        <div className="sticky top-0 left-0 z-30 border-b border-[var(--color-line)] bg-white px-1 py-2 text-center text-[10px] font-bold text-[var(--color-muted)]">
+          Giờ
+        </div>
+        {days.map((day) => {
+          const isToday =
+            day === now.getDate() &&
+            month === now.getMonth() + 1 &&
+            year === now.getFullYear();
+          return (
+            <div
+              key={`h-${day}`}
+              className={`sticky top-0 z-20 border-b border-l border-[var(--color-line)] py-2 text-center text-[11px] font-bold ${
+                isToday
+                  ? 'bg-[var(--color-brand)]/10 text-[var(--color-brand-deep)]'
+                  : 'bg-[var(--color-canvas)] text-[var(--color-ink)]'
+              }`}
+            >
+              {day}
+            </div>
+          );
+        })}
+
+        <div className="relative" style={{ height: ROW_H * 24 }}>
+          {HOURS.map((hour) => (
+            <div
+              key={`label-${hour}`}
+              className="sticky left-0 z-10 flex items-start justify-end border-b border-[var(--color-line)] bg-white pr-1.5 pt-0.5 text-[10px] font-semibold text-[var(--color-muted)]"
+              style={{ height: ROW_H }}
+            >
+              {formatHourLabel(hour)}
+            </div>
+          ))}
+        </div>
+
+        {days.map((day) => (
+          <div
+            key={`day-${day}`}
+            className="relative border-l border-[var(--color-line)]"
+            style={{ height: ROW_H * 24 }}
+          >
+            {HOURS.map((hour) => (
+              <div
+                key={`g-${day}-${hour}`}
+                className="border-b border-[var(--color-line)] bg-white/70"
+                style={{ height: ROW_H }}
+              />
+            ))}
+            {(itemsByDay.get(day) ?? []).map((slot) => {
+              const top = slot.startHour * ROW_H;
+              const height = Math.max(16, (slot.endHour - slot.startHour) * ROW_H - 2);
+              return (
+                <button
+                  key={slot.id}
+                  type="button"
+                  title={`${slot.customerName} · ${slot.service.name} · ${formatTimeRange(slot)}`}
+                  onClick={() => onSelect(slot.id)}
+                  className={`absolute left-0.5 right-0.5 z-[1] overflow-hidden rounded-md px-1 py-0.5 text-left shadow-sm ring-1 ring-black/10 transition hover:brightness-110 ${statusTone(slot.status)} ${
+                    selectedId === slot.id ? 'ring-2 ring-[var(--color-ink)]' : ''
+                  }`}
+                  style={{ top, height }}
+                >
+                  <span className="block truncate text-[9px] font-extrabold leading-tight">
+                    {formatTimeRange(slot)}
+                  </span>
+                  <span className="block truncate text-[8px] leading-tight opacity-95">
+                    {slot.customerName}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function PartnerScheduleBoard({ enabled }: Props) {
   const now = new Date();
@@ -84,7 +287,10 @@ export function PartnerScheduleBoard({ enabled }: Props) {
         <div>
           <h2 className="text-xl font-extrabold">Lịch thuê theo tháng</h2>
           <p className="mt-0.5 text-sm text-[var(--color-muted)]">
-            Mỗi cột = 1 ngày · 24 hàng giờ · khối = giờ thuê (theo thời lượng dịch vụ)
+            <span className="md:hidden">Danh sách theo ngày · chạm để xem chi tiết</span>
+            <span className="hidden md:inline">
+              Mỗi cột = 1 ngày · 24 hàng giờ · khối = giờ thuê (theo thời lượng dịch vụ)
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -108,114 +314,37 @@ export function PartnerScheduleBoard({ enabled }: Props) {
         </div>
       </div>
 
-      <div className="max-h-[min(70vh,720px)] overflow-auto">
-        <div
-          className="relative grid min-w-[720px]"
-          style={{
-            gridTemplateColumns: `52px repeat(${daysInMonth}, minmax(40px, 1fr))`,
-          }}
-        >
-          <div className="sticky top-0 left-0 z-30 border-b border-[var(--color-line)] bg-white px-1 py-2 text-center text-[10px] font-bold text-[var(--color-muted)]">
-            Giờ
-          </div>
-          {days.map((day) => {
-            const isToday =
-              day === now.getDate() &&
-              month === now.getMonth() + 1 &&
-              year === now.getFullYear();
-            return (
-              <div
-                key={`h-${day}`}
-                className={`sticky top-0 z-20 border-b border-l border-[var(--color-line)] py-2 text-center text-[11px] font-bold ${
-                  isToday
-                    ? 'bg-[var(--color-brand)]/10 text-[var(--color-brand-deep)]'
-                    : 'bg-[var(--color-canvas)] text-[var(--color-ink)]'
-                }`}
-              >
-                {day}
-              </div>
-            );
-          })}
-
-          {/* Cột nhãn giờ */}
-          <div className="relative" style={{ height: ROW_H * 24 }}>
-            {HOURS.map((hour) => (
-              <div
-                key={`label-${hour}`}
-                className="sticky left-0 z-10 flex items-start justify-end border-b border-[var(--color-line)] bg-white pr-1.5 pt-0.5 text-[10px] font-semibold text-[var(--color-muted)]"
-                style={{ height: ROW_H }}
-              >
-                {formatHourLabel(hour)}
-              </div>
-            ))}
-          </div>
-
-          {/* Cột ngày: lưới giờ + khối thuê absolute */}
-          {days.map((day) => (
-            <div
-              key={`day-${day}`}
-              className="relative border-l border-[var(--color-line)]"
-              style={{ height: ROW_H * 24 }}
-            >
-              {HOURS.map((hour) => (
-                <div
-                  key={`g-${day}-${hour}`}
-                  className="border-b border-[var(--color-line)] bg-white/70"
-                  style={{ height: ROW_H }}
-                />
-              ))}
-              {(itemsByDay.get(day) ?? []).map((slot) => {
-                const top = slot.startHour * ROW_H;
-                const height = Math.max(
-                  16,
-                  (slot.endHour - slot.startHour) * ROW_H - 2,
-                );
-                return (
-                  <button
-                    key={slot.id}
-                    type="button"
-                    title={`${slot.customerName} · ${slot.service.name} · ${formatTimeRange(slot)}`}
-                    onClick={() => setSelectedId(slot.id)}
-                    className={`absolute left-0.5 right-0.5 z-[1] overflow-hidden rounded-md px-1 py-0.5 text-left shadow-sm ring-1 ring-black/10 transition hover:brightness-110 ${statusTone(slot.status)} ${
-                      selectedId === slot.id ? 'ring-2 ring-[var(--color-ink)]' : ''
-                    }`}
-                    style={{ top, height }}
-                  >
-                    <span className="block truncate text-[9px] font-extrabold leading-tight">
-                      {formatTimeRange(slot)}
-                    </span>
-                    <span className="block truncate text-[8px] leading-tight opacity-95">
-                      {slot.customerName}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-
       {scheduleQuery.isLoading ? (
         <p className="px-5 py-3 text-sm text-[var(--color-muted)]">Đang tải lịch…</p>
-      ) : null}
+      ) : (
+        <>
+          <MobileAgendaList
+            year={year}
+            month={month}
+            itemsByDay={itemsByDay}
+            days={days}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+          <DesktopMonthGrid
+            daysInMonth={daysInMonth}
+            days={days}
+            now={now}
+            year={year}
+            month={month}
+            itemsByDay={itemsByDay}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        </>
+      )}
 
-      {selected ? (
-        <div className="border-t border-[var(--color-line)] bg-[var(--color-canvas)]/50 px-4 py-3 sm:px-5">
-          <p className="text-sm font-extrabold">
-            {selected.service.name} · {formatBookingStatus(selected.status)}
-          </p>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Khách thuê:{' '}
-            <strong className="text-[var(--color-ink)]">{selected.customerName}</strong>
-            {' · '}
-            {formatTimeRange(selected)} ({selected.durationHours} giờ)
-            {' · '}
-            {formatPrice(selected.totalPrice)}
-          </p>
-          <p className="mt-1 text-xs text-[var(--color-muted)]">{selected.address}</p>
-        </div>
-      ) : (scheduleQuery.data?.items.length ?? 0) === 0 && !scheduleQuery.isLoading ? (
-        <p className="px-5 py-3 text-sm text-[var(--color-muted)]">
+      {selected ? <ScheduleSelectedDetail selected={selected} /> : null}
+
+      {!selected &&
+      (scheduleQuery.data?.items.length ?? 0) === 0 &&
+      !scheduleQuery.isLoading ? (
+        <p className="hidden px-5 py-3 text-sm text-[var(--color-muted)] md:block">
           Tháng này chưa có đơn trên lịch. Nhận việc hoặc được thuê thẳng sẽ hiện giờ thuê tại đây.
         </p>
       ) : null}
