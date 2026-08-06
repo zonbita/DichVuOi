@@ -186,7 +186,7 @@ export function ChatbotPopup() {
           role="dialog"
           aria-modal="false"
           aria-labelledby={titleId}
-          className="pointer-events-auto flex h-[min(70vh,560px)] w-[min(100vw-2rem,380px)] flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl"
+          className="pointer-events-auto flex h-[min(70vh,560px)] w-[min(380px,calc(100dvw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl"
         >
           <header className="bg-[linear-gradient(135deg,var(--color-brand),var(--color-sea))] px-4 pt-3 text-white">
             <div className="flex items-start justify-between gap-3">

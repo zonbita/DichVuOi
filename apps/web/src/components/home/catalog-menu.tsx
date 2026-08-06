@@ -94,7 +94,7 @@ export function CatalogMenu({
   return (
     <>
       {/* Mobile: nút mở menu nhóm — luôn hiện dưới lg */}
-      <div className="mb-3 lg:hidden">
+      <div className="mb-3 min-w-0 max-w-full overflow-hidden lg:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -110,7 +110,7 @@ export function CatalogMenu({
         </button>
 
         {!pickerMode ? (
-          <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto pb-1">
+          <div className="no-scrollbar mt-2 flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1">
             {groups.slice(0, 10).map((group) => (
               <Link
                 key={group.id}

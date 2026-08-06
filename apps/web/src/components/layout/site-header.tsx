@@ -49,10 +49,10 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-[200] bg-[var(--color-navy)] text-white shadow-[0_2px_12px_rgba(5,45,71,0.25)]">
       <div className="relative z-20">
-        <div className="page-shell w-full max-w-none">
-          <div className="flex w-full flex-col">
-            <div className="flex w-full items-center gap-3 py-3 sm:gap-4 sm:py-3.5 lg:gap-5">
-              <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
+        <div className="page-shell w-full max-w-none overflow-x-clip">
+          <div className="flex w-full min-w-0 flex-col">
+            <div className="flex w-full min-w-0 items-center gap-2 py-3 sm:gap-4 sm:py-3.5 lg:gap-5">
+              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden sm:gap-2">
                 <Link to="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
                   <img
                     src={logo}
@@ -79,15 +79,19 @@ export function SiteHeader() {
                 />
               </div>
 
-              <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-2.5">
+              <div className="ml-auto flex min-w-0 shrink items-center gap-1.5 sm:gap-2.5">
                 {user ? (
                   <>
                     {user.role === 'ADMIN' || user.role === 'MODERATOR' ? (
                       <Link
                         to={user.role === 'MODERATOR' ? '/admin/support' : '/admin'}
-                        className="hidden items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-[15px] font-semibold transition hover:bg-white/10 sm:flex"
+                        aria-label={user.role === 'MODERATOR' ? 'Mod' : 'Admin'}
+                        className="flex items-center gap-2 rounded-full border border-white/20 px-2 py-1.5 text-[15px] font-semibold transition hover:bg-white/10 sm:px-3"
                       >
-                        {user.role === 'MODERATOR' ? 'Mod' : 'Admin'}
+                        <Icon name="shield" className="h-4 w-4 shrink-0" />
+                        <span className="hidden sm:inline">
+                          {user.role === 'MODERATOR' ? 'Mod' : 'Admin'}
+                        </span>
                       </Link>
                     ) : null}
                     <ModeSwitcher onDark />

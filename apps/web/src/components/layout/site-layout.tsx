@@ -35,7 +35,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <main
         className={
           isHome
-            ? 'flex min-h-0 flex-1 flex-col'
+            ? 'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip'
             : isUserDash
               ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
               : 'page-shell flex-1 py-6'

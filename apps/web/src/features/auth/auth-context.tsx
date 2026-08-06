@@ -13,6 +13,14 @@ import type { AuthResponse, AuthUser } from '../../types/auth';
 const TOKEN_KEY = 'dichvuoi_token';
 const MODE_KEY = 'dichvuoi_mode';
 
+/**
+ * Auth trên web — hai lớp khác nhau:
+ * - `user.role` (UserRole): quyền hệ thống từ DB/API/JWT — CUSTOMER | PARTNER | ADMIN | MODERATOR.
+ *   Lưu trong JWT payload; client chỉ giữ token, gọi `/api/auth/me` để lấy `user.role`.
+ * - `mode` (AppMode): chế độ UI khách thuê vs người làm — `hire` | `offer`.
+ *   Chỉ lưu localStorage `dichvuoi_mode`, không nằm trong JWT/DB.
+ * - `canOffer`: có `partnerProfile` mới bật mode `offer` (không chỉ dựa vào role PARTNER).
+ */
 export type AppMode = 'hire' | 'offer';
 
 type AuthContextValue = {

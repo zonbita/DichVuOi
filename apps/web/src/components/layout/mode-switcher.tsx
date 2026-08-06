@@ -55,13 +55,14 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
   }
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative min-w-0 shrink">
       <button
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={`Tài khoản: ${user.fullName}, ${current.label}`}
         onClick={() => setOpen((value) => !value)}
-        className={`group flex max-w-[14rem] items-center gap-2.5 rounded-full border py-1 pl-1 pr-2.5 text-left transition sm:max-w-[16rem] sm:pr-3 ${
+        className={`group flex min-w-0 items-center gap-1.5 rounded-full border py-1 pl-1 pr-1.5 text-left transition sm:max-w-[16rem] sm:gap-2.5 sm:pr-3 ${
           onDark
             ? open
               ? 'border-white/30 bg-white/15'
@@ -78,7 +79,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
           email={user.email}
           size="md"
         />
-        <span className="min-w-0 flex-1 py-0.5">
+        <span className="hidden min-w-0 flex-1 py-0.5 sm:block">
           <span
             className={`block truncate text-sm font-bold leading-tight tracking-tight ${
               onDark ? 'text-white' : 'text-[var(--color-ink)]'
@@ -95,7 +96,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
           </span>
         </span>
         <span
-          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
+          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition sm:h-6 sm:w-6 ${
             onDark
               ? open
                 ? 'rotate-180 bg-white/20 text-white'
@@ -112,7 +113,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
       {open ? (
         <div
           role="listbox"
-          className="absolute right-0 z-[9990] mt-2 w-[280px] overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-2xl"
+          className="absolute right-0 z-[9990] mt-2 w-[min(280px,calc(100dvw-2rem))] overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-2xl"
         >
           <div className="flex items-center gap-3 border-b border-[var(--color-line)] bg-[var(--color-canvas)] px-3.5 py-3">
             <UserAvatar

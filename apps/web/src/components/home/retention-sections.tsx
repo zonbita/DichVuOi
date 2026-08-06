@@ -18,7 +18,7 @@ function SectionShell({
 }) {
   return (
     <section className="page-shell mt-10">
-      <div className="section-container">
+      <div className="section-container min-w-0">
         <div className="section-header-bar mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5 sm:px-5 sm:py-4">
           <h2 className="text-xl font-bold tracking-tight text-[var(--color-navy)] sm:text-2xl">
             {title}

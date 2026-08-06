@@ -15,9 +15,11 @@ const perks: Array<{ icon: IconName; title: string; body: string }> = [
 /** Khối marketplace đầu trang — sidebar + banner + benefit + tag nav. */
 export function HeroSection() {
   return (
-    <section className="page-shell pt-5 pb-1">
-      <div className="section-container grid gap-4 overflow-visible lg:grid-cols-[360px_1fr] lg:gap-5">
-        <CatalogMenu />
+    <section className="page-shell min-w-0 overflow-x-clip pt-5 pb-1">
+      <div className="section-container grid min-w-0 gap-4 overflow-x-clip lg:grid-cols-[360px_1fr] lg:gap-5 lg:overflow-visible">
+        <div className="min-w-0 lg:contents">
+          <CatalogMenu />
+        </div>
 
         <div className="animate-fade-in min-w-0">
           <HeroBanner />

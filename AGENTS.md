@@ -16,3 +16,14 @@ Chi tiết: `.cursor/skills/analyze-build-verify/SKILL.md`
 - API: `apps/api` (NestJS, Prisma, Socket.IO)
 - Section / chrome: **1280px** (`.chrome-container` / `.section-container`)
 - Dashboard khách thuê & người làm: `UserDashboardLayout` (cột giống admin)
+
+## Auth & role (web)
+
+| Khái niệm | Nguồn | Giá trị | Ghi chú |
+|-----------|--------|---------|---------|
+| `user.role` | DB `User.role` → JWT → `GET /api/auth/me` | `CUSTOMER` \| `PARTNER` \| `ADMIN` \| `MODERATOR` | Quyền hệ thống (admin, guard API) |
+| `mode` | `localStorage` `dichvuoi_mode` | `hire` \| `offer` | UI khách thuê / người làm, **không** lưu DB |
+| `canOffer` | `user.partnerProfile != null` | boolean | Có hồ sơ người làm mới chuyển mode `offer` |
+| Token | `localStorage` `dichvuoi_token` | JWT string | Client không parse role trực tiếp |
+
+Chi tiết: `apps/web/src/features/auth/auth-context.tsx`

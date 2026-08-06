@@ -17,7 +17,7 @@ export function ScrollRail({
   }
 
   return (
-    <div className="group/rail relative overflow-hidden">
+    <div className="group/rail relative min-w-0 max-w-full overflow-hidden">
       <div ref={trackRef} className="no-scrollbar flex gap-3.5 overflow-x-auto pb-1">
         {children}
       </div>

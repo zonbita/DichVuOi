@@ -164,7 +164,7 @@ export function HomePage() {
   const hasCatalog = groups.length > 0 || services.length > 0;
 
   return (
-    <div className="pb-4">
+    <div className="min-w-0 overflow-x-clip pb-4">
       <HeroSection />
 
       <RebookSection />
@@ -191,8 +191,8 @@ export function HomePage() {
       )}
 
       <section className="page-shell mt-10">
-        <div className="section-container">
-          <div className="rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-brand-soft)] p-4 shadow-[var(--shadow-card)] sm:p-5">
+        <div className="section-container min-w-0">
+          <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-brand-soft)] p-4 shadow-[var(--shadow-card)] sm:p-5">
             <SectionHeader
               title="Deal dịch vụ hôm nay"
               action={<ViewAllLink showChevron={false} />}
@@ -215,10 +215,10 @@ export function HomePage() {
       <HomeOpenJobsSection />
 
       <section className="page-shell mt-10">
-        <div className="section-container">
+        <div className="section-container min-w-0">
           <SectionHeader title="Dịch vụ nổi bật" action={<ViewAllLink />} />
 
-          <div className="relative mb-5">
+          <div className="relative mb-5 min-w-0 max-w-full overflow-hidden">
             <div
               ref={tabRailRef}
               className="no-scrollbar flex gap-2.5 overflow-x-auto scroll-smooth pr-12 pb-0.5"
@@ -269,8 +269,8 @@ export function HomePage() {
       </section>
 
       <section className="page-shell mt-10">
-        <div className="section-container">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 rounded-[14px] border border-[var(--color-line)] bg-white px-6 py-5 shadow-[var(--shadow-card)]">
+        <div className="section-container min-w-0">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-4 rounded-[14px] border border-[var(--color-line)] bg-white px-4 py-5 shadow-[var(--shadow-card)] sm:px-6">
             {trustPoints.map((point) => (
               <div key={point.label} className="flex items-center gap-3">
                 <span className="icon-tile h-11 w-11">
@@ -284,7 +284,7 @@ export function HomePage() {
                 </span>
               </div>
             ))}
-            <PaymentPartnerBadges className="ml-auto" />
+            <PaymentPartnerBadges className="w-full basis-full sm:ml-auto sm:w-auto sm:basis-auto" />
           </div>
         </div>
       </section>
