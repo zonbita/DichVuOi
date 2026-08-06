@@ -104,7 +104,7 @@ export function CustomerBookingDetailPage() {
     booking.paymentStatus === 'HELD';
 
   return (
-    <div className="glass-page -mx-4 flex flex-col gap-4 rounded-[24px] px-4 py-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <div className="flex flex-col gap-4 pb-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
@@ -126,7 +126,7 @@ export function CustomerBookingDetailPage() {
         </Link>
       </div>
 
-      <div className="glass-card overflow-hidden">
+      <div className="overflow-hidden">
         <CustomerBookingCard
           booking={booking}
           currentUserId={user.id}

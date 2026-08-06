@@ -65,8 +65,7 @@ function statusBadgeClass(status: string) {
   }
 }
 
-const surface =
-  'overflow-hidden rounded-[20px] border border-[#DCE4EF]/70 bg-white/85 shadow-[0_8px_28px_rgba(15,39,71,0.06)] backdrop-blur-md';
+const surface = 'glass-card overflow-hidden';
 
 export function CustomerBookingCard({
   booking,
@@ -133,7 +132,7 @@ export function CustomerBookingCard({
     <article
       className={`${surface} ${showChat ? 'cursor-pointer' : ''} ${
         unreadCount > 0
-          ? 'ring-2 ring-[#DC5B5B] ring-offset-2 ring-offset-[#F4F7FB]'
+          ? 'ring-2 ring-[#DC5B5B] ring-offset-2 ring-offset-transparent'
           : ''
       }`}
       onClick={onCardClick}
@@ -161,7 +160,7 @@ export function CustomerBookingCard({
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 to={`/don-cua-toi/don/${booking.id}`}
-                className="text-2xl font-bold tracking-tight text-[#0F2747] hover:text-[#2563EB] sm:text-[26px]"
+                className="text-2xl font-bold tracking-tight text-[#0F2747] hover:text-[var(--color-brand-deep)] sm:text-[26px]"
               >
                 {booking.service.name}
               </Link>
@@ -233,16 +232,11 @@ export function CustomerBookingCard({
         </div>
 
         {/* Payment summary */}
-        <div className="flex w-full shrink-0 flex-col justify-center gap-4 border-t border-[#DCE4EF] pt-5 lg:w-[240px] lg:border-t-0 lg:border-l lg:pl-7 lg:pt-0">
+        <div className="flex w-full shrink-0 flex-col justify-center gap-4 border-t border-white/50 pt-5 lg:w-[240px] lg:border-t-0 lg:border-l lg:border-white/50 lg:pl-7 lg:pt-0">
           <div className="flex flex-col items-center gap-2.5 lg:items-start">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFF7E8] text-[#C98518]">
-                <Icon name="wallet" className="h-5 w-5" />
-              </span>
-              <p className="text-2xl font-bold tracking-tight text-[#C98518]">
-                {formatPrice(booking.totalPrice)}
-              </p>
-            </div>
+            <p className="text-2xl font-bold tracking-tight text-[#0F2747]">
+              {formatPrice(booking.totalPrice)}
+            </p>
 
             {booking.paymentStatus === 'REFUNDED' ? (
               <p className="inline-flex items-center gap-1.5 rounded-full bg-[#ECFDF5] px-2.5 py-1 text-[11px] font-semibold text-[#047857]">
@@ -268,15 +262,21 @@ export function CustomerBookingCard({
                 type="button"
                 onClick={() => onPay(booking.id)}
                 disabled={paying}
-                className="h-12 w-full rounded-xl bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-50"
+                className="btn-primary h-11 w-full px-4 text-sm disabled:opacity-50"
               >
-                Đặt cọc từ ví VNĐ
+                {paying ? 'Đang đặt cọc…' : 'Đặt cọc'}
               </button>
             ) : null}
+            <Link
+              to={`/don-cua-toi/don/${booking.id}`}
+              className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-[var(--color-brand)]/35 bg-white/50 px-4 text-sm font-semibold text-[var(--color-brand-deep)] transition hover:bg-[var(--color-brand-soft)]/80"
+            >
+              Chi tiết
+            </Link>
             {booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED' ? (
               <Link
                 to="/don-cua-toi/vi"
-                className="text-center text-xs font-semibold text-[#2563EB] hover:underline"
+                className="text-center text-xs font-semibold text-[var(--color-brand-deep)] hover:underline"
               >
                 Nạp ví nếu thiếu số dư
               </Link>
@@ -288,12 +288,12 @@ export function CustomerBookingCard({
                   type="button"
                   onClick={() => onConfirm(booking.id, incompleteCount > 0)}
                   disabled={confirming}
-                  className="h-12 w-full rounded-xl bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-50"
+                  className="btn-primary h-11 w-full px-4 text-sm disabled:opacity-50"
                 >
                   Đồng ý 100%
                 </button>
                 {onProposeSettlement ? (
-                  <div className="space-y-1.5 rounded-xl border border-[#DCE4EF] bg-[#F8FAFC] p-2.5">
+                  <div className="space-y-1.5 rounded-xl border border-white/60 bg-white/40 p-2.5 backdrop-blur-sm">
                     <p className="text-[11px] font-semibold text-[#64748B]">
                       Nghiệm thu theo % (cần 2 bên đồng ý)
                     </p>
@@ -320,7 +320,7 @@ export function CustomerBookingCard({
                         onClick={() =>
                           onProposeSettlement(booking.id, settlementPercentDraft)
                         }
-                        className="rounded-lg border border-[#BFDBFE] bg-white px-3 py-2 text-xs font-semibold text-[#2563EB] hover:bg-[#EFF6FF] disabled:opacity-50"
+                        className="rounded-lg border border-[var(--color-brand)]/30 bg-white/70 px-3 py-2 text-xs font-semibold text-[var(--color-brand-deep)] hover:bg-[var(--color-brand-soft)] disabled:opacity-50"
                       >
                         Gửi đề xuất
                       </button>
@@ -339,7 +339,7 @@ export function CustomerBookingCard({
                         type="button"
                         disabled={settlementPending}
                         onClick={() => onApproveSettlement(booking.id)}
-                        className="w-full rounded-lg bg-[#0F2747] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0B1C33] disabled:opacity-50"
+                        className="w-full rounded-lg bg-[var(--color-navy)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--color-navy-deep)] disabled:opacity-50"
                       >
                         Đồng ý mức {booking.settlementPercent}%
                       </button>
@@ -376,7 +376,7 @@ export function CustomerBookingCard({
                   onCancel(booking.id);
                 }}
                 disabled={cancelling}
-                className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl border border-[#DC5B5B] bg-white px-4 text-sm font-semibold text-[#DC5B5B] transition hover:bg-[#FFF5F5] disabled:opacity-50"
+                className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[#DC5B5B]/70 bg-white/60 px-4 text-sm font-semibold text-[#DC5B5B] transition hover:bg-[#FFF5F5] disabled:opacity-50"
               >
                 <span aria-hidden className="text-base leading-none">
                   ×
@@ -411,7 +411,7 @@ export function CustomerBookingCard({
             {booking.status === 'COMPLETED' && booking.partnerId ? (
               <Link
                 to={`/dich-vu/${booking.service.slug}?partner=${booking.partnerId}`}
-                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#2563EB] px-4 text-sm font-semibold text-white transition hover:bg-[#1D4ED8]"
+                className="btn-primary inline-flex h-11 w-full items-center justify-center px-4 text-sm"
               >
                 Thuê lại
               </Link>
@@ -422,7 +422,7 @@ export function CustomerBookingCard({
             booking.paymentStatus === 'REFUNDED' ? (
               <Link
                 to="/don-cua-toi/khieu-nai"
-                className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl border border-[#BFDBFE] bg-white px-3 text-sm font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF]"
+                className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--color-brand)]/30 bg-white/50 px-3 text-sm font-semibold text-[var(--color-brand-deep)] transition hover:bg-[var(--color-brand-soft)]/80"
               >
                 <Icon name="shield" className="h-3.5 w-3.5" />
                 Khiếu nại đơn
@@ -443,7 +443,7 @@ export function CustomerBookingCard({
       ) : null}
       {showChat ? (
         <div className="border-t border-[#DCE4EF] px-6 py-3 sm:px-8">
-          <p className="text-xs font-semibold text-[#2563EB]">
+          <p className="text-xs font-semibold text-[var(--color-brand-deep)]">
             {unreadCount > 0
               ? `${unreadCount > 9 ? '9+' : unreadCount} tin mới — nhấp để mở chat →`
               : 'Nhấp vào thẻ để mở chat đơn →'}

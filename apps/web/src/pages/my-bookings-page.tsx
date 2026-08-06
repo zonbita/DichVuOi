@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate } from 'react-router-dom';
 import { CustomerBookingCard } from '../components/customer/customer-booking-card';
+import { Icon } from '../components/ui/icon';
+import type { IconName } from '../components/ui/icon';
 import { useAuth } from '../features/auth/auth-context';
 import { useCustomerRealtime } from '../hooks/use-customer-realtime';
 import { api, formatPrice } from '../services/api';
@@ -159,8 +161,10 @@ export function MyBookingsPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-extrabold sm:text-3xl">Đơn thuê của tôi</h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--glass-ink,#172033)] sm:text-3xl">
+              Đơn thuê của tôi
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-1 text-[11px] font-bold text-emerald-700 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -175,41 +179,84 @@ export function MyBookingsPage() {
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Tổng đơn
-          </p>
-          <p className="mt-1 text-2xl font-extrabold">{stats.total}</p>
-        </div>
-        <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Cần đặt cọc
-          </p>
-          <p className="mt-1 text-2xl font-extrabold text-amber-700">{stats.waitingPay}</p>
-        </div>
-        <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Đang thực hiện
-          </p>
-          <p className="mt-1 text-2xl font-extrabold text-sky-700">{stats.active}</p>
-          {stats.awaitingPartner > 0 ? (
-            <p className="mt-1 text-xs text-[var(--color-muted)]">
-              {stats.awaitingPartner} đơn chờ người làm
-            </p>
-          ) : null}
-        </div>
-        <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Đã chi (hoàn thành)
-          </p>
-          <p className="mt-1 text-2xl font-extrabold text-[var(--color-sale)]">
-            {formatPrice(stats.spent)}
-          </p>
-          <p className="mt-1 text-xs text-[var(--color-muted)]">{stats.completed} đơn xong</p>
-        </div>
+        {(
+          [
+            {
+              key: 'total',
+              label: 'Tổng đơn',
+              value: String(stats.total),
+              icon: 'receipt' as IconName,
+              iconClass: 'bg-sky-100/90 text-sky-600',
+              tint: '',
+              valueClass: 'text-[var(--glass-ink,#172033)]',
+              labelClass: 'text-[var(--glass-muted,#7c8799)]',
+              hint: null as string | null,
+            },
+            {
+              key: 'pay',
+              label: 'Cần đặt cọc',
+              value: String(stats.waitingPay),
+              icon: 'wallet' as IconName,
+              iconClass: 'bg-amber-100/90 text-amber-600',
+              tint: 'bg-gradient-to-br from-amber-50/70 to-white/40',
+              valueClass: 'text-amber-700',
+              labelClass: 'text-amber-700/75',
+              hint: null,
+            },
+            {
+              key: 'active',
+              label: 'Đang thực hiện',
+              value: String(stats.active),
+              icon: 'clock' as IconName,
+              iconClass: 'bg-sky-100/90 text-sky-600',
+              tint: 'bg-gradient-to-br from-sky-50/70 to-white/40',
+              valueClass: 'text-sky-700',
+              labelClass: 'text-sky-700/75',
+              hint:
+                stats.awaitingPartner > 0
+                  ? `${stats.awaitingPartner} đơn chờ người làm`
+                  : null,
+            },
+            {
+              key: 'spent',
+              label: 'Đã chi (hoàn thành)',
+              value: formatPrice(stats.spent),
+              icon: 'bank' as IconName,
+              iconClass: 'bg-[var(--color-brand-soft)] text-[var(--color-brand)]',
+              tint: 'bg-gradient-to-br from-[var(--color-brand-soft)]/80 to-white/40',
+              valueClass: 'text-[var(--color-brand-deep)]',
+              labelClass: 'text-[var(--color-brand-deep)]/80',
+              hint: `${stats.completed} đơn xong`,
+            },
+          ] as const
+        ).map((stat) => (
+          <div
+            key={stat.key}
+            className={`glass-card flex gap-3 p-4 transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(23,32,51,0.08)] ${stat.tint}`}
+          >
+            <span
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${stat.iconClass}`}
+            >
+              <Icon name={stat.icon} className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p
+                className={`text-[11px] font-semibold uppercase tracking-wide ${stat.labelClass}`}
+              >
+                {stat.label}
+              </p>
+              <p className={`mt-0.5 truncate text-2xl font-extrabold ${stat.valueClass}`}>
+                {stat.value}
+              </p>
+              {stat.hint ? (
+                <p className="mt-0.5 text-xs text-[var(--glass-muted,#7c8799)]">{stat.hint}</p>
+              ) : null}
+            </div>
+          </div>
+        ))}
       </section>
 
-      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+      <div className="flex flex-wrap items-center gap-0.5 rounded-2xl border border-white/55 bg-white/40 p-1 backdrop-blur-md sm:gap-1">
         {TABS.map((item) => {
           const count = tabCounts[item.id];
           const activeTab = tab === item.id;
@@ -218,16 +265,16 @@ export function MyBookingsPage() {
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`px-3 py-1.5 text-sm font-bold transition ${
+              className={`relative rounded-xl px-3 py-2 text-sm font-bold transition-colors duration-200 ${
                 activeTab
-                  ? 'rounded-full bg-[var(--color-ink)] text-white'
-                  : 'text-[var(--color-ink)] hover:text-[var(--color-brand-deep)]'
+                  ? 'text-[var(--color-navy)] after:absolute after:inset-x-2.5 after:bottom-1 after:h-[3px] after:rounded-full after:bg-[var(--color-brand)]'
+                  : 'text-[var(--color-muted)] hover:text-[var(--color-brand-deep)]'
               }`}
             >
               {item.label}
               <span
                 className={`ml-1.5 text-xs font-semibold ${
-                  activeTab ? 'text-white/80' : 'text-[var(--color-muted)]'
+                  activeTab ? 'text-[var(--color-brand)]' : 'text-[var(--color-muted)]'
                 }`}
               >
                 {count}
@@ -237,7 +284,9 @@ export function MyBookingsPage() {
         })}
       </div>
 
-      {bookingsQuery.isLoading ? <p>Đang tải đơn...</p> : null}
+      {bookingsQuery.isLoading ? (
+        <p className="text-[var(--glass-muted,#7c8799)]">Đang tải đơn...</p>
+      ) : null}
       {bookingsQuery.isError ? (
         <p className="text-red-600">Không tải được danh sách đơn.</p>
       ) : null}
@@ -286,7 +335,7 @@ export function MyBookingsPage() {
       </div>
 
       {!bookingsQuery.isLoading && filtered.length === 0 ? (
-        <p className="border border-dashed border-[var(--color-line)] bg-white px-4 py-10 text-center text-[var(--color-muted)]">
+        <p className="glass-card border-dashed px-4 py-10 text-center text-[var(--glass-muted,#7c8799)]">
           {bookings.length === 0 ? (
             <>
               Chưa có đơn nào.{' '}

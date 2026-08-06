@@ -42,8 +42,8 @@ const hireNav: NavItem[] = [
   {
     to: '/don-cua-toi/vi',
     label: 'Ví VNĐ',
-    icon: 'wallet',
-    iconClass: 'text-emerald-600',
+    icon: 'card',
+    iconClass: 'text-[var(--color-brand)]',
   },
   {
     to: '/don-cua-toi/rut-tien',
@@ -253,11 +253,11 @@ export function UserDashboardLayout() {
   }
 
   const sidebar = (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 px-4 py-4">
-        <div className="rounded-[20px] bg-white p-4 shadow-[0_10px_28px_rgba(0,156,149,0.1)]">
+    <div className="dash-sidebar">
+      <div className="shrink-0 p-3.5 pb-2">
+        <div className="p-4">
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+            <span className="dash-profile-avatar">
               <Icon name="user" className="h-6 w-6" />
             </span>
             <div className="min-w-0">
@@ -271,8 +271,8 @@ export function UserDashboardLayout() {
           </div>
           {user ? (
             <>
-              <div className="my-3.5 h-px bg-[var(--color-line)]" />
-              <p className="flex items-center gap-2 text-sm font-semibold text-[#F59E0B]">
+              <div className="my-3.5 h-px bg-[var(--color-line)]/80" />
+              <p className="flex items-center gap-2 text-sm font-bold text-[#F59E0B]">
                 <Icon name="wallet" className="h-4 w-4 shrink-0" />
                 Ví: {formatPrice(user.walletBalance ?? 0)}
               </p>
@@ -281,7 +281,7 @@ export function UserDashboardLayout() {
         </div>
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-0.5 overflow-hidden pb-2">
+      <nav className="dash-nav">
         {navItems.map((item) => {
           const active = navActive(pathname, item);
           const count = badgeValue(item.badge);
@@ -291,23 +291,21 @@ export function UserDashboardLayout() {
               to={item.to}
               end={item.end}
               onClick={() => setMobileOpen(false)}
-              className={`admin-nav-link ${active ? 'is-active' : ''}`}
+              className={`dash-nav-link ${active ? 'is-active' : ''}`}
             >
               <Icon
                 name={item.icon}
                 className={`h-[18px] w-[18px] shrink-0 ${item.iconClass}`}
               />
               <span>{item.label}</span>
-              {count > 0 ? (
-                <span className="admin-badge admin-badge-amber ml-auto">{count}</span>
-              ) : null}
+              {count > 0 ? <span className="dash-nav-badge">{count}</span> : null}
             </NavLink>
           );
         })}
       </nav>
 
-      <div className="shrink-0 border-t border-[var(--admin-border)] p-2">
-        <button type="button" onClick={switchRole} className="admin-nav-link w-full text-left">
+      <div className="dash-sidebar-foot">
+        <button type="button" onClick={switchRole} className="dash-nav-link w-full text-left">
           <Icon
             name="swap"
             className="h-[18px] w-[18px] shrink-0 text-[var(--color-brand)]"
@@ -319,8 +317,8 @@ export function UserDashboardLayout() {
   );
 
   return (
-    <div className="admin-shell flex h-full min-h-0 w-full flex-1 overflow-hidden !min-h-0">
-      <aside className="hidden h-full w-[248px] shrink-0 border-r border-[var(--admin-border)] bg-white lg:block">
+    <div className="admin-shell glass-page flex h-full min-h-0 w-full flex-1 overflow-hidden !min-h-0">
+      <aside className="hidden h-full w-[272px] shrink-0 p-3 pr-1 lg:block">
         {sidebar}
       </aside>
 
@@ -332,18 +330,18 @@ export function UserDashboardLayout() {
             className="absolute inset-0 bg-black/35"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex h-full w-[280px] flex-col bg-white shadow-xl">
+          <aside className="absolute inset-y-0 left-0 flex h-full w-[300px] flex-col p-3">
             {sidebar}
           </aside>
         </div>
       ) : null}
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex shrink-0 items-center gap-3 border-b border-[var(--admin-border)] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+        <header className="flex shrink-0 items-center gap-3 border-b border-white/50 bg-white/70 px-4 py-3 backdrop-blur-md lg:hidden">
           <button
             type="button"
             aria-label="Mở menu"
-            className="rounded-xl border border-[var(--admin-border)] p-2"
+            className="rounded-xl border border-white/70 bg-white/80 p-2 shadow-sm"
             onClick={() => setMobileOpen(true)}
           >
             <Icon name="menu" className="h-5 w-5" />

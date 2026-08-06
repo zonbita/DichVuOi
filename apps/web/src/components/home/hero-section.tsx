@@ -9,7 +9,6 @@ const perks: Array<{ icon: IconName; title: string; body: string }> = [
   { icon: 'calendar', title: 'Đặt lịch dễ dàng', body: 'Chọn giờ phù hợp' },
   { icon: 'shield', title: 'Thợ giỏi — uy tín', body: 'Hồ sơ & cấp độ rõ ràng' },
   { icon: 'headset', title: 'An tâm bảo hành', body: 'Hỗ trợ sau dịch vụ' },
-  { icon: 'card', title: 'Thanh toán tiện lợi', body: 'Tiền mặt hoặc online' },
 ];
 
 /** Khối marketplace đầu trang — sidebar + banner + benefit + tag nav. */
@@ -24,7 +23,7 @@ export function HeroSection() {
         <div className="animate-fade-in min-w-0">
           <HeroBanner />
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-4">
             {perks.map((perk) => (
               <BenefitCard key={perk.title} {...perk} />
             ))}
