@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { OpenJobCard } from '../common/open-job-card';
 import { Icon } from '../ui/icon';
+import { SectionHeaderBar, SectionHeaderViewAll } from './section-header-bar';
 
 export function HomeOpenJobsSection() {
   const [page, setPage] = useState(1);
@@ -24,30 +25,20 @@ export function HomeOpenJobsSection() {
   return (
     <section className="page-shell mt-10">
       <div className="section-container min-w-0">
-        <div className="section-header-bar mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5 sm:px-5 sm:py-4">
-          <h2 className="text-xl font-bold tracking-tight text-[var(--color-navy)] sm:text-2xl">
-            Việc mới đăng tuyển
-          </h2>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+        <SectionHeaderBar
+          icon="briefcase"
+          title="Việc mới đăng tuyển"
+          badge={
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold text-white ring-1 ring-white/25">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              Live
             </span>
-            Live
-          </span>
-          <div className="ml-auto">
-            <Link
-              to="/doi-tac/don-thue"
-              className="group flex items-center gap-1 text-[15px] font-semibold text-[var(--color-brand)] transition hover:text-[var(--color-navy)]"
-            >
-              Xem tất cả
-              <Icon
-                name="chevronRight"
-                className="h-4 w-4 transition group-hover:translate-x-0.5"
-              />
-            </Link>
-          </div>
-        </div>
+          }
+          action={<SectionHeaderViewAll to="/doi-tac/don-thue" />}
+        />
 
         {openJobsQuery.isLoading ? (
           <p className="text-base text-[var(--color-muted)]">Đang tải việc mới...</p>

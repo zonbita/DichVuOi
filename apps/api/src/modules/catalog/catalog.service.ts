@@ -284,6 +284,19 @@ export class CatalogService {
       return {
         id: offering.id,
         price: offering.price ?? service.basePrice,
+        priceMin:
+          offering.priceMin && offering.priceMin > 0
+            ? offering.priceMin
+            : offering.price ?? service.basePrice,
+        priceMax:
+          offering.priceMax && offering.priceMax > 0
+            ? Math.max(
+                offering.priceMax,
+                offering.priceMin && offering.priceMin > 0
+                  ? offering.priceMin
+                  : offering.price ?? service.basePrice,
+              )
+            : offering.price ?? service.basePrice,
         headline: offering.headline,
         experienceYears: offering.experienceYears,
         hoursWorked: minutesToWorkHours(mins),

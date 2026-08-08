@@ -1,9 +1,9 @@
 @import 'tailwindcss';
 
 @theme {
-  --container-page: 1280px;
-  --container-chrome: 1280px;
-  --container-section: 1280px;
+  --container-page: 1396px;
+  --container-chrome: 1396px;
+  --container-section: 1396px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 14px;
@@ -38,9 +38,9 @@
   --scrollbar-thumb: rgba(73, 119, 232, 0.38);
   --scrollbar-thumb-hover: rgba(0, 156, 149, 0.55);
 
-  --container-page: 1280px;
-  --container-chrome: 1280px;
-  --container-section: 1280px;
+  --container-page: 1396px;
+  --container-chrome: 1396px;
+  --container-section: 1396px;
 
   font-family: 'Be Vietnam Pro', Inter, Manrope, 'Segoe UI', sans-serif;
   font-size: 16px;
@@ -269,23 +269,24 @@ select {
 }
 
 /**
- * Mega-menu — shell glass-page + panel frosted (khớp dashboard).
+ * Mega-menu — soft-3D glass (radial glow + squircle + bóng mềm).
  */
 .mega-menu-shell {
   --glass-ink: #172033;
   --glass-muted: #7c8799;
   --glass-accent: #4977e8;
   --glass-line: rgba(23, 32, 51, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
   background:
-    radial-gradient(ellipse 90% 55% at 88% -8%, rgba(125, 211, 252, 0.28), transparent 58%),
-    radial-gradient(ellipse 75% 50% at 8% 0%, rgba(73, 119, 232, 0.14), transparent 52%),
-    radial-gradient(ellipse 55% 40% at 55% 105%, rgba(0, 156, 149, 0.08), transparent 55%),
-    rgba(232, 240, 248, 0.92);
+    radial-gradient(ellipse 120% 90% at 18% -20%, rgba(125, 211, 252, 0.42) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 92% 110%, rgba(0, 156, 149, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 55% at 50% 40%, rgba(255, 255, 255, 0.72) 0%, rgba(232, 240, 248, 0.94) 100%);
   box-shadow:
-    0 18px 48px rgba(15, 39, 71, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    0 14px 36px rgba(5, 45, 71, 0.14),
+    0 4px 12px rgba(5, 45, 71, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -10px 22px rgba(15, 39, 71, 0.04);
   color: var(--glass-ink);
   backdrop-filter: blur(20px) saturate(1.2);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
@@ -300,22 +301,85 @@ select {
 }
 
 .mega-menu-panel {
+  border-radius: 0 22px 22px 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.88) 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.9) 100%);
   box-shadow:
     inset 1px 0 0 rgba(255, 255, 255, 0.95),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 14px 36px rgba(5, 45, 71, 0.1);
   backdrop-filter: blur(22px) saturate(1.25);
   -webkit-backdrop-filter: blur(22px) saturate(1.25);
   color: var(--glass-ink, #172033);
 }
 
 .mega-menu-item-active {
-  background: rgba(255, 255, 255, 0.92);
+  background:
+    radial-gradient(ellipse 120% 140% at 20% 0%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
   border: 1px solid rgba(255, 255, 255, 0.98);
+  border-radius: 14px;
   box-shadow:
-    0 6px 18px rgba(15, 39, 71, 0.06),
+    0 6px 18px rgba(5, 45, 71, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.hero-banner {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 14px 40px rgba(5, 45, 71, 0.16),
+    0 4px 12px rgba(5, 45, 71, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.hero-banner__tag {
+  background:
+    radial-gradient(circle at 30% 20%, #2dd4bf 0%, var(--color-brand) 55%, var(--color-brand-deep) 100%);
+  box-shadow:
+    0 4px 12px rgba(0, 122, 116, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.hero-banner__cta {
+  background:
+    radial-gradient(circle at 30% 20%, #2dd4bf 0%, var(--color-brand) 55%, var(--color-brand-deep) 100%);
+  box-shadow:
+    0 6px 18px rgba(0, 122, 116, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    background var(--transition-ui),
+    transform var(--transition-ui),
+    box-shadow var(--transition-ui),
+    filter var(--transition-ui);
+}
+
+.hero-banner__cta:hover {
+  filter: brightness(1.05);
+  box-shadow:
+    0 8px 22px rgba(0, 122, 116, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.hero-banner__nav {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    0 6px 18px rgba(5, 45, 71, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.hero-banner__tile {
+  border-radius: 22%;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.06) 100%);
+  box-shadow:
+    0 10px 28px rgba(5, 45, 71, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -8px 16px rgba(5, 45, 71, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .icon-tile {
@@ -709,46 +773,85 @@ select {
   animation-play-state: paused;
 }
 
-.hero-banner__tag {
-  background: var(--color-brand);
-  box-shadow: 0 2px 8px rgba(7, 59, 92, 0.2);
-}
-
-.hero-banner__cta {
-  background: var(--color-brand);
-  box-shadow: 0 4px 16px rgba(0, 156, 149, 0.28);
-  transition:
-    background var(--transition-ui),
-    transform var(--transition-ui),
-    box-shadow var(--transition-ui);
-}
-
-.hero-banner__cta:hover {
-  background: var(--color-brand-deep);
-  box-shadow: var(--shadow-hover);
-}
-
+/**
+ * Soft-3D navy chrome — section header trang chủ + thanh «Bạn cần hỗ trợ?»
+ * Radial navy (màu cũ) + bóng mềm + highlight + squircle icon. Xem DESIGN.md.
+ */
+.soft-3d-navy,
 .section-header-bar {
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  border-radius: 16px;
-  background: linear-gradient(
-    105deg,
-    rgba(247, 243, 232, 0.88) 0%,
-    rgba(255, 255, 255, 0.58) 48%,
-    rgba(232, 240, 248, 0.72) 100%
-  );
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #0a5678 0%, #073b5c 42%, #052d47 78%, #041f32 100%);
   box-shadow:
-    0 10px 28px rgba(15, 39, 71, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    0 14px 36px rgba(5, 45, 71, 0.34),
+    0 4px 12px rgba(5, 45, 71, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(2, 20, 32, 0.4);
 }
 
-.section-header-bar > h2 {
+.soft-3d-navy__highlight,
+.section-header-bar__highlight {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 4rem;
+  background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
+}
+
+.section-header-bar > h2,
+.section-header-bar .section-header-bar__title {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #fff;
+}
+
+.section-header-bar__sub {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.section-header-bar__action {
+  color: #fff;
+}
+
+.section-header-bar__action:hover {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.soft-3d-squircle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 12px rgba(5, 45, 71, 0.28);
+  color: #fff;
+}
+
+.soft-3d-squircle--lg {
+  height: 3rem;
+  width: 3rem;
+  border-radius: 14px;
+}
+
+.soft-3d-squircle--md {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.soft-3d-squircle--sm {
+  height: 2.25rem;
+  width: 2.25rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -69,14 +69,14 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
         aria-expanded={open}
         aria-label={`Tài khoản: ${user.fullName}, ${current.label}`}
         onClick={() => setOpen((value) => !value)}
-        className={`group flex min-w-0 items-center gap-1.5 rounded-full border py-1 pl-1 pr-1.5 text-left transition sm:max-w-[16rem] sm:gap-2.5 sm:pr-3 ${
+        className={`group flex min-w-0 items-center gap-1.5 border py-1 pl-1 pr-1.5 text-left transition sm:max-w-[16rem] sm:gap-2.5 sm:pr-3 ${
           onDark
             ? open
-              ? 'border-white/30 bg-white/15'
-              : 'border-white/20 bg-white/10 hover:border-white/30 hover:bg-white/15'
+              ? 'rounded-[14px] border-white/25 bg-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(5,45,71,0.22)]'
+              : 'rounded-[14px] border-white/15 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_2px_8px_rgba(5,45,71,0.2)] hover:border-white/25 hover:bg-white/15'
             : open
-              ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] shadow-sm'
-              : 'border-[var(--color-line)] bg-white shadow-sm hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-soft)]/60'
+              ? 'rounded-full border-[var(--color-brand)] bg-[var(--color-brand-soft)] shadow-sm'
+              : 'rounded-full border-[var(--color-line)] bg-white shadow-sm hover:border-[var(--color-brand)] hover:bg-[var(--color-brand-soft)]/60'
         }`}
       >
         <UserAvatar

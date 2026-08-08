@@ -1,32 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../features/auth/auth-context';
 import { api } from '../../services/api';
 import { ScrollRail } from '../common/scroll-rail';
-import { Icon } from '../ui/icon';
+import type { IconName } from '../ui/icon';
 import { RetentionPartnerCard } from './retention-partner-card';
+import { SectionHeaderBar, SectionHeaderViewAll } from './section-header-bar';
 
 function SectionShell({
   title,
+  icon,
   action,
   children,
 }: {
   title: string;
+  icon?: IconName;
   action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="page-shell mt-10">
       <div className="section-container min-w-0">
-        <div className="section-header-bar mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5 sm:px-5 sm:py-4">
-          <h2 className="text-xl font-bold tracking-tight text-[var(--color-navy)] sm:text-2xl">
-            {title}
-          </h2>
-          {action ? (
-            <div className="ml-auto flex shrink-0 items-center gap-3">{action}</div>
-          ) : null}
-        </div>
+        <SectionHeaderBar title={title} icon={icon} action={action} />
         {children}
       </div>
     </section>
@@ -48,15 +43,8 @@ export function RebookSection() {
   return (
     <SectionShell
       title="Thuê lại nhanh"
-      action={
-        <Link
-          to="/don-cua-toi"
-          className="group flex items-center gap-1 text-[15px] font-bold text-[var(--color-brand-deep)] transition hover:text-[var(--color-brand)]"
-        >
-          Đơn của tôi
-          <Icon name="chevronRight" className="h-4 w-4 transition group-hover:translate-x-0.5" />
-        </Link>
-      }
+      icon="rotateCcw"
+      action={<SectionHeaderViewAll to="/don-cua-toi" label="Đơn của tôi" />}
     >
       <ScrollRail>
         {hints.map((hint) => (
@@ -95,7 +83,7 @@ export function FamiliarPartnersSection() {
   if (!user || favorites.length === 0) return null;
 
   return (
-    <SectionShell title="Người làm quen">
+    <SectionShell title="Người làm quen" icon="users">
       <ScrollRail>
         {favorites.map((item) => (
           <RetentionPartnerCard

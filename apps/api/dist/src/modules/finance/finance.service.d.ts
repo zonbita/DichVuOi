@@ -216,10 +216,10 @@ export declare class FinanceService {
         refundedAt: Date | null;
         partnerId: string | null;
         bookingId: string;
+        serviceName: string;
         currency: string;
         invoiceNumber: string;
         customerId: string;
-        serviceName: string;
         subtotal: number;
         issuedAt: Date;
         settledAt: Date | null;
@@ -253,10 +253,10 @@ export declare class FinanceService {
         refundedAt: Date | null;
         partnerId: string | null;
         bookingId: string;
+        serviceName: string;
         currency: string;
         invoiceNumber: string;
         customerId: string;
-        serviceName: string;
         subtotal: number;
         issuedAt: Date;
         settledAt: Date | null;

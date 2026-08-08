@@ -4,15 +4,22 @@ import { Link } from 'react-router-dom';
 import { DashboardPageHeader } from '../components/dashboard/dashboard-chrome';
 import { SquareImageSlider } from '../components/partner/square-image-slider';
 import { Icon } from '../components/ui/icon';
+import {
+  PRICE_SLIDER_MIN,
+  PriceRangeSlider,
+} from '../components/ui/price-range-slider';
 import { RichPostBody, SimpleRichEditor } from '../components/ui/simple-rich-editor';
 import { useAuth } from '../features/auth/auth-context';
-import { api, formatPrice } from '../services/api';
+import { api, formatPrice, formatPriceNumber } from '../services/api';
 import type { PartnerServicePost } from '../types/partner-service-post';
+import { resolveOfferingPriceRange } from '../utils/market-price';
 import { resizeImageToSquare } from '../utils/resize-image';
 import { plainTextFromHtml, sanitizePostHtml } from '../utils/sanitize-post-html';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
 const MAX_IMAGES = 8;
+/** Trần mặc định khi chưa có giá chào. */
+const DEFAULT_PRICE_MAX = 5_000_000;
 
 function mediaSrc(url: string) {
   if (!url) return url;
@@ -39,16 +46,21 @@ type FormState = {
   serviceId: string;
   title: string;
   body: string;
-  /** Chuỗi số VNĐ — parse khi lưu. */
-  price: string;
+  priceMin: number;
+  priceMax: number;
   images: string[];
 };
 
-const emptyForm = (serviceId = '', price = ''): FormState => ({
+const emptyForm = (
+  serviceId = '',
+  priceMin = PRICE_SLIDER_MIN,
+  priceMax = DEFAULT_PRICE_MAX,
+): FormState => ({
   serviceId,
   title: '',
   body: '',
-  price,
+  priceMin,
+  priceMax: Math.max(priceMax, priceMin),
   images: [],
 });
 
@@ -57,6 +69,8 @@ type OfferingOption = {
   name: string;
   unit: string;
   price: number | null;
+  priceMin: number | null;
+  priceMax: number | null;
   groupName: string;
   groupSlug: string;
 };
@@ -139,14 +153,28 @@ export function PartnerServicePostsPage() {
 
   const offeringOptions = useMemo((): OfferingOption[] => {
     return offerings
-      .map((o) => ({
-        serviceId: o.service?.id ?? o.serviceId,
-        name: o.service?.name ?? 'Nghề',
-        unit: o.service?.unit ?? 'lần',
-        price: o.price ?? null,
-        groupName: o.service?.category?.group?.name ?? 'Khác',
-        groupSlug: o.service?.category?.group?.slug ?? '',
-      }))
+      .map((o) => {
+        const priceMin =
+          o.priceMin && o.priceMin > 0
+            ? o.priceMin
+            : o.price && o.price > 0
+              ? o.price
+              : null;
+        const priceMax =
+          o.priceMax && o.priceMax > 0
+            ? Math.max(o.priceMax, priceMin ?? o.priceMax)
+            : priceMin;
+        return {
+          serviceId: o.service?.id ?? o.serviceId,
+          name: o.service?.name ?? 'Nghề',
+          unit: o.service?.unit ?? 'lần',
+          price: priceMin,
+          priceMin,
+          priceMax,
+          groupName: o.service?.category?.group?.name ?? 'Khác',
+          groupSlug: o.service?.category?.group?.slug ?? '',
+        };
+      })
       .filter((o) => Boolean(o.serviceId))
       .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
   }, [offerings]);
@@ -203,9 +231,16 @@ export function PartnerServicePostsPage() {
       if (form.images.length < 1) {
         throw new Error('Cần ít nhất một ảnh.');
       }
-      const price = Number(String(form.price).replace(/[^\d]/g, ''));
-      if (!Number.isFinite(price) || price < 1000) {
-        throw new Error('Nhập giá chào hợp lệ (tối thiểu 1.000 VNĐ).');
+      const priceMin = Math.round(form.priceMin);
+      const priceMax = Math.round(form.priceMax);
+      if (!Number.isFinite(priceMin) || priceMin < 1000) {
+        throw new Error('Chọn giá min hợp lệ (tối thiểu 1.000 VNĐ).');
+      }
+      if (!Number.isFinite(priceMax) || priceMax < 1000) {
+        throw new Error('Chọn giá max hợp lệ (tối thiểu 1.000 VNĐ).');
+      }
+      if (priceMax < priceMin) {
+        throw new Error('Giá max phải lớn hơn hoặc bằng giá min.');
       }
       const body = sanitizePostHtml(form.body);
       if (plainTextFromHtml(body).length < 20) {
@@ -215,14 +250,16 @@ export function PartnerServicePostsPage() {
         serviceId: form.serviceId,
         title: form.title.trim(),
         body,
-        price: Math.round(price),
+        priceMin: Math.round(priceMin),
+        priceMax: Math.round(priceMax),
         images: form.images,
       };
       if (editingId) {
         return api.updateServicePost(editingId, {
           title: payload.title,
           body: payload.body,
-          price: payload.price,
+          priceMin: payload.priceMin,
+          priceMax: payload.priceMax,
           images: payload.images,
         });
       }
@@ -289,11 +326,19 @@ export function PartnerServicePostsPage() {
       return;
     }
     setEditingId(null);
-    const seedPrice =
-      selectedProfession.price != null && selectedProfession.price > 0
-        ? String(selectedProfession.price)
-        : '';
-    setForm(emptyForm(professionId, seedPrice));
+    const seedMin =
+      selectedProfession.priceMin != null && selectedProfession.priceMin > 0
+        ? selectedProfession.priceMin
+        : selectedProfession.price != null && selectedProfession.price > 0
+          ? selectedProfession.price
+          : PRICE_SLIDER_MIN;
+    const seedMax =
+      selectedProfession.priceMax != null && selectedProfession.priceMax > 0
+        ? selectedProfession.priceMax
+        : seedMin > 0
+          ? Math.max(seedMin, DEFAULT_PRICE_MAX)
+          : DEFAULT_PRICE_MAX;
+    setForm(emptyForm(professionId, seedMin, seedMax));
     setFormOpen(true);
     setError(null);
     setUploadError('');
@@ -302,15 +347,22 @@ export function PartnerServicePostsPage() {
   function openEdit(post: PartnerServicePost) {
     setEditingId(post.id);
     setProfessionId(post.serviceId);
-    const offeringPrice =
-      offeringOptions.find((o) => o.serviceId === post.serviceId)?.price ??
-      post.price;
+    const offering = offeringOptions.find((o) => o.serviceId === post.serviceId);
+    const priceMin =
+      offering?.priceMin ??
+      post.priceMin ??
+      post.price ??
+      PRICE_SLIDER_MIN;
+    const priceMax =
+      offering?.priceMax ??
+      post.priceMax ??
+      (priceMin > 0 ? Math.max(priceMin, DEFAULT_PRICE_MAX) : DEFAULT_PRICE_MAX);
     setForm({
       serviceId: post.serviceId,
       title: post.title,
       body: post.body,
-      price:
-        offeringPrice != null && offeringPrice > 0 ? String(offeringPrice) : '',
+      priceMin: Math.max(0, priceMin),
+      priceMax: Math.max(priceMin, priceMax),
       images:
         post.images?.length > 0
           ? post.images
@@ -447,33 +499,27 @@ export function PartnerServicePostsPage() {
               placeholder="VD: Thiết kế nội thất 3D — Rhino & Revit"
             />
           </label>
-          <label className="block text-sm">
-            <span className="font-semibold">
-              Giá chào <span className="text-red-600">*</span>
-            </span>
-            <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-              Giá bạn chào cho nghề này — hiện trên hồ sơ công khai và khi khách thuê.
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <input
-                type="text"
-                inputMode="numeric"
-                className="w-full rounded-xl border border-[var(--color-line)] px-3 py-2"
-                value={form.price}
-                onChange={(e) =>
+          <div className="overflow-hidden rounded-xl border border-[#DCE6EC] bg-white">
+            <div className="px-3 py-2.5 sm:px-4 sm:py-3">
+              <PriceRangeSlider
+                layout="vertical"
+                title={`Giá chào (${formUnit})`}
+                min={form.priceMin}
+                max={form.priceMax}
+                showBubbles
+                onChange={({ min, max }) =>
                   setForm((prev) => ({
                     ...prev,
-                    price: e.target.value.replace(/[^\d]/g, ''),
+                    priceMin: min,
+                    priceMax: max,
                   }))
                 }
-                required
-                placeholder="VD: 200000"
               />
-              <span className="shrink-0 text-sm font-semibold text-[var(--color-muted)]">
-                VNĐ/{formUnit}
-              </span>
+              <p className="mt-1.5 text-xs text-[var(--color-muted)]">
+                Kéo thanh hoặc nhập «Từ / Đến» — tối thiểu 1.000 VNĐ khi lưu.
+              </p>
             </div>
-          </label>
+          </div>
           <div className="block text-sm">
             <span className="font-semibold">Nội dung</span>
             <SimpleRichEditor
@@ -638,14 +684,33 @@ export function PartnerServicePostsPage() {
                   <h3 className="text-lg font-extrabold leading-snug text-[var(--color-navy)]">
                     {post.title}
                   </h3>
-                  {post.price != null && post.price > 0 ? (
-                    <p className="text-base font-extrabold text-[var(--color-sale)]">
-                      {formatPrice(post.price)}
-                      <span className="text-xs font-semibold text-[var(--color-muted)]">
-                        /{post.service.unit}
-                      </span>
-                    </p>
-                  ) : null}
+                  {(() => {
+                    const range = resolveOfferingPriceRange({
+                      price: post.price,
+                      priceMin: post.priceMin,
+                      priceMax: post.priceMax,
+                    });
+                    if (!range) return null;
+                    return (
+                      <p className="whitespace-nowrap text-base font-extrabold text-[var(--color-sale)]">
+                        {range.max > range.min ? (
+                          <>
+                            {formatPriceNumber(range.min)}
+                            <span className="mx-1 font-semibold text-[var(--color-muted)]">
+                              –
+                            </span>
+                            {formatPriceNumber(range.max)}
+                            <span className="ml-1">VNĐ</span>
+                          </>
+                        ) : (
+                          formatPrice(range.min)
+                        )}
+                        <span className="text-xs font-semibold text-[var(--color-muted)]">
+                          /{post.service.unit}
+                        </span>
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 {imgs.length > 0 ? (

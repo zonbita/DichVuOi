@@ -680,7 +680,8 @@ export const api = {
     serviceId: string;
     title: string;
     body: string;
-    price: number;
+    priceMin: number;
+    priceMax: number;
     images: string[];
   }) =>
     request<PartnerServicePost>('/api/partners/me/posts', {
@@ -693,7 +694,8 @@ export const api = {
       serviceId?: string;
       title?: string;
       body?: string;
-      price?: number;
+      priceMin?: number;
+      priceMax?: number;
       images?: string[];
     },
   ) =>

@@ -42,6 +42,8 @@ export declare class PartnersService {
             images: string[];
             serviceId: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
         }[];
         id: string;
         userId: string;
@@ -66,6 +68,8 @@ export declare class PartnersService {
         offerings: {
             id: string;
             price: number;
+            priceMin: number;
+            priceMax: number;
             headline: string | null;
             experienceYears: number;
             hoursWorked: number;
@@ -117,6 +121,7 @@ export declare class PartnersService {
                 isVerified: boolean;
                 ratingAvg: number;
                 ratingCount: number;
+                reputation: import("../../common/reputation.service").PartnerReputationSnapshot | null;
             };
             createdAt: Date;
             updatedAt: Date;
@@ -131,6 +136,8 @@ export declare class PartnersService {
             images: string[];
             serviceId: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
         }[];
         total: number;
         page: number;
@@ -152,6 +159,8 @@ export declare class PartnersService {
             images: string[];
             serviceId: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
         };
         seller: {
             userId: string;
@@ -171,6 +180,8 @@ export declare class PartnersService {
         offering: {
             id: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
             headline: string | null;
             experienceYears: number;
             includes: string | null;
@@ -191,6 +202,8 @@ export declare class PartnersService {
     private parsePostImages;
     private serializePostImages;
     private normalizePostBody;
+    private offeringPriceRange;
+    private assertPriceRange;
     private shapeServicePost;
     listMyServicePosts(userId: string, serviceId?: string): Promise<{
         createdAt: Date;
@@ -206,6 +219,8 @@ export declare class PartnersService {
         images: string[];
         serviceId: string;
         price: number | null;
+        priceMin: number | null;
+        priceMax: number | null;
     }[]>;
     createServicePost(userId: string, dto: CreatePartnerServicePostDto): Promise<{
         createdAt: Date;
@@ -221,6 +236,8 @@ export declare class PartnersService {
         images: string[];
         serviceId: string;
         price: number | null;
+        priceMin: number | null;
+        priceMax: number | null;
     }>;
     updateServicePost(userId: string, postId: string, dto: UpdatePartnerServicePostDto): Promise<{
         createdAt: Date;
@@ -236,6 +253,8 @@ export declare class PartnersService {
         images: string[];
         serviceId: string;
         price: number | null;
+        priceMin: number | null;
+        priceMax: number | null;
     }>;
     deleteServicePost(userId: string, postId: string): Promise<{
         ok: boolean;
@@ -272,6 +291,8 @@ export declare class PartnersService {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -346,6 +367,8 @@ export declare class PartnersService {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -421,6 +444,8 @@ export declare class PartnersService {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -495,6 +520,8 @@ export declare class PartnersService {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -673,6 +700,8 @@ export declare class PartnersService {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -759,6 +788,8 @@ export declare class PartnersService {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;

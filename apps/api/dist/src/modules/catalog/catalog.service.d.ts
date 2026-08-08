@@ -17,6 +17,8 @@ export declare class CatalogService {
     findServiceProviders(slug: string): Promise<{
         id: string;
         price: number;
+        priceMin: number;
+        priceMax: number;
         headline: string | null;
         experienceYears: number;
         hoursWorked: number;
@@ -30,7 +32,7 @@ export declare class CatalogService {
             districts: string[];
             skills: string[];
             acceptingJobs: boolean;
-            workModes: ("online" | "onsite")[];
+            workModes: ("onsite" | "online")[];
             responseMinutes: number;
             bio: string | null;
             headline: string | null;

@@ -281,7 +281,12 @@ model PartnerService {
   partnerProfile   PartnerProfile @relation(fields: [partnerProfileId], references: [id], onDelete: Cascade)
   serviceId        String
   service          Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  /** Giá chào chính / đặt cọc — đồng bộ = priceMin. */
   price            Int?
+  /** Giá chào cận dưới (₫). */
+  priceMin         Int?
+  /** Giá chào cận trên (₫). */
+  priceMax         Int?
   headline         String?
   experienceYears  Int            @default(0)
   /** Bao gồm gì khi thuê (văn bản ngắn). */

@@ -377,22 +377,26 @@ export function CatalogMobileDrawer({
   onServiceSelect?: (pick: CatalogServicePick) => void;
   selectedServiceSlug?: string | null;
 }) {
+  /** Cùng soft-3D glass với mega-menu desktop (navbar «NHÓM DỊCH VỤ»). */
   return (
     <div className="fixed inset-0 z-[9990]">
       <button
         type="button"
         aria-label="Đóng menu"
-        className="absolute inset-0 bg-black/50 transition-opacity duration-200"
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-200"
         onClick={onClose}
       />
-      <div
-        className={`absolute inset-y-0 left-0 flex w-[min(100%,360px)] flex-col overflow-hidden shadow-2xl ${CATALOG_MENU_DARK.surfaceClass}`}
-      >
-        <CatalogMenuHeader onClose={onClose} size="sm" />
-        <div className="flex-1 overflow-y-auto py-2">
+      <div className="mega-menu-shell absolute inset-y-0 left-0 flex w-[min(100%,360px)] flex-col overflow-hidden !rounded-none !rounded-r-[22px] border-l-0 shadow-[12px_0_40px_rgba(5,45,71,0.18)]">
+        <CatalogMenuHeader onClose={onClose} size="sm" tone="glass" />
+        <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain py-2">
           {groups.map((group, index) => {
             const isExpanded = expanded === group.slug;
             const color = groupColor(group.slug);
+            const rowClass = `relative mx-2.5 flex min-h-[48px] min-w-0 flex-1 items-center gap-3.5 rounded-[14px] px-3.5 text-[15px] font-semibold outline-none ${itemTransition} focus-visible:ring-2 focus-visible:ring-[var(--glass-accent,#4977e8)]/40 ${
+              isExpanded
+                ? 'mega-menu-item-active'
+                : 'border border-transparent text-[var(--glass-ink,#172033)] hover:bg-white/50'
+            }`;
             return (
               <div key={group.id}>
                 <div className="flex items-stretch">
@@ -400,12 +404,14 @@ export function CatalogMobileDrawer({
                     <button
                       type="button"
                       onClick={() => onExpandedChange(isExpanded ? null : group.slug)}
-                      className={`relative mx-2.5 flex min-h-[48px] min-w-0 flex-1 items-center gap-3.5 rounded-[14px] px-3.5 text-left text-[15px] font-semibold text-white/90 outline-none ${itemTransition} hover:bg-[rgba(56,189,248,0.1)] focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60`}
+                      className={`${rowClass} text-left`}
+                      style={isExpanded ? { color: color.ink } : undefined}
                     >
                       <GroupCatalogIcon
                         slug={group.slug}
                         icon={group.icon}
                         className="h-6 w-6 shrink-0"
+                        active={isExpanded}
                         tint={color.main}
                       />
                       <span className="truncate">{group.name}</span>
@@ -414,12 +420,14 @@ export function CatalogMobileDrawer({
                     <Link
                       to={`/nhom/${group.slug}`}
                       onClick={onClose}
-                      className={`relative mx-2.5 flex min-h-[48px] min-w-0 flex-1 items-center gap-3.5 rounded-[14px] px-3.5 text-[15px] font-semibold text-white/90 outline-none ${itemTransition} hover:bg-[rgba(56,189,248,0.1)] focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60`}
+                      className={rowClass}
+                      style={isExpanded ? { color: color.ink } : undefined}
                     >
                       <GroupCatalogIcon
                         slug={group.slug}
                         icon={group.icon}
                         className="h-6 w-6 shrink-0"
+                        active={isExpanded}
                         tint={color.main}
                       />
                       <span className="truncate">{group.name}</span>
@@ -430,7 +438,7 @@ export function CatalogMobileDrawer({
                     aria-expanded={isExpanded}
                     aria-label={isExpanded ? 'Thu gọn' : 'Mở danh mục'}
                     onClick={() => onExpandedChange(isExpanded ? null : group.slug)}
-                    className="px-3 text-[rgba(148,163,184,0.75)] outline-none focus-visible:text-white"
+                    className="px-3 text-[var(--glass-muted,#7c8799)] outline-none transition hover:text-[var(--glass-ink,#172033)] focus-visible:text-[var(--glass-ink,#172033)]"
                   >
                     <Icon
                       name="chevronRight"
@@ -441,14 +449,11 @@ export function CatalogMobileDrawer({
                 {index < groups.length - 1 && !isExpanded ? (
                   <div
                     className="mx-6 h-px"
-                    style={{ backgroundColor: CATALOG_MENU_DARK.separator }}
+                    style={{ backgroundColor: 'var(--glass-line, rgba(23, 32, 51, 0.08))' }}
                   />
                 ) : null}
                 {isExpanded ? (
-                  <div
-                    className="mx-2.5 mb-1 rounded-[14px] px-3.5 py-2"
-                    style={{ backgroundColor: CATALOG_MENU_DARK.active }}
-                  >
+                  <div className="mx-2.5 mb-1 rounded-[14px] border border-white/70 bg-white/55 px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
                     {(group.categories ?? []).map((category) => (
                       <div key={category.id} className="pt-2 first:pt-1">
                         <p className="text-sm font-bold" style={{ color: color.main }}>
@@ -471,10 +476,10 @@ export function CatalogMobileDrawer({
                                     });
                                     onClose();
                                   }}
-                                  className={`block w-full py-1.5 text-left text-[14px] ${
+                                  className={`block w-full py-1.5 text-left text-[14px] transition ${
                                     selectedServiceSlug === service.slug
-                                      ? 'font-semibold text-white'
-                                      : 'text-white/70 hover:text-white'
+                                      ? 'font-semibold text-[var(--glass-accent,#4977e8)]'
+                                      : 'text-[var(--glass-ink,#172033)]/85 hover:text-[var(--glass-accent,#4977e8)]'
                                   }`}
                                 >
                                   {service.name}
@@ -483,7 +488,7 @@ export function CatalogMobileDrawer({
                                 <Link
                                   to={`/dich-vu/${service.slug}`}
                                   onClick={onClose}
-                                  className="block py-1.5 text-[14px] text-white/70 hover:text-white"
+                                  className="block py-1.5 text-[14px] text-[var(--glass-ink,#172033)]/85 transition hover:text-[var(--glass-accent,#4977e8)]"
                                 >
                                   {service.name}
                                 </Link>
@@ -497,7 +502,7 @@ export function CatalogMobileDrawer({
                       <Link
                         to={`/nhom/${group.slug}`}
                         onClick={onClose}
-                        className="mt-2 inline-block text-sm font-semibold text-white/80 hover:text-white"
+                        className="mt-2 inline-block text-sm font-semibold text-[var(--glass-accent,#4977e8)] hover:opacity-90"
                       >
                         Xem nhóm ›
                       </Link>
@@ -510,14 +515,10 @@ export function CatalogMobileDrawer({
         </div>
         {!pickerMode ? (
           <div
-            className="shrink-0 border-t py-2"
-            style={{
-              borderColor: CATALOG_MENU_DARK.border,
-              background:
-                'linear-gradient(180deg, rgba(6,26,48,0.35) 0%, rgba(4,18,34,0.85) 100%)',
-            }}
+            className="relative z-10 shrink-0 border-t py-2"
+            style={{ borderColor: 'var(--glass-line, rgba(23, 32, 51, 0.08))' }}
           >
-            <CatalogAllCategoriesLink onClick={onClose} />
+            <CatalogAllCategoriesLink onClick={onClose} tone="glass" />
           </div>
         ) : null}
       </div>

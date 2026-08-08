@@ -113,10 +113,10 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
 
   const triggerClass = open
     ? onDark
-      ? 'bg-white/15 text-white'
+      ? 'border-white/25 bg-white/15 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_4px_12px_rgba(5,45,71,0.22)]'
       : 'bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
     : onDark
-      ? 'text-white/90 hover:bg-white/10'
+      ? 'border-white/15 bg-white/10 text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_2px_8px_rgba(5,45,71,0.2)] hover:border-white/25 hover:bg-white/15'
       : 'text-[var(--color-ink)] hover:bg-[var(--color-brand-soft)]';
 
   const desktopPanel =
@@ -183,9 +183,9 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
         aria-controls={open ? menuId : undefined}
         aria-haspopup="true"
         onClick={() => setOpen((value) => !value)}
-        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[15px] font-bold transition sm:gap-2 sm:px-3 ${triggerClass}`}
+        className={`flex items-center gap-1.5 rounded-[14px] border border-transparent px-2.5 py-2 text-[15px] font-bold transition sm:gap-2 sm:px-3 ${triggerClass}`}
       >
-        <Icon name="menu" className="h-5 w-5 text-[var(--color-brand)]" />
+        <Icon name="menu" className="h-5 w-5 drop-shadow-sm text-[var(--color-brand)]" />
         <span className="hidden whitespace-nowrap sm:inline">NHÓM DỊCH VỤ</span>
         <Icon
           name="chevronDown"

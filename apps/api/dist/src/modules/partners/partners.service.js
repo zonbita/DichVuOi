@@ -98,9 +98,19 @@ let PartnersService = class PartnersService {
             const ratingAvg = ratingCount > 0
                 ? Math.round((stats.ratings.reduce((s, n) => s + n, 0) / ratingCount) * 10) / 10
                 : 0;
+            const priceMin = o.priceMin && o.priceMin > 0
+                ? o.priceMin
+                : o.price && o.price > 0
+                    ? o.price
+                    : o.service.basePrice;
+            const priceMax = o.priceMax && o.priceMax > 0
+                ? Math.max(o.priceMax, priceMin)
+                : priceMin;
             return {
                 id: o.id,
-                price: o.price ?? o.service.basePrice,
+                price: priceMin,
+                priceMin,
+                priceMax,
                 headline: o.headline,
                 experienceYears: o.experienceYears,
                 hoursWorked: hoursByServiceId.get(o.service.id) ?? 0,
@@ -268,6 +278,8 @@ let PartnersService = class PartnersService {
                         id: true,
                         serviceId: true,
                         price: true,
+                        priceMin: true,
+                        priceMax: true,
                         headline: true,
                         experienceYears: true,
                         includes: true,
@@ -352,7 +364,7 @@ let PartnersService = class PartnersService {
             }),
         ]);
         const shaped = this.shapePublic(profile, completedJobs, reviews, hoursByServiceId);
-        const priceByService = new Map(profile.offerings.map((o) => [o.serviceId, o.price]));
+        const priceByService = new Map(profile.offerings.map((o) => [o.serviceId, this.offeringPriceRange(o)]));
         return {
             ...shaped,
             reputation,
@@ -394,18 +406,18 @@ let PartnersService = class PartnersService {
                             user: { select: { fullName: true } },
                             offerings: {
                                 where: { isActive: true },
-                                select: { serviceId: true, price: true },
+                                select: { serviceId: true, price: true, priceMin: true, priceMax: true },
                             },
                         },
                     },
                 },
             }),
         ]);
+        const reputations = await this.reputation.getSnapshotsBatch(posts.map((post) => post.partnerProfile.userId));
         return {
             items: posts.map((post) => {
-                const price = post.partnerProfile.offerings.find((o) => o.serviceId === post.serviceId)
-                    ?.price ?? null;
-                const shaped = this.shapeServicePost(post, price);
+                const offering = post.partnerProfile.offerings.find((o) => o.serviceId === post.serviceId);
+                const shaped = this.shapeServicePost(post, this.offeringPriceRange(offering));
                 return {
                     ...shaped,
                     seller: {
@@ -418,6 +430,7 @@ let PartnersService = class PartnersService {
                         isVerified: post.partnerProfile.isVerified,
                         ratingAvg: post.partnerProfile.ratingAvg,
                         ratingCount: post.partnerProfile.ratingCount,
+                        reputation: reputations.get(post.partnerProfile.userId) ?? null,
                     },
                 };
             }),
@@ -481,6 +494,8 @@ let PartnersService = class PartnersService {
                 select: {
                     id: true,
                     price: true,
+                    priceMin: true,
+                    priceMax: true,
                     headline: true,
                     experienceYears: true,
                     includes: true,
@@ -508,8 +523,9 @@ let PartnersService = class PartnersService {
         const ratingAvg = ratingCount > 0
             ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / ratingCount) * 10) / 10
             : 0;
+        const offeringRange = this.offeringPriceRange(offering);
         return {
-            post: this.shapeServicePost(post),
+            post: this.shapeServicePost(post, offeringRange),
             seller: {
                 userId: profile.userId,
                 fullName: profile.user.fullName,
@@ -528,7 +544,9 @@ let PartnersService = class PartnersService {
             offering: offering
                 ? {
                     id: offering.id,
-                    price: offering.price,
+                    price: offeringRange.price,
+                    priceMin: offeringRange.priceMin,
+                    priceMax: offeringRange.priceMax,
                     headline: offering.headline,
                     experienceYears: offering.experienceYears,
                     includes: offering.includes,
@@ -601,8 +619,33 @@ let PartnersService = class PartnersService {
         }
         return html;
     }
-    shapeServicePost(post, price) {
+    offeringPriceRange(offering) {
+        if (!offering) {
+            return { price: null, priceMin: null, priceMax: null };
+        }
+        const min = offering.priceMin && offering.priceMin > 0
+            ? offering.priceMin
+            : offering.price && offering.price > 0
+                ? offering.price
+                : null;
+        if (min == null) {
+            return { price: null, priceMin: null, priceMax: null };
+        }
+        const max = offering.priceMax && offering.priceMax > 0
+            ? Math.max(offering.priceMax, min)
+            : min;
+        return { price: min, priceMin: min, priceMax: max };
+    }
+    assertPriceRange(priceMin, priceMax) {
+        if (priceMax < priceMin) {
+            throw new common_1.BadRequestException('Giá max phải lớn hơn hoặc bằng giá min');
+        }
+    }
+    shapeServicePost(post, range) {
         const images = this.parsePostImages(post.imagesJson, post.coverUrl);
+        const normalized = typeof range === 'number' || range == null
+            ? this.offeringPriceRange(range == null ? null : { price: range, priceMin: range, priceMax: range })
+            : this.offeringPriceRange(range);
         return {
             id: post.id,
             title: post.title,
@@ -610,7 +653,9 @@ let PartnersService = class PartnersService {
             coverUrl: images[0] ?? post.coverUrl,
             images,
             serviceId: post.serviceId,
-            price: price ?? null,
+            price: normalized.price,
+            priceMin: normalized.priceMin,
+            priceMax: normalized.priceMax,
             ...(post.status !== undefined ? { status: post.status } : {}),
             ...(post.rejectReason !== undefined
                 ? { rejectReason: post.rejectReason }
@@ -643,9 +688,9 @@ let PartnersService = class PartnersService {
                 partnerProfileId: profile.id,
                 serviceId: { in: posts.map((p) => p.serviceId) },
             },
-            select: { serviceId: true, price: true },
+            select: { serviceId: true, price: true, priceMin: true, priceMax: true },
         });
-        const priceByService = new Map(offerings.map((o) => [o.serviceId, o.price]));
+        const priceByService = new Map(offerings.map((o) => [o.serviceId, this.offeringPriceRange(o)]));
         return posts.map((p) => this.shapeServicePost(p, priceByService.get(p.serviceId) ?? null));
     }
     async createServicePost(userId, dto) {
@@ -677,11 +722,13 @@ let PartnersService = class PartnersService {
         }
         const { imagesJson, coverUrl } = this.serializePostImages(dto.images);
         const body = this.normalizePostBody(dto.body);
-        const price = Math.round(dto.price);
+        const priceMin = Math.round(dto.priceMin);
+        const priceMax = Math.round(dto.priceMax);
+        this.assertPriceRange(priceMin, priceMax);
         const post = await this.prisma.$transaction(async (tx) => {
             await tx.partnerService.update({
                 where: { id: offering.id },
-                data: { price },
+                data: { price: priceMin, priceMin, priceMax },
             });
             return tx.partnerServicePost.create({
                 data: {
@@ -699,7 +746,7 @@ let PartnersService = class PartnersService {
                 include: { service: { select: servicePostServiceSelect } },
             });
         });
-        return this.shapeServicePost(post, price);
+        return this.shapeServicePost(post, { price: priceMin, priceMin, priceMax });
     }
     async updateServicePost(userId, postId, dto) {
         const profile = await this.prisma.partnerProfile.findUnique({
@@ -716,15 +763,37 @@ let PartnersService = class PartnersService {
         const imageFields = dto.images !== undefined
             ? this.serializePostImages(dto.images)
             : null;
-        const price = dto.price !== undefined ? Math.round(dto.price) : undefined;
+        const hasPriceUpdate = dto.priceMin !== undefined || dto.priceMax !== undefined;
+        let nextRange;
+        if (hasPriceUpdate) {
+            const current = await this.prisma.partnerService.findFirst({
+                where: {
+                    partnerProfileId: profile.id,
+                    serviceId: existing.serviceId,
+                },
+                select: { price: true, priceMin: true, priceMax: true },
+            });
+            const fallback = this.offeringPriceRange(current);
+            const priceMin = Math.round(dto.priceMin ?? fallback.priceMin ?? fallback.price ?? 0);
+            const priceMax = Math.round(dto.priceMax ?? fallback.priceMax ?? priceMin);
+            if (priceMin < 1000) {
+                throw new common_1.BadRequestException('Giá min tối thiểu 1.000 VNĐ');
+            }
+            this.assertPriceRange(priceMin, priceMax);
+            nextRange = { price: priceMin, priceMin, priceMax };
+        }
         const post = await this.prisma.$transaction(async (tx) => {
-            if (price !== undefined) {
+            if (nextRange) {
                 await tx.partnerService.updateMany({
                     where: {
                         partnerProfileId: profile.id,
                         serviceId: existing.serviceId,
                     },
-                    data: { price },
+                    data: {
+                        price: nextRange.price,
+                        priceMin: nextRange.priceMin,
+                        priceMax: nextRange.priceMax,
+                    },
                 });
             }
             return tx.partnerServicePost.update({
@@ -753,9 +822,9 @@ let PartnersService = class PartnersService {
                 partnerProfileId: profile.id,
                 serviceId: existing.serviceId,
             },
-            select: { price: true },
+            select: { price: true, priceMin: true, priceMax: true },
         });
-        return this.shapeServicePost(post, offering?.price ?? price ?? null);
+        return this.shapeServicePost(post, nextRange ?? this.offeringPriceRange(offering));
     }
     async deleteServicePost(userId, postId) {
         const profile = await this.prisma.partnerProfile.findUnique({

@@ -98,7 +98,7 @@ function ProfessionArt({ slide }: { slide: ComposeSlide }) {
         return (
           <div
             key={`${slide.title}-${name}-${index}`}
-            className="absolute flex items-center justify-center rounded-[22%] border border-white/25 bg-white/15 text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-[6px]"
+            className="hero-banner__tile absolute flex items-center justify-center text-white"
             style={{
               top: spot.top,
               left: spot.left,
@@ -110,7 +110,7 @@ function ProfessionArt({ slide }: { slide: ComposeSlide }) {
           >
             <Icon
               name={name}
-              className={isFocus ? 'h-9 w-9' : 'h-6 w-6'}
+              className={`drop-shadow-[0_2px_4px_rgba(5,45,71,0.35)] ${isFocus ? 'h-9 w-9' : 'h-6 w-6'}`}
               style={{ color: 'inherit' }}
             />
           </div>
@@ -139,7 +139,11 @@ export function HeroBanner() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
+    <div className="hero-banner relative overflow-hidden bg-white">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-20 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.18),transparent_70%)]"
+      />
       <div className="relative h-[220px] w-full sm:h-[340px] md:h-[420px] lg:h-[500px]">
         {banners.map((banner, index) => (
           <div
@@ -173,11 +177,15 @@ export function HeroBanner() {
                 <div
                   className="absolute inset-0"
                   style={{
-                    background: `linear-gradient(115deg, #073b5c 0%, #0a4f6e 42%, ${banner.accent} 78%, #1a6b78 100%)`,
+                    background: `radial-gradient(ellipse 130% 160% at 18% -30%, #0a5678 0%, #073b5c 38%, ${banner.accent} 72%, #041f32 100%)`,
                   }}
                 />
                 <div
-                  className="absolute inset-0 opacity-40"
+                  aria-hidden
+                  className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.12),transparent_55%)]"
+                />
+                <div
+                  className="absolute inset-0 opacity-35"
                   style={{
                     backgroundImage:
                       'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.14) 0 1px, transparent 1px), radial-gradient(circle at 80% 60%, rgba(255,255,255,0.1) 0 1px, transparent 1px)',
@@ -190,19 +198,19 @@ export function HeroBanner() {
                   <span className="hero-banner__tag w-fit rounded-full px-3 py-1 text-[12px] font-semibold text-white sm:px-3.5 sm:py-1.5 sm:text-[13px]">
                     {banner.tag}
                   </span>
-                  <h2 className="max-w-[28rem] text-[22px] font-extrabold uppercase leading-[1.15] tracking-tight sm:text-[30px] lg:text-[32px]">
+                  <h2 className="max-w-[28rem] text-[22px] font-extrabold uppercase leading-[1.15] tracking-tight drop-shadow-sm sm:text-[30px] lg:text-[32px]">
                     {banner.title}
                   </h2>
-                  <p className="max-w-[28rem] text-sm leading-relaxed text-white/88 sm:text-base">
+                  <p className="max-w-[28rem] text-sm leading-relaxed text-white/90 sm:text-base">
                     {banner.subtitle}
                   </p>
                   <div className="mt-0.5 sm:mt-1">
                     <Link
                       to="/nhom"
-                      className="hero-banner__cta inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-white sm:px-6 sm:py-3 sm:text-[15px]"
+                      className="hero-banner__cta inline-flex items-center gap-1.5 rounded-[14px] px-5 py-2.5 text-sm font-bold text-white sm:px-6 sm:py-3 sm:text-[15px]"
                     >
                       Đặt ngay
-                      <Icon name="chevronRight" className="h-4 w-4" />
+                      <Icon name="chevronRight" className="h-4 w-4 drop-shadow-sm" />
                     </Link>
                   </div>
                 </div>
@@ -216,7 +224,7 @@ export function HeroBanner() {
         type="button"
         onClick={() => move(-1)}
         aria-label="Banner trước"
-        className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-white/95 text-[var(--color-muted)] shadow-md transition hover:bg-white sm:left-3 sm:h-10 sm:w-10"
+        className="hero-banner__nav absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-[var(--color-muted)] transition hover:brightness-105 sm:left-3 sm:h-10 sm:w-10"
       >
         <Icon name="chevronLeft" className="h-5 w-5" />
       </button>
@@ -224,7 +232,7 @@ export function HeroBanner() {
         type="button"
         onClick={() => move(1)}
         aria-label="Banner kế tiếp"
-        className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl bg-white/95 text-[var(--color-muted)] shadow-md transition hover:bg-white sm:right-3 sm:h-10 sm:w-10"
+        className="hero-banner__nav absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-[var(--color-muted)] transition hover:brightness-105 sm:right-3 sm:h-10 sm:w-10"
       >
         <Icon name="chevronRight" className="h-5 w-5" />
       </button>
@@ -238,7 +246,7 @@ export function HeroBanner() {
             aria-label={`Xem banner ${index + 1}`}
             className={`h-2 rounded-full transition-all duration-[180ms] ease-in-out ${
               index === active
-                ? 'w-6 bg-[var(--color-brand)]'
+                ? 'w-6 bg-[var(--color-brand)] shadow-[0_2px_8px_rgba(0,156,149,0.45)]'
                 : 'w-2 bg-white/70 hover:bg-white'
             }`}
           />

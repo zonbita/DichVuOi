@@ -108,23 +108,30 @@ export function SiteFooter() {
     <footer className="mt-12">
       <div className="page-shell">
         <div className="chrome-container">
-          <div className="grid gap-6 rounded-[14px] bg-[var(--color-navy)] px-6 py-7 text-white lg:grid-cols-[auto_1fr] lg:items-center">
-            <div className="flex items-center gap-4">
-              <Icon name="headset" className="h-10 w-10 shrink-0" />
-              <div>
-                <p className="text-xl font-extrabold">Bạn cần hỗ trợ?</p>
-                <p className="text-base text-white/85">Đội ngũ Dịch Vụ Ơi luôn sẵn sàng</p>
+          <div className="soft-3d-navy grid gap-6 rounded-[22px] px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[auto_1fr] lg:items-center">
+            <div aria-hidden className="soft-3d-navy__highlight" />
+            <div className="relative flex items-center gap-3.5 sm:gap-4">
+              <span className="soft-3d-squircle soft-3d-squircle--lg">
+                <Icon name="headset" className="h-7 w-7 drop-shadow-sm" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-lg font-extrabold drop-shadow-sm sm:text-xl">
+                  Bạn cần hỗ trợ?
+                </p>
+                <p className="text-sm text-white/85 sm:text-base">
+                  Đội ngũ Dịch Vụ Ơi luôn sẵn sàng
+                </p>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="relative grid gap-3.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               {supportChannels.map((channel) => (
-                <div key={channel.label} className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center bg-white/15">
-                    <Icon name={channel.icon} className="h-[18px] w-[18px]" />
+                <div key={channel.label} className="flex min-w-0 items-center gap-3">
+                  <span className="soft-3d-squircle soft-3d-squircle--sm">
+                    <Icon name={channel.icon} className="h-[18px] w-[18px] drop-shadow-sm" />
                   </span>
-                  <span className="text-sm leading-tight">
+                  <span className="min-w-0 text-sm leading-tight">
                     <span className="block text-white/75">{channel.label}</span>
-                    <span className="font-semibold">{channel.value}</span>
+                    <span className="block truncate font-semibold">{channel.value}</span>
                   </span>
                 </div>
               ))}

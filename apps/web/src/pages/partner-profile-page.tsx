@@ -7,7 +7,8 @@ import { SquareImageSlider } from '../components/partner/square-image-slider';
 import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { StarIcon, Icon } from '../components/ui/icon';
 import { publicPartnerQueryOptions } from '../lib/query-client';
-import { api, formatPrice } from '../services/api';
+import { api, formatPrice, formatPriceNumber } from '../services/api';
+import { resolveOfferingPriceRange } from '../utils/market-price';
 import type { PublicPartnerProfile } from '../types/auth';
 import { offeringColor } from '../utils/catalog-colors';
 
@@ -207,14 +208,39 @@ function ProfileHeader({
         </div>
 
         {top ? (
-          <div className="flex shrink-0 flex-col justify-center gap-2 border-t border-white/50 px-4 py-3 sm:w-[180px] sm:border-t-0 sm:border-l sm:py-4">
+          <div className="flex shrink-0 flex-col justify-center gap-2 border-t border-white/50 px-4 py-3 sm:w-[200px] sm:border-t-0 sm:border-l sm:py-4">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                Giá từ
+                Giá chào
               </p>
-              <p className="mt-0.5 text-lg font-extrabold leading-tight text-[var(--color-sale)]">
-                {formatPrice(top.price)}
-              </p>
+              {(() => {
+                const range = resolveOfferingPriceRange({
+                  price: top.price,
+                  priceMin: top.priceMin,
+                  priceMax: top.priceMax,
+                });
+                if (!range) {
+                  return (
+                    <p className="mt-0.5 text-sm font-semibold text-[var(--color-muted)]">
+                      Liên hệ
+                    </p>
+                  );
+                }
+                return (
+                  <p className="mt-0.5 whitespace-nowrap text-lg font-extrabold leading-tight text-[var(--color-sale)]">
+                    {range.max > range.min ? (
+                      <>
+                        {formatPriceNumber(range.min)}
+                        <span className="mx-0.5 font-semibold text-[var(--color-muted)]">–</span>
+                        {formatPriceNumber(range.max)}
+                        <span className="ml-0.5">VNĐ</span>
+                      </>
+                    ) : (
+                      formatPrice(range.min)
+                    )}
+                  </p>
+                );
+              })()}
               <p className="text-xs font-semibold text-[var(--color-muted)]">/{top.service.unit}</p>
             </div>
             <button type="button" onClick={onViewGigs} className="btn-primary w-full py-2 text-sm">
@@ -261,7 +287,11 @@ function GigCard({
   const hireTo = `/dich-vu/${post.service.slug}?partner=${partnerUserId}`;
   const ratingAvg = offering?.ratingAvg ?? 0;
   const ratingCount = offering?.ratingCount ?? 0;
-  const price = offering?.price;
+  const priceRange = resolveOfferingPriceRange({
+    price: post.price ?? offering?.price,
+    priceMin: post.priceMin ?? offering?.priceMin,
+    priceMax: post.priceMax ?? offering?.priceMax,
+  });
   const unit = offering?.service.unit ?? post.service.unit;
 
   return (
@@ -307,13 +337,22 @@ function GigCard({
           </span>
         </p>
         <div className="mt-auto flex items-end justify-between gap-2 border-t border-white/50 pt-2.5">
-          <div>
+          <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-              Từ
+              Giá chào
             </p>
-            {price != null ? (
-              <p className="text-lg font-extrabold leading-tight text-[var(--color-sale)]">
-                {formatPrice(price)}
+            {priceRange ? (
+              <p className="whitespace-nowrap text-lg font-extrabold leading-tight text-[var(--color-sale)]">
+                {priceRange.max > priceRange.min ? (
+                  <>
+                    {formatPriceNumber(priceRange.min)}
+                    <span className="mx-0.5 font-semibold text-[var(--color-muted)]">–</span>
+                    {formatPriceNumber(priceRange.max)}
+                    <span className="ml-0.5">VNĐ</span>
+                  </>
+                ) : (
+                  formatPrice(priceRange.min)
+                )}
                 <span className="text-xs font-semibold text-[var(--color-muted)]">/{unit}</span>
               </p>
             ) : (

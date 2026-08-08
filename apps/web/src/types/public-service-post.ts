@@ -40,6 +40,8 @@ export type PublicServicePostDetail = {
   offering: {
     id: string;
     price: number | null;
+    priceMin: number | null;
+    priceMax: number | null;
     headline: string | null;
     experienceYears: number;
     includes: string | null;
@@ -67,6 +69,8 @@ export type PublicServicePostListItem = {
   images: string[];
   serviceId: string;
   price: number | null;
+  priceMin?: number | null;
+  priceMax?: number | null;
   createdAt: string;
   updatedAt: string;
   service: {
@@ -91,5 +95,15 @@ export type PublicServicePostListItem = {
     isVerified: boolean;
     ratingAvg: number;
     ratingCount: number;
+    /** Uy tín chu kỳ — tách biệt level (1–100). */
+    reputation: {
+      currentPoints: number;
+      startingPoints: number;
+      percent: number;
+      periodIndex: number;
+      periodStart: string;
+      periodEnd: string;
+      deductedThisPeriod: number;
+    } | null;
   };
 };

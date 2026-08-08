@@ -43,7 +43,7 @@ export function DashboardPageHeader({
         <DashboardIconBox name={icon} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--color-navy)]">
+            <h1 className="text-xl font-extrabold tracking-tight text-[var(--color-navy)] sm:text-2xl">
               {title}
             </h1>
             {badge}

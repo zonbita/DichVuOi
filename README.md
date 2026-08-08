@@ -316,7 +316,7 @@ Shadow: `--shadow-card` = `0 6px 24px rgba(7,59,92,0.08)` · `--shadow-hover` kh
 
 - Font: **Be Vietnam Pro** (primary) + **Inter** fallback — khai báo trong `index.html` + `:root`.
 - Base 16px, `-webkit-font-smoothing: antialiased`.
-- Container công khai: **1280px** — `.page-container` / `.chrome-container` / `.section-container` (token `--container-page`).
+- Container công khai: **1396px** — `.page-container` / `.chrome-container` / `.section-container` (token `--container-page`).
 - Dashboard khách thuê & người làm (`UserDashboardLayout`): sidebar + nội dung, kế thừa token (admin shell Soft UI riêng — xem [Admin](#admin)).
 
 ### Auth & mode (web) — quy tắc bắt buộc
@@ -348,8 +348,8 @@ Shared: `apps/web/src/components/dashboard/dashboard-chrome.tsx` (`DashboardPage
 
 ### Gallery bài đăng dịch vụ (gig)
 
-- Thẻ gig (list/card): `object-cover` (crop khung).
-- Trang chi tiết `/user/:userId/dich-vu/:postId`: `object-contain` — **hiện đủ ảnh** trong khung (`SquareImageSlider` + `objectFit="contain"`).
+- Thẻ gig (list/card): `SquareImageSlider` `variant="cover"` — `object-cover`, dots điều hướng.
+- Trang chi tiết `/user/:userId/dich-vu/:postId` (+ admin duyệt): `variant="gallery"` kiểu Fiverr — hero `object-cover` + hàng **thumbnail** dưới, mũi tên, counter `1/N` (`apps/web/src/components/partner/square-image-slider.tsx`).
 
 ### Giá tiền — luôn 1 hàng
 
@@ -415,6 +415,28 @@ Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): 
 - **Icon & accent ngành** (mega menu, thẻ dịch vụ, sidebar catalog): giữ **màu riêng từng nhóm** qua `groupColor(slug).main` — **không** đổi icon catalog sang teal thương hiệu.
 - Giá (`--color-sale`), CTA chính, trạng thái đơn: màu hệ thống, không theo ngành.
 - Thanh uy tín partner: track hồng `#e91e8c`, fill gradient vàng→cam (ngoài palette navy/teal — nhận diện riêng).
+
+### Soft-3D teal — popup chat (kiểu logo Cốc Cốc)
+
+Phạm vi **chỉ** FAB + panel chatbot (`apps/web/src/components/chatbot/chatbot-popup.tsx`). Không áp soft-3D teal này cho header/footer (chrome navy), catalog ngành, hay thẻ dịch vụ.
+
+**Ý đồ:** cảm giác app-icon / soft-3D (radial highlight + bóng mềm + inset light) giống logo Cốc Cốc, nhưng **giữ brand Dich Vụ Ơi** — palette teal thương hiệu (`--color-brand` `#009C95` và các bậc gần), không dùng đỏ/cam Cốc Cốc.
+
+| Thành phần | Quy ước |
+|------------|---------|
+| FAB (nút chat) | Bo tròn đầy đủ; nền `radial-gradient` sáng góc trên-trái → teal brand → teal đậm; shadow ngoài mềm + `inset` highlight trắng + bóng dưới tối nhẹ (`FAB_SURFACE`) |
+| Header panel | Cùng họ radial teal; highlight ellipse trắng mờ trên đỉnh; chữ/icon trắng; copy «Dich Vụ Ơi» / trợ lý |
+| Avatar bot / nút gửi | Squircle / circle nhỏ, cùng radial teal brand |
+| Bóng panel | Soft depth navy/teal (`PANEL_SHADOW`) — không glow tím, không neon |
+| Icon | Lucide (`MessageCircle`, `Send`, `X`) — không emoji |
+
+**Gradient tham chiếu FAB** (có thể tinh chỉnh, giữ trung tâm brand):
+
+```text
+radial-gradient(circle at 42% 36%, #5eead4 0%, #14b8a6 38%, #009c95 68%, #0f766e 100%)
+```
+
+**Không:** đổi soft-3D teal sang purple/indigo; overlay sticker rời trên FAB; flat solid `#009C95` không radial/inset khi làm lại FAB.
 
 ## Bảng màu ngành nghề
 
@@ -1006,7 +1028,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - **Escrow** (`PaymentStatus`): **tạo đơn = tự giam cọc** từ ví → `HELD`; `RELEASED` + hoa hồng 15% khi hoàn thành; chặn hàng chờ / nhận việc / chat / `IN_PROGRESS` khi chưa `HELD`
 - **Review hai chiều** sau `COMPLETED` (cập nhật `PartnerProfile.ratingAvg`)
 - **Admin Soft UI** `/admin` (**Lucide** KPI icons, khớp mock Soft UI) + **MODERATOR** `/admin/support`; finance / service-posts / complaints
-- **Bài đăng DV (gig):** partner CRUD → admin duyệt → public `/user/:userId` + chi tiết `/user/:userId/dich-vu/:postId` (gallery `object-contain`)
+- **Bài đăng DV (gig):** partner CRUD → admin duyệt → public `/user/:userId` + chi tiết `/user/:userId/dich-vu/:postId` (gallery Fiverr: hero + thumbnails)
 - Dashboard user đồng bộ chrome theo `/doi-tac/viec` (`dashboard-chrome.tsx`)
 - Hồ sơ công khai `/user/:userId` (select gọn + cache TanStack 60s; skeleton loading)
 - **Retention P0:** lưu người làm quen; gợi ý thuê lại; trang chủ «Thuê lại nhanh»
@@ -1035,7 +1057,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - Vite, React, Tailwind CSS, React Router, TanStack Query  
 - React Hook Form và Zod  
 - Mobile-first / responsive (`sm` / `md` / `lg`)  
-- Bố cục công khai: **1280px** (`.chrome-container` / `.section-container` / `.page-container`); header/footer full-bleed navy — xem [Hệ thống giao diện](#hệ-thống-giao-diện-ui)
+- Bố cục công khai: **1396px** (`.chrome-container` / `.section-container` / `.page-container`); header/footer full-bleed navy — xem [Hệ thống giao diện](#hệ-thống-giao-diện-ui)
 - Dashboard **Khách thuê** (`/don-cua-toi`) và **Người làm** (`/doi-tac`): cột sidebar + nội dung giống Admin (`UserDashboardLayout`)
 - Trang chủ: chip nghề marquee nằm **dưới vùng perks** (trong `HeroSection`), không còn dưới header
 - Header: **logo trái | search căn giữa | tài khoản phải** — nền `--color-navy`, nút «Đơn thuê» viền gold
@@ -1179,6 +1201,7 @@ Production: cấu hình env trên Vercel (web `VITE_API_URL`, `VITE_GOOGLE_CLIEN
 ### Chatbot (FAQ + ChatGPT)
 
 - Popup chat góc phải dưới trên web khách hàng
+- **UI:** soft-3D teal (kiểu logo Cốc Cốc) + brand Dich Vụ Ơi — xem [Soft-3D teal — popup chat](#soft-3d-teal--popup-chat-kiểu-logo-cốc-cốc)
 - Ưu tiên khớp **~2000 câu FAQ** có sẵn (`apps/api/src/modules/chatbot/data/faq-knowledge.json`)
 - Không khớp đủ điểm → gọi **ChatGPT** nếu có `OPENAI_API_KEY` trong `apps/api/.env`
 - Sinh lại FAQ: `node apps/api/scripts/generate-faq.mjs`

@@ -64,6 +64,8 @@ export type PartnerProfile = {
     id: string;
     serviceId: string;
     price: number | null;
+    priceMin?: number | null;
+    priceMax?: number | null;
     headline: string | null;
     isActive: boolean;
     /** Tổng giờ làm nghề này trên sàn (đơn COMPLETED). */
@@ -135,6 +137,8 @@ export type PublicPartnerProfile = {
   offerings: Array<{
     id: string;
     price: number;
+    priceMin?: number;
+    priceMax?: number;
     headline: string | null;
     experienceYears: number;
     /** Tổng giờ làm nghề này trên sàn. */
@@ -179,6 +183,8 @@ export type PublicPartnerProfile = {
     images: string[];
     serviceId: string;
     price?: number | null;
+    priceMin?: number | null;
+    priceMax?: number | null;
     createdAt: string;
     updatedAt: string;
     service: {

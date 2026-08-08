@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { ServiceCard } from '../components/common/service-card';
-import { HeroSection } from '../components/home/hero-section';
 import { HomeHotJobsSection } from '../components/home/home-hot-jobs-section';
 import { HomeOpenJobsSection } from '../components/home/home-open-jobs-section';
 import { HomeServicePostsSection } from '../components/home/home-service-posts-section';
 import { FamiliarPartnersSection, RebookSection } from '../components/home/retention-sections';
+import {
+  SectionHeaderBar,
+  SectionHeaderViewAll,
+} from '../components/home/section-header-bar';
 import { Icon } from '../components/ui/icon';
 import type { IconName } from '../components/ui/icon';
 import { PaymentPartnerBadges } from '../components/ui/payment-partner-badges';
@@ -29,53 +30,6 @@ const trustPoints: Array<{ icon: IconName; value: string; label: string }> = [
   { icon: 'check', value: '98%', label: 'Khách hàng hài lòng' },
   { icon: 'headset', value: 'Hỗ trợ 24/7', label: 'Tư vấn tận tình' },
 ];
-
-function SectionHeader({
-  title,
-  action,
-  children,
-}: {
-  title: string;
-  action?: ReactNode;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="section-header-bar mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3.5 sm:px-5 sm:py-4">
-      <h2 className="text-xl font-bold tracking-tight text-[var(--color-navy)] sm:text-2xl">
-        {title}
-      </h2>
-      {children}
-      {action ? (
-        <div className="ml-auto flex shrink-0 items-center gap-3">{action}</div>
-      ) : null}
-    </div>
-  );
-}
-
-function ViewAllLink({
-  to = '/nhom',
-  showChevron = true,
-}: {
-  to?: string;
-  showChevron?: boolean;
-}) {
-  return (
-    <Link
-      to={to}
-      className="text-[15px] font-semibold !text-[var(--color-brand)] transition hover:!text-[var(--color-navy)]"
-    >
-      <span className="inline-flex items-center gap-1">
-        Xem tất cả
-        {showChevron ? (
-          <Icon
-            name="chevronRight"
-            className="h-4 w-4 transition group-hover:translate-x-0.5"
-          />
-        ) : null}
-      </span>
-    </Link>
-  );
-}
 
 export function HomePage() {
   const { user } = useAuth();
@@ -121,7 +75,7 @@ export function HomePage() {
 
   return (
     <div className="min-w-0 overflow-x-clip pb-4">
-      <HeroSection />
+      <HomeServicePostsSection />
 
       <RebookSection />
       <HomeOpenJobsSection />
@@ -149,11 +103,13 @@ export function HomePage() {
 
       <HomeHotJobsSection />
 
-      <HomeServicePostsSection />
-
       <section className="page-shell mt-10">
         <div className="section-container min-w-0">
-          <SectionHeader title="Dịch vụ nổi bật" action={<ViewAllLink />} />
+          <SectionHeaderBar
+            icon="star"
+            title="Dịch vụ nổi bật"
+            action={<SectionHeaderViewAll to="/nhom" />}
+          />
 
           <div className="relative mb-5 min-w-0 max-w-full overflow-hidden">
             <div

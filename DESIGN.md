@@ -88,15 +88,35 @@ Typography uu tien kha nang doc tren dashboard va danh sach nghiep vu: contrast 
 
 ## Layout
 
-Layout dung container co gioi han 1280px (`page/chrome/section`) de giu nhip nhat quan giua public pages va dashboard. Page shell responsive voi padding ngang 16px (mobile) va 24px (tablet+).
+Layout dung container co gioi han 1396px (`page/chrome/section`) de giu nhip nhat quan giua public pages va dashboard. Page shell responsive voi padding ngang 16px (mobile) va 24px (tablet+).
 
 ## Elevation & Depth
 
 Depth duoc dung muc vua phai: card bong nhe (`--shadow-card`) cho surface tach lop, hover shadow manh hon (`--shadow-hover`) cho interactive affordance. Khong dung effect phuc tap tren da so man hinh.
 
+### Soft-3D Chrome (navy)
+
+Ngon ngu do sau dung cho chrome thuong hieu — **giu mau navy cu**, khong doi sang teal/purple.
+
+**Ap dung:**
+- Navbar (`site-header.tsx`)
+- Section header trang chu (`.section-header-bar` / `SectionHeaderBar`)
+- Thanh footer **«Bạn cần hỗ trợ?»** (`.soft-3d-navy`)
+
+**Cong thuc:**
+- **Nen radial navy:** `#0a5678 → #073b5c → #052d47 → #041f32` (ellipse tu goc tren-trai)
+- **Bong mem:** shadow ngoai offset + blur; inset highlight top + inset dark day
+- **Highlight:** overlay radial trang nhe canh tren (`.section-header-bar__highlight` / `.soft-3d-navy__highlight`)
+- **Radius:** ~22px (squircle panel)
+- **Squircle icon:** `.soft-3d-squircle` — border white/15, nen white/10, inset highlight
+  - Section: 1 icon theo chu de (sparkles / briefcase / chart…)
+  - Support bar: headset lon + 4 kenh (phone, message, Zalo, mail)
+
+**Token CSS:** `apps/web/src/index.css` — component: `apps/web/src/components/home/section-header-bar.tsx`
+
 ## Shapes
 
-Form language mem vua phai: radius 8-16px cho controls va cards; bo goc lon hon cho surface quan trong (xl), va pill cho cac nut outline dac thu.
+Form language mem vua phai: radius 8-16px cho controls va cards; bo goc lon (~22px) cho soft-3D chrome; pill cho chip/nav mobile.
 
 ## Components
 
@@ -118,6 +138,6 @@ Form language mem vua phai: radius 8-16px cho controls va cards; bo goc lon hon 
 ## Do's and Don'ts
 
 - Do giu trust hierarchy: navy cho authority, teal cho action, gold dung co dieu do.
-- Do giu spacing/container theo 1280 framework de tranh vo chrome.
+- Do giu spacing/container theo 1396 framework de tranh vo chrome.
 - Don't dung qua nhieu accent cung luc tren cung viewport.
 - Don't pha vo token radius/spacing mau trong cac flow cot loi khi khong co ly do nghiep vu.

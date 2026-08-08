@@ -49,7 +49,7 @@ function NavIconButton({
   const badge =
     count && count > 0 ? (
       <span
-        className="absolute -right-0.5 -top-0.5 z-[2] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E41E3F] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[var(--color-navy)]"
+        className="absolute -right-0.5 -top-0.5 z-[2] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E41E3F] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[var(--color-navy)] shadow-[0_2px_6px_rgba(5,45,71,0.3)]"
         aria-hidden
       >
         {count > 9 ? '9+' : count}
@@ -57,7 +57,7 @@ function NavIconButton({
     ) : null;
 
   const className =
-    'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60';
+    'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-white/15 bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_2px_8px_rgba(5,45,71,0.2)] transition hover:bg-white/20 hover:border-white/25 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_12px_rgba(5,45,71,0.22)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60';
 
   if (to) {
     return (

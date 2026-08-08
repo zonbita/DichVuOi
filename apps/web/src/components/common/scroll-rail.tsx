@@ -108,7 +108,7 @@ export function ScrollRail({
             type="button"
             onClick={() => scroll(-1)}
             aria-label="Xem mục trước"
-            className="absolute left-1 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[var(--color-ink)] shadow-md transition hover:bg-[var(--color-brand-soft)] lg:flex"
+            className="absolute left-0 top-[22%] z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/95 text-[var(--color-navy)] opacity-0 shadow-[0_6px_18px_rgba(5,45,71,0.16)] transition hover:bg-white group-hover/rail:opacity-100 lg:flex"
           >
             <Icon name="chevronLeft" className="h-4 w-4" />
           </button>
@@ -116,7 +116,7 @@ export function ScrollRail({
             type="button"
             onClick={() => scroll(1)}
             aria-label="Xem mục kế tiếp"
-            className="absolute right-1 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[var(--color-ink)] shadow-md transition hover:bg-[var(--color-brand-soft)] lg:flex"
+            className="absolute right-0 top-[22%] z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/95 text-[var(--color-navy)] opacity-0 shadow-[0_6px_18px_rgba(5,45,71,0.16)] transition hover:bg-white group-hover/rail:opacity-100 lg:flex"
           >
             <Icon name="chevronRight" className="h-4 w-4" />
           </button>

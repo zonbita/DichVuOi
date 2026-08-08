@@ -3,6 +3,7 @@ import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { io, type Socket } from 'socket.io-client';
+import { MessageCircle, Send, X } from 'lucide-react';
 import { useAuth } from '../../features/auth/auth-context';
 import {
   markSupportChatRead,
@@ -12,6 +13,16 @@ import {
 import { api } from '../../services/api';
 import type { ChatbotSource } from '../../types/chatbot';
 import type { SupportMessage } from '../../types/support';
+
+const FAB_SURFACE: CSSProperties = {
+  background:
+    'radial-gradient(circle at 42% 36%, #5eead4 0%, #14b8a6 38%, #009c95 68%, #0f766e 100%)',
+  boxShadow:
+    '0 10px 28px rgba(0, 122, 116, 0.38), 0 2px 6px rgba(7, 59, 92, 0.18), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -10px 18px rgba(7, 59, 92, 0.18)',
+};
+
+const PANEL_SHADOW =
+  '0 18px 48px rgba(7, 59, 92, 0.18), 0 4px 14px rgba(0, 156, 149, 0.12)';
 
 type ChatTab = 'ai' | 'support';
 
@@ -351,27 +362,46 @@ export function ChatbotPopup() {
           role="dialog"
           aria-modal="false"
           aria-labelledby={titleId}
-          style={panelStyle}
-          className="pointer-events-auto fixed z-[99999] flex flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl"
+          style={{ ...panelStyle, boxShadow: PANEL_SHADOW }}
+          className="pointer-events-auto fixed z-[99999] flex flex-col overflow-hidden rounded-[22px] border border-white/70 bg-white"
         >
-          <header className="bg-[linear-gradient(135deg,var(--color-brand),var(--color-sea))] px-4 pt-3 text-white">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 id={titleId} className="text-base font-semibold">
-                  Hỗ trợ Dịch Vụ Ơi
-                </h2>
-                <p className="mt-0.5 text-xs text-white/85">{headerSubtitle}</p>
+          <header
+            className="relative px-4 pt-3.5 text-white"
+            style={{
+              background:
+                'radial-gradient(ellipse 120% 140% at 30% 0%, #5eead4 0%, #14b8a6 32%, #009c95 62%, #0f766e 100%)',
+              boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.18)',
+            }}
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.28),transparent_70%)]"
+            />
+            <div className="relative flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <span
+                  className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-white/18 text-white shadow-[0_4px_12px_rgba(7,59,92,0.2),inset_0_1px_0_rgba(255,255,255,0.4)]"
+                  aria-hidden
+                >
+                  <MessageCircle className="h-5 w-5 drop-shadow-[0_2px_3px_rgba(7,59,92,0.25)]" strokeWidth={2.25} />
+                </span>
+                <div className="min-w-0">
+                  <h2 id={titleId} className="text-base font-semibold tracking-tight drop-shadow-sm">
+                    Hỗ trợ Dịch Vụ Ơi
+                  </h2>
+                  <p className="mt-0.5 text-xs text-white/90">{headerSubtitle}</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full bg-white/15 px-2.5 py-1 text-sm hover:bg-white/25"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/18 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] transition hover:bg-white/28"
                 aria-label="Đóng chat"
               >
-                ✕
+                <X className="h-4 w-4" strokeWidth={2.5} />
               </button>
             </div>
-            <div className="mt-3 flex gap-1">
+            <div className="relative mt-3.5 flex gap-1">
               {(
                 [
                   { id: 'ai' as const, label: 'Hỏi AI' },
@@ -385,9 +415,9 @@ export function ChatbotPopup() {
                     setTab(item.id);
                     setDraft('');
                   }}
-                  className={`flex-1 rounded-t-lg px-3 py-2 text-sm font-semibold transition ${
+                  className={`flex-1 rounded-t-[12px] px-3 py-2 text-sm font-semibold transition ${
                     tab === item.id
-                      ? 'bg-white text-[var(--color-brand-deep)]'
+                      ? 'bg-white text-[var(--color-brand-deep)] shadow-[0_-2px_8px_rgba(7,59,92,0.08)]'
                       : 'bg-white/15 text-white/90 hover:bg-white/25'
                   }`}
                 >
@@ -409,11 +439,19 @@ export function ChatbotPopup() {
                     className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm ${
+                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                         m.role === 'user'
-                          ? 'rounded-br-md bg-[var(--color-brand)] !text-white'
-                          : 'rounded-bl-md border border-[var(--color-line)] bg-white text-[var(--color-ink)]'
+                          ? 'rounded-br-md !text-white shadow-[0_4px_12px_rgba(0,122,116,0.28)]'
+                          : 'rounded-bl-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-[0_2px_8px_rgba(7,59,92,0.06)]'
                       }`}
+                      style={
+                        m.role === 'user'
+                          ? {
+                              background:
+                                'radial-gradient(circle at 30% 20%, #2dd4bf 0%, #009c95 55%, #0f766e 100%)',
+                            }
+                          : undefined
+                      }
                     >
                       <p className="whitespace-pre-wrap">{m.text}</p>
                       {m.role === 'bot' && m.source ? (
@@ -440,7 +478,7 @@ export function ChatbotPopup() {
                       type="button"
                       onClick={() => sendAi(q)}
                       disabled={askMutation.isPending}
-                      className="shrink-0 rounded-full border border-[var(--color-line)] bg-[var(--color-brand-soft)] px-2.5 py-1 text-xs text-[var(--color-brand-deep)] hover:border-[var(--color-brand)] disabled:opacity-50"
+                      className="shrink-0 rounded-full border border-[var(--color-brand)]/20 bg-[var(--color-brand-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-brand-deep)] shadow-[0_1px_3px_rgba(0,156,149,0.1)] transition hover:border-[var(--color-brand)]/40 hover:shadow-[0_2px_8px_rgba(0,156,149,0.18)] disabled:opacity-50"
                     >
                       {q.length > 36 ? `${q.slice(0, 36)}…` : q}
                     </button>
@@ -463,9 +501,11 @@ export function ChatbotPopup() {
                 <button
                   type="submit"
                   disabled={askMutation.isPending || !draft.trim()}
-                  className="rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold !text-white disabled:opacity-50"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] !text-white transition disabled:opacity-50"
+                  style={FAB_SURFACE}
+                  aria-label="Gửi"
                 >
-                  Gửi
+                  <Send className="h-4 w-4 drop-shadow-[0_1px_2px_rgba(7,59,92,0.35)]" strokeWidth={2.5} />
                 </button>
               </form>
             </>
@@ -526,11 +566,19 @@ export function ChatbotPopup() {
                           className={`flex ${mine ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm ${
+                            className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                               mine
-                                ? 'rounded-br-md bg-[var(--color-brand)] !text-white'
-                                : 'rounded-bl-md border border-[var(--color-line)] bg-white text-[var(--color-ink)]'
+                                ? 'rounded-br-md !text-white shadow-[0_4px_12px_rgba(0,122,116,0.28)]'
+                                : 'rounded-bl-md border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-[0_2px_8px_rgba(7,59,92,0.06)]'
                             }`}
+                            style={
+                              mine
+                                ? {
+                                    background:
+                                      'radial-gradient(circle at 30% 20%, #2dd4bf 0%, #009c95 55%, #0f766e 100%)',
+                                  }
+                                : undefined
+                            }
                           >
                             {!mine ? (
                               <p className="mb-1 text-[10px] font-bold uppercase tracking-wide opacity-60">
@@ -570,9 +618,11 @@ export function ChatbotPopup() {
                   <button
                     type="submit"
                     disabled={supportMutation.isPending || !draft.trim()}
-                    className="rounded-full bg-[var(--color-ink)] px-4 py-2 text-sm font-semibold !text-white disabled:opacity-50"
+                    className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] !text-white transition disabled:opacity-50"
+                    style={FAB_SURFACE}
+                    aria-label="Gửi"
                   >
-                    Gửi
+                    <Send className="h-4 w-4 drop-shadow-[0_1px_2px_rgba(7,59,92,0.35)]" strokeWidth={2.5} />
                   </button>
                 </form>
               ) : null}
@@ -587,14 +637,21 @@ export function ChatbotPopup() {
         onPointerMove={onFabPointerMove}
         onPointerUp={onFabPointerUp}
         onPointerCancel={onFabPointerUp}
-        style={{ left: fabPos.x, top: fabPos.y }}
-        className="pointer-events-auto fixed z-[100000] flex h-14 w-14 cursor-grab touch-none items-center justify-center rounded-2xl bg-[var(--color-brand)] text-2xl !text-white shadow-lg shadow-[var(--color-brand)]/30 transition hover:bg-[var(--color-brand-deep)] active:cursor-grabbing focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)]"
+        style={{ left: fabPos.x, top: fabPos.y, ...FAB_SURFACE }}
+        className="pointer-events-auto fixed z-[100000] flex h-14 w-14 cursor-grab touch-none items-center justify-center rounded-[18px] !text-white transition duration-200 hover:brightness-105 hover:scale-[1.03] active:cursor-grabbing active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)]"
         aria-expanded={open}
         aria-controls={open ? titleId : undefined}
         aria-label={open ? 'Đóng trợ lý chat' : 'Mở trợ lý chat — kéo để di chuyển'}
         title="Kéo để di chuyển · nhấp để mở/đóng"
       >
-        {open ? '✕' : '💬'}
+        {open ? (
+          <X className="h-6 w-6 drop-shadow-[0_2px_4px_rgba(7,59,92,0.35)]" strokeWidth={2.5} />
+        ) : (
+          <MessageCircle
+            className="h-7 w-7 drop-shadow-[0_2px_4px_rgba(7,59,92,0.35)]"
+            strokeWidth={2.25}
+          />
+        )}
       </button>
     </>
   );

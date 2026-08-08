@@ -31,12 +31,21 @@ export class CreatePartnerServicePostDto {
 
   @ApiProperty({
     example: 200000,
-    description: 'Giá chào cho nghề này (VNĐ)',
+    description: 'Giá chào min (VNĐ)',
   })
-  @IsInt({ message: 'Giá chào phải là số nguyên' })
-  @Min(1000, { message: 'Giá chào tối thiểu 1.000 VNĐ' })
-  @Max(500_000_000, { message: 'Giá chào quá lớn' })
-  price!: number;
+  @IsInt({ message: 'Giá min phải là số nguyên' })
+  @Min(1000, { message: 'Giá min tối thiểu 1.000 VNĐ' })
+  @Max(500_000_000, { message: 'Giá min quá lớn' })
+  priceMin!: number;
+
+  @ApiProperty({
+    example: 500000,
+    description: 'Giá chào max (VNĐ)',
+  })
+  @IsInt({ message: 'Giá max phải là số nguyên' })
+  @Min(1000, { message: 'Giá max tối thiểu 1.000 VNĐ' })
+  @Max(500_000_000, { message: 'Giá max quá lớn' })
+  priceMax!: number;
 
   @ApiProperty({
     type: [String],
@@ -72,13 +81,23 @@ export class UpdatePartnerServicePostDto {
 
   @ApiPropertyOptional({
     example: 200000,
-    description: 'Giá chào cho nghề này (VNĐ)',
+    description: 'Giá chào min (VNĐ)',
   })
   @IsOptional()
-  @IsInt({ message: 'Giá chào phải là số nguyên' })
-  @Min(1000, { message: 'Giá chào tối thiểu 1.000 VNĐ' })
-  @Max(500_000_000, { message: 'Giá chào quá lớn' })
-  price?: number;
+  @IsInt({ message: 'Giá min phải là số nguyên' })
+  @Min(1000, { message: 'Giá min tối thiểu 1.000 VNĐ' })
+  @Max(500_000_000, { message: 'Giá min quá lớn' })
+  priceMin?: number;
+
+  @ApiPropertyOptional({
+    example: 500000,
+    description: 'Giá chào max (VNĐ)',
+  })
+  @IsOptional()
+  @IsInt({ message: 'Giá max phải là số nguyên' })
+  @Min(1000, { message: 'Giá max tối thiểu 1.000 VNĐ' })
+  @Max(500_000_000, { message: 'Giá max quá lớn' })
+  priceMax?: number;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()

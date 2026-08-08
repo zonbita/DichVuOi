@@ -31,7 +31,7 @@ Dich Vu Oi la san ket noi 2 chieu customer-partner theo mo hinh freelancer marke
 - Co dual-role tren 1 account (`CUSTOMER`, `PARTNER`, `ADMIN`).
 - Co escrow hold tien ngay khi tao don; hoa hong mac dinh theo booking sau khi hoan thanh.
 - Catalog public uu tien service online; service offline duoc quan tri trong he thong.
-- Rang buoc layout web theo container 1280 (`chrome-container`, `section-container`).
+- Rang buoc layout web theo container 1396 (`chrome-container`, `section-container`).
 - Chua co cong thanh toan production day du (dang local-first + roadmap).
 
 ## Brand Commitments

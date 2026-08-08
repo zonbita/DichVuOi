@@ -14,7 +14,7 @@ Chi tiết: `.cursor/skills/analyze-build-verify/SKILL.md`
 
 - Web: `apps/web` (React, Vite, Tailwind, TanStack Query)
 - API: `apps/api` (NestJS, Prisma, Socket.IO)
-- Section / chrome: **1280px** (`.chrome-container` / `.section-container`)
+- Section / chrome: **1396px** (`.chrome-container` / `.section-container`)
 - Dashboard khách thuê & người làm: `UserDashboardLayout` (cột giống admin)
 
 ## Auth & role (web)

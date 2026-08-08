@@ -174,7 +174,7 @@ export function AdminServicePostDetailPage() {
               <SquareImageSlider
                 images={imgs}
                 resolveSrc={mediaSrc}
-                variant="cover"
+                variant="gallery"
                 className=""
               />
             ) : (

@@ -7,8 +7,10 @@ export type PartnerServicePost = {
   coverUrl: string | null;
   images: string[];
   serviceId: string;
-  /** Giá chào nghề (từ PartnerService). */
+  /** Giá chào min — alias priceMin (tương thích). */
   price: number | null;
+  priceMin?: number | null;
+  priceMax?: number | null;
   status: PartnerServicePostStatus;
   rejectReason: string | null;
   reviewedAt: string | null;

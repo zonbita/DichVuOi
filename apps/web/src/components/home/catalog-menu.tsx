@@ -64,7 +64,7 @@ export function CatalogMenu({
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+          className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-white/80 bg-white/90 px-4 py-3.5 text-left shadow-[0_10px_28px_rgba(5,45,71,0.1),inset_0_1px_0_rgba(255,255,255,0.95)]"
         >
           <span className="flex items-center gap-2.5 text-base font-bold">
             <Icon name="menu" className="h-5 w-5 text-[var(--color-brand)]" />
@@ -145,7 +145,7 @@ export function CatalogMenu({
 
         <div
           ref={panelRef}
-          className={`mega-menu-panel absolute top-0 left-full z-[110] ml-px w-[min(720px,calc(100vw-380px))] overflow-hidden rounded-r-[20px] border border-white/80 shadow-[0_18px_48px_rgba(15,39,71,0.12)] transition-[opacity,transform] duration-200 ease-out ${
+          className={`mega-menu-panel absolute top-0 left-full z-[110] ml-px w-[min(720px,calc(100vw-380px))] overflow-hidden border border-white/80 transition-[opacity,transform] duration-200 ease-out ${
             activeSlug && activeGroup
               ? 'pointer-events-auto translate-x-0 opacity-100'
               : 'pointer-events-none translate-x-1 opacity-0'

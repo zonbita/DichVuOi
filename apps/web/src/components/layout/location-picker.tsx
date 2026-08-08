@@ -67,7 +67,7 @@ export function LocationPicker({
           onDark ? 'text-white' : 'text-[var(--color-ink)]'
         }`}
       >
-        <Icon name="pin" className={`h-4 w-4 ${onDark ? 'text-[var(--color-brand)]' : 'text-[var(--color-brand)]'}`} />
+        <Icon name="pin" className="h-4 w-4 drop-shadow-sm text-[var(--color-brand)]" />
         <span className="max-w-[9.5rem] truncate">{selected.name}</span>
         <Icon
           name="chevronDown"

@@ -39,6 +39,8 @@ export declare class PartnersController {
             images: string[];
             serviceId: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
         };
         seller: {
             userId: string;
@@ -58,6 +60,8 @@ export declare class PartnersController {
         offering: {
             id: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
             headline: string | null;
             experienceYears: number;
             includes: string | null;
@@ -87,6 +91,7 @@ export declare class PartnersController {
                 isVerified: boolean;
                 ratingAvg: number;
                 ratingCount: number;
+                reputation: import("../../common/reputation.service").PartnerReputationSnapshot | null;
             };
             createdAt: Date;
             updatedAt: Date;
@@ -101,6 +106,8 @@ export declare class PartnersController {
             images: string[];
             serviceId: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
         }[];
         total: number;
         page: number;
@@ -123,6 +130,8 @@ export declare class PartnersController {
             images: string[];
             serviceId: string;
             price: number | null;
+            priceMin: number | null;
+            priceMax: number | null;
         }[];
         id: string;
         userId: string;
@@ -147,6 +156,8 @@ export declare class PartnersController {
         offerings: {
             id: string;
             price: number;
+            priceMin: number;
+            priceMax: number;
             headline: string | null;
             experienceYears: number;
             hoursWorked: number;
@@ -264,6 +275,8 @@ export declare class PartnersController {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -393,6 +406,8 @@ export declare class PartnersController {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -467,6 +482,8 @@ export declare class PartnersController {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -523,6 +540,8 @@ export declare class PartnersController {
         images: string[];
         serviceId: string;
         price: number | null;
+        priceMin: number | null;
+        priceMax: number | null;
     }[]>;
     createMyPost(user: AuthUser, dto: CreatePartnerServicePostDto): Promise<{
         createdAt: Date;
@@ -538,6 +557,8 @@ export declare class PartnersController {
         images: string[];
         serviceId: string;
         price: number | null;
+        priceMin: number | null;
+        priceMax: number | null;
     }>;
     updateMyPost(user: AuthUser, id: string, dto: UpdatePartnerServicePostDto): Promise<{
         createdAt: Date;
@@ -553,6 +574,8 @@ export declare class PartnersController {
         images: string[];
         serviceId: string;
         price: number | null;
+        priceMin: number | null;
+        priceMax: number | null;
     }>;
     deleteMyPost(user: AuthUser, id: string): Promise<{
         ok: boolean;
@@ -608,6 +631,8 @@ export declare class PartnersController {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;
@@ -694,6 +719,8 @@ export declare class PartnersController {
             updatedAt: Date;
             includes: string | null;
             headline: string | null;
+            priceMin: number | null;
+            priceMax: number | null;
             isActive: boolean;
             partnerProfileId: string;
             serviceId: string;

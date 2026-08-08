@@ -20,6 +20,26 @@ export function marketPriceRange(input: {
   return { min, max };
 }
 
+/** Khoảng giá chào partner (bài đăng / offering) — không suy ra từ basePrice. */
+export function resolveOfferingPriceRange(input: {
+  price?: number | null;
+  priceMin?: number | null;
+  priceMax?: number | null;
+}): { min: number; max: number } | null {
+  const min =
+    input.priceMin && input.priceMin > 0
+      ? input.priceMin
+      : input.price && input.price > 0
+        ? input.price
+        : null;
+  if (min == null) return null;
+  const max =
+    input.priceMax && input.priceMax > 0
+      ? Math.max(input.priceMax, min)
+      : min;
+  return { min, max };
+}
+
 export function formatMarketPriceRange(
   input: {
     basePrice: number;

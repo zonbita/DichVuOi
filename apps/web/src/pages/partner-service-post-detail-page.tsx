@@ -5,7 +5,7 @@ import { SquareImageSlider } from '../components/partner/square-image-slider';
 import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { Icon, StarIcon } from '../components/ui/icon';
 import { RichPostBody } from '../components/ui/simple-rich-editor';
-import { api, formatPrice } from '../services/api';
+import { api, formatPrice, formatPriceNumber } from '../services/api';
 
 function mediaSrc(url: string) {
   const apiBase = import.meta.env.VITE_API_URL ?? '';
@@ -88,13 +88,21 @@ export function PartnerServicePostDetailPage() {
   const imgs =
     post.images?.length > 0 ? post.images : post.coverUrl ? [post.coverUrl] : [];
   const unit = offering?.unit ?? post.service.unit;
-  const price = offering?.price;
+  const priceMin = offering?.priceMin ?? offering?.price ?? null;
+  const priceMax = offering?.priceMax ?? priceMin;
   const hireTo = `/dich-vu/${post.service.slug}?partner=${seller.userId}`;
   const serviceRatingAvg = offering?.ratingAvg ?? 0;
   const serviceRatingCount = offering?.ratingCount ?? reviews.length;
 
+  const priceLabel =
+    priceMin != null
+      ? priceMax != null && priceMax > priceMin
+        ? `${formatPriceNumber(priceMin)} – ${formatPriceNumber(priceMax)} VNĐ`
+        : formatPrice(priceMin)
+      : 'Liên hệ';
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-24 lg:pb-0">
       <nav className="flex flex-wrap items-center gap-1.5 text-sm text-[var(--color-muted)]">
         <Link to={`/user/${seller.userId}`} className="hover:text-[var(--color-brand-deep)]">
           {seller.fullName}
@@ -110,22 +118,21 @@ export function PartnerServicePostDetailPage() {
               <SquareImageSlider
                 images={imgs}
                 resolveSrc={mediaSrc}
-                variant="cover"
-                objectFit="contain"
+                variant="gallery"
                 className="rounded-none"
               />
             ) : (
-              <div className="flex aspect-[16/10] items-center justify-center bg-[var(--color-brand-soft)] text-4xl font-extrabold text-[var(--color-brand)]">
+              <div className="flex aspect-[4/3] items-center justify-center bg-[var(--color-brand-soft)] text-4xl font-extrabold text-[var(--color-brand)] sm:aspect-[16/10]">
                 {post.service.name.slice(0, 1)}
               </div>
             )}
-            <div className="space-y-3 p-4 sm:p-5">
+            <div className="space-y-3 p-3.5 sm:p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
                 {post.service.category?.group.name
                   ? `${post.service.category.group.name} · ${post.service.category.name}`
                   : post.service.name}
               </p>
-              <h1 className="text-2xl font-extrabold leading-tight text-[var(--color-navy)] sm:text-3xl">
+              <h1 className="text-xl font-extrabold leading-tight text-[var(--color-navy)] sm:text-2xl lg:text-3xl">
                 {post.title}
               </h1>
               <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-muted)]">
@@ -220,9 +227,18 @@ export function PartnerServicePostDetailPage() {
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
               Giá chào
             </p>
-            {price != null ? (
-              <p className="mt-1 whitespace-nowrap text-2xl font-extrabold leading-tight text-[var(--color-sale)]">
-                {formatPrice(price)}
+            {priceMin != null ? (
+              <p className="mt-1 text-xl font-extrabold leading-tight text-[var(--color-sale)] sm:whitespace-nowrap sm:text-2xl">
+                {priceMax != null && priceMax > priceMin ? (
+                  <>
+                    {formatPriceNumber(priceMin)}
+                    <span className="mx-1 font-semibold text-[var(--color-muted)]">–</span>
+                    {formatPriceNumber(priceMax)}
+                    <span className="ml-1">VNĐ</span>
+                  </>
+                ) : (
+                  formatPrice(priceMin)
+                )}
                 <span className="text-base font-semibold text-[var(--color-muted)]">/{unit}</span>
               </p>
             ) : (
@@ -233,7 +249,7 @@ export function PartnerServicePostDetailPage() {
             ) : null}
             <Link
               to={hireTo}
-              className="btn-primary mt-4 inline-flex w-full items-center justify-center py-3 text-sm"
+              className="btn-primary mt-4 hidden w-full items-center justify-center py-3 text-sm lg:inline-flex"
             >
               Thuê dịch vụ này
             </Link>
@@ -297,6 +313,29 @@ export function PartnerServicePostDetailPage() {
             </p>
           </section>
         </aside>
+      </div>
+
+      {/* Sticky CTA — mobile / tablet */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-line)] bg-white/95 px-3 py-3 shadow-[0_-8px_24px_rgba(5,45,71,0.12)] backdrop-blur-md lg:hidden">
+        <div className="mx-auto flex max-w-[1396px] items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+              Giá chào
+            </p>
+            <p className="truncate text-base font-extrabold text-[var(--color-sale)]">
+              {priceLabel}
+              {priceMin != null ? (
+                <span className="text-sm font-semibold text-[var(--color-muted)]">/{unit}</span>
+              ) : null}
+            </p>
+          </div>
+          <Link
+            to={hireTo}
+            className="btn-primary shrink-0 px-4 py-2.5 text-sm whitespace-nowrap"
+          >
+            Thuê dịch vụ
+          </Link>
+        </div>
       </div>
     </div>
   );

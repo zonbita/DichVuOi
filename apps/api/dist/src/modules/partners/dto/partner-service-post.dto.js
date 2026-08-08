@@ -16,7 +16,8 @@ class CreatePartnerServicePostDto {
     serviceId;
     title;
     body;
-    price;
+    priceMin;
+    priceMax;
     images;
 }
 exports.CreatePartnerServicePostDto = CreatePartnerServicePostDto;
@@ -42,13 +43,23 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         example: 200000,
-        description: 'Giá chào cho nghề này (VNĐ)',
+        description: 'Giá chào min (VNĐ)',
     }),
-    (0, class_validator_1.IsInt)({ message: 'Giá chào phải là số nguyên' }),
-    (0, class_validator_1.Min)(1000, { message: 'Giá chào tối thiểu 1.000 VNĐ' }),
-    (0, class_validator_1.Max)(500_000_000, { message: 'Giá chào quá lớn' }),
+    (0, class_validator_1.IsInt)({ message: 'Giá min phải là số nguyên' }),
+    (0, class_validator_1.Min)(1000, { message: 'Giá min tối thiểu 1.000 VNĐ' }),
+    (0, class_validator_1.Max)(500_000_000, { message: 'Giá min quá lớn' }),
     __metadata("design:type", Number)
-], CreatePartnerServicePostDto.prototype, "price", void 0);
+], CreatePartnerServicePostDto.prototype, "priceMin", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: 500000,
+        description: 'Giá chào max (VNĐ)',
+    }),
+    (0, class_validator_1.IsInt)({ message: 'Giá max phải là số nguyên' }),
+    (0, class_validator_1.Min)(1000, { message: 'Giá max tối thiểu 1.000 VNĐ' }),
+    (0, class_validator_1.Max)(500_000_000, { message: 'Giá max quá lớn' }),
+    __metadata("design:type", Number)
+], CreatePartnerServicePostDto.prototype, "priceMax", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         type: [String],
@@ -65,7 +76,8 @@ class UpdatePartnerServicePostDto {
     serviceId;
     title;
     body;
-    price;
+    priceMin;
+    priceMax;
     images;
 }
 exports.UpdatePartnerServicePostDto = UpdatePartnerServicePostDto;
@@ -94,14 +106,25 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         example: 200000,
-        description: 'Giá chào cho nghề này (VNĐ)',
+        description: 'Giá chào min (VNĐ)',
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsInt)({ message: 'Giá chào phải là số nguyên' }),
-    (0, class_validator_1.Min)(1000, { message: 'Giá chào tối thiểu 1.000 VNĐ' }),
-    (0, class_validator_1.Max)(500_000_000, { message: 'Giá chào quá lớn' }),
+    (0, class_validator_1.IsInt)({ message: 'Giá min phải là số nguyên' }),
+    (0, class_validator_1.Min)(1000, { message: 'Giá min tối thiểu 1.000 VNĐ' }),
+    (0, class_validator_1.Max)(500_000_000, { message: 'Giá min quá lớn' }),
     __metadata("design:type", Number)
-], UpdatePartnerServicePostDto.prototype, "price", void 0);
+], UpdatePartnerServicePostDto.prototype, "priceMin", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 500000,
+        description: 'Giá chào max (VNĐ)',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)({ message: 'Giá max phải là số nguyên' }),
+    (0, class_validator_1.Min)(1000, { message: 'Giá max tối thiểu 1.000 VNĐ' }),
+    (0, class_validator_1.Max)(500_000_000, { message: 'Giá max quá lớn' }),
+    __metadata("design:type", Number)
+], UpdatePartnerServicePostDto.prototype, "priceMax", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ type: [String] }),
     (0, class_validator_1.IsOptional)(),

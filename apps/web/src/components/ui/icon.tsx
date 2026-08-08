@@ -292,6 +292,11 @@ const shapes = {
       <path d="M4 7h16M4 12h16M4 17h16" />
     </>
   ),
+  close: (
+    <>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </>
+  ),
   paw: (
     <>
       <circle cx="7.6" cy="9.2" r="1.8" />
