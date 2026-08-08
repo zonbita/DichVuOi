@@ -9,7 +9,10 @@ import {
   assertBootSecrets,
   isProductionLike,
 } from './common/security-env';
-import { ensureUploadsRoot } from './common/uploads-root';
+import {
+  ensureUploadsRoot,
+  resolveBundledUploadsRoot,
+} from './common/uploads-root';
 
 async function bootstrap() {
   assertBootSecrets();
@@ -23,14 +26,26 @@ async function bootstrap() {
     }),
   );
 
+  const staticHeaders = (res: {
+    setHeader: (name: string, value: string) => void;
+  }) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+  };
+
   const uploadsRoot = ensureUploadsRoot();
   app.useStaticAssets(uploadsRoot, {
     prefix: '/uploads/',
-    setHeaders: (res) => {
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-    },
+    setHeaders: staticHeaders,
   });
+  /** Ảnh commit trong repo — fallback khi /tmp Vercel trống. */
+  const bundledUploads = resolveBundledUploadsRoot();
+  if (bundledUploads && bundledUploads !== uploadsRoot) {
+    app.useStaticAssets(bundledUploads, {
+      prefix: '/uploads/',
+      setHeaders: staticHeaders,
+    });
+  }
 
   app.setGlobalPrefix('api');
   app.enableCors({

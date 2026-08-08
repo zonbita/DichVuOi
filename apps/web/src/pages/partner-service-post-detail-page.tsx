@@ -6,11 +6,7 @@ import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/
 import { Icon, StarIcon } from '../components/ui/icon';
 import { RichPostBody } from '../components/ui/simple-rich-editor';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
-
-function mediaSrc(url: string) {
-  const apiBase = import.meta.env.VITE_API_URL ?? '';
-  return url.startsWith('http') || url.startsWith('blob:') ? url : `${apiBase}${url}`;
-}
+import { mediaSrc } from '../utils/media-src';
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -265,7 +261,10 @@ export function PartnerServicePostDetailPage() {
             <div className="flex gap-3">
               <AvatarLevelOverlay level={seller.level} className="block w-16 shrink-0">
                 <div className="aspect-square w-full overflow-hidden rounded-2xl">
-                  <SellerAvatar name={seller.fullName} src={seller.avatarUrl} />
+                  <SellerAvatar
+                    name={seller.fullName}
+                    src={seller.avatarUrl ? mediaSrc(seller.avatarUrl) : null}
+                  />
                 </div>
               </AvatarLevelOverlay>
               <div className="min-w-0 flex-1">

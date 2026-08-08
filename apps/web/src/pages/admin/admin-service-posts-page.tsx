@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { LevelBadgeGold } from '../../components/ui/partner-badges';
 import { api } from '../../services/api';
+import { mediaSrc } from '../../utils/media-src';
 import {
   EmptyState,
   FilterBar,
@@ -18,12 +19,9 @@ import {
 
 function Avatar({ name, src }: { name: string; src?: string | null }) {
   if (src) {
-    const url = src.startsWith('http')
-      ? src
-      : `${import.meta.env.VITE_API_URL ?? ''}${src}`;
     return (
       <img
-        src={url}
+        src={mediaSrc(src)}
         alt={name}
         className="h-12 w-12 rounded-xl object-cover ring-1 ring-[var(--color-line)]"
       />

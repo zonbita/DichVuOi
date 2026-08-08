@@ -11,15 +11,11 @@ import { api, formatPrice, formatPriceNumber } from '../services/api';
 import { resolveOfferingPriceRange } from '../utils/market-price';
 import type { PublicPartnerProfile } from '../types/auth';
 import { offeringColor } from '../utils/catalog-colors';
+import { mediaSrc } from '../utils/media-src';
 
 type PartnerOffering = PublicPartnerProfile['offerings'][number];
 type ServicePost = PublicPartnerProfile['servicePosts'][number];
 type Review = PublicPartnerProfile['reviews'][number];
-
-function mediaSrc(url: string) {
-  const apiBase = import.meta.env.VITE_API_URL ?? '';
-  return url.startsWith('http') || url.startsWith('blob:') ? url : `${apiBase}${url}`;
-}
 
 function StarRow({ rating }: { rating: number }) {
   return (

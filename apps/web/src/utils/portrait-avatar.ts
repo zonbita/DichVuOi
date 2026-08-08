@@ -1,3 +1,5 @@
+import { mediaSrc } from './media-src';
+
 /** Số ảnh chân dung trong `public/avatars` — khớp API `portraitAvatarUrl`. */
 const PORTRAIT_COUNT = 9;
 
@@ -16,6 +18,6 @@ export function resolveUserAvatarUrl(input: {
   email?: string | null;
   avatarUrl?: string | null;
 }): string {
-  if (input.avatarUrl) return input.avatarUrl;
+  if (input.avatarUrl) return mediaSrc(input.avatarUrl);
   return portraitAvatarUrl(input.id || input.email || 'guest');
 }

@@ -16,6 +16,7 @@ exports.UploadsController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
+const blob_1 = require("@vercel/blob");
 const crypto_1 = require("crypto");
 const fs_1 = require("fs");
 const multer_1 = require("multer");
@@ -43,19 +44,25 @@ function safeExt(_originalName, mime) {
         return '.gif';
     return '.jpg';
 }
+function useBlobStorage() {
+    return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+}
 function imageInterceptor(subdir) {
+    const memory = useBlobStorage() || Boolean(process.env.VERCEL);
     const dest = (0, path_1.join)((0, uploads_root_1.resolveUploadsRoot)(), subdir);
     return (0, platform_express_1.FileInterceptor)('file', {
-        storage: (0, multer_1.diskStorage)({
-            destination: (_req, _file, cb) => {
-                ensureDir(dest);
-                cb(null, dest);
-            },
-            filename: (_req, file, cb) => {
-                const name = `${Date.now()}-${(0, crypto_1.randomUUID)().slice(0, 8)}${safeExt(file.originalname, file.mimetype)}`;
-                cb(null, name);
-            },
-        }),
+        storage: memory
+            ? (0, multer_1.memoryStorage)()
+            : (0, multer_1.diskStorage)({
+                destination: (_req, _file, cb) => {
+                    ensureDir(dest);
+                    cb(null, dest);
+                },
+                filename: (_req, file, cb) => {
+                    const name = `${Date.now()}-${(0, crypto_1.randomUUID)().slice(0, 8)}${safeExt(file.originalname, file.mimetype)}`;
+                    cb(null, name);
+                },
+            }),
         limits: { fileSize: MAX_BYTES },
         fileFilter: (_req, file, cb) => {
             if (!ALLOWED.has(file.mimetype)) {
@@ -66,9 +73,34 @@ function imageInterceptor(subdir) {
         },
     });
 }
-function uploadedPayload(subdir, file) {
+async function uploadedPayload(subdir, file) {
     if (!file) {
         throw new common_1.BadRequestException('Chưa chọn file ảnh');
+    }
+    if (useBlobStorage()) {
+        if (!file.buffer?.length) {
+            throw new common_1.BadRequestException('File ảnh trống');
+        }
+        const pathname = `${subdir}/${Date.now()}-${(0, crypto_1.randomUUID)().slice(0, 8)}${safeExt(file.originalname, file.mimetype)}`;
+        try {
+            const blob = await (0, blob_1.put)(pathname, file.buffer, {
+                access: 'public',
+                contentType: file.mimetype,
+                token: process.env.BLOB_READ_WRITE_TOKEN,
+            });
+            return {
+                url: blob.url,
+                fileName: file.originalname,
+                size: file.size,
+            };
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : 'Không lưu được ảnh lên Blob';
+            throw new common_1.ServiceUnavailableException(message);
+        }
+    }
+    if (process.env.VERCEL) {
+        throw new common_1.ServiceUnavailableException('Vercel không lưu ảnh bền trên /tmp. Thêm BLOB_READ_WRITE_TOKEN (Vercel Blob) rồi deploy lại API.');
     }
     return {
         url: `/uploads/${subdir}/${file.filename}`,

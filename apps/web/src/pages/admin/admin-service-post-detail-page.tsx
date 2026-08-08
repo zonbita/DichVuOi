@@ -9,12 +9,8 @@ import {
 import { Icon, StarIcon } from '../../components/ui/icon';
 import { RichPostBody } from '../../components/ui/simple-rich-editor';
 import { api, formatPrice } from '../../services/api';
+import { mediaSrc } from '../../utils/media-src';
 import { PageHeader } from './admin-ui';
-
-function mediaSrc(url: string) {
-  const apiBase = import.meta.env.VITE_API_URL ?? '';
-  return url.startsWith('http') || url.startsWith('blob:') ? url : `${apiBase}${url}`;
-}
 
 function StarRow({ rating }: { rating: number }) {
   return (

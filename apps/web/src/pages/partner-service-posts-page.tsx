@@ -14,20 +14,12 @@ import { api, formatPrice, formatPriceNumber } from '../services/api';
 import type { PartnerServicePost } from '../types/partner-service-post';
 import { resolveOfferingPriceRange } from '../utils/market-price';
 import { resizeImageToSquare } from '../utils/resize-image';
+import { mediaSrc } from '../utils/media-src';
 import { plainTextFromHtml, sanitizePostHtml } from '../utils/sanitize-post-html';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '';
 const MAX_IMAGES = 8;
 /** Trần mặc định khi chưa có giá chào. */
 const DEFAULT_PRICE_MAX = 5_000_000;
-
-function mediaSrc(url: string) {
-  if (!url) return url;
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) {
-    return url;
-  }
-  return `${API_BASE}${url}`;
-}
 
 const STATUS_LABEL: Record<PartnerServicePost['status'], string> = {
   PENDING: 'Chờ BQT duyệt',

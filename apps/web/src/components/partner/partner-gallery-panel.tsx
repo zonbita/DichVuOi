@@ -1,13 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { api } from '../../services/api';
-
-function mediaSrc(url: string) {
-  const apiBase = import.meta.env.VITE_API_URL ?? '';
-  return url.startsWith('http') || url.startsWith('blob:')
-    ? url
-    : `${apiBase}${url}`;
-}
+import { mediaSrc } from '../../utils/media-src';
 
 const MAX_GALLERY = 6;
 

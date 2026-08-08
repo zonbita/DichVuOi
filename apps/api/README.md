@@ -31,6 +31,7 @@ DB local / production: **PostgreSQL** (`DATABASE_URL` trong `.env`). Local có t
    - `GOOGLE_CLIENT_ID` — Google login (set `emailVerified`)
 4. Sau deploy: chạy `prisma db push` / seed từ máy local trỏ cùng `DATABASE_URL`.
 5. Project Web: set `VITE_API_URL=https://dich-vu-oi-api.vercel.app` rồi **Redeploy**.
+6. **Ảnh upload (bắt buộc production):** Vercel Storage → **Blob** → tạo store → copy `BLOB_READ_WRITE_TOKEN` vào env API → Redeploy. Không có token thì upload trả 503 (FS `/tmp` không bền). Ảnh demo cũ có thể nằm trong `apps/web/public/uploads` (same-origin).
 
 > Thiếu `JWT_SECRET` / `VIETQR_INTENT_SECRET` đạt chuẩn → mọi request trả `FUNCTION_INVOCATION_FAILED` / 500.
 

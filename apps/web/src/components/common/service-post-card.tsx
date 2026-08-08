@@ -8,11 +8,7 @@ import { ReputationProgressBar } from '../partner/reputation-progress-bar';
 import { LevelBadgeGold } from '../ui/partner-badges';
 import { StarIcon } from '../ui/icon';
 import { UserAvatar } from '../ui/user-avatar';
-
-function mediaSrc(url: string) {
-  const apiBase = import.meta.env.VITE_API_URL ?? '';
-  return url.startsWith('http') || url.startsWith('blob:') ? url : `${apiBase}${url}`;
-}
+import { mediaSrc } from '../../utils/media-src';
 
 type Props = {
   post: PublicServicePostListItem;

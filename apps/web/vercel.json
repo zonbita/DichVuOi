@@ -16,5 +16,11 @@
       ]
     }
   ],
-  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/((?!assets/|uploads/|avatars/|favicon\\.png|icons\\.svg).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
+

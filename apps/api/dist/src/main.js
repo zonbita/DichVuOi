@@ -18,14 +18,22 @@ async function bootstrap() {
         contentSecurityPolicy: false,
         crossOriginResourcePolicy: { policy: 'cross-origin' },
     }));
+    const staticHeaders = (res) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+    };
     const uploadsRoot = (0, uploads_root_1.ensureUploadsRoot)();
     app.useStaticAssets(uploadsRoot, {
         prefix: '/uploads/',
-        setHeaders: (res) => {
-            res.setHeader('X-Content-Type-Options', 'nosniff');
-            res.setHeader('Cache-Control', 'public, max-age=86400');
-        },
+        setHeaders: staticHeaders,
     });
+    const bundledUploads = (0, uploads_root_1.resolveBundledUploadsRoot)();
+    if (bundledUploads && bundledUploads !== uploadsRoot) {
+        app.useStaticAssets(bundledUploads, {
+            prefix: '/uploads/',
+            setHeaders: staticHeaders,
+        });
+    }
     app.setGlobalPrefix('api');
     app.enableCors({
         origin: (0, cors_origin_1.buildCorsOrigin)(),
