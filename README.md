@@ -263,7 +263,7 @@ File chính: `apps/web/src/lib/catalog-cache.ts`, `catalog-queries.ts`; `apps/ap
 
 ## Nhóm dịch vụ bao quát (tầm nhìn catalog)
 
-22 nhóm là **tầm nhìn dài hạn**. Catalog công khai **chỉ hiện nghề `supportsOnline=true`** (menu ~13 nhóm online/hybrid). Nghề offline-only vẫn seed/admin nhưng ẩn khỏi trang chủ / `/nhom` / mega menu.
+22 nhóm là **tầm nhìn dài hạn**. Catalog công khai **chỉ hiện nghề `supportsOnline=true`** (menu ~12 nhóm online/hybrid sau khi ẩn «Tư vấn - phát triển cá nhân»). Nghề offline-only vẫn seed/admin nhưng ẩn khỏi trang chủ / `/nhom` / mega menu.
 
 | Nhóm bao quát | Ví dụ nghề / dịch vụ bên trong | Ghi chú |
 |---------------|--------------------------------|---------|
@@ -276,18 +276,18 @@ File chính: `apps/web/src/lib/catalog-cache.ts`, `catalog-queries.ts`; `apps/ap
 | **Xe - vận chuyển** | *(ẩn)* Rửa xe, tài xế, chuyển nhà… | Offline-only |
 | **Học tập - ngoại ngữ** | **Gia sư:** Toán, Lý, Hóa, Sinh, Văn, Sử, Địa, Tin · **Ngoại ngữ:** Anh, Nhật, Hàn, Trung, Đức, Pháp, Tây Ban Nha, Việt cho NN · **Luyện thi:** IELTS, TOEIC, TOEFL, SAT, GRE, GMAT, JLPT, TOPIK, HSK, VSTEP, ĐH | Online / hybrid |
 | **Game - eSports** | Coaching, Game Tester, dạy/lập trình/đồ họa game, edit highlight, overlay, thumbnail, cộng đồng, Caster, tổ chức giải, dịch game, VO · *(ẩn)* setup PC | Online; cấm boosting |
-| **Lập trình - công nghệ** | Frontend / Backend / Fullstack / Mobile / DevOps / QA / Game Dev, WordPress, SEO kỹ thuật, hỗ trợ máy từ xa, MVP · **AI Engineer, Prompt, AI Automation, Chatbot, Consultant** · Excel · *(ẩn)* cài mạng VP | MVP số + Top IT |
-| **Thiết kế - sáng tạo nội dung** | UI/UX, Graphic, Illustrator, 3D, Interior (online), Retoucher · Video / Motion / Audio / Podcast / AI Video · Content / Copy / Technical / Ghostwriter / Biên tập / AI Content | MVP số + creative |
+| **Lập trình - công nghệ** | Frontend / Backend / Fullstack / Mobile / DevOps / QA / Game Dev, WordPress, **Shopify/Webflow/Framer**, **No-code**, **Zalo OA**, security, user testing, MVP · **AI**, scraping, data annotation · *(ẩn)* cài mạng VP | MVP số + Top IT |
+| **Thiết kế - sáng tạo nội dung** | UI/UX, Graphic, **Brand identity**, **Packaging**, Infographic, **AI Artist**, 3D, Interior · Video / Motion / **Logo animation** / **Explainer** / **3D product** / Podcast · Content / Copy / **UX Writing** / AI Content | MVP số + creative |
 | **Sự kiện - truyền thông** | Webinar, MC online, hỗ trợ họp, **Livestream Operator từ xa** · *(ẩn)* chụp/quay tại chỗ, trang trí, ban nhạc | Một phần online |
 | **Thú cưng** | *(ẩn)* Tắm cắt, dắt chó, trông pet… | Offline-only |
 | **Thể thao - PT** | PT / yoga / coach chạy **online**, giáo án · *(ẩn)* PT gym, bơi, pickleball tại chỗ | Hybrid |
-| **Doanh nghiệp - văn phòng** | CSKH từ xa, tuyển dụng, quy trình, đào tạo NV online, kế toán hộ KD · *(ẩn)* dọn VP, lễ tân, tea-break | Hybrid |
-| **Tài chính – hành chính – pháp lý hỗ trợ** | Báo cáo TC, **tư vấn thuế / luật sư / HR online** (có phép) · *(ẩn)* runner công chứng | Compliance |
+| **Doanh nghiệp - văn phòng** | CSKH từ xa, tuyển dụng, quy trình, đào tạo NV online, kế toán hộ KD, **Setup CRM**, **Business plan / pitch** · *(ẩn)* dọn VP, lễ tân, tea-break | Hybrid |
+| **Tài chính – hành chính – pháp lý hỗ trợ** | Báo cáo TC, **tư vấn thuế / luật sư / HR online**, **đăng ký thương hiệu / SHTT** (có phép) · *(ẩn)* runner công chứng | Compliance |
 | **Sân vườn - ngoài trời** | *(ẩn)* Cắt cỏ, tiểu cảnh, hồ cá… | Offline-only |
-| **Marketing - bán hàng online** | **SEO Specialist**, Facebook/Google/TikTok Ads, email/affiliate, Social Media Manager, **Shopee / TikTok Shop / Lazada Operator**, inbox, product listing | Online 100% |
-| **Dịch thuật - ngôn ngữ** | Dịch Anh/Trung/Nhật/Hàn – Việt, hiệu đính, phiên dịch online, phụ đề, gỡ băng, chuẩn hóa CV | Online 100% |
-| **Trợ lý từ xa - vận hành** | **VA**, Appointment Setter, Live Chat, **Data Entry**, Excel/PPT, Research, Project Coordinator, **Sales Online / Telesales / Lead Gen** · *(ẩn)* nộp hồ sơ tại chỗ | Online (+ runner ẩn) |
-| **Tư vấn - phát triển cá nhân** | Hướng nghiệp, **Career Coach**, phỏng vấn, CV–LinkedIn, dinh dưỡng / tham vấn tâm lý online (chứng chỉ) | Online — compliance y tế |
+| **Marketing - bán hàng online** | **SEO**, **Local SEO**, Ads, email/affiliate, **GA4**, **Influencer/KOL**, SMM, **Shopee / TikTok Shop / Lazada**, inbox, listing | Online 100% |
+| **Dịch thuật - ngôn ngữ** | Dịch Anh/Trung/Nhật/Hàn – Việt, hiệu đính, phiên dịch online, phụ đề, gỡ băng, **CV – LinkedIn / cover letter** | Online 100% |
+| **Trợ lý từ xa - vận hành** | **VA**, Appointment Setter, Live Chat, **Notion/Airtable**, **Data Entry**, Excel/PPT, Research, Project Coordinator, **Sales Online / Telesales / Lead Gen** · *(ẩn)* nộp hồ sơ tại chỗ | Online (+ runner ẩn) |
+| **Tư vấn - phát triển cá nhân** | *(ẩn)* Hướng nghiệp, Career Coach, phỏng vấn, dinh dưỡng / tâm lý… (CV đã chuyển sang Dịch thuật) | Offline-only — compliance |
 | **Giải trí** | Hát live, ảo thuật/DJ/MC online, RPG/board/cờ, quiz, kể chuyện, xem phim đồng hành | Online 100% — không người lớn / cày thuê |
 
 ## Hệ thống giao diện (UI)
