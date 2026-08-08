@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, MouseEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { formatPrice, formatPriceNumber } from '../../services/api';
 import type { Booking } from '../../types/catalog';
 import { serviceImage } from '../../utils/catalog-images';
@@ -46,6 +47,8 @@ export function openJobRoomTone(booking: Booking) {
 
 type OpenJobCardProps = {
   booking: Booking;
+  /** Điều hướng tới trang chi tiết khi bấm phần nội dung card. */
+  detailTo?: string;
   footerLeft?: ReactNode;
   footerRight: ReactNode;
 };
@@ -56,6 +59,7 @@ const metaPill =
 /** Card đơn mở — ~668×178: ảnh | tiêu đề + meta | giá + CTA. */
 export function OpenJobCard({
   booking,
+  detailTo,
   footerLeft,
   footerRight,
 }: OpenJobCardProps) {
@@ -91,116 +95,139 @@ export function OpenJobCard({
     booking.applyDepositPercent ??
     Math.round((booking.applyDepositBps ?? 1000) / 100);
 
-  return (
-    <article className="w-full max-w-[668px] overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[0_4px_14px_rgba(24,49,63,0.07)]">
-      <div className="flex flex-col gap-3.5 p-4 sm:h-[178px] sm:flex-row sm:items-stretch sm:gap-4 sm:px-5 sm:py-[18px]">
-        <div className="relative h-[100px] w-[100px] shrink-0 self-start sm:h-[142px] sm:w-[142px] sm:self-center">
-          <img
-            src={serviceImage(booking.service)}
-            alt={booking.service.name}
-            className="h-full w-full rounded-[14px] object-cover"
-            loading="lazy"
-            decoding="async"
-          />
-          <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
-            <Icon name="briefcase" className="h-3.5 w-3.5" />
+  const main = (
+    <>
+      <div className="relative h-[100px] w-[100px] shrink-0 self-start sm:h-[142px] sm:w-[142px] sm:self-center">
+        <img
+          src={serviceImage(booking.service)}
+          alt={booking.service.name}
+          className="h-full w-full rounded-[14px] object-cover"
+          loading="lazy"
+          decoding="async"
+        />
+        <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
+          <Icon name="briefcase" className="h-3.5 w-3.5" />
+        </span>
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
+        <h3 className="truncate text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]">
+          {booking.service.name}
+        </h3>
+        <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
+          <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
+          <span className="truncate">
+            {booking.customerName}
+            {booking.customerPhoneMasked ? ` · ${booking.customerPhone}` : null}
           </span>
-        </div>
+        </p>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3">
-          <div className="flex min-w-0 flex-1 flex-col justify-center">
-            <h3 className="truncate text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]">
-              {booking.service.name}
-            </h3>
-            <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
-              <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
-              <span className="truncate">
-                {booking.customerName}
-                {booking.customerPhoneMasked
-                  ? ` · ${booking.customerPhone}`
-                  : null}
+        <div className="mt-3 flex w-full flex-wrap items-center gap-2">
+          {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
+            <JobMetaPill
+              icon="clock"
+              iconClassName="!h-3.5 !w-3.5 text-[#E11D48]"
+              className={`${metaPill} !bg-[#FFF1F2]`}
+              title={new Date(booking.matchingDeadlineAt).toLocaleString('vi-VN')}
+            >
+              <span className="font-semibold text-[#BE123C]">
+                {matchingDeadlineLabel}
               </span>
-            </p>
+            </JobMetaPill>
+          ) : null}
 
-            <div className="mt-3 flex w-full flex-wrap items-center gap-2">
-              {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
-                <JobMetaPill
-                  icon="clock"
-                  iconClassName="!h-3.5 !w-3.5 text-[#E11D48]"
-                  className={`${metaPill} !bg-[#FFF1F2]`}
-                  title={new Date(
-                    booking.matchingDeadlineAt,
-                  ).toLocaleString('vi-VN')}
-                >
-                  <span className="font-semibold text-[#BE123C]">
-                    {matchingDeadlineLabel}
-                  </span>
-                </JobMetaPill>
-              ) : null}
+          <ScheduleTimePill
+            date={booking.scheduledAt}
+            className={`${metaPill} !bg-[#EFF6FF] [&_svg]:!h-3.5 [&_svg]:!w-3.5`}
+          />
 
-              <ScheduleTimePill
-                date={booking.scheduledAt}
-                className={`${metaPill} !bg-[#EFF6FF] [&_svg]:!h-3.5 [&_svg]:!w-3.5`}
-              />
+          {durationLabel ? (
+            <JobMetaPill
+              icon="clock"
+              iconClassName="!h-3.5 !w-3.5 text-[#7C3AED]"
+              className={`${metaPill} !bg-[#F5F3FF]`}
+            >
+              <span className="font-semibold text-[#6D28D9]">{durationLabel}</span>
+            </JobMetaPill>
+          ) : null}
 
-              {durationLabel ? (
-                <JobMetaPill
-                  icon="clock"
-                  iconClassName="!h-3.5 !w-3.5 text-[#7C3AED]"
-                  className={`${metaPill} !bg-[#F5F3FF]`}
-                >
-                  <span className="font-semibold text-[#6D28D9]">
-                    {durationLabel}
-                  </span>
-                </JobMetaPill>
-              ) : null}
+          <JobMetaPill
+            icon="users"
+            iconClassName="!h-3.5 !w-3.5 text-[#059669]"
+            className={`${metaPill} !bg-[#ECFDF5]`}
+          >
+            <span className="font-semibold text-[#047857]">
+              {applicationsLabel}
+            </span>
+          </JobMetaPill>
 
-              <JobMetaPill
-                icon="users"
-                iconClassName="!h-3.5 !w-3.5 text-[#059669]"
-                className={`${metaPill} !bg-[#ECFDF5]`}
-              >
-                <span className="font-semibold text-[#047857]">
-                  {applicationsLabel}
-                </span>
-              </JobMetaPill>
+          <JobMetaPill
+            icon="shield"
+            iconClassName="!h-3.5 !w-3.5 text-[#0F766E]"
+            className={`${metaPill} !bg-[#F0FDFA]`}
+          >
+            <span className="whitespace-nowrap font-semibold text-[#0F766E]">
+              {depositAmount <= 0
+                ? `Cọc 0% · miễn`
+                : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
+            </span>
+          </JobMetaPill>
+        </div>
+      </div>
+    </>
+  );
 
-              <JobMetaPill
-                icon="shield"
-                iconClassName="!h-3.5 !w-3.5 text-[#0F766E]"
-                className={`${metaPill} !bg-[#F0FDFA]`}
-              >
-                <span className="whitespace-nowrap font-semibold text-[#0F766E]">
-                  {depositAmount <= 0
-                    ? `Cọc 0% · miễn`
-                    : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
-                </span>
-              </JobMetaPill>
-            </div>
+  const shellClass =
+    'w-full max-w-[668px] overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[0_4px_14px_rgba(24,49,63,0.07)] transition hover:border-[var(--color-brand)]/35 hover:shadow-[0_6px_18px_rgba(24,49,63,0.1)]';
+
+  return (
+    <article className={shellClass}>
+      <div className="flex flex-col gap-3.5 p-4 sm:h-[178px] sm:flex-row sm:items-stretch sm:gap-4 sm:px-5 sm:py-[18px]">
+        {detailTo ? (
+          <Link
+            to={detailTo}
+            className="flex min-w-0 flex-1 flex-col gap-3 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] sm:flex-row sm:items-stretch sm:gap-4"
+          >
+            {main}
+          </Link>
+        ) : (
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
+            {main}
           </div>
+        )}
 
-          <div className="flex shrink-0 flex-col items-stretch justify-between gap-2.5 sm:w-[210px] sm:items-end sm:py-0.5">
+        <div className="flex shrink-0 flex-col items-stretch justify-between gap-2.5 sm:w-[210px] sm:items-end sm:py-0.5">
+          {detailTo ? (
+            <Link
+              to={detailTo}
+              className="inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[#FFF7ED] px-3.5 py-2.5 text-[13px] font-extrabold text-[#C2410C] outline-none hover:bg-[#FFEDD5] focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] sm:justify-start"
+              title={budgetLabel}
+            >
+              <Icon name="wallet" className="h-4 w-4 shrink-0 text-[#EA580C]" />
+              <span className="min-w-0 truncate tabular-nums leading-snug">
+                {budgetLabel}
+              </span>
+            </Link>
+          ) : (
             <p
               className="inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[#FFF7ED] px-3.5 py-2.5 text-[13px] font-extrabold text-[#C2410C] sm:justify-start"
               title={budgetLabel}
             >
-              <Icon
-                name="wallet"
-                className="h-4 w-4 shrink-0 text-[#EA580C]"
-              />
+              <Icon name="wallet" className="h-4 w-4 shrink-0 text-[#EA580C]" />
               <span className="min-w-0 truncate tabular-nums leading-snug">
                 {budgetLabel}
               </span>
             </p>
+          )}
 
-            <div
-              className={`flex w-full flex-wrap items-center gap-2 ${
-                footerLeft != null ? 'justify-between' : 'justify-end'
-              } sm:flex-col sm:items-end`}
-            >
-              {footerLeft}
-              {footerRight}
-            </div>
+          <div
+            className={`flex w-full flex-wrap items-center gap-2 ${
+              footerLeft != null ? 'justify-between' : 'justify-end'
+            } sm:flex-col sm:items-end`}
+            onClick={(e: MouseEvent) => e.stopPropagation()}
+          >
+            {footerLeft}
+            {footerRight}
           </div>
         </div>
       </div>

@@ -40,6 +40,9 @@ let BookingsController = class BookingsController {
     listMine(user) {
         return this.bookingsService.listMineAsCustomer(user.id);
     }
+    customerPublishSchedule(user, query) {
+        return this.bookingsService.listCustomerPublishSchedule(user.id, query.year, query.month);
+    }
     rebookHints(user) {
         return this.bookingsService.getRebookHints(user.id);
     }
@@ -117,6 +120,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], BookingsController.prototype, "listMine", null);
+__decorate([
+    (0, common_1.Get)('mine/publish-schedule'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, partner_schedule_query_dto_1.PartnerScheduleQueryDto]),
+    __metadata("design:returntype", void 0)
+], BookingsController.prototype, "customerPublishSchedule", null);
 __decorate([
     (0, common_1.Get)('rebook-hints'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

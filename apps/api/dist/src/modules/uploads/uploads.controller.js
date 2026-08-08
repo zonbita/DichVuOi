@@ -83,6 +83,9 @@ let UploadsController = class UploadsController {
     uploadAvatar(file) {
         return uploadedPayload('avatars', file);
     }
+    uploadServicePost(file) {
+        return uploadedPayload('service-posts', file);
+    }
 };
 exports.UploadsController = UploadsController;
 __decorate([
@@ -115,6 +118,21 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], UploadsController.prototype, "uploadAvatar", null);
+__decorate([
+    (0, common_1.Post)('service-post'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: { file: { type: 'string', format: 'binary' } },
+        },
+    }),
+    (0, common_1.UseInterceptors)(imageInterceptor('service-posts')),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UploadsController.prototype, "uploadServicePost", null);
 exports.UploadsController = UploadsController = __decorate([
     (0, swagger_1.ApiTags)('uploads'),
     (0, swagger_1.ApiBearerAuth)(),

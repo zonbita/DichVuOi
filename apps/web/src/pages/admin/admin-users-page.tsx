@@ -14,6 +14,7 @@ import {
 import {
   ROLE_OPTIONS,
   formatDateTime,
+  useAdminViewportPageSize,
   useFilterParams,
   useSearchFilter,
 } from './admin-utils';
@@ -22,19 +23,21 @@ export function AdminUsersPage() {
   const { get, page, setParam, setPage } = useFilterParams();
   const [search, setSearch] = useSearchFilter(get, setParam);
   const queryClient = useQueryClient();
+  const pageSize = useAdminViewportPageSize({ rowPx: 58, chromePx: 300 });
 
   const q = get('q');
   const role = get('role');
 
   const usersQuery = useQuery({
-    queryKey: ['admin', 'users', { q, role, page }],
-    queryFn: () => api.adminUsers({ q, role: role || undefined, page }),
+    queryKey: ['admin', 'users', { q, role, page, pageSize }],
+    queryFn: () =>
+      api.adminUsers({ q, role: role || undefined, page, pageSize }),
     placeholderData: keepPreviousData,
   });
 
   const roleMutation = useMutation({
     mutationFn: ({ id, nextRole }: { id: string; nextRole: string }) =>
-      api.adminUpdateUser(id, nextRole),
+      api.adminUpdateUser(id, { role: nextRole }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });

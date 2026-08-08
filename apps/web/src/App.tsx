@@ -1,5 +1,6 @@
 import { Suspense, lazy, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { TermsAcceptGate } from './components/auth/terms-accept-gate';
 import { SiteLayout } from './components/layout/site-layout';
 import { UserDashboardLayout } from './components/layout/user-dashboard-layout';
 
@@ -14,6 +15,11 @@ const CompanyInfoPage = lazy(() =>
 const GroupsPage = lazy(() =>
   import('./pages/groups-page').then((m) => ({ default: m.GroupsPage })),
 );
+const ServicePostsPage = lazy(() =>
+  import('./pages/service-posts-page').then((m) => ({
+    default: m.ServicePostsPage,
+  })),
+);
 const GroupDetailPage = lazy(() =>
   import('./pages/group-detail-page').then((m) => ({
     default: m.GroupDetailPage,
@@ -27,6 +33,11 @@ const ServiceDetailPage = lazy(() =>
 const PartnerProfilePage = lazy(() =>
   import('./pages/partner-profile-page').then((m) => ({
     default: m.PartnerProfilePage,
+  })),
+);
+const PartnerServicePostDetailPage = lazy(() =>
+  import('./pages/partner-service-post-detail-page').then((m) => ({
+    default: m.PartnerServicePostDetailPage,
   })),
 );
 const BookingSuccessPage = lazy(() =>
@@ -55,14 +66,29 @@ const HireServicePage = lazy(() =>
     default: m.HireServicePage,
   })),
 );
+const CustomerPublishSchedulePage = lazy(() =>
+  import('./pages/customer-publish-schedule-page').then((m) => ({
+    default: m.CustomerPublishSchedulePage,
+  })),
+);
 const PartnerDashboardPage = lazy(() =>
   import('./pages/partner-dashboard-page').then((m) => ({
     default: m.PartnerDashboardPage,
   })),
 );
+const PartnerServicePostsPage = lazy(() =>
+  import('./pages/partner-service-posts-page').then((m) => ({
+    default: m.PartnerServicePostsPage,
+  })),
+);
 const PartnerBookingDetailPage = lazy(() =>
   import('./pages/partner-booking-detail-page').then((m) => ({
     default: m.PartnerBookingDetailPage,
+  })),
+);
+const OpenJobDetailPage = lazy(() =>
+  import('./pages/open-job-detail-page').then((m) => ({
+    default: m.OpenJobDetailPage,
   })),
 );
 const WalletPage = lazy(() =>
@@ -88,6 +114,9 @@ const TermsPage = lazy(() =>
 );
 const PrivacyPage = lazy(() =>
   import('./pages/static-site-pages').then((m) => ({ default: m.PrivacyPage })),
+);
+const RulesPage = lazy(() =>
+  import('./pages/static-site-pages').then((m) => ({ default: m.RulesPage })),
 );
 const HelpCenterPage = lazy(() =>
   import('./pages/static-site-pages').then((m) => ({
@@ -163,6 +192,16 @@ const AdminReviewsPage = lazy(() =>
     default: m.AdminReviewsPage,
   })),
 );
+const AdminServicePostsPage = lazy(() =>
+  import('./pages/admin/admin-service-posts-page').then((m) => ({
+    default: m.AdminServicePostsPage,
+  })),
+);
+const AdminServicePostDetailPage = lazy(() =>
+  import('./pages/admin/admin-service-post-detail-page').then((m) => ({
+    default: m.AdminServicePostDetailPage,
+  })),
+);
 const AdminComplaintsPage = lazy(() =>
   import('./pages/admin/admin-complaints-page').then((m) => ({
     default: m.AdminComplaintsPage,
@@ -171,6 +210,11 @@ const AdminComplaintsPage = lazy(() =>
 const AdminFlaggedPage = lazy(() =>
   import('./pages/admin/admin-flagged-page').then((m) => ({
     default: m.AdminFlaggedPage,
+  })),
+);
+const AdminAuditLogsPage = lazy(() =>
+  import('./pages/admin/admin-audit-logs-page').then((m) => ({
+    default: m.AdminAuditLogsPage,
   })),
 );
 const AdminFinancePage = lazy(() =>
@@ -204,14 +248,16 @@ function Lazy({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <SiteLayout>
-        <Lazy>
-          <Routes>
+      <TermsAcceptGate>
+        <SiteLayout>
+          <Lazy>
+            <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/thong-tin-cong-ty" element={<CompanyInfoPage />} />
             <Route path="/gioi-thieu" element={<AboutPage />} />
             <Route path="/dieu-khoan" element={<TermsPage />} />
             <Route path="/chinh-sach-bao-mat" element={<PrivacyPage />} />
+            <Route path="/noi-quy" element={<RulesPage />} />
             <Route path="/tro-giup" element={<HelpCenterPage />} />
             <Route path="/huong-dan-dat-dich-vu" element={<BookingGuidePage />} />
             <Route path="/chinh-sach-bao-hanh" element={<WarrantyPage />} />
@@ -220,9 +266,14 @@ export default function App() {
             <Route path="/quy-trinh-doi-tac" element={<PartnerProcessPage />} />
             <Route path="/chinh-sach-doi-tac" element={<PartnerPolicyPage />} />
             <Route path="/nhom" element={<GroupsPage />} />
+            <Route path="/bai-dang" element={<ServicePostsPage />} />
             <Route path="/nhom/:slug" element={<GroupDetailPage />} />
             <Route path="/dich-vu/:slug" element={<ServiceDetailPage />} />
             <Route path="/user/:userId" element={<PartnerProfilePage />} />
+            <Route
+              path="/user/:userId/dich-vu/:postId"
+              element={<PartnerServicePostDetailPage />}
+            />
             <Route path="/nguoi/:userId" element={<RedirectNguoiToUser />} />
             <Route path="/dat-lich/:id" element={<BookingSuccessPage />} />
             <Route path="/dang-nhap" element={<LoginPage />} />
@@ -234,6 +285,10 @@ export default function App() {
                 element={<CustomerBookingDetailPage />}
               />
               <Route path="/don-cua-toi/thue" element={<HireServicePage />} />
+              <Route
+                path="/don-cua-toi/lich-dang"
+                element={<CustomerPublishSchedulePage />}
+              />
               <Route
                 path="/don-cua-toi/ho-so"
                 element={<PartnerDashboardPage />}
@@ -256,8 +311,13 @@ export default function App() {
               />
               <Route path="/don-cua-toi/tro-giup" element={<HelpCenterPage />} />
               <Route path="/don-cua-toi/khieu-nai" element={<ComplaintPage />} />
+              <Route path="/don-cua-toi/noi-quy" element={<RulesPage />} />
               <Route path="/doi-tac" element={<PartnerDashboardPage />} />
               <Route path="/doi-tac/don-thue" element={<PartnerDashboardPage />} />
+              <Route
+                path="/doi-tac/don-thue/:id"
+                element={<OpenJobDetailPage />}
+              />
               <Route path="/doi-tac/viec" element={<PartnerDashboardPage />} />
               <Route
                 path="/doi-tac/viec/:id"
@@ -280,6 +340,10 @@ export default function App() {
                 element={<InvoiceDetailPage basePath="/doi-tac" />}
               />
               <Route path="/doi-tac/ho-so" element={<PartnerDashboardPage />} />
+              <Route
+                path="/doi-tac/dich-vu"
+                element={<PartnerServicePostsPage />}
+              />
               <Route path="/doi-tac/cap-do" element={<PartnerDashboardPage />} />
               <Route path="/doi-tac/quy-trinh" element={<PartnerProcessPage />} />
             </Route>
@@ -291,14 +355,21 @@ export default function App() {
               <Route path="bookings" element={<AdminBookingsPage />} />
               <Route path="bookings/:id" element={<AdminBookingDetailPage />} />
               <Route path="reviews" element={<AdminReviewsPage />} />
+              <Route path="service-posts" element={<AdminServicePostsPage />} />
+              <Route
+                path="service-posts/:postId"
+                element={<AdminServicePostDetailPage />}
+              />
               <Route path="complaints" element={<AdminComplaintsPage />} />
               <Route path="flagged" element={<AdminFlaggedPage />} />
+              <Route path="audit" element={<AdminAuditLogsPage />} />
               <Route path="finance" element={<AdminFinancePage />} />
               <Route path="catalog" element={<AdminCatalogPage />} />
             </Route>
           </Routes>
         </Lazy>
       </SiteLayout>
+      </TermsAcceptGate>
     </BrowserRouter>
   );
 }

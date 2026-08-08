@@ -66,12 +66,13 @@ export function HomeOpenJobsSection() {
                 <OpenJobCard
                   key={booking.id}
                   booking={booking}
+                  detailTo={`/doi-tac/don-thue/${booking.id}`}
                   footerRight={
                     <Link
-                      to="/doi-tac/don-thue"
+                      to={`/doi-tac/don-thue/${booking.id}`}
                       className="inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-brand-deep)]"
                     >
-                      Ứng tuyển
+                      Xem đơn
                       <Icon name="chevronRight" className="h-4 w-4" />
                     </Link>
                   }

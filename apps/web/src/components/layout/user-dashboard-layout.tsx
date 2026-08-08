@@ -34,6 +34,16 @@ const hireNav: NavItem[] = [
     iconClass: 'text-[var(--color-gold)]',
   },
   {
+    to: '/don-cua-toi/lich-dang',
+    label: 'Lịch đăng đơn',
+    icon: 'clock',
+    iconClass: 'text-violet-600',
+  },
+];
+
+/** Menu tài khoản — mở từ dropdown «Hồ sơ», không hiện trên sidebar Đơn thuê / Đối tác. */
+const profileNav: NavItem[] = [
+  {
     to: '/don-cua-toi/ho-so',
     label: 'Hồ sơ',
     icon: 'user',
@@ -69,6 +79,12 @@ const hireNav: NavItem[] = [
     icon: 'message',
     iconClass: 'text-amber-600',
   },
+  {
+    to: '/don-cua-toi/noi-quy',
+    label: 'Nội quy',
+    icon: 'shield',
+    iconClass: 'text-teal-700',
+  },
 ];
 
 const offerNav: NavItem[] = [
@@ -78,6 +94,12 @@ const offerNav: NavItem[] = [
     icon: 'home',
     iconClass: 'text-[var(--color-brand)]',
     end: true,
+  },
+  {
+    to: '/doi-tac/dich-vu',
+    label: 'Dịch vụ của tôi',
+    icon: 'pencil',
+    iconClass: 'text-[var(--color-brand)]',
   },
   {
     to: '/doi-tac/don-thue',
@@ -94,30 +116,6 @@ const offerNav: NavItem[] = [
     badge: 'partnerAction',
   },
   {
-    to: '/doi-tac/vi',
-    label: 'Ví VNĐ',
-    icon: 'wallet',
-    iconClass: 'text-emerald-600',
-  },
-  {
-    to: '/doi-tac/rut-tien',
-    label: 'Rút tiền',
-    icon: 'bank',
-    iconClass: 'text-violet-600',
-  },
-  {
-    to: '/doi-tac/hoa-don',
-    label: 'Hóa đơn',
-    icon: 'receipt',
-    iconClass: 'text-[var(--color-gold)]',
-  },
-  {
-    to: '/doi-tac/ho-so',
-    label: 'Hồ sơ',
-    icon: 'user',
-    iconClass: 'text-sky-600',
-  },
-  {
     to: '/doi-tac/cap-do',
     label: 'Cấp độ',
     icon: 'chart',
@@ -130,6 +128,54 @@ const offerNav: NavItem[] = [
     iconClass: 'text-teal-700',
   },
 ];
+
+/** Khi bị admin chặn — chỉ khiếu nại + trợ giúp (chat support popup vẫn dùng được). */
+const blockedNav: NavItem[] = [
+  {
+    to: '/don-cua-toi/khieu-nai',
+    label: 'Khiếu nại',
+    icon: 'message',
+    iconClass: 'text-amber-600',
+  },
+  {
+    to: '/don-cua-toi/tro-giup',
+    label: 'Chat / Trợ giúp',
+    icon: 'headset',
+    iconClass: 'text-sky-600',
+  },
+];
+
+const PROFILE_PATH_PREFIXES = [
+  '/don-cua-toi/ho-so',
+  '/don-cua-toi/vi',
+  '/don-cua-toi/rut-tien',
+  '/don-cua-toi/hoa-don',
+  '/don-cua-toi/tro-giup',
+  '/don-cua-toi/khieu-nai',
+  '/don-cua-toi/noi-quy',
+  // Deep-link / CTA cũ từ khu vực đối tác vẫn mở cùng nhóm menu hồ sơ
+  '/doi-tac/ho-so',
+  '/doi-tac/vi',
+  '/doi-tac/rut-tien',
+  '/doi-tac/hoa-don',
+];
+
+const BLOCKED_ALLOWED_PREFIXES = [
+  '/don-cua-toi/khieu-nai',
+  '/don-cua-toi/tro-giup',
+];
+
+function isProfilePath(pathname: string) {
+  return PROFILE_PATH_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + '/'),
+  );
+}
+
+function isBlockedPathAllowed(pathname: string) {
+  return BLOCKED_ALLOWED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + '/'),
+  );
+}
 
 function navActive(pathname: string, item: NavItem) {
   const url = new URL(item.to, 'http://local');
@@ -158,6 +204,7 @@ function hireNeedsAction(b: Booking, userId: string) {
     return !(b.reviews ?? []).some((r) => r.fromUserId === userId);
   }
   if (b.status === 'PENDING' && b.paymentStatus === 'HELD' && !b.partnerId) return true;
+  if (b.status === 'SCHEDULED' && b.paymentStatus === 'HELD') return true;
   return false;
 }
 
@@ -180,30 +227,48 @@ export function UserDashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isOfferPath = pathname.startsWith('/doi-tac');
-  const navItems = isOfferPath ? offerNav : hireNav;
-  const title = isOfferPath ? 'Người làm' : 'Khách thuê';
+  const isBlocked = Boolean(user?.isBlocked);
+  const onProfile = isProfilePath(pathname);
+  const navItems = isBlocked
+    ? blockedNav
+    : onProfile
+      ? profileNav
+      : isOfferPath
+        ? offerNav
+        : hireNav;
+  const title = isBlocked
+    ? 'Tài khoản bị hạn chế'
+    : onProfile
+      ? 'Hồ sơ'
+      : isOfferPath
+        ? 'Người làm'
+        : 'Khách thuê';
 
   useEffect(() => {
+    if (isBlocked) {
+      setMode('hire');
+      return;
+    }
     if (pathname.startsWith('/doi-tac')) setMode('offer');
     else if (pathname.startsWith('/don-cua-toi')) setMode('hire');
-  }, [pathname, setMode]);
+  }, [pathname, setMode, isBlocked]);
 
   const hireQuery = useQuery({
     queryKey: ['bookings', 'mine'],
     queryFn: api.getMyBookings,
-    enabled: Boolean(user) && !isOfferPath,
+    enabled: Boolean(user) && !isOfferPath && !isBlocked,
   });
 
   const openQuery = useQuery({
     queryKey: ['bookings', 'open'],
     queryFn: api.getOpenBookings,
-    enabled: Boolean(user) && isOfferPath && canOffer,
+    enabled: Boolean(user) && isOfferPath && canOffer && !isBlocked,
   });
 
   const partnerMineQuery = useQuery({
     queryKey: ['bookings', 'partner'],
     queryFn: api.getPartnerBookings,
-    enabled: Boolean(user) && isOfferPath && canOffer,
+    enabled: Boolean(user) && isOfferPath && canOffer && !isBlocked,
   });
 
   const badges = useMemo(() => {
@@ -234,6 +299,10 @@ export function UserDashboardLayout() {
   if (!user) {
     const redirect = encodeURIComponent(pathname || '/don-cua-toi');
     return <Navigate to={`/dang-nhap?redirect=${redirect}`} replace />;
+  }
+
+  if (user.isBlocked && !isBlockedPathAllowed(pathname)) {
+    return <Navigate to="/don-cua-toi/khieu-nai" replace />;
   }
 
   function badgeValue(kind?: NavItem['badge']) {
@@ -269,12 +338,20 @@ export function UserDashboardLayout() {
               </p>
             </div>
           </div>
-          {user ? (
+          {user && !isBlocked ? (
             <>
               <div className="my-3.5 h-px bg-[var(--color-line)]/80" />
               <p className="flex items-center gap-2 text-sm font-bold text-[#F59E0B]">
                 <Icon name="wallet" className="h-4 w-4 shrink-0" />
                 Ví: {formatPrice(user.walletBalance ?? 0)}
+              </p>
+            </>
+          ) : null}
+          {isBlocked ? (
+            <>
+              <div className="my-3.5 h-px bg-[var(--color-line)]/80" />
+              <p className="text-xs font-semibold leading-relaxed text-red-700">
+                Tài khoản bị chặn. Chỉ còn khiếu nại và chat hỗ trợ với admin.
               </p>
             </>
           ) : null}
@@ -304,15 +381,17 @@ export function UserDashboardLayout() {
         })}
       </nav>
 
-      <div className="dash-sidebar-foot">
-        <button type="button" onClick={switchRole} className="dash-nav-link w-full text-left">
-          <Icon
-            name="swap"
-            className="h-[18px] w-[18px] shrink-0 text-[var(--color-brand)]"
-          />
-          <span>{isOfferPath ? 'Sang Đơn thuê' : 'Sang Nhận việc'}</span>
-        </button>
-      </div>
+      {!isBlocked && canOffer ? (
+        <div className="dash-sidebar-foot">
+          <button type="button" onClick={switchRole} className="dash-nav-link w-full text-left">
+            <Icon
+              name="swap"
+              className="h-[18px] w-[18px] shrink-0 text-[var(--color-brand)]"
+            />
+            <span>{isOfferPath ? 'Sang Đơn thuê' : 'Sang Nhận việc'}</span>
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 

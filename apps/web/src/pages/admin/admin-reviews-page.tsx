@@ -2,16 +2,22 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { EmptyState, FilterBar, PageHeader, Pagination, SearchInput } from './admin-ui';
-import { formatDateTime, useFilterParams, useSearchFilter } from './admin-utils';
+import {
+  formatDateTime,
+  useAdminViewportPageSize,
+  useFilterParams,
+  useSearchFilter,
+} from './admin-utils';
 
 export function AdminReviewsPage() {
   const { get, page, setParam, setPage } = useFilterParams();
   const [search, setSearch] = useSearchFilter(get, setParam);
+  const pageSize = useAdminViewportPageSize({ rowPx: 88, chromePx: 280 });
   const q = get('q');
 
   const reviewsQuery = useQuery({
-    queryKey: ['admin', 'reviews', { q, page }],
-    queryFn: () => api.adminReviews({ q, page }),
+    queryKey: ['admin', 'reviews', { q, page, pageSize }],
+    queryFn: () => api.adminReviews({ q, page, pageSize }),
     placeholderData: keepPreviousData,
   });
 

@@ -358,6 +358,7 @@ async function main() {
         phone: customer.phone,
         walletBalance: customer.walletBalance,
         role: Role.CUSTOMER,
+        termsAcceptedAt: new Date(),
       },
       create: {
         email: customer.email,
@@ -366,6 +367,7 @@ async function main() {
         phone: customer.phone,
         role: Role.CUSTOMER,
         walletBalance: customer.walletBalance,
+        termsAcceptedAt: new Date(),
       },
     });
   }
@@ -376,6 +378,7 @@ async function main() {
       passwordHash,
       fullName: 'Admin DichVuOi',
       role: Role.ADMIN,
+      termsAcceptedAt: new Date(),
     },
     create: {
       email: 'admin@dichvuoi.vn',
@@ -383,6 +386,20 @@ async function main() {
       fullName: 'Admin DichVuOi',
       phone: '0900999999',
       role: Role.ADMIN,
+      termsAcceptedAt: new Date(),
+    },
+  });
+
+  // Admin production / Google: zonbita96@gmail.com
+  await prisma.user.upsert({
+    where: { email: 'zonbita96@gmail.com' },
+    update: { role: Role.ADMIN, termsAcceptedAt: new Date() },
+    create: {
+      email: 'zonbita96@gmail.com',
+      fullName: 'Admin Zonbita',
+      role: Role.ADMIN,
+      emailVerified: true,
+      termsAcceptedAt: new Date(),
     },
   });
 
@@ -392,6 +409,7 @@ async function main() {
       passwordHash,
       fullName: 'Moderator DichVuOi',
       role: Role.MODERATOR,
+      termsAcceptedAt: new Date(),
     },
     create: {
       email: 'moderator@dichvuoi.vn',
@@ -399,6 +417,7 @@ async function main() {
       fullName: 'Moderator DichVuOi',
       phone: '0900888888',
       role: Role.MODERATOR,
+      termsAcceptedAt: new Date(),
     },
   });
 
@@ -420,6 +439,7 @@ async function main() {
         fullName: p.fullName,
         phone: p.phone,
         role: Role.PARTNER,
+        termsAcceptedAt: new Date(),
         ...(p.email === 'partner@dichvuoi.vn'
           ? { walletBalance: startingWallet }
           : {}),
@@ -431,6 +451,7 @@ async function main() {
         phone: p.phone,
         role: Role.PARTNER,
         walletBalance: startingWallet,
+        termsAcceptedAt: new Date(),
       },
     });
 

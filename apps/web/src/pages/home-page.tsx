@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { DealCard } from '../components/common/deal-card';
-import { ScrollRail } from '../components/common/scroll-rail';
 import { ServiceCard } from '../components/common/service-card';
 import { HeroSection } from '../components/home/hero-section';
+import { HomeHotJobsSection } from '../components/home/home-hot-jobs-section';
 import { HomeOpenJobsSection } from '../components/home/home-open-jobs-section';
+import { HomeServicePostsSection } from '../components/home/home-service-posts-section';
 import { FamiliarPartnersSection, RebookSection } from '../components/home/retention-sections';
 import { Icon } from '../components/ui/icon';
 import type { IconName } from '../components/ui/icon';
@@ -29,50 +29,6 @@ const trustPoints: Array<{ icon: IconName; value: string; label: string }> = [
   { icon: 'check', value: '98%', label: 'Khách hàng hài lòng' },
   { icon: 'headset', value: 'Hỗ trợ 24/7', label: 'Tư vấn tận tình' },
 ];
-
-function msUntilEndOfDay() {
-  const now = new Date();
-  const endOfDay = new Date(now);
-  endOfDay.setHours(23, 59, 59, 999);
-  return endOfDay.getTime() - now.getTime();
-}
-
-function CountdownBadge() {
-  const [remaining, setRemaining] = useState(msUntilEndOfDay);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setRemaining(msUntilEndOfDay()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const totalSeconds = Math.max(0, Math.floor(remaining / 1000));
-  const parts = [
-    { value: Math.floor(totalSeconds / 3600), label: 'Giờ' },
-    { value: Math.floor((totalSeconds % 3600) / 60), label: 'Phút' },
-    { value: totalSeconds % 60, label: 'Giây' },
-  ];
-
-  return (
-    <span className="flex flex-wrap items-center gap-2.5 text-sm text-[var(--color-muted)]">
-      <span className="font-medium">Kết thúc sau</span>
-      <span className="flex gap-1.5">
-        {parts.map((part) => (
-          <span
-            key={part.label}
-            className="flex min-w-[44px] flex-col items-center rounded-md bg-[var(--color-navy)] px-2.5 py-1.5 leading-none text-white"
-          >
-            <span className="text-base font-extrabold tabular-nums tracking-wide">
-              {String(part.value).padStart(2, '0')}
-            </span>
-            <span className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-white/65">
-              {part.label}
-            </span>
-          </span>
-        ))}
-      </span>
-    </span>
-  );
-}
 
 function SectionHeader({
   title,
@@ -168,6 +124,7 @@ export function HomePage() {
       <HeroSection />
 
       <RebookSection />
+      <HomeOpenJobsSection />
       <FamiliarPartnersSection />
 
       {(apiDown || servingStale) && (
@@ -190,29 +147,9 @@ export function HomePage() {
         </div>
       )}
 
-      <section className="page-shell mt-10">
-        <div className="section-container min-w-0">
-          <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-brand-soft)] p-4 shadow-[var(--shadow-card)] sm:p-5">
-            <SectionHeader
-              title="Deal dịch vụ hôm nay"
-              action={<ViewAllLink showChevron={false} />}
-            >
-              <CountdownBadge />
-            </SectionHeader>
-            {servicesQuery.isLoading ? (
-              <p className="text-base text-[var(--color-muted)]">Đang tải dịch vụ...</p>
-            ) : (
-              <ScrollRail showArrows={false}>
-                {services.slice(0, 8).map((service) => (
-                  <DealCard key={service.id} service={service} />
-                ))}
-              </ScrollRail>
-            )}
-          </div>
-        </div>
-      </section>
+      <HomeHotJobsSection />
 
-      <HomeOpenJobsSection />
+      <HomeServicePostsSection />
 
       <section className="page-shell mt-10">
         <div className="section-container min-w-0">

@@ -4,6 +4,7 @@ export declare class RegisterDto {
     fullName: string;
     phone?: string;
     enableOffering?: boolean;
+    acceptedTerms: boolean;
 }
 export declare class LoginDto {
     email: string;
@@ -11,6 +12,7 @@ export declare class LoginDto {
 }
 export declare class GoogleLoginDto {
     idToken: string;
+    acceptedTerms?: boolean;
 }
 export declare class RequestPhoneOtpDto {
     phone: string;

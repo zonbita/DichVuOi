@@ -39,6 +39,15 @@ export class CreateBookingDto {
   @IsDateString()
   scheduledAt!: string;
 
+  @ApiPropertyOptional({
+    example: '2026-08-01T08:00:00.000Z',
+    description:
+      'Hẹn giờ đăng lên bảng tin (chỉ đơn mở). Phải ở tương lai và trước scheduledAt.',
+  })
+  @IsOptional()
+  @IsDateString()
+  publishAt?: string;
+
   @ApiPropertyOptional({ description: 'userId của partner được chọn để thuê trực tiếp' })
   @IsOptional()
   @IsString()

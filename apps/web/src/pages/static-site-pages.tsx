@@ -8,6 +8,7 @@ import {
   partnerProcessPage,
   privacyPage,
   refundPage,
+  rulesPage,
   termsPage,
   warrantyPage,
 } from '../content/site-pages';
@@ -24,8 +25,12 @@ export function PrivacyPage() {
   return <StaticDoc doc={privacyPage} />;
 }
 
+export function RulesPage() {
+  return <StaticDoc doc={rulesPage} dashboardIcon="shield" />;
+}
+
 export function HelpCenterPage() {
-  return <StaticDoc doc={helpCenterPage} />;
+  return <StaticDoc doc={helpCenterPage} dashboardIcon="headset" />;
 }
 
 export function BookingGuidePage() {
@@ -41,11 +46,11 @@ export function RefundPage() {
 }
 
 export function ComplaintPage() {
-  return <StaticDoc doc={complaintPage} />;
+  return <StaticDoc doc={complaintPage} dashboardIcon="message" />;
 }
 
 export function PartnerProcessPage() {
-  return <StaticDoc doc={partnerProcessPage} />;
+  return <StaticDoc doc={partnerProcessPage} dashboardIcon="shield" />;
 }
 
 export function PartnerPolicyPage() {

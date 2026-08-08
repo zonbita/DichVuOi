@@ -71,7 +71,9 @@ export class AuthService {
     emailVerified?: boolean;
     bankVerified?: boolean;
     role: Role;
+    isBlocked?: boolean;
     walletBalance?: number;
+    termsAcceptedAt?: Date | null;
     partnerProfile?: unknown;
   }) {
     return {
@@ -83,7 +85,11 @@ export class AuthService {
       emailVerified: Boolean(user.emailVerified),
       bankVerified: Boolean(user.bankVerified),
       role: user.role,
+      isBlocked: Boolean(user.isBlocked),
       walletBalance: user.walletBalance ?? 0,
+      termsAcceptedAt: user.termsAcceptedAt
+        ? user.termsAcceptedAt.toISOString()
+        : null,
       partnerProfile: user.partnerProfile ?? null,
     };
   }
@@ -97,6 +103,12 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
+    if (!dto.acceptedTerms) {
+      throw new BadRequestException(
+        'Bạn cần đồng ý Nội quy và các quy tắc trước khi tạo tài khoản',
+      );
+    }
+
     const email = dto.email.toLowerCase().trim();
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -113,6 +125,7 @@ export class AuthService {
         fullName: dto.fullName.trim(),
         phone: dto.phone?.trim(),
         role,
+        termsAcceptedAt: new Date(),
         ...(enableOffering
           ? {
               partnerProfile: {
@@ -252,6 +265,8 @@ export class AuthService {
         passwordHash: null,
         role: Role.CUSTOMER,
         emailVerified: true,
+        // Đăng ký (acceptedTerms) → ghi ngay; đăng nhập Google lần đầu → null, modal gate 1 lần.
+        termsAcceptedAt: dto.acceptedTerms ? new Date() : null,
       },
       include: { partnerProfile: true },
     });
@@ -260,6 +275,16 @@ export class AuthService {
       accessToken: this.sign(created),
       user: this.sanitize(created),
     };
+  }
+
+  /** Ghi nhận đồng ý Nội quy (tài khoản cũ chưa có termsAcceptedAt). */
+  async acceptTerms(userId: string) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { termsAcceptedAt: new Date() },
+      include: { partnerProfile: true },
+    });
+    return this.sanitize(user);
   }
 
   async me(userId: string) {

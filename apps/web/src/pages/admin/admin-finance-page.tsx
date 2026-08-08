@@ -19,6 +19,7 @@ import {
 } from './admin-ui';
 import {
   formatDateTime,
+  useAdminViewportPageSize,
   useFilterParams,
   useSearchFilter,
 } from './admin-utils';
@@ -39,6 +40,7 @@ export function AdminFinancePage() {
   const { get, page, setParam, setPage } = useFilterParams();
   const [search, setSearch] = useSearchFilter(get, setParam);
   const queryClient = useQueryClient();
+  const pageSize = useAdminViewportPageSize({ rowPx: 52, chromePx: 420 });
 
   const q = get('q');
   const type = get('type');
@@ -55,11 +57,12 @@ export function AdminFinancePage() {
   });
 
   const walletsQuery = useQuery({
-    queryKey: ['admin', 'finance', 'wallets', { q, page, positiveOnly }],
+    queryKey: ['admin', 'finance', 'wallets', { q, page, pageSize, positiveOnly }],
     queryFn: () =>
       api.adminFinanceWallets({
         q: q || undefined,
         page,
+        pageSize,
         positiveOnly: positiveOnly || undefined,
       }),
     placeholderData: keepPreviousData,
@@ -67,12 +70,13 @@ export function AdminFinancePage() {
   });
 
   const txQuery = useQuery({
-    queryKey: ['admin', 'finance', 'tx', { q, type, page }],
+    queryKey: ['admin', 'finance', 'tx', { q, type, page, pageSize }],
     queryFn: () =>
       api.adminFinanceTransactions({
         q: q || undefined,
         type: type || undefined,
         page,
+        pageSize,
       }),
     placeholderData: keepPreviousData,
     enabled: tab === 'tx',

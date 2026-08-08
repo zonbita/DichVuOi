@@ -17,38 +17,66 @@ export function MegaPanel({
   group,
   onServiceSelect,
   selectedServiceSlug,
+  fitContent = false,
+  glass = false,
 }: {
   group: ServiceGroupTree;
   onServiceSelect?: (pick: CatalogServicePick) => void;
   selectedServiceSlug?: string | null;
+  /** Header mega-menu: không ép min-height, cao theo danh sách nhóm. */
+  fitContent?: boolean;
+  /** Nền glass-page / frosted thay vì trắng đặc. */
+  glass?: boolean;
 }) {
   const categories = group.categories ?? [];
   const color = groupColor(group.slug);
 
   return (
     <div
-      className="flex h-full min-h-[420px] flex-col bg-white p-5 text-[var(--color-ink)] shadow-lg"
+      className={`flex h-full flex-col p-5 ${
+        glass
+          ? 'mega-menu-panel text-[var(--glass-ink,#172033)]'
+          : 'bg-white text-[var(--color-ink)] shadow-lg'
+      } ${fitContent ? 'min-h-0' : 'min-h-[420px]'}`}
       style={{ borderTop: `3px solid ${color.main}` }}
     >
-      <div className="mb-4 flex items-start justify-between gap-3 border-b border-[var(--color-line)] pb-3">
+      <div
+        className={`mb-4 flex items-start justify-between gap-3 border-b pb-3 ${
+          glass ? 'border-[var(--glass-line,rgba(23,32,51,0.08))]' : 'border-[var(--color-line)]'
+        }`}
+      >
         <div>
           <p className="text-lg font-extrabold" style={{ color: color.ink }}>
             {group.name}
           </p>
           {group.description ? (
-            <p className="mt-1 text-sm text-[var(--color-muted)]">{group.description}</p>
+            <p
+              className={`mt-1 text-sm ${
+                glass ? 'text-[var(--glass-muted,#7c8799)]' : 'text-[var(--color-muted)]'
+              }`}
+            >
+              {group.description}
+            </p>
           ) : null}
         </div>
         <Link
           to={`/nhom/${group.slug}`}
-          className="shrink-0 text-[15px] font-bold text-[var(--color-brand-deep)] hover:underline"
+          className={`shrink-0 text-[15px] font-bold hover:underline ${
+            glass ? 'text-[var(--glass-accent,#4977e8)]' : 'text-[var(--color-brand-deep)]'
+          }`}
         >
           Xem tất cả ›
         </Link>
       </div>
 
       {categories.length === 0 ? (
-        <p className="text-[15px] text-[var(--color-muted)]">Đang cập nhật danh mục...</p>
+        <p
+          className={`text-[15px] ${
+            glass ? 'text-[var(--glass-muted,#7c8799)]' : 'text-[var(--color-muted)]'
+          }`}
+        >
+          Đang cập nhật danh mục...
+        </p>
       ) : (
         <div className="grid flex-1 grid-cols-2 gap-x-8 gap-y-5 xl:grid-cols-3">
           {categories.map((category) => (
@@ -72,10 +100,14 @@ export function MegaPanel({
                             groupName: group.name,
                           })
                         }
-                        className={`group/item block w-full text-left text-[15px] transition hover:text-[var(--color-brand-deep)] ${
-                          selectedServiceSlug === service.slug
-                            ? 'font-semibold text-[var(--color-brand-deep)]'
-                            : 'text-[var(--color-ink)]/85'
+                        className={`group/item block w-full text-left text-[15px] transition ${
+                          glass
+                            ? selectedServiceSlug === service.slug
+                              ? 'font-semibold text-[var(--glass-accent,#4977e8)]'
+                              : 'text-[var(--glass-ink,#172033)]/85 hover:text-[var(--glass-accent,#4977e8)]'
+                            : selectedServiceSlug === service.slug
+                              ? 'font-semibold text-[var(--color-brand-deep)]'
+                              : 'text-[var(--color-ink)]/85 hover:text-[var(--color-brand-deep)]'
                         }`}
                       >
                         <span className="leading-snug group-hover/item:underline">{service.name}</span>
@@ -83,7 +115,11 @@ export function MegaPanel({
                     ) : (
                       <Link
                         to={`/dich-vu/${service.slug}`}
-                        className="group/item block text-[15px] text-[var(--color-ink)]/85 transition hover:text-[var(--color-brand-deep)]"
+                        className={`group/item block text-[15px] transition ${
+                          glass
+                            ? 'text-[var(--glass-ink,#172033)]/85 hover:text-[var(--glass-accent,#4977e8)]'
+                            : 'text-[var(--color-ink)]/85 hover:text-[var(--color-brand-deep)]'
+                        }`}
                       >
                         <span className="leading-snug group-hover/item:underline">{service.name}</span>
                       </Link>
@@ -91,7 +127,13 @@ export function MegaPanel({
                   </li>
                 ))}
                 {category.services.length === 0 ? (
-                  <li className="text-sm text-[var(--color-muted)]">Sắp ra mắt</li>
+                  <li
+                    className={`text-sm ${
+                      glass ? 'text-[var(--glass-muted,#7c8799)]' : 'text-[var(--color-muted)]'
+                    }`}
+                  >
+                    Sắp ra mắt
+                  </li>
                 ) : null}
               </ul>
             </div>
@@ -119,12 +161,13 @@ export function GroupListItem({
   onEnter?: (anchor: HTMLElement) => void;
   onClick?: () => void;
   showChevron?: boolean;
-  /** dark = sidebar menu nhóm (mặc định, khớp UI hình). */
-  tone?: 'dark' | 'light';
+  /** dark = sidebar navy; light = nền sáng; glass = mega-menu glass-page. */
+  tone?: 'dark' | 'light' | 'glass';
   showSeparator?: boolean;
 }) {
   const color = groupColor(group.slug);
   const isDark = tone === 'dark';
+  const isGlass = tone === 'glass';
 
   return (
     <Link
@@ -132,21 +175,41 @@ export function GroupListItem({
       onMouseEnter={(event) => onEnter?.(event.currentTarget)}
       onFocus={(event) => onEnter?.(event.currentTarget)}
       onClick={onClick}
-      className={`relative mx-2.5 flex min-h-[48px] items-center gap-3.5 rounded-[14px] px-3.5 text-[15px] font-semibold outline-none ${itemTransition} focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#061a30] ${
+      className={`relative mx-2.5 flex min-h-[48px] items-center gap-3.5 rounded-[14px] px-3.5 text-[15px] font-semibold outline-none ${itemTransition} ${
         isDark
-          ? active
-            ? 'catalog-menu-item-active text-white'
-            : 'border border-transparent text-white/90 hover:bg-[rgba(56,189,248,0.1)] hover:text-white'
-          : active
-            ? 'font-semibold'
-            : 'text-[var(--color-muted)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]'
-      } ${showSeparator && !active ? 'after:absolute after:right-3 after:bottom-0 after:left-3 after:h-px after:bg-[rgba(148,163,184,0.12)]' : ''}`}
+          ? `focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#061a30] ${
+              active
+                ? 'catalog-menu-item-active text-white'
+                : 'border border-transparent text-white/90 hover:bg-[rgba(56,189,248,0.1)] hover:text-white'
+            }`
+          : isGlass
+            ? `focus-visible:ring-2 focus-visible:ring-[var(--glass-accent,#4977e8)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                active
+                  ? 'mega-menu-item-active font-semibold'
+                  : 'border border-transparent text-[var(--glass-muted,#7c8799)] hover:bg-white/50 hover:text-[var(--glass-ink,#172033)]'
+              }`
+            : `focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]/40 focus-visible:ring-offset-2 ${
+                active
+                  ? 'font-semibold'
+                  : 'text-[var(--color-muted)] hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]'
+              }`
+      } ${
+        showSeparator && !active
+          ? isGlass
+            ? 'after:absolute after:right-3 after:bottom-0 after:left-3 after:h-px after:bg-[rgba(23,32,51,0.06)]'
+            : 'after:absolute after:right-3 after:bottom-0 after:left-3 after:h-px after:bg-[rgba(148,163,184,0.12)]'
+          : ''
+      }`}
       style={
         isDark
           ? undefined
-          : active
-            ? { backgroundColor: color.soft, color: color.ink }
-            : { color: 'var(--color-muted)' }
+          : isGlass
+            ? active
+              ? { color: color.ink }
+              : undefined
+            : active
+              ? { backgroundColor: color.soft, color: color.ink }
+              : { color: 'var(--color-muted)' }
       }
     >
       {active ? (
@@ -176,7 +239,9 @@ export function GroupListItem({
         style={
           isDark
             ? { color: active ? '#fff' : 'rgba(255,255,255,0.92)' }
-            : { color: active ? color.ink : undefined }
+            : isGlass
+              ? { color: active ? color.ink : 'var(--glass-ink, #172033)' }
+              : { color: active ? color.ink : undefined }
         }
       >
         {group.name}
@@ -190,7 +255,9 @@ export function GroupListItem({
               ? 'rgba(148, 163, 184, 0.7)'
               : active
                 ? color.main
-                : 'var(--color-muted)',
+                : isGlass
+                  ? 'var(--glass-muted, #7c8799)'
+                  : 'var(--color-muted)',
             opacity: active || isDark ? 1 : 0.55,
           }}
         />
@@ -202,20 +269,30 @@ export function GroupListItem({
 export function CatalogAllCategoriesLink({
   onClick,
   className = '',
+  tone = 'dark',
 }: {
   onClick?: () => void;
   className?: string;
+  tone?: 'dark' | 'glass';
 }) {
+  const isGlass = tone === 'glass';
+
   return (
     <Link
       to="/nhom"
       onClick={onClick}
-      className={`relative mx-2.5 flex min-h-[48px] items-center gap-3.5 rounded-[14px] border border-transparent px-3.5 text-[15px] font-semibold text-white/90 outline-none ${itemTransition} hover:bg-[rgba(56,189,248,0.1)] hover:text-white focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#061a30] ${className}`}
+      className={`relative mx-2.5 flex min-h-[48px] items-center gap-3.5 rounded-[14px] border border-transparent px-3.5 text-[15px] font-semibold outline-none ${itemTransition} ${
+        isGlass
+          ? 'text-[var(--glass-ink,#172033)] hover:bg-white/55 focus-visible:ring-2 focus-visible:ring-[var(--glass-accent,#4977e8)]/40'
+          : 'text-white/90 hover:bg-[rgba(56,189,248,0.1)] hover:text-white focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#061a30]'
+      } ${className}`}
     >
       <Icon
         name="grid"
         className="h-6 w-6 shrink-0"
-        style={{ color: 'rgba(148, 163, 184, 0.9)' }}
+        style={{
+          color: isGlass ? 'var(--glass-accent, #4977e8)' : 'rgba(148, 163, 184, 0.9)',
+        }}
       />
       <span className="min-w-0 flex-1 truncate leading-snug">
         Xem tất cả danh mục
@@ -223,7 +300,9 @@ export function CatalogAllCategoriesLink({
       <Icon
         name="chevronRight"
         className="h-4 w-4 shrink-0"
-        style={{ color: 'rgba(148, 163, 184, 0.7)' }}
+        style={{
+          color: isGlass ? 'var(--glass-muted, #7c8799)' : 'rgba(148, 163, 184, 0.7)',
+        }}
       />
     </Link>
   );
@@ -232,30 +311,47 @@ export function CatalogAllCategoriesLink({
 export function CatalogMenuHeader({
   onClose,
   size = 'lg',
+  tone = 'dark',
 }: {
   onClose?: () => void;
   size?: 'sm' | 'lg';
+  tone?: 'dark' | 'glass';
 }) {
+  const isGlass = tone === 'glass';
+
   return (
     <div
       className={`flex shrink-0 items-center justify-between border-b ${
         size === 'lg' ? 'px-5 py-4' : 'px-4 py-3.5'
       }`}
-      style={{ borderColor: CATALOG_MENU_DARK.border }}
+      style={{
+        borderColor: isGlass
+          ? 'var(--glass-line, rgba(23, 32, 51, 0.08))'
+          : CATALOG_MENU_DARK.border,
+      }}
     >
       <p
-        className={`flex items-center gap-3 font-bold tracking-[0.04em] text-white uppercase ${
+        className={`flex items-center gap-3 font-bold tracking-[0.04em] uppercase ${
           size === 'lg' ? 'text-[18px]' : 'text-[16px]'
-        }`}
+        } ${isGlass ? 'text-[var(--glass-ink,#172033)]' : 'text-white'}`}
       >
-        <Icon name="menu" className="h-5 w-5 shrink-0 text-white" />
+        <Icon
+          name="menu"
+          className={`h-5 w-5 shrink-0 ${
+            isGlass ? 'text-[var(--glass-accent,#4977e8)]' : 'text-white'
+          }`}
+        />
         NHÓM DỊCH VỤ
       </p>
       {onClose ? (
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg px-2 py-1 text-[14px] font-semibold text-white/55 outline-none transition hover:text-white focus-visible:ring-2 focus-visible:ring-[#22d3ee]/60"
+          className={`rounded-lg px-2 py-1 text-[14px] font-semibold outline-none transition focus-visible:ring-2 ${
+            isGlass
+              ? 'text-[var(--glass-muted,#7c8799)] hover:text-[var(--glass-ink,#172033)] focus-visible:ring-[var(--glass-accent,#4977e8)]/40'
+              : 'text-white/55 hover:text-white focus-visible:ring-[#22d3ee]/60'
+          }`}
         >
           Đóng
         </button>

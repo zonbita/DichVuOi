@@ -117,7 +117,7 @@ Không miễn mọi trách nhiệm; giúp chứng minh sàn đã **quản lý r�
 | Đánh giá sau `COMPLETED`; badge verified admin | **Có** (verified = duyệt vận hành) |
 | Admin khóa / xử lý đơn, flagged PII, hàng đợi duyệt partner | **Có một phần** |
 | Chat hỗ trợ kỹ thuật (MODERATOR) | **Có** — `/admin/support` |
-| Xác minh CCCD / giấy tờ đối tác | **Roadmap** |
+| Xác minh CCCD / giấy tờ đối tác | **Không làm** — đủ SĐT + NH payout + admin `isVerified`; không bắt CCCD |
 | Webhook ngân hàng tự cộng ví / Virtual Account | **Roadmap** (SePay/Casso…) |
 | Khóa / tạm ngưng nhận việc khi khiếu nại nghiêm trọng (workflow) | **Có một phần** — tự `acceptingJobs=false` khi uy tín &lt; 500 |
 | Module khiếu nại formal + trừ điểm uy tín năm | **Có** — `Complaint`, `PartnerReputationPeriod`, Admin `/admin/complaints` |
@@ -225,6 +225,7 @@ Env liên quan: `VIETQR_*`, `VIETQR_INTENT_SECRET`, `SMS_PROVIDER` / `ESMS_*` �
 - Đã có: thuê + danh sách Người làm theo dịch vụ; nhận việc; dual-role (bật nhận việc trên cùng account — tùy chọn, không bắt buộc).
 - Hồ sơ người làm (UI dashboard): **SĐT, địa chỉ, nghề, giới thiệu kỹ năng** + trang công khai `/user/:userId`; ẩn SĐT/email public.
 - **Chọn nhiều nghề** trên Hồ sơ người làm: UI tags kiểu UE5 (`ProfessionTagsInput`) → đồng bộ `PartnerService` qua `PUT /api/partners/me/offerings` (`serviceIds[]`, tối đa 40). Gắn lúc bật nhận việc hoặc khi sửa hồ sơ `/doi-tac`.
+- **Bài đăng dịch vụ (gig):** partner tạo/sửa tại `/doi-tac/dich-vu` → admin duyệt `/admin/service-posts` → hiện public trên hồ sơ + chi tiết `/user/:userId/dich-vu/:postId`.
 
 ## Danh mục — cấu trúc 3 tầng
 
@@ -316,7 +317,45 @@ Shadow: `--shadow-card` = `0 6px 24px rgba(7,59,92,0.08)` · `--shadow-hover` kh
 - Font: **Be Vietnam Pro** (primary) + **Inter** fallback — khai báo trong `index.html` + `:root`.
 - Base 16px, `-webkit-font-smoothing: antialiased`.
 - Container công khai: **1280px** — `.page-container` / `.chrome-container` / `.section-container` (token `--container-page`).
-- Dashboard khách thuê & người làm (`UserDashboardLayout`): sidebar + nội dung, kế thừa token (admin shell dùng cùng canvas/line).
+- Dashboard khách thuê & người làm (`UserDashboardLayout`): sidebar + nội dung, kế thừa token (admin shell Soft UI riêng — xem [Admin](#admin)).
+
+### Auth & mode (web) — quy tắc bắt buộc
+
+| Khái niệm | Nguồn | Giá trị | Ghi chú |
+|-----------|--------|---------|---------|
+| `user.role` | DB → JWT → `GET /api/auth/me` | `CUSTOMER` \| `PARTNER` \| `ADMIN` \| `MODERATOR` | Quyền hệ thống / guard API |
+| `mode` | `localStorage` `dichvuoi_mode` | `hire` \| `offer` | UI khách thuê / người làm — **không** lưu DB |
+| `canOffer` | `user.partnerProfile != null` | boolean | Có hồ sơ người làm mới được mode `offer` |
+| Token | `localStorage` `dichvuoi_token` | JWT | Client **không** parse role từ JWT |
+
+Chi tiết: `apps/web/src/features/auth/auth-context.tsx` · `AGENTS.md`.
+
+**API partner `me/*`:** endpoint hồ sơ / cấp độ / offerings cho phép `CUSTOMER` **đã có** `PartnerProfile` (không chỉ `Role.PARTNER`) — UI dựa `canOffer`, không chỉ `user.role`.
+
+### Dashboard user — chuẩn visual (`/doi-tac/viec`)
+
+Mọi trang trong menu `UserDashboardLayout` (`/don-cua-toi/*`, `/doi-tac/*`) bám **cùng style** trang Việc:
+
+| Thành phần | Quy ước |
+|------------|---------|
+| Header | Icon teal + tiêu đề `text-2xl font-extrabold text-[var(--color-navy)]` + mô tả muted |
+| Surface / tab | Trắng, `rounded-2xl`, viền `--color-line`, shadow nhẹ |
+| Tab active | Nền navy + badge brand |
+| Empty | Card trắng + CTA `bg-[var(--color-navy)]` |
+| Token | Chỉ `--color-navy` / `--muted` / `--line` / `--brand` — **không** hardcode `#0F2F4A` / `#F4F8FA` |
+
+Shared: `apps/web/src/components/dashboard/dashboard-chrome.tsx` (`DashboardPageHeader`, `DashboardSurface`, `DashboardEmpty`).
+
+### Gallery bài đăng dịch vụ (gig)
+
+- Thẻ gig (list/card): `object-cover` (crop khung).
+- Trang chi tiết `/user/:userId/dich-vu/:postId`: `object-contain` — **hiện đủ ảnh** trong khung (`SquareImageSlider` + `objectFit="contain"`).
+
+### Giá tiền — luôn 1 hàng
+
+- Số tiền + đơn vị tiền + đơn vị tính (vd. `1.200.000 VNĐ/gói`) **không xuống dòng**.
+- Dùng `whitespace-nowrap` trên dòng giá; trong cột hẹp (aside giá chào) ưu tiên `text-2xl` (hoặc nhỏ hơn) thay vì `text-3xl` để vừa khung.
+- `formatPrice` / `formatPriceNumber` (`apps/web/src/services/api.ts`); màu `--color-sale`.
 
 ### Component classes
 
@@ -577,20 +616,20 @@ flowchart TD
 - P1: gallery portfolio 3–6 ảnh; % đúng hạn từ booking `COMPLETED`; **push/PWA nhắc lịch định kỳ**
 - P2: lịch trống (availability filter trên trang dịch vụ); intro video ngắn (ngành online); escrow thanh toán thật; đặt lịch định kỳ (dọn 2 tuần/lần, gia sư 3 buổi/tuần)
 
-### Chưa làm (ghi chú) — không SEO / không mở rộng `/admin` trong vòng này
-
-Các hạng mục sau **cố ý hoãn** (không implement cùng vòng xác minh rút tiền):
+### Chưa làm (ghi chú) — hạ tầng lớn còn hoãn
 
 | Hạng mục | Ghi chú |
 |---------|--------|
 | **Push / PWA nhắc lịch** | Nhắc booking định kỳ trên thiết bị |
-| **Gallery portfolio** (3–6 ảnh người làm) | Schema đã có `galleryJson`; UI upload/hiển thị còn thiếu |
-| **Admin: ban chat** | Cảnh cáo / khóa chat / ban từ tin bị lọc PII |
-| **Admin: audit log** | Nhật ký thao tác admin |
-| **Admin: biểu đồ GMV** | Funnel / GMV theo thời gian, export CSV |
-| SEO prerender/SSR catalog | SPA hiện tại; tách khỏi admin dashboard |
+| **Lịch trống / availability** | Filter ngày còn trống trên trang dịch vụ |
+| **Ảnh R2/S3** | Upload hiện local `/uploads`; cloud khi scale Vercel |
+| **SEO prerender/SSR catalog** | SPA hiện tại |
+| **Redis / BullMQ** | Cache phân tán + worker nền |
+| **Matching AI** | Ghép nghề / gợi ý thông minh |
 
-> Không làm SEO kèm dashboard `/admin` trong cùng đợt. Ưu tiên ops tiền thật (webhook nạp) + email/NH rút.
+**Đã bổ sung gần đây:** trang `/bai-dang` · gallery portfolio hồ sơ · admin khóa chat PII · audit log · biểu đồ GMV 30 ngày · **không yêu cầu CCCD**.
+
+> Ưu tiên ops tiền thật (webhook nạp) + email/NH rút trước hạ tầng Redis/SSR.
 
 ## Tìm kiếm không dấu + gần đúng
 
@@ -642,7 +681,8 @@ Mỗi ngành cần có: quy trình đặt lịch, cách tính giá, tiêu chuẩ
 - Webhook bank / MoMo / VNPay tự cộng ví — hiện VietQR + **mock-confirm**; escrow ví nội bộ đã dùng production-path  
 - Thu STK ngân hàng **cá nhân khách** chỉ vì nạp VietQR (không chuẩn ngành / không khả thi từ QR)  
 - Geo quận-huyện sâu; gói combo (Package)  
-- Partner tự đăng gói dịch vụ riêng (đang dùng catalog chung)  
+- Partner tự tạo **Service (SKU catalog)** mới — đang dùng catalog chung; **được** đăng bài gig (`PartnerServicePost`) gắn nghề có sẵn, admin duyệt  
+
 
 ## Booking (thuê dịch vụ)
 
@@ -799,37 +839,66 @@ Thanh toán cho 2 bên + source sàn
 
 ## Admin
 
-- Seed: `admin@dichvuoi.vn` / `demo1234` (role `ADMIN`).
-- Web: `/admin` — shell sidebar riêng (không dùng header/footer marketplace). Layout: Tổng quan · Đơn hàng · Dịch vụ · Đối tác · Khách hàng · Đánh giá · Khiếu nại.
+- Seed: `admin@dichvuoi.vn` / `demo1234` (role `ADMIN`). Local có thể gán thêm email admin qua seed.
+- Web: `/admin` — shell Soft UI riêng (không dùng header/footer marketplace).
+- **Phân quyền shell:** `ADMIN` — toàn bộ menu ops; `MODERATOR` — chỉ `/admin/support` (chat khách); non-staff → redirect `/don-cua-toi`.
+
+### Soft UI Tổng quan (`/admin`)
+
+Palette shell (`index.css` `.admin-shell`): `--admin-ink` `#1A2B48`, `--admin-bg` `#F0F4F8`, card trắng, shadow mềm, accent blue/green/purple/yellow/red.
+
+**Icon library bắt buộc cho KPI Tổng quan:** [`lucide-react`](https://lucide.dev) (stroke Soft UI, khớp mock). Sidebar admin vẫn dùng `components/ui/icon`.
+
+| UI | Lucide export | Ghi chú |
+|----|---------------|---------|
+| Users | `Users` | ô soft blue + glow |
+| Partners | `Building2` | soft purple |
+| Chờ duyệt hồ sơ | `ClipboardCheck` | soft green |
+| Tổng đơn | `ShoppingCart` | + sparkline |
+| Việc mở | `FileText` | |
+| Hoàn thành | `CheckCircle2` | |
+| Đã hủy | `Trash2` | soft red |
+| Dòng tiền (section) | `DollarSign` | |
+| GMV | `Wallet` | + bars |
+| Cọc đang giữ | `Tag` | soft purple (price tag) |
+| Hoa hồng | `Banknote` | soft green |
+| Đánh giá | `Star` | |
+| Tin lọc PII | `AlertOctagon` | |
+| Ngày tháng | `Calendar` + `ChevronDown` | |
+| Chip / tổng kết nhanh | `UserCheck`, `TrendingUp`, `UserPlus`, `ShoppingBag`, `Shield`… | |
+
+Quy ước render: ô soft `rounded-[14px]` + **glow** pastel; icon `size` 16–22, `strokeWidth={2}` / `2.25`, `absoluteStrokeWidth`. File: `pages/admin/admin-overview-page.tsx`.
 
 ### Màn hình `/admin`
 
-Layout chung (`pages/admin/admin-layout.tsx`) chặn non-ADMIN, hiện nav + badge số việc tồn
-(hồ sơ chờ duyệt, tin bị lọc). Mỗi tab là một route riêng — bookmark / share link được.
+Layout (`pages/admin/admin-layout.tsx`): nav + badge hàng đợi (hỗ trợ OPEN, việc mở, bài đăng DV chờ, partners, khiếu nại…). Mỗi tab = route riêng.
 
-| Route | Làm gì |
-|-------|--------|
-| `/admin` | Tổng quan KPI + shortcut hàng đợi |
-| `/admin/bookings` | Danh sách đơn — filter status / escrow / ngày |
-| `/admin/bookings/:id` | **Chi tiết đơn kiểu ops**: header + actions, 3 cột (Các bên / Escrow / Timeline), chat bubble, đánh giá |
-| `/admin/catalog` | CRUD dịch vụ + featured nhóm |
-| `/admin/partners` | Hàng đợi duyệt hồ sơ |
-| `/admin/users` | Khách hàng — đổi role |
-| `/admin/reviews` | Đánh giá |
-| `/admin/complaints` | Hàng đợi khiếu nại đơn — xác minh & trừ uy tín |
-| `/admin/flagged` | Tin chat bị lọc PII |
+| Route | Làm gì | Ai thấy |
+|-------|--------|---------|
+| `/admin` | Tổng quan KPI Soft UI + chip hàng đợi | ADMIN |
+| `/admin/support` | Chat hỗ trợ khách | ADMIN + MODERATOR |
+| `/admin/finance` | Dòng tiền / ví sàn | ADMIN |
+| `/admin/bookings` | Danh sách đơn — filter status / escrow / ngày | ADMIN |
+| `/admin/bookings/:id` | Chi tiết đơn ops | ADMIN |
+| `/admin/catalog` | CRUD dịch vụ | ADMIN |
+| `/admin/partners` | Hàng đợi duyệt hồ sơ; **Chặn / Mở chặn** (`User.isBlocked`) | ADMIN |
+| `/admin/service-posts` | Duyệt bài đăng dịch vụ (gig) của partner | ADMIN |
+| `/admin/users` | Khách hàng — đổi role | ADMIN |
+| `/admin/reviews` | Đánh giá | ADMIN |
+| `/admin/complaints` | Khiếu nại — xác minh & trừ uy tín | ADMIN |
+| `/admin/flagged` | Tin chat bị lọc PII | ADMIN |
 
-Bộ lọc sống trong URL (`?q=&status=&page=`), đổi filter tự reset về trang 1.
+Bộ lọc sống trong URL (`?q=&status=&page=`), đổi filter tự reset về trang 1. List admin dùng **viewport `pageSize`** (phân trang theo khung nhìn).
 
 ### API `@Roles(ADMIN)` dưới `/api/admin/*`
 
 | Endpoint | Ghi chú |
 |----------|---------|
-| `GET stats` | users, partners, **partnersPendingVerify**, đơn, GMV hoàn thành, escrow, hoa hồng, reviews, tin bị lọc |
+| `GET stats` | users, partners, **partnersPendingVerify**, **servicePostsPending**, đơn / openJobs, GMV, escrow, hoa hồng, reviews, tin bị lọc |
 | `GET users` | `?q&role&page&pageSize` |
 | `PATCH users/:id` | đổi role |
-| `GET partners` | `?q&verified&acceptingJobs&city&page&pageSize` — chưa verify lên đầu |
-| `PATCH partners/:userId` | `isVerified` / `acceptingJobs` |
+| `GET partners` | `?q&verified&acceptingJobs&blocked&city&page&pageSize` — chưa verify lên đầu |
+| `PATCH partners/:userId` | `isVerified` / `acceptingJobs` / **`isBlocked`** (chặn dashboard; vẫn khiếu nại + chat support; chặn → `acceptingJobs=false`) |
 | `GET bookings` | `?q&status&paymentStatus&from&to&page&pageSize` |
 | `GET bookings/:id` | chi tiết + messages (kèm `redacted`) + reviews |
 | `PATCH bookings/:id` | force status / escrow / hoàn tiền |
@@ -841,6 +910,10 @@ Bộ lọc sống trong URL (`?q=&status=&page=`), đổi filter tự reset về
 | `POST services` | tạo dịch vụ (slug tự sinh từ tên nếu bỏ trống, trùng slug → 409) |
 | `PATCH services/:id` | sửa / bật / tắt |
 | `PATCH groups/:id` | bật / tắt `isFeatured` |
+| `GET service-posts/queue` | hàng đợi theo partner (pending) |
+| `GET service-posts` | list bài đăng DV `?status&q&page&pageSize` |
+| `GET service-posts/:id` | chi tiết |
+| `PATCH service-posts/:id` | duyệt / từ chối / ẩn |
 
 Mọi endpoint list trả `{ items, total, page, pageSize, pageCount }` (mặc định 20/trang, tối đa 100).
 
@@ -932,7 +1005,9 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - **Chống bỏ sàn P0:** che liên hệ theo vai trò/trạng thái (`contact-privacy.ts`); chat đơn `BookingMessage` + lọc PII; UI chat trên đơn thuê / việc của partner
 - **Escrow** (`PaymentStatus`): **tạo đơn = tự giam cọc** từ ví → `HELD`; `RELEASED` + hoa hồng 15% khi hoàn thành; chặn hàng chờ / nhận việc / chat / `IN_PROGRESS` khi chưa `HELD`
 - **Review hai chiều** sau `COMPLETED` (cập nhật `PartnerProfile.ratingAvg`)
-- **Admin dashboard** `/admin` + **MODERATOR** chat hỗ trợ `/admin/support`
+- **Admin Soft UI** `/admin` (**Lucide** KPI icons, khớp mock Soft UI) + **MODERATOR** `/admin/support`; finance / service-posts / complaints
+- **Bài đăng DV (gig):** partner CRUD → admin duyệt → public `/user/:userId` + chi tiết `/user/:userId/dich-vu/:postId` (gallery `object-contain`)
+- Dashboard user đồng bộ chrome theo `/doi-tac/viec` (`dashboard-chrome.tsx`)
 - Hồ sơ công khai `/user/:userId` (select gọn + cache TanStack 60s; skeleton loading)
 - **Retention P0:** lưu người làm quen; gợi ý thuê lại; trang chủ «Thuê lại nhanh»
 - **Lịch thuê partner** + realtime Socket.IO `/partner-realtime`
@@ -948,8 +1023,8 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - Lịch trống / availability filter trên trang dịch vụ (khách chọn ngày còn trống)
 - Ảnh dịch vụ trên R2/S3; Partner tự đăng gói dịch vụ  
 - MoMo/VNPay bổ sung kênh nạp  
-- Xác minh CCCD đối tác; workflow tạm khóa nhận việc khi khiếu nại nghiêm trọng  
-- **Hoãn (không SEO + admin):** Push/PWA nhắc lịch · gallery portfolio · admin ban chat · audit log · biểu đồ GMV — xem mục *Chưa làm (ghi chú)*  
+- Workflow tạm khóa nhận việc khi khiếu nại nghiêm trọng (không CCCD)  
+- **Hoãn hạ tầng lớn:** Redis/BullMQ · SEO/SSR catalog · matching AI · Push/PWA đầy đủ — xem mục *Chưa làm (ghi chú)*  
 - Rà soát nghĩa vụ đăng ký sàn TMĐT VN khi scale thương mại  
 - Tái cấu trúc FE dần về `features/catalog`, mở rộng `features/booking`  
 

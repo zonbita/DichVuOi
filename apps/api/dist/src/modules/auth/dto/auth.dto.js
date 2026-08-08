@@ -18,6 +18,7 @@ class RegisterDto {
     fullName;
     phone;
     enableOffering;
+    acceptedTerms;
 }
 exports.RegisterDto = RegisterDto;
 __decorate([
@@ -52,6 +53,14 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], RegisterDto.prototype, "enableOffering", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: true,
+        description: 'Bắt buộc đồng ý Nội quy và các quy tắc trước khi tạo tài khoản',
+    }),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], RegisterDto.prototype, "acceptedTerms", void 0);
 class LoginDto {
     email;
     password;
@@ -70,6 +79,7 @@ __decorate([
 ], LoginDto.prototype, "password", void 0);
 class GoogleLoginDto {
     idToken;
+    acceptedTerms;
 }
 exports.GoogleLoginDto = GoogleLoginDto;
 __decorate([
@@ -80,6 +90,15 @@ __decorate([
     (0, class_validator_1.MinLength)(20),
     __metadata("design:type", String)
 ], GoogleLoginDto.prototype, "idToken", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: true,
+        description: 'Bắt buộc khi tạo tài khoản Google lần đầu — đồng ý Nội quy và các quy tắc',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], GoogleLoginDto.prototype, "acceptedTerms", void 0);
 class RequestPhoneOtpDto {
     phone;
 }

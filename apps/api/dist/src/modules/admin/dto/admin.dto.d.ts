@@ -1,8 +1,15 @@
-import { BookingStatus, PaymentStatus, Role } from '@prisma/client';
+import { BookingStatus, PaymentStatus, Role, PartnerServicePostStatus } from '@prisma/client';
 export declare class AdminPageQueryDto {
     q?: string;
     page?: number;
     pageSize?: number;
+}
+export declare class AdminServicePostQueryDto extends AdminPageQueryDto {
+    status?: PartnerServicePostStatus;
+}
+export declare class AdminReviewServicePostDto {
+    status: PartnerServicePostStatus;
+    rejectReason?: string;
 }
 export declare class AdminUserQueryDto extends AdminPageQueryDto {
     role?: Role;
@@ -10,6 +17,7 @@ export declare class AdminUserQueryDto extends AdminPageQueryDto {
 export declare class AdminPartnerQueryDto extends AdminPageQueryDto {
     verified?: boolean;
     acceptingJobs?: boolean;
+    blocked?: boolean;
     city?: string;
 }
 export declare class AdminBookingQueryDto extends AdminPageQueryDto {
@@ -25,10 +33,12 @@ export declare class AdminServiceQueryDto extends AdminPageQueryDto {
 }
 export declare class AdminUpdateUserDto {
     role?: Role;
+    chatBanned?: boolean;
 }
 export declare class AdminUpdatePartnerDto {
     isVerified?: boolean;
     acceptingJobs?: boolean;
+    isBlocked?: boolean;
     phoneVerified?: boolean;
     bankVerified?: boolean;
 }

@@ -41,10 +41,17 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
 
   if (!user) return null;
 
+  const isBlocked = Boolean(user.isBlocked);
   const current = modes.find((item) => item.id === mode) ?? modes[0];
   const avatarSrc = user.partnerProfile?.avatarUrl;
 
   function switchMode(next: AppMode) {
+    if (isBlocked) {
+      setMode('hire');
+      setOpen(false);
+      navigate('/don-cua-toi/khieu-nai');
+      return;
+    }
     setMode(next);
     setOpen(false);
     if (next === 'hire') {
@@ -133,36 +140,80 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
           </div>
 
           <p className="px-3.5 pb-1 pt-2.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-            Chuyển vai trên cùng tài khoản
+            {isBlocked
+              ? 'Tài khoản bị chặn'
+              : 'Chuyển vai trên cùng tài khoản'}
           </p>
-          {modes.map((item) => {
-            const active = item.id === mode;
-            const offerLocked = item.id === 'offer' && !canOffer;
-            return (
+          {isBlocked ? (
+            <div className="mx-2 mb-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800">
+              Chỉ còn khiếu nại và chat hỗ trợ với admin.
               <button
-                key={item.id}
                 type="button"
-                role="option"
-                aria-selected={active}
-                onClick={() => switchMode(item.id)}
-                className={`mx-2 mb-1 flex w-[calc(100%-1rem)] flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition hover:bg-[var(--color-brand-soft)] ${
-                  active ? 'bg-[var(--color-brand-soft)] ring-1 ring-[var(--color-brand)]/25' : ''
-                }`}
+                className="mt-2 block font-semibold text-[var(--color-brand-deep)] underline"
+                onClick={() => {
+                  setOpen(false);
+                  navigate('/don-cua-toi/khieu-nai');
+                }}
               >
-                <span className="flex items-center justify-between gap-2 text-[15px] font-bold">
-                  {item.label}
-                  {active ? (
-                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-[var(--color-brand-deep)]">
-                      Đang dùng
+                Mở khiếu nại
+              </button>
+            </div>
+          ) : (
+            <>
+              {modes.map((item) => {
+                const active = item.id === mode;
+                const offerLocked = item.id === 'offer' && !canOffer;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => switchMode(item.id)}
+                    className={`mx-2 mb-1 flex w-[calc(100%-1rem)] flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition hover:bg-[var(--color-brand-soft)] ${
+                      active
+                        ? 'bg-[var(--color-brand-soft)] ring-1 ring-[var(--color-brand)]/25'
+                        : ''
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2 text-[15px] font-bold">
+                      {item.label}
+                      {active ? (
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-[var(--color-brand-deep)]">
+                          Đang dùng
+                        </span>
+                      ) : null}
                     </span>
-                  ) : null}
-                </span>
-                <span className="text-sm text-[var(--color-muted)]">
-                  {offerLocked ? 'Chưa bật hồ sơ — sẽ mở form kích hoạt' : item.hint}
+                    <span className="text-sm text-[var(--color-muted)]">
+                      {offerLocked
+                        ? 'Chưa bật hồ sơ — sẽ mở form kích hoạt'
+                        : item.hint}
+                    </span>
+                  </button>
+                );
+              })}
+
+              <div className="mx-2 my-1 h-px bg-[var(--color-line)]" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('hire');
+                  setOpen(false);
+                  navigate('/don-cua-toi/ho-so');
+                }}
+                className="mx-2 mb-1 flex w-[calc(100%-1rem)] items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:bg-[var(--color-brand-soft)]"
+              >
+                <Icon name="user" className="h-5 w-5 shrink-0 text-sky-600" />
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-bold">Hồ sơ</span>
+                  <span className="block text-sm text-[var(--color-muted)]">
+                    Ví, rút tiền, hóa đơn, hỗ trợ
+                  </span>
                 </span>
               </button>
-            );
-          })}
+            </>
+          )}
           <button
             type="button"
             onClick={() => {

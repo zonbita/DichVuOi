@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isProductionLike = isProductionLike;
+exports.allowPasswordAuth = allowPasswordAuth;
 exports.allowMockPayments = allowMockPayments;
 exports.resolveJwtSecret = resolveJwtSecret;
 exports.resolveVietQrIntentSecret = resolveVietQrIntentSecret;
@@ -14,6 +15,14 @@ const WEAK_VIETQR = new Set(['', 'dichvuoi-dev-vietqr-secret']);
 function isProductionLike() {
     return (process.env.NODE_ENV === 'production' ||
         process.env.VERCEL_ENV === 'production');
+}
+function allowPasswordAuth() {
+    const flag = process.env.ALLOW_PASSWORD_AUTH?.trim().toLowerCase();
+    if (flag === '1' || flag === 'true')
+        return true;
+    if (flag === '0' || flag === 'false')
+        return false;
+    return !isProductionLike();
 }
 function allowMockPayments() {
     const flag = process.env.ALLOW_MOCK_PAYMENTS?.trim().toLowerCase();

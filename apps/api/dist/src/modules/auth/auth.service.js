@@ -98,7 +98,11 @@ let AuthService = class AuthService {
             emailVerified: Boolean(user.emailVerified),
             bankVerified: Boolean(user.bankVerified),
             role: user.role,
+            isBlocked: Boolean(user.isBlocked),
             walletBalance: user.walletBalance ?? 0,
+            termsAcceptedAt: user.termsAcceptedAt
+                ? user.termsAcceptedAt.toISOString()
+                : null,
             partnerProfile: user.partnerProfile ?? null,
         };
     }
@@ -110,6 +114,9 @@ let AuthService = class AuthService {
         });
     }
     async register(dto) {
+        if (!dto.acceptedTerms) {
+            throw new common_1.BadRequestException('Bạn cần đồng ý Nội quy và các quy tắc trước khi tạo tài khoản');
+        }
         const email = dto.email.toLowerCase().trim();
         const existing = await this.prisma.user.findUnique({ where: { email } });
         if (existing) {
@@ -124,6 +131,7 @@ let AuthService = class AuthService {
                 fullName: dto.fullName.trim(),
                 phone: dto.phone?.trim(),
                 role,
+                termsAcceptedAt: new Date(),
                 ...(enableOffering
                     ? {
                         partnerProfile: {
@@ -233,6 +241,7 @@ let AuthService = class AuthService {
                 passwordHash: null,
                 role: client_1.Role.CUSTOMER,
                 emailVerified: true,
+                termsAcceptedAt: dto.acceptedTerms ? new Date() : null,
             },
             include: { partnerProfile: true },
         });
@@ -240,6 +249,14 @@ let AuthService = class AuthService {
             accessToken: this.sign(created),
             user: this.sanitize(created),
         };
+    }
+    async acceptTerms(userId) {
+        const user = await this.prisma.user.update({
+            where: { id: userId },
+            data: { termsAcceptedAt: new Date() },
+            include: { partnerProfile: true },
+        });
+        return this.sanitize(user);
     }
     async me(userId) {
         const user = await this.prisma.user.findUnique({

@@ -5,47 +5,47 @@ export declare class BookingsPublicController {
     listOpenBoard(page?: string, pageSize?: string): Promise<{
         items: (({
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             } | null;
             service: {
                 category: {
                     group: {
-                        description: string | null;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         name: string;
                         slug: string;
+                        description: string | null;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
+                    description: string | null;
                     groupId: string;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 basePrice: number;
                 priceMin: number;
                 priceMax: number;
@@ -68,8 +68,8 @@ export declare class BookingsPublicController {
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import("@prisma/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -79,10 +79,10 @@ export declare class BookingsPublicController {
             }[];
             applications: ({
                 partner: {
+                    id: string;
                     email: string;
                     fullName: string;
                     phone: string | null;
-                    id: string;
                     partnerProfile: {
                         phoneVerified: boolean;
                         bankVerified: boolean;
@@ -105,24 +105,23 @@ export declare class BookingsPublicController {
                 };
             } & {
                 id: string;
-                createdAt: Date;
-                updatedAt: Date;
                 partnerId: string;
                 note: string | null;
                 status: import("@prisma/client").$Enums.ApplicationStatus;
+                createdAt: Date;
+                updatedAt: Date;
                 bookingId: string;
                 depositAmount: number;
                 depositStatus: import("@prisma/client").$Enums.PaymentStatus;
             })[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             userId: string;
             partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
+            publishAt: Date | null;
             note: string | null;
             budgetMin: number | null;
             budgetMax: number | null;
@@ -147,6 +146,8 @@ export declare class BookingsPublicController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
         } & {
             applications?: {
                 partnerId: string;
@@ -154,47 +155,47 @@ export declare class BookingsPublicController {
             applicationCount?: number;
         }) | (Omit<{
             user: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             };
             partner: {
+                id: string;
                 email: string;
                 fullName: string;
                 phone: string | null;
-                id: string;
             } | null;
             service: {
                 category: {
                     group: {
-                        description: string | null;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         name: string;
                         slug: string;
+                        description: string | null;
                         supportsOnline: boolean;
-                        isFeatured: boolean;
                         sortOrder: number;
                         icon: string | null;
+                        isFeatured: boolean;
                     };
                 } & {
-                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     name: string;
                     slug: string;
+                    description: string | null;
                     groupId: string;
                 };
             } & {
-                description: string | null;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
                 name: string;
                 slug: string;
+                description: string | null;
                 basePrice: number;
                 priceMin: number;
                 priceMax: number;
@@ -217,8 +218,8 @@ export declare class BookingsPublicController {
                 createdAt: Date;
                 updatedAt: Date;
                 bookingId: string;
-                sortOrder: number;
                 content: string;
+                sortOrder: number;
                 source: import("@prisma/client").$Enums.RequirementSource;
                 partnerDone: boolean;
                 partnerDoneAt: Date | null;
@@ -228,10 +229,10 @@ export declare class BookingsPublicController {
             }[];
             applications: ({
                 partner: {
+                    id: string;
                     email: string;
                     fullName: string;
                     phone: string | null;
-                    id: string;
                     partnerProfile: {
                         phoneVerified: boolean;
                         bankVerified: boolean;
@@ -254,24 +255,23 @@ export declare class BookingsPublicController {
                 };
             } & {
                 id: string;
-                createdAt: Date;
-                updatedAt: Date;
                 partnerId: string;
                 note: string | null;
                 status: import("@prisma/client").$Enums.ApplicationStatus;
+                createdAt: Date;
+                updatedAt: Date;
                 bookingId: string;
                 depositAmount: number;
                 depositStatus: import("@prisma/client").$Enums.PaymentStatus;
             })[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             userId: string;
             partnerId: string | null;
             serviceId: string;
             address: string;
             scheduledAt: Date;
+            publishAt: Date | null;
             note: string | null;
             budgetMin: number | null;
             budgetMax: number | null;
@@ -296,6 +296,8 @@ export declare class BookingsPublicController {
             customerSettlementApprovedAt: Date | null;
             partnerSettlementApprovedAt: Date | null;
             settlementResolvedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
         } & {
             applications?: unknown;
         }, "applications"> & {

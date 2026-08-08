@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 export function PageHeader({
   title,
@@ -12,11 +12,11 @@ export function PageHeader({
   return (
     <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight sm:text-[1.75rem]">
+        <h1 className="text-2xl font-extrabold tracking-tight text-[var(--admin-ink)] sm:text-[1.75rem]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 text-sm text-[var(--color-muted)]">{description}</p>
+          <p className="mt-1 text-sm text-[var(--admin-muted)]">{description}</p>
         ) : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -128,6 +128,11 @@ export function Pagination({
   total: number;
   onChange: (page: number) => void;
 }) {
+  // Khi pageSize theo viewport đổi, clamp page về pageCount hợp lệ
+  useEffect(() => {
+    if (pageCount >= 1 && page > pageCount) onChange(pageCount);
+  }, [page, pageCount, onChange]);
+
   return (
     <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm">
       <p className="text-[var(--color-muted)]">

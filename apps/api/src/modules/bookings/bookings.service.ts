@@ -17,6 +17,7 @@ import {
   shapeBookingForViewer,
   type ContactViewerRole,
 } from '../../common/contact-privacy';
+import { assertUserNotBlocked } from '../../common/assert-not-blocked';
 import { buildRequirementSeeds } from '../../common/booking-requirements';
 import {
   APPLY_DEPOSIT_BUDGET_THRESHOLD,
@@ -547,13 +548,24 @@ export class BookingsService {
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
+    if (user.isBlocked) {
+      throw new ForbiddenException(
+        'Tài khoản bị chặn. Bạn chỉ có thể khiếu nại hoặc chat hỗ trợ với admin.',
+      );
+    }
 
     let partnerId: string | undefined;
     let totalPrice = service.basePrice;
     let status: BookingStatus = BookingStatus.PENDING;
     let matchingDeadlineAt: Date | undefined;
+    let publishAt: Date | undefined;
 
     if (dto.partnerId) {
+      if (dto.publishAt) {
+        throw new BadRequestException(
+          'Không hẹn giờ đăng khi thuê trực tiếp người làm',
+        );
+      }
       const offering = await this.prisma.partnerService.findFirst({
         where: {
           serviceId: service.id,
@@ -569,6 +581,24 @@ export class BookingsService {
       partnerId = dto.partnerId;
       totalPrice = offering.price ?? service.basePrice;
       status = BookingStatus.CONFIRMED;
+    } else if (dto.publishAt) {
+      publishAt = new Date(dto.publishAt);
+      if (Number.isNaN(publishAt.getTime())) {
+        throw new BadRequestException('Thời gian đăng không hợp lệ');
+      }
+      if (publishAt.getTime() <= Date.now()) {
+        throw new BadRequestException('Thời gian đăng phải ở tương lai');
+      }
+      const workAt = new Date(dto.scheduledAt);
+      if (Number.isNaN(workAt.getTime())) {
+        throw new BadRequestException('Thời gian mong muốn không hợp lệ');
+      }
+      if (publishAt.getTime() >= workAt.getTime()) {
+        throw new BadRequestException(
+          'Giờ đăng phải trước thời gian mong muốn làm việc',
+        );
+      }
+      status = BookingStatus.SCHEDULED;
     } else {
       matchingDeadlineAt = new Date(
         Date.now() + MATCHING_WINDOW_DAYS * 24 * 60 * 60 * 1000,
@@ -616,6 +646,7 @@ export class BookingsService {
         status,
         address: dto.address,
         scheduledAt: new Date(dto.scheduledAt),
+        publishAt,
         note: noteResult.text,
         budgetMin,
         budgetMax,
@@ -662,6 +693,7 @@ export class BookingsService {
   }
 
   async findOne(id: string, viewer?: Viewer) {
+    await this.publishDueScheduledBookings();
     await this.settleExpiredMatching(id);
     await this.settleExpiredResponseSla(id);
     await this.settleExpiredConfirmations(id);
@@ -673,6 +705,14 @@ export class BookingsService {
     if (!booking) {
       throw new NotFoundException('Không tìm thấy đơn đặt lịch');
     }
+
+    const now = new Date();
+    const isOpenBoard =
+      booking.status === BookingStatus.PENDING &&
+      !booking.partnerId &&
+      booking.paymentStatus === PaymentStatus.HELD &&
+      (booking.matchingDeadlineAt == null ||
+        booking.matchingDeadlineAt > now);
 
     if (viewer && viewer.role !== Role.ADMIN) {
       const isCustomer = booking.userId === viewer.id;
@@ -691,7 +731,7 @@ export class BookingsService {
           select: { id: true },
         }));
 
-      if (!isCustomer && !isAssignedPartner && !isApplicant) {
+      if (!isCustomer && !isAssignedPartner && !isApplicant && !isOpenBoard) {
         throw new ForbiddenException('Không xem được đơn này');
       }
     }
@@ -706,31 +746,33 @@ export class BookingsService {
         where: { id },
         include: bookingInclude,
       });
-      const assigned = Boolean(
-        viewer && refreshed.partnerId === viewer.id,
-      );
+      const useOpenQueue =
+        Boolean(viewer) &&
+        viewer!.role !== Role.ADMIN &&
+        refreshed.userId !== viewer!.id &&
+        refreshed.partnerId !== viewer!.id;
       return this.shape(
         refreshed,
         viewer,
-        assigned || !viewer ? undefined : 'open_queue',
+        useOpenQueue ? 'open_queue' : undefined,
       );
     }
 
-    const assigned = Boolean(viewer && booking.partnerId === viewer.id);
-    const isApplicantOnly =
+    const useOpenQueue =
       Boolean(viewer) &&
-      !assigned &&
+      viewer!.role !== Role.ADMIN &&
       booking.userId !== viewer!.id &&
       booking.partnerId !== viewer!.id;
 
     return this.shape(
       booking,
       viewer,
-      isApplicantOnly ? 'open_queue' : undefined,
+      useOpenQueue ? 'open_queue' : undefined,
     );
   }
 
   async listMineAsCustomer(userId: string) {
+    await this.publishDueScheduledBookings();
     await this.settleExpiredMatching();
     await this.settleExpiredResponseSla();
     await this.settleExpiredConfirmations();
@@ -740,6 +782,94 @@ export class BookingsService {
       include: bookingInclude,
     });
     return rows.map((b) => this.shape(b, { id: userId, role: Role.CUSTOMER }));
+  }
+
+  /**
+   * Đơn SCHEDULED tới giờ publishAt → PENDING + mở hàng chờ + realtime.
+   */
+  async publishDueScheduledBookings() {
+    const now = new Date();
+    const due = await this.prisma.booking.findMany({
+      where: {
+        status: BookingStatus.SCHEDULED,
+        partnerId: null,
+        publishAt: { lte: now },
+      },
+      include: bookingInclude,
+    });
+
+    for (const booking of due) {
+      const matchingDeadlineAt = new Date(
+        now.getTime() + MATCHING_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+      );
+      const updated = await this.prisma.booking.update({
+        where: { id: booking.id },
+        data: {
+          status: BookingStatus.PENDING,
+          matchingDeadlineAt,
+        },
+        include: bookingInclude,
+      });
+      this.realtime.emitOpenCreated(
+        this.shape(updated, undefined, 'open_queue'),
+      );
+      this.realtime.emitCustomerBooking(
+        updated.userId,
+        this.shape(updated, { id: updated.userId, role: Role.CUSTOMER }),
+      );
+    }
+  }
+
+  /**
+   * Lịch tháng khách thuê: các slot hẹn đăng đơn (theo publishAt).
+   */
+  async listCustomerPublishSchedule(
+    userId: string,
+    year: number,
+    month: number,
+  ) {
+    await this.publishDueScheduledBookings();
+    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const end = new Date(year, month, 1, 0, 0, 0, 0);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const rows = await this.prisma.booking.findMany({
+      where: {
+        userId,
+        publishAt: { gte: start, lt: end },
+        status: { not: BookingStatus.CANCELLED },
+      },
+      orderBy: { publishAt: 'asc' },
+      include: bookingInclude,
+    });
+
+    /** Khối hiển thị trên lưới giờ — sự kiện đăng, không phải giờ làm. */
+    const PUBLISH_SLOT_MIN = 30;
+
+    const items = rows.map((b) => {
+      const shaped = this.shape(b, { id: userId, role: Role.CUSTOMER });
+      const startAt = new Date(b.publishAt!);
+      const endAt = new Date(startAt.getTime() + PUBLISH_SLOT_MIN * 60_000);
+      const startHour =
+        startAt.getHours() +
+        startAt.getMinutes() / 60 +
+        startAt.getSeconds() / 3600;
+      const endHourRaw =
+        endAt.getHours() + endAt.getMinutes() / 60 + endAt.getSeconds() / 3600;
+      const crossesDay = endAt.getDate() !== startAt.getDate();
+      const endHour = crossesDay ? 24 : Math.max(startHour + 0.25, endHourRaw);
+
+      return {
+        ...shaped,
+        day: startAt.getDate(),
+        startHour,
+        endHour,
+        durationMin: PUBLISH_SLOT_MIN,
+        durationHours: Math.round((PUBLISH_SLOT_MIN / 60) * 100) / 100,
+      };
+    });
+
+    return { year, month, daysInMonth, items };
   }
 
   /** Gợi ý thuê lại — gom đơn COMPLETED theo partner + dịch vụ. */
@@ -920,6 +1050,7 @@ export class BookingsService {
   }
 
   async listOpen(viewerId?: string, limit?: number) {
+    await this.publishDueScheduledBookings();
     await this.settleExpiredMatching();
     await this.settleExpiredResponseSla();
     // Chỉ đơn đã đặt cọc mới vào hàng chờ — tránh nhận việc rồi bỏ sàn.
@@ -948,11 +1079,12 @@ export class BookingsService {
 
   /** Bảng tin đơn mở công khai (trang chủ) — che SĐT/địa chỉ qua open_queue. */
   async listOpenBoard(page = 1, pageSize = 8) {
+    await this.publishDueScheduledBookings();
     await this.settleExpiredMatching();
     await this.settleExpiredResponseSla();
 
     const safePage = Math.max(1, Math.floor(page) || 1);
-    const safeSize = Math.min(Math.max(Math.floor(pageSize) || 8, 1), 24);
+    const safeSize = Math.min(Math.max(Math.floor(pageSize) || 8, 1), 48);
     const where = {
       status: BookingStatus.PENDING,
       partnerId: null,
@@ -991,6 +1123,7 @@ export class BookingsService {
 
   /** Partner ứng tuyển đơn mở — cọc 10% totalPrice từ ví. */
   async apply(id: string, partnerId: string, dto: ApplyBookingDto = {}) {
+    await assertUserNotBlocked(this.prisma, partnerId);
     await this.settleExpiredMatching(id);
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new NotFoundException('Không tìm thấy đơn');
@@ -1269,6 +1402,7 @@ export class BookingsService {
     }
 
     const allowed: Record<string, BookingStatus[]> = {
+      [BookingStatus.SCHEDULED]: [BookingStatus.CANCELLED],
       [BookingStatus.PENDING]: [BookingStatus.CANCELLED],
       [BookingStatus.CONFIRMED]: [
         BookingStatus.IN_PROGRESS,
@@ -1783,6 +1917,15 @@ export class BookingsService {
 
     if (viewer.role !== Role.ADMIN) {
       this.assertDepositForChat(booking);
+      const me = await this.prisma.user.findUnique({
+        where: { id: viewer.id },
+        select: { chatBanned: true },
+      });
+      if (me?.chatBanned) {
+        throw new BadRequestException(
+          'Tài khoản đã bị khóa chat đơn. Liên hệ hỗ trợ hoặc gửi khiếu nại.',
+        );
+      }
     } else if (!booking.partnerId) {
       throw new BadRequestException(
         'Chat mở sau khi có người nhận việc. Không trao đổi SĐT ngoài sàn.',

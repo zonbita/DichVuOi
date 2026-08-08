@@ -17,6 +17,14 @@ export function isProductionLike(): boolean {
   );
 }
 
+/** Email/mật khẩu: bật ở local; product chỉ Google. Override: ALLOW_PASSWORD_AUTH=1|0. */
+export function allowPasswordAuth(): boolean {
+  const flag = process.env.ALLOW_PASSWORD_AUTH?.trim().toLowerCase();
+  if (flag === '1' || flag === 'true') return true;
+  if (flag === '0' || flag === 'false') return false;
+  return !isProductionLike();
+}
+
 /** Parse ALLOW_MOCK_PAYMENTS; default = on outside production-like envs. */
 export function allowMockPayments(): boolean {
   const flag = process.env.ALLOW_MOCK_PAYMENTS?.trim().toLowerCase();

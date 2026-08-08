@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { catalogQueries } from '../../lib/catalog-queries';
-import { CATALOG_MENU_DARK } from '../../utils/catalog-colors';
 import { Icon } from '../ui/icon';
 import {
   CatalogAllCategoriesLink,
@@ -12,6 +11,10 @@ import {
   MegaPanel,
 } from '../home/catalog-menu-shared';
 
+type PanelPos = { top: number; left: number };
+
+const VIEWPORT_PAD = 12;
+
 export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
   const treeQuery = useQuery(catalogQueries.groupsTree);
 
@@ -20,7 +23,10 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [isNarrow, setIsNarrow] = useState(false);
+  const [panelPos, setPanelPos] = useState<PanelPos>({ top: 0, left: 0 });
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
 
   const activeGroup = groups.find((group) => group.slug === activeSlug) ?? groups[0] ?? null;
@@ -33,6 +39,40 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
     return () => mq.removeEventListener('change', sync);
   }, []);
 
+  useLayoutEffect(() => {
+    if (!open || isNarrow) return;
+
+    function place() {
+      const trigger = triggerRef.current;
+      const panel = panelRef.current;
+      if (!trigger) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const gap = 8;
+      let top = rect.bottom + gap;
+      const maxLeft = Math.max(8, window.innerWidth - 8 - Math.min(1040, window.innerWidth - 16));
+      const left = Math.min(rect.left, maxLeft);
+
+      if (panel) {
+        const panelHeight = panel.offsetHeight;
+        const maxBottom = window.innerHeight - VIEWPORT_PAD;
+        if (top + panelHeight > maxBottom) {
+          top = Math.max(VIEWPORT_PAD, maxBottom - panelHeight);
+        }
+      }
+
+      setPanelPos({ top, left });
+    }
+
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, isNarrow, groups.length, treeQuery.isLoading, activeSlug]);
+
   useEffect(() => {
     if (!open) return;
 
@@ -41,9 +81,11 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
     }
 
     function onPointer(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) {
+        return;
       }
+      setOpen(false);
     }
 
     document.addEventListener('keydown', onKey);
@@ -77,9 +119,65 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
       ? 'text-white/90 hover:bg-white/10'
       : 'text-[var(--color-ink)] hover:bg-[var(--color-brand-soft)]';
 
+  const desktopPanel =
+    open && !isNarrow
+      ? createPortal(
+          <div
+            ref={panelRef}
+            id={menuId}
+            role="menu"
+            style={{ top: panelPos.top, left: panelPos.left }}
+            className="mega-menu-shell fixed z-[9990] flex overflow-hidden"
+            onMouseLeave={() => setActiveSlug(groups[0]?.slug ?? null)}
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest('a')) close();
+            }}
+          >
+            <div className="mega-menu-aside relative z-10 flex w-[320px] shrink-0 flex-col">
+              <CatalogMenuHeader size="sm" tone="glass" />
+              <ul className="py-2">
+                {treeQuery.isLoading ? (
+                  <li className="px-4 py-2 text-sm text-[var(--glass-muted,#7c8799)]">
+                    Đang tải...
+                  </li>
+                ) : null}
+                {groups.map((group, index) => (
+                  <li key={group.id}>
+                    <GroupListItem
+                      group={group}
+                      active={activeSlug === group.slug}
+                      onEnter={() => setActiveSlug(group.slug)}
+                      onClick={close}
+                      tone="glass"
+                      showSeparator={index < groups.length - 1}
+                    />
+                  </li>
+                ))}
+              </ul>
+              <div
+                className="shrink-0 border-t py-2"
+                style={{ borderColor: 'var(--glass-line, rgba(23, 32, 51, 0.08))' }}
+              >
+                <CatalogAllCategoriesLink onClick={close} tone="glass" />
+              </div>
+            </div>
+
+            <div
+              className="w-[min(720px,calc(100vw-340px))] max-w-[720px] shrink-0"
+              aria-hidden
+            />
+            <div className="mega-menu-panel absolute inset-y-0 left-[320px] w-[min(720px,calc(100vw-340px))] max-w-[720px] overflow-hidden">
+              {activeGroup ? <MegaPanel group={activeGroup} fitContent glass /> : null}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <div ref={rootRef} className="relative shrink-0">
       <button
+        ref={triggerRef}
         type="button"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
@@ -97,54 +195,7 @@ export function HeaderGroupsMenu({ onDark = false }: { onDark?: boolean }) {
         />
       </button>
 
-      {open && !isNarrow ? (
-        <div
-          id={menuId}
-          role="menu"
-          className="absolute top-[calc(100%+8px)] left-0 z-[9990] flex overflow-hidden rounded-[16px] border border-[color-mix(in_srgb,#7eb6d9_42%,transparent)] bg-transparent shadow-[0_14px_36px_rgba(2,18,32,0.38)]"
-          onMouseLeave={() => setActiveSlug(groups[0]?.slug ?? null)}
-          onClick={(event) => {
-            if ((event.target as HTMLElement).closest('a')) close();
-          }}
-        >
-          <div
-            className={`flex w-[320px] shrink-0 flex-col border-r border-[color-mix(in_srgb,#7eb6d9_35%,transparent)] ${CATALOG_MENU_DARK.surfaceClass}`}
-          >
-            <CatalogMenuHeader size="sm" />
-            <ul className="max-h-[min(70vh,640px)] flex-1 overflow-y-auto py-2">
-              {treeQuery.isLoading ? (
-                <li className="px-4 py-2 text-sm text-white/50">Đang tải...</li>
-              ) : null}
-              {groups.map((group, index) => (
-                <li key={group.id}>
-                  <GroupListItem
-                    group={group}
-                    active={activeSlug === group.slug}
-                    onEnter={() => setActiveSlug(group.slug)}
-                    onClick={close}
-                    tone="dark"
-                    showSeparator={index < groups.length - 1}
-                  />
-                </li>
-              ))}
-            </ul>
-            <div
-              className="shrink-0 border-t py-2"
-              style={{
-                borderColor: CATALOG_MENU_DARK.border,
-                background:
-                  'linear-gradient(180deg, rgba(6,26,48,0.2) 0%, rgba(4,18,34,0.55) 100%)',
-              }}
-            >
-              <CatalogAllCategoriesLink onClick={close} />
-            </div>
-          </div>
-
-          <div className="w-[min(720px,calc(100vw-340px))] max-w-[720px] bg-white">
-            {activeGroup ? <MegaPanel group={activeGroup} /> : null}
-          </div>
-        </div>
-      ) : null}
+      {desktopPanel}
 
       {open && isNarrow
         ? createPortal(

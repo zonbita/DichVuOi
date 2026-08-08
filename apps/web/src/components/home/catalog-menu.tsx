@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { catalogQueries } from '../../lib/catalog-queries';
-import { CATALOG_MENU_DARK, groupColor } from '../../utils/catalog-colors';
+import { groupColor } from '../../utils/catalog-colors';
 import { GroupCatalogIcon } from '../catalog/group-catalog-icon';
 import { Icon } from '../ui/icon';
 import {
@@ -36,37 +36,9 @@ export function CatalogMenu({
   const activeGroup = groups.find((group) => group.slug === activeSlug) ?? null;
   const asideRef = useRef<HTMLElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const anchorRef = useRef<HTMLElement | null>(null);
-  const [panelTop, setPanelTop] = useState(0);
 
-  function alignPanel(anchor: HTMLElement) {
-    const aside = asideRef.current;
-    if (!aside) return;
-
-    const asideRect = aside.getBoundingClientRect();
-    const anchorRect = anchor.getBoundingClientRect();
-    const panelHeight = panelRef.current?.offsetHeight ?? 420;
-    const viewportPadding = 16;
-
-    let top = anchorRect.top - asideRect.top;
-    const maxTopInAside = Math.max(0, asideRect.height - panelHeight);
-    top = Math.min(Math.max(0, top), maxTopInAside);
-
-    const absoluteTop = asideRect.top + top;
-    if (absoluteTop + panelHeight > window.innerHeight - viewportPadding) {
-      top = window.innerHeight - viewportPadding - panelHeight - asideRect.top;
-    }
-    if (asideRect.top + top < viewportPadding) {
-      top = viewportPadding - asideRect.top;
-    }
-
-    setPanelTop(Math.max(0, top));
-  }
-
-  function handleItemEnter(slug: string, anchor: HTMLElement) {
-    anchorRef.current = anchor;
+  function handleItemEnter(slug: string) {
     setActiveSlug(slug);
-    requestAnimationFrame(() => alignPanel(anchor));
   }
 
   function handleServiceSelect(pick: CatalogServicePick) {
@@ -75,12 +47,6 @@ export function CatalogMenu({
       setActiveSlug(pick.groupSlug);
     }
   }
-
-  useLayoutEffect(() => {
-    if (activeSlug && anchorRef.current) {
-      alignPanel(anchorRef.current);
-    }
-  }, [activeSlug, activeGroup]);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -137,33 +103,30 @@ export function CatalogMenu({
         ) : null}
       </div>
 
-      {/* Desktop: sidebar + mega panel hover */}
+      {/* Desktop: sidebar + mega panel hover — glass-page */}
       <aside
         ref={asideRef}
         className="relative z-[100] hidden w-full max-w-[360px] lg:block"
         onMouseLeave={() => {
           if (!pickerMode) {
             setActiveSlug(null);
-            anchorRef.current = null;
           }
         }}
       >
-        <div
-          className={`flex max-h-[min(860px,calc(100vh-7.5rem))] flex-col overflow-hidden ${CATALOG_MENU_DARK.surfaceClass}`}
-        >
-          <CatalogMenuHeader size="lg" />
+        <div className="mega-menu-shell flex flex-col overflow-hidden">
+          <CatalogMenuHeader size="lg" tone="glass" />
 
-          <ul className="flex-1 overflow-y-auto py-2">
+          <ul className="py-2">
             {treeQuery.isLoading ? (
-              <li className="px-5 py-3 text-sm text-white/50">Đang tải...</li>
+              <li className="px-5 py-3 text-sm text-[var(--glass-muted,#7c8799)]">Đang tải...</li>
             ) : null}
             {groups.map((group, index) => (
               <li key={group.id}>
                 <GroupListItem
                   group={group}
                   active={activeSlug === group.slug}
-                  onEnter={(anchor) => handleItemEnter(group.slug, anchor)}
-                  tone="dark"
+                  onEnter={() => handleItemEnter(group.slug)}
+                  tone="glass"
                   showSeparator={index < groups.length - 1}
                 />
               </li>
@@ -173,25 +136,21 @@ export function CatalogMenu({
           {!pickerMode ? (
             <div
               className="shrink-0 border-t py-2"
-              style={{
-                borderColor: CATALOG_MENU_DARK.border,
-                background:
-                  'linear-gradient(180deg, rgba(6,26,48,0.2) 0%, rgba(4,18,34,0.55) 100%)',
-              }}
+              style={{ borderColor: 'var(--glass-line, rgba(23, 32, 51, 0.08))' }}
             >
-              <CatalogAllCategoriesLink />
+              <CatalogAllCategoriesLink tone="glass" />
             </div>
           ) : null}
         </div>
 
         <div
           ref={panelRef}
-          className={`absolute left-full z-[110] ml-px w-[min(720px,calc(100vw-380px))] overflow-hidden rounded-r-[16px] border border-[var(--color-line)] bg-white shadow-xl transition-[top,opacity,transform] duration-200 ease-out ${
+          className={`mega-menu-panel absolute top-0 left-full z-[110] ml-px w-[min(720px,calc(100vw-380px))] overflow-hidden rounded-r-[20px] border border-white/80 shadow-[0_18px_48px_rgba(15,39,71,0.12)] transition-[opacity,transform] duration-200 ease-out ${
             activeSlug && activeGroup
               ? 'pointer-events-auto translate-x-0 opacity-100'
               : 'pointer-events-none translate-x-1 opacity-0'
           }`}
-          style={{ top: panelTop }}
+          style={{ height: '100%' }}
           onMouseEnter={() => {
             if (activeSlug) setActiveSlug(activeSlug);
           }}
@@ -201,6 +160,7 @@ export function CatalogMenu({
               group={activeGroup}
               onServiceSelect={pickerMode ? handleServiceSelect : onServiceSelect}
               selectedServiceSlug={selectedServiceSlug}
+              glass
             />
           ) : null}
         </div>

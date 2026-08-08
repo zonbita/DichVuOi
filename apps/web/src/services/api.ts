@@ -29,6 +29,9 @@ import type {
   AdminReview,
   AdminService,
   AdminServiceInput,
+  AdminServicePost,
+  AdminServicePostDetail,
+  AdminServicePostQueueItem,
   AdminStats,
   AdminUser,
   Paginated,
@@ -36,6 +39,8 @@ import type {
 import type { Complaint, ComplaintStatus } from '../types/complaint';
 import type { ChatbotReply, ChatbotStats } from '../types/chatbot';
 import type { SupportMessage, SupportThread, SupportThreadDetail } from '../types/support';
+import type { PartnerServicePost } from '../types/partner-service-post';
+import type { PublicServicePostDetail, PublicServicePostListItem } from '../types/public-service-post';
 import type {
   Invoice,
   VietQrBank,
@@ -68,6 +73,7 @@ export type AdminUserQuery = AdminListQuery & { role?: string };
 export type AdminPartnerQuery = AdminListQuery & {
   verified?: boolean;
   acceptingJobs?: boolean;
+  blocked?: boolean;
   city?: string;
 };
 
@@ -141,6 +147,7 @@ export const api = {
     fullName: string;
     phone?: string;
     enableOffering?: boolean;
+    acceptedTerms: boolean;
   }) =>
     request<AuthResponse>('/api/auth/register', {
       method: 'POST',
@@ -151,12 +158,18 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  loginWithGoogle: (payload: { idToken: string }) =>
+  loginWithGoogle: (payload: { idToken: string; acceptedTerms?: boolean }) =>
     request<AuthResponse>('/api/auth/google', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
   me: (token?: string | null) => request<AuthUser>('/api/auth/me', { token }),
+  acceptTerms: (token?: string | null) =>
+    request<AuthUser>('/api/auth/accept-terms', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({}),
+    }),
 
   createBooking: (payload: CreateBookingInput) =>
     request<Booking>('/api/bookings', {
@@ -179,6 +192,10 @@ export const api = {
   getPartnerSchedule: (year: number, month: number) =>
     request<PartnerSchedule>(
       `/api/bookings/partner/schedule${queryString({ year, month })}`,
+    ),
+  getCustomerPublishSchedule: (year: number, month: number) =>
+    request<PartnerSchedule>(
+      `/api/bookings/mine/publish-schedule${queryString({ year, month })}`,
     ),
   acceptBooking: (id: string) =>
     request<{
@@ -396,9 +413,53 @@ export const api = {
       size: number;
     }>;
   },
+  uploadServicePostImage: async (file: File) => {
+    const body = new FormData();
+    body.append('file', file);
+    const response = await fetch(`${API_BASE}/api/uploads/service-post`, {
+      method: 'POST',
+      headers: authOnlyHeaders(),
+      body,
+    });
+    if (!response.ok) {
+      const raw = await response.text();
+      let message = 'Tải ảnh thất bại';
+      try {
+        const parsed = JSON.parse(raw) as { message?: string | string[] };
+        if (typeof parsed.message === 'string') message = parsed.message;
+        else if (Array.isArray(parsed.message)) message = parsed.message.join(', ');
+      } catch {
+        if (raw.trim()) message = raw.slice(0, 200);
+      }
+      throw new Error(message);
+    }
+    return response.json() as Promise<{
+      url: string;
+      fileName: string;
+      size: number;
+    }>;
+  },
   listMyComplaints: () => request<Complaint[]>('/api/complaints/mine'),
 
   adminStats: () => request<AdminStats>('/api/admin/stats'),
+  adminGmvSeries: (days = 30) =>
+    request<{
+      days: number;
+      total: number;
+      points: Array<{ date: string; gmv: number }>;
+    }>(`/api/admin/stats/gmv-series${queryString({ days })}`),
+  adminAuditLogs: (query: AdminListQuery = {}) =>
+    request<
+      Paginated<{
+        id: string;
+        action: string;
+        targetType: string | null;
+        targetId: string | null;
+        meta: Record<string, unknown> | null;
+        createdAt: string;
+        actor: { id: string; fullName: string; email: string };
+      }>
+    >(`/api/admin/audit-logs${queryString(query)}`),
   adminFinanceOverview: () =>
     request<AdminFinanceOverview>('/api/admin/finance/overview'),
   adminFinanceWallets: (query: {
@@ -430,10 +491,13 @@ export const api = {
     ),
   adminUsers: (query: AdminUserQuery = {}) =>
     request<Paginated<AdminUser>>(`/api/admin/users${queryString(query)}`),
-  adminUpdateUser: (id: string, role: string) =>
+  adminUpdateUser: (
+    id: string,
+    payload: { role?: string; chatBanned?: boolean },
+  ) =>
     request<AdminUser>(`/api/admin/users/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify(payload),
     }),
   adminPartners: (query: AdminPartnerQuery = {}) =>
     request<Paginated<AdminPartner>>(`/api/admin/partners${queryString(query)}`),
@@ -442,6 +506,7 @@ export const api = {
     payload: {
       isVerified?: boolean;
       acceptingJobs?: boolean;
+      isBlocked?: boolean;
       phoneVerified?: boolean;
       bankVerified?: boolean;
     },
@@ -464,6 +529,31 @@ export const api = {
     }),
   adminReviews: (query: AdminListQuery = {}) =>
     request<Paginated<AdminReview>>(`/api/admin/reviews${queryString(query)}`),
+  adminServicePosts: (
+    query: AdminListQuery & { status?: string } = {},
+  ) =>
+    request<Paginated<AdminServicePost>>(
+      `/api/admin/service-posts${queryString(query)}`,
+    ),
+  adminServicePostQueue: (query: AdminListQuery = {}) =>
+    request<Paginated<AdminServicePostQueueItem>>(
+      `/api/admin/service-posts/queue${queryString(query)}`,
+    ),
+  adminServicePostDetail: (id: string) =>
+    request<AdminServicePostDetail>(`/api/admin/service-posts/${id}`),
+  adminReviewServicePost: (
+    id: string,
+    payload: { status: 'APPROVED' | 'REJECTED'; rejectReason?: string },
+  ) =>
+    request<{
+      id: string;
+      title: string;
+      status: string;
+      rejectReason: string | null;
+    }>(`/api/admin/service-posts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
   adminFlaggedMessages: (query: AdminListQuery = {}) =>
     request<Paginated<AdminFlaggedMessage>>(
       `/api/admin/messages/flagged${queryString(query)}`,
@@ -532,6 +622,18 @@ export const api = {
   getPartnerLevel: () => request<PartnerLevelBreakdown>('/api/partners/me/level'),
   getPublicPartner: (userId: string) =>
     request<PublicPartnerProfile>(`/api/partners/public/${userId}`),
+  getPublicPartnerPost: (userId: string, postId: string) =>
+    request<PublicServicePostDetail>(
+      `/api/partners/public/${userId}/posts/${postId}`,
+    ),
+  getApprovedServicePosts: (page = 1, pageSize = 12) =>
+    request<{
+      items: PublicServicePostListItem[];
+      total: number;
+      page: number;
+      pageSize: number;
+      pageCount: number;
+    }>(`/api/partners/posts${queryString({ page, pageSize })}`),
   searchPartners: (q: string, limit = 24) =>
     request<PartnerSearchHit[]>(
       `/api/partners/search${queryString({ q, limit })}`,
@@ -569,6 +671,39 @@ export const api = {
     request<PartnerProfile & { user: AuthUser }>('/api/partners/me/offerings', {
       method: 'PUT',
       body: JSON.stringify({ serviceIds }),
+    }),
+  getMyServicePosts: (serviceId?: string) =>
+    request<PartnerServicePost[]>(
+      `/api/partners/me/posts${queryString({ serviceId })}`,
+    ),
+  createServicePost: (payload: {
+    serviceId: string;
+    title: string;
+    body: string;
+    price: number;
+    images: string[];
+  }) =>
+    request<PartnerServicePost>('/api/partners/me/posts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  updateServicePost: (
+    id: string,
+    payload: {
+      serviceId?: string;
+      title?: string;
+      body?: string;
+      price?: number;
+      images?: string[];
+    },
+  ) =>
+    request<PartnerServicePost>(`/api/partners/me/posts/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  deleteServicePost: (id: string) =>
+    request<{ ok: boolean }>(`/api/partners/me/posts/${id}`, {
+      method: 'DELETE',
     }),
 
   requestPartnerPhoneOtp: (phone: string) =>
@@ -711,6 +846,7 @@ export function formatWorkHours(hours: number | null | undefined) {
 
 export function formatBookingStatus(status: string) {
   const map: Record<string, string> = {
+    SCHEDULED: 'Hẹn giờ đăng',
     PENDING: 'Chờ chọn người',
     CONFIRMED: 'Đã nhận',
     IN_PROGRESS: 'Đang làm',

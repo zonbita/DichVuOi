@@ -21,7 +21,11 @@ import {
   SearchInput,
   SelectFilter,
 } from './admin-ui';
-import { useFilterParams, useSearchFilter } from './admin-utils';
+import {
+  useAdminViewportPageSize,
+  useFilterParams,
+  useSearchFilter,
+} from './admin-utils';
 
 const schema = z.object({
   name: z.string().min(2, 'Tên tối thiểu 2 ký tự'),
@@ -66,6 +70,7 @@ export function AdminCatalogPage() {
   const [editing, setEditing] = useState<AdminService | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const queryClient = useQueryClient();
+  const pageSize = useAdminViewportPageSize({ rowPx: 64, chromePx: 360 });
 
   const q = get('q');
   const groupId = get('groupId');
@@ -80,11 +85,12 @@ export function AdminCatalogPage() {
     queryFn: api.adminCategories,
   });
   const servicesQuery = useQuery({
-    queryKey: ['admin', 'services', { q, groupId, isActive, page }],
+    queryKey: ['admin', 'services', { q, groupId, isActive, page, pageSize }],
     queryFn: () =>
       api.adminServices({
         q,
         page,
+        pageSize,
         groupId: groupId || undefined,
         isActive: isActive === '' ? undefined : isActive === 'true',
       }),
@@ -154,12 +160,6 @@ export function AdminCatalogPage() {
     onSuccess: invalidateCatalog,
   });
 
-  const groupMutation = useMutation({
-    mutationFn: ({ id, next }: { id: string; next: boolean }) =>
-      api.adminUpdateGroup(id, { isFeatured: next }),
-    onSuccess: invalidateCatalog,
-  });
-
   const services = servicesQuery.data;
   const groups = catalogQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
@@ -168,7 +168,7 @@ export function AdminCatalogPage() {
     <div className="space-y-8">
       <PageHeader
         title="Dịch vụ & catalog"
-        description="CRUD nghề (Service), bật/tắt và quản lý nhóm featured trên trang chủ."
+        description="CRUD nghề (Service), bật/tắt và chỉnh giá trên catalog."
         actions={
           <button
             type="button"
@@ -500,50 +500,6 @@ export function AdminCatalogPage() {
             />
           </>
         ) : null}
-      </section>
-
-      <section>
-        <h2 className="text-lg font-extrabold">Nhóm & danh mục</h2>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          Nhóm «featured» dùng gắn nhãn/ưu tiên; trang chủ hiện tất cả ngành nghề.
-        </p>
-        <div className="mt-4 space-y-3">
-          {groups.map((group) => (
-            <article
-              key={group.id}
-              className="rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-sm"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <p className="font-bold">
-                  {group.name}{' '}
-                  <span className="text-sm font-normal text-[var(--color-muted)]">
-                    · {group._count.categories} danh mục
-                  </span>
-                </p>
-                <button
-                  type="button"
-                  disabled={groupMutation.isPending}
-                  className="rounded-xl border border-[var(--color-line)] px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
-                  onClick={() =>
-                    groupMutation.mutate({
-                      id: group.id,
-                      next: !group.isFeatured,
-                    })
-                  }
-                >
-                  {group.isFeatured ? 'Bỏ featured' : 'Đặt featured'}
-                </button>
-              </div>
-              <ul className="mt-2 space-y-1 text-sm text-[var(--color-muted)]">
-                {group.categories.map((category) => (
-                  <li key={category.id}>
-                    {category.name} — {category._count.services} dịch vụ
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
       </section>
     </div>
   );

@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Booking } from '../../types/catalog';
 import { OpenJobCard, openJobRoomTone } from '../common/open-job-card';
+import {
+  DashboardPageHeader,
+  dashboardSurfaceClass,
+} from '../dashboard/dashboard-chrome';
 import { ListPagination } from '../ui/list-pagination';
 import { Icon } from '../ui/icon';
 import {
@@ -56,16 +60,24 @@ export function PartnerIncomingList({
   }, [bookings, safePage]);
 
   return (
-    <section className="surface-card flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5">
+    <section
+      className={`${dashboardSurfaceClass} flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5`}
+    >
       <div className="flex shrink-0 flex-wrap items-start justify-between gap-3 sm:gap-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-extrabold">Đơn thuê realtime</h2>
-          <Link
-            to="/doi-tac/ho-so"
-            className="mt-0.5 inline-block text-xs font-semibold text-[var(--color-brand)] underline-offset-2 hover:underline"
-          >
-            Thêm nghề (Bấm vào để sang hồ sơ)
-          </Link>
+          <DashboardPageHeader
+            icon="sparkles"
+            title="Đơn thuê realtime"
+            description="Việc mở trên sàn — ứng tuyển để khách chọn bạn."
+            actions={
+              <Link
+                to="/doi-tac/ho-so"
+                className="text-sm font-semibold text-[var(--color-brand)] underline-offset-2 hover:underline"
+              >
+                Thêm nghề →
+              </Link>
+            }
+          />
         </div>
         {showProfessionFilter ? (
           <div className="w-full max-w-[360px] shrink-0 sm:ml-auto">
@@ -100,6 +112,7 @@ export function PartnerIncomingList({
             <OpenJobCard
               key={booking.id}
               booking={booking}
+              detailTo={`/doi-tac/don-thue/${booking.id}`}
               footerLeft={
                 <span
                   className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-extrabold tracking-wide uppercase ${tone.badge}`}

@@ -16,6 +16,7 @@ const crypto_1 = require("crypto");
 const escrow_1 = require("../../common/escrow");
 const security_env_1 = require("../../common/security-env");
 const email_otp_rate_1 = require("../../common/email-otp-rate");
+const assert_not_blocked_1 = require("../../common/assert-not-blocked");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
 const mail_service_1 = require("../mail/mail.service");
 const BANK_VERIFY_OTP_TTL_MS = 10 * 60 * 1000;
@@ -115,6 +116,7 @@ let FinanceService = class FinanceService {
         }
     }
     async withdraw(userId, dto) {
+        await (0, assert_not_blocked_1.assertUserNotBlocked)(this.prisma, userId);
         const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
         const accountName = dto.accountName.trim().toUpperCase();
         const bankBin = dto.bankBin.trim();

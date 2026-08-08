@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminAdjustWalletDto = exports.AdminFinanceWalletQueryDto = exports.AdminFinanceTxQueryDto = exports.AdminUpdateGroupDto = exports.AdminUpdateServiceDto = exports.AdminCreateServiceDto = exports.AdminUpdateBookingDto = exports.AdminUpdatePartnerDto = exports.AdminUpdateUserDto = exports.AdminServiceQueryDto = exports.AdminBookingQueryDto = exports.AdminPartnerQueryDto = exports.AdminUserQueryDto = exports.AdminPageQueryDto = void 0;
+exports.AdminAdjustWalletDto = exports.AdminFinanceWalletQueryDto = exports.AdminFinanceTxQueryDto = exports.AdminUpdateGroupDto = exports.AdminUpdateServiceDto = exports.AdminCreateServiceDto = exports.AdminUpdateBookingDto = exports.AdminUpdatePartnerDto = exports.AdminUpdateUserDto = exports.AdminServiceQueryDto = exports.AdminBookingQueryDto = exports.AdminPartnerQueryDto = exports.AdminUserQueryDto = exports.AdminReviewServicePostDto = exports.AdminServicePostQueryDto = exports.AdminPageQueryDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const client_1 = require("@prisma/client");
 const class_transformer_1 = require("class-transformer");
@@ -50,6 +50,32 @@ __decorate([
     (0, class_validator_1.Max)(100),
     __metadata("design:type", Number)
 ], AdminPageQueryDto.prototype, "pageSize", void 0);
+class AdminServicePostQueryDto extends AdminPageQueryDto {
+    status;
+}
+exports.AdminServicePostQueryDto = AdminServicePostQueryDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: ['PENDING', 'APPROVED', 'REJECTED'] }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.PartnerServicePostStatus),
+    __metadata("design:type", String)
+], AdminServicePostQueryDto.prototype, "status", void 0);
+class AdminReviewServicePostDto {
+    status;
+    rejectReason;
+}
+exports.AdminReviewServicePostDto = AdminReviewServicePostDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ enum: ['APPROVED', 'REJECTED'] }),
+    (0, class_validator_1.IsEnum)(client_1.PartnerServicePostStatus),
+    __metadata("design:type", String)
+], AdminReviewServicePostDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], AdminReviewServicePostDto.prototype, "rejectReason", void 0);
 class AdminUserQueryDto extends AdminPageQueryDto {
     role;
 }
@@ -63,6 +89,7 @@ __decorate([
 class AdminPartnerQueryDto extends AdminPageQueryDto {
     verified;
     acceptingJobs;
+    blocked;
     city;
 }
 exports.AdminPartnerQueryDto = AdminPartnerQueryDto;
@@ -80,6 +107,13 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], AdminPartnerQueryDto.prototype, "acceptingJobs", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Lọc theo tài khoản bị admin chặn' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(toOptionalBoolean),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], AdminPartnerQueryDto.prototype, "blocked", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'Tỉnh / thành phố' }),
     (0, class_validator_1.IsOptional)(),
@@ -144,6 +178,7 @@ __decorate([
 ], AdminServiceQueryDto.prototype, "isActive", void 0);
 class AdminUpdateUserDto {
     role;
+    chatBanned;
 }
 exports.AdminUpdateUserDto = AdminUpdateUserDto;
 __decorate([
@@ -152,9 +187,18 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.Role),
     __metadata("design:type", String)
 ], AdminUpdateUserDto.prototype, "role", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Khóa / mở chat đơn (sau tin PII hoặc cảnh cáo)',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], AdminUpdateUserDto.prototype, "chatBanned", void 0);
 class AdminUpdatePartnerDto {
     isVerified;
     acceptingJobs;
+    isBlocked;
     phoneVerified;
     bankVerified;
 }
@@ -171,6 +215,14 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], AdminUpdatePartnerDto.prototype, "acceptingJobs", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Admin chặn / mở chặn tài khoản (dashboard bị hạn chế; vẫn khiếu nại + chat support)',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], AdminUpdatePartnerDto.prototype, "isBlocked", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'Admin bật/tắt xác minh SĐT' }),
     (0, class_validator_1.IsOptional)(),

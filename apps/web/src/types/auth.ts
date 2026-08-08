@@ -96,6 +96,10 @@ export type AuthUser = {
   /** Đã xác minh STK nhận khi rút ví. */
   bankVerified?: boolean;
   role: UserRole;
+  /** Admin chặn — dashboard hạn chế (chỉ khiếu nại + chat hỗ trợ). */
+  isBlocked?: boolean;
+  /** ISO — đã đồng ý Nội quy; null = chưa đồng ý (cần gate). */
+  termsAcceptedAt?: string | null;
   /** Số dư ví nội bộ (VNĐ). */
   walletBalance?: number;
   partnerProfile: PartnerProfile | null;
@@ -161,10 +165,34 @@ export type PublicPartnerProfile = {
     comment: string | null;
     createdAt: string;
     fromName: string;
+    serviceId?: string;
     serviceName: string;
     serviceSlug: string;
     groupSlug?: string | null;
     groupName?: string | null;
+  }>;
+  servicePosts: Array<{
+    id: string;
+    title: string;
+    body: string;
+    coverUrl: string | null;
+    images: string[];
+    serviceId: string;
+    price?: number | null;
+    createdAt: string;
+    updatedAt: string;
+    service: {
+      id: string;
+      slug: string;
+      name: string;
+      unit: string;
+      category: {
+        id: string;
+        name: string;
+        slug: string;
+        group: { id: string; name: string; slug: string };
+      } | null;
+    };
   }>;
   reputation: {
     currentPoints: number;

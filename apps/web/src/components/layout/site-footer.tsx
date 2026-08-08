@@ -20,6 +20,7 @@ const linkColumns: Array<{
       { label: 'Thông tin công ty', to: '/thong-tin-cong-ty' },
       { label: 'Giới thiệu', to: '/gioi-thieu' },
       { label: 'Điều khoản sử dụng', to: '/dieu-khoan' },
+      { label: 'Nội quy và các quy tắc', to: '/noi-quy' },
       { label: 'Chính sách bảo mật', to: '/chinh-sach-bao-mat' },
     ],
   },

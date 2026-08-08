@@ -14,6 +14,46 @@ export function useDebounced<T>(value: T, delay = 350): T {
 }
 
 /**
+ * Số dòng/item mỗi trang theo chiều cao viewport — đủ đầy màn hình rồi phân trang.
+ * `rowPx`: cao 1 hàng; `chromePx`: header + filter + pagination + padding.
+ */
+export function useAdminViewportPageSize(options?: {
+  rowPx?: number;
+  chromePx?: number;
+  min?: number;
+  max?: number;
+}) {
+  const rowPx = options?.rowPx ?? 56;
+  const chromePx = options?.chromePx ?? 320;
+  const min = options?.min ?? 8;
+  const max = options?.max ?? 50;
+
+  const calc = () => {
+    if (typeof window === 'undefined') return 20;
+    const available = window.innerHeight - chromePx;
+    return Math.max(min, Math.min(max, Math.floor(available / rowPx)));
+  };
+
+  const [pageSize, setPageSize] = useState(calc);
+
+  useEffect(() => {
+    let frame = 0;
+    const onResize = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => setPageSize(calc()));
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', onResize);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowPx, chromePx, min, max]);
+
+  return pageSize;
+}
+
+/**
  * Bộ lọc admin sống trong URL để chia sẻ / bookmark được
  * (vd. `/admin/partners?verified=false`). Đổi filter luôn reset về trang 1.
  */

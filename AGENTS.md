@@ -27,3 +27,7 @@ Chi tiết: `.cursor/skills/analyze-build-verify/SKILL.md`
 | Token | `localStorage` `dichvuoi_token` | JWT string | Client không parse role trực tiếp |
 
 Chi tiết: `apps/web/src/features/auth/auth-context.tsx`
+
+## UI / Admin (ghi trong README)
+
+Quy tắc chi tiết (Lucide trên `/admin` Tổng quan, dashboard chrome theo `/doi-tac/viec`, gallery `object-contain`, **giá tiền 1 hàng**…): xem **README.md** mục *Hệ thống giao diện (UI)* và *Admin*.

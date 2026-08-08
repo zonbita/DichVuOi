@@ -21,6 +21,7 @@ import {
   bookingStatusTone,
   formatDateTime,
   paymentStatusTone,
+  useAdminViewportPageSize,
   useFilterParams,
   useSearchFilter,
 } from './admin-utils';
@@ -28,6 +29,7 @@ import {
 export function AdminBookingsPage() {
   const { get, page, setParam, setPage } = useFilterParams();
   const [search, setSearch] = useSearchFilter(get, setParam);
+  const pageSize = useAdminViewportPageSize({ rowPx: 56, chromePx: 340 });
 
   const q = get('q');
   const status = get('status');
@@ -39,12 +41,13 @@ export function AdminBookingsPage() {
     queryKey: [
       'admin',
       'bookings',
-      { q, status, paymentStatus, from, to, page },
+      { q, status, paymentStatus, from, to, page, pageSize },
     ],
     queryFn: () =>
       api.adminBookings({
         q,
         page,
+        pageSize,
         status: status || undefined,
         paymentStatus: paymentStatus || undefined,
         from: from ? new Date(from).toISOString() : undefined,

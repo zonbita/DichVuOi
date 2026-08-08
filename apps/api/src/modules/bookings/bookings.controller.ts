@@ -46,6 +46,18 @@ export class BookingsController {
     return this.bookingsService.listMineAsCustomer(user.id);
   }
 
+  @Get('mine/publish-schedule')
+  customerPublishSchedule(
+    @CurrentUser() user: AuthUser,
+    @Query() query: PartnerScheduleQueryDto,
+  ) {
+    return this.bookingsService.listCustomerPublishSchedule(
+      user.id,
+      query.year,
+      query.month,
+    );
+  }
+
   @Get('rebook-hints')
   rebookHints(@CurrentUser() user: AuthUser) {
     return this.bookingsService.getRebookHints(user.id);

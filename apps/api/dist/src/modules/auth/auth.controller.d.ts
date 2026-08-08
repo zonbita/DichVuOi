@@ -15,7 +15,9 @@ export declare class AuthController {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
     }>;
@@ -30,7 +32,9 @@ export declare class AuthController {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
     }>;
@@ -45,7 +49,9 @@ export declare class AuthController {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
     }>;
@@ -58,7 +64,23 @@ export declare class AuthController {
         emailVerified: boolean;
         bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
         walletBalance: number;
+        termsAcceptedAt: string | null;
+        partnerProfile: {} | null;
+    }>;
+    acceptTerms(user: AuthUser): Promise<{
+        id: string;
+        email: string;
+        fullName: string;
+        phone: string | null;
+        phoneVerified: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
+        role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
+        walletBalance: number;
+        termsAcceptedAt: string | null;
         partnerProfile: {} | null;
     }>;
     requestPhoneOtp(user: AuthUser, dto: RequestPhoneOtpDto): Promise<{
@@ -87,7 +109,9 @@ export declare class AuthController {
         emailVerified: boolean;
         bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
         walletBalance: number;
+        termsAcceptedAt: string | null;
         partnerProfile: {} | null;
     }>;
     requestEmailOtp(user: AuthUser, dto: RequestEmailOtpDto): Promise<{
@@ -121,7 +145,9 @@ export declare class AuthController {
         emailVerified: boolean;
         bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
         walletBalance: number;
+        termsAcceptedAt: string | null;
         partnerProfile: {} | null;
     }>;
 }

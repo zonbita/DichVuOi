@@ -15,35 +15,42 @@ import {
   SearchInput,
   SelectFilter,
 } from './admin-ui';
-import { formatDateTime, useFilterParams, useSearchFilter } from './admin-utils';
+import {
+  formatDateTime,
+  useAdminViewportPageSize,
+  useFilterParams,
+  useSearchFilter,
+} from './admin-utils';
 
 const VERIFIED_OPTIONS = [
   { value: 'false', label: 'Chưa xác minh' },
   { value: 'true', label: 'Đã xác minh' },
 ];
 
-const ACCEPTING_OPTIONS = [
-  { value: 'true', label: 'Đang nhận việc' },
-  { value: 'false', label: 'Tạm nghỉ' },
+const BLOCKED_OPTIONS = [
+  { value: 'false', label: 'Đang mở' },
+  { value: 'true', label: 'Đã chặn' },
 ];
 
 export function AdminPartnersPage() {
   const { get, page, setParam, setPage } = useFilterParams();
   const [search, setSearch] = useSearchFilter(get, setParam);
   const queryClient = useQueryClient();
+  const pageSize = useAdminViewportPageSize({ rowPx: 72, chromePx: 320 });
 
   const q = get('q');
   const verified = get('verified');
-  const accepting = get('acceptingJobs');
+  const blocked = get('blocked');
 
   const partnersQuery = useQuery({
-    queryKey: ['admin', 'partners', { q, verified, accepting, page }],
+    queryKey: ['admin', 'partners', { q, verified, blocked, page, pageSize }],
     queryFn: () =>
       api.adminPartners({
         q,
         page,
+        pageSize,
         verified: verified === '' ? undefined : verified === 'true',
-        acceptingJobs: accepting === '' ? undefined : accepting === 'true',
+        blocked: blocked === '' ? undefined : blocked === 'true',
       }),
     placeholderData: keepPreviousData,
   });
@@ -57,6 +64,7 @@ export function AdminPartnersPage() {
       payload: {
         isVerified?: boolean;
         acceptingJobs?: boolean;
+        isBlocked?: boolean;
         phoneVerified?: boolean;
         bankVerified?: boolean;
       };
@@ -73,7 +81,7 @@ export function AdminPartnersPage() {
     <div>
       <PageHeader
         title="Đối tác"
-        description="Hàng đợi duyệt hồ sơ người làm — chưa verify xếp lên đầu."
+        description="Hàng đợi duyệt hồ sơ người làm — chưa verify xếp lên đầu. Chặn = khóa dashboard (còn khiếu nại + chat admin)."
       />
       <FilterBar>
         <SearchInput
@@ -88,10 +96,10 @@ export function AdminPartnersPage() {
           options={VERIFIED_OPTIONS}
         />
         <SelectFilter
-          label="Mọi trạng thái việc"
-          value={accepting}
-          onChange={(value) => setParam('acceptingJobs', value)}
-          options={ACCEPTING_OPTIONS}
+          label="Mọi trạng thái chặn"
+          value={blocked}
+          onChange={(value) => setParam('blocked', value)}
+          options={BLOCKED_OPTIONS}
         />
       </FilterBar>
 
@@ -109,13 +117,17 @@ export function AdminPartnersPage() {
       {data && data.items.length > 0 ? (
         <>
           <div className="mt-5 space-y-3">
-            {data.items.map((partner) => (
+            {data.items.map((partner) => {
+              const isBlocked = Boolean(partner.user.isBlocked);
+              return (
               <article
                 key={partner.id}
                 className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-4 shadow-sm ${
-                  partner.isVerified
-                    ? 'border-[var(--color-line)]'
-                    : 'border-amber-300'
+                  isBlocked
+                    ? 'border-red-300'
+                    : partner.isVerified
+                      ? 'border-[var(--color-line)]'
+                      : 'border-amber-300'
                 }`}
               >
                 <div className="min-w-0">
@@ -135,9 +147,13 @@ export function AdminPartnersPage() {
                     <Badge tone={partner.bankVerified ? 'green' : 'amber'}>
                       {partner.bankVerified ? 'NH OK' : 'NH chưa'}
                     </Badge>
-                    <Badge tone={partner.acceptingJobs ? 'blue' : 'neutral'}>
-                      {partner.acceptingJobs ? 'Đang nhận việc' : 'Tạm nghỉ'}
-                    </Badge>
+                    {isBlocked ? (
+                      <Badge tone="red">Đã chặn</Badge>
+                    ) : (
+                      <Badge tone={partner.acceptingJobs ? 'blue' : 'neutral'}>
+                        {partner.acceptingJobs ? 'Đang nhận việc' : 'Tạm nghỉ'}
+                      </Badge>
+                    )}
                   </p>
                   <p className="mt-1 text-sm text-[var(--color-muted)]">
                     {partner.user.email} · {partner.city ?? '—'} · Lv{' '}
@@ -211,19 +227,24 @@ export function AdminPartnersPage() {
                   <button
                     type="button"
                     disabled={partnerMutation.isPending}
-                    className="rounded-full border border-[var(--color-line)] px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+                    className={`rounded-full px-3 py-1.5 text-sm font-semibold disabled:opacity-50 ${
+                      isBlocked
+                        ? 'border border-[var(--color-brand)] text-[var(--color-brand-deep)]'
+                        : 'border border-red-400 text-red-700'
+                    }`}
                     onClick={() =>
                       partnerMutation.mutate({
                         userId: partner.userId,
-                        payload: { acceptingJobs: !partner.acceptingJobs },
+                        payload: { isBlocked: !isBlocked },
                       })
                     }
                   >
-                    {partner.acceptingJobs ? 'Cho tạm nghỉ' : 'Cho nhận việc'}
+                    {isBlocked ? 'Mở chặn' : 'Chặn'}
                   </button>
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
 
           <Pagination

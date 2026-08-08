@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { PartnerLevelBreakdown } from '../../types/auth';
+import { DashboardSurface } from '../dashboard/dashboard-chrome';
 import { LevelBadgeGold, VerificationBadge } from '../ui/partner-badges';
 
 type Row = {
@@ -97,7 +98,7 @@ export function PartnerLevelPanel({ data }: Props) {
 
   return (
     <div className="space-y-5">
-      <section className="surface-card p-5">
+      <DashboardSurface className="p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm text-[var(--color-muted)]">
@@ -132,10 +133,10 @@ export function PartnerLevelPanel({ data }: Props) {
         <p className="mt-4 text-sm text-[var(--color-muted)]">
           Online gần nhất: {formatLastOnline(data.inputs.lastOnlineAt)}
         </p>
-      </section>
+      </DashboardSurface>
 
-      <section className="surface-card p-5">
-        <h2 className="text-lg font-extrabold">Nguồn điểm</h2>
+      <DashboardSurface className="p-5">
+        <h2 className="text-lg font-extrabold text-[var(--color-navy)]">Nguồn điểm</h2>
         <p className="mt-1 text-sm text-[var(--color-muted)]">
           Cấp = làm tròn tổng các nguồn dưới (kẹp 1–100).
         </p>
@@ -161,10 +162,10 @@ export function PartnerLevelPanel({ data }: Props) {
             </article>
           ))}
         </div>
-      </section>
+      </DashboardSurface>
 
-      <section className="surface-card p-5">
-        <h2 className="text-lg font-extrabold">Số liệu hiện tại</h2>
+      <DashboardSurface className="p-5">
+        <h2 className="text-lg font-extrabold text-[var(--color-navy)]">Số liệu hiện tại</h2>
         <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
           <li>
             <span className="text-[var(--color-muted)]">Giờ online: </span>
@@ -206,12 +207,12 @@ export function PartnerLevelPanel({ data }: Props) {
           </Link>
           <Link
             to="/doi-tac/viec"
-            className="inline-flex rounded-xl bg-[var(--color-brand)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--color-brand-deep)]"
+            className="inline-flex rounded-xl bg-[var(--color-navy)] px-4 py-2 text-sm font-bold !text-white hover:bg-[var(--color-navy-deep)]"
           >
             Nhận việc
           </Link>
         </div>
-      </section>
+      </DashboardSurface>
     </div>
   );
 }

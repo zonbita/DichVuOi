@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   hireServiceSchema,
   defaultScheduledAtLocal,
+  defaultPublishAtLocal,
   APPLY_DEPOSIT_BUDGET_THRESHOLD,
   applyDepositPercentBounds,
   clampApplyDepositPercent,
@@ -16,7 +17,7 @@ import { api } from '../../services/api';
 import type { CatalogTreeService, ServiceGroupTree } from '../../types/catalog';
 import { groupColor } from '../../utils/catalog-colors';
 import { marketPriceRange } from '../../utils/market-price';
-import { AddressMapPicker } from './address-map-picker';
+import { HireBookingPreview } from './hire-booking-preview';
 import { HireServicePicker } from './hire-service-picker';
 import { HireTasksInput } from './hire-tasks-input';
 import type { CatalogServicePick } from '../home/catalog-menu-shared';
@@ -25,7 +26,10 @@ import { DatetimeLocalField } from '../ui/datetime-local-field';
 import { Icon } from '../ui/icon';
 
 type ServiceOption = CatalogServicePick &
-  Pick<CatalogTreeService, 'basePrice' | 'priceMin' | 'priceMax'>;
+  Pick<
+    CatalogTreeService,
+    'basePrice' | 'priceMin' | 'priceMax' | 'unit' | 'durationMin'
+  >;
 
 function flattenServices(groups: ServiceGroupTree[]): ServiceOption[] {
   return groups.flatMap((group) =>
@@ -40,6 +44,8 @@ function flattenServices(groups: ServiceGroupTree[]): ServiceOption[] {
         basePrice: service.basePrice,
         priceMin: service.priceMin,
         priceMax: service.priceMax,
+        unit: service.unit,
+        durationMin: service.durationMin,
       })),
     ),
   );
@@ -157,8 +163,9 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       customerName: '',
       customerPhone: '',
       customerEmail: '',
-      address: '',
       scheduledAt: defaultScheduledAtLocal(),
+      schedulePublish: false,
+      publishAt: '',
       note: '',
       budgetMin: PRICE_SLIDER_MIN,
       budgetMax: 5_000_000,
@@ -173,8 +180,15 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
   const depositBounds = applyDepositPercentBounds(budgetMax || 0);
   const customerName = watch('customerName');
   const customerPhone = watch('customerPhone');
-  const address = watch('address');
   const scheduledAt = watch('scheduledAt');
+  const schedulePublish = watch('schedulePublish');
+  const publishAt = watch('publishAt');
+
+  useEffect(() => {
+    if (!schedulePublish) return;
+    if (publishAt && publishAt.trim()) return;
+    setValue('publishAt', defaultPublishAtLocal(), { shouldValidate: true });
+  }, [schedulePublish, publishAt, setValue]);
 
   useEffect(() => {
     if (!user) return;
@@ -244,12 +258,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
 
   const activeStep: 1 | 2 | 3 = !serviceSlug
     ? 1
-    : !(
-          customerName?.trim() &&
-          customerPhone?.trim() &&
-          address?.trim() &&
-          scheduledAt
-        )
+    : !(customerName?.trim() && customerPhone?.trim() && scheduledAt)
       ? 2
       : 3;
 
@@ -270,6 +279,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
     onSuccess: async (booking) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['wallet'] }),
+        queryClient.invalidateQueries({ queryKey: ['bookings', 'mine'] }),
         refreshMe(),
       ]);
       navigate(`/dat-lich/${booking.id}`);
@@ -288,8 +298,12 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       customerName: values.customerName,
       customerPhone: values.customerPhone,
       customerEmail: values.customerEmail || undefined,
-      address: values.address,
+      address: 'Cập nhật sau khi chọn người làm',
       scheduledAt: new Date(values.scheduledAt).toISOString(),
+      publishAt:
+        values.schedulePublish && values.publishAt?.trim()
+          ? new Date(values.publishAt).toISOString()
+          : undefined,
       note: taskNote || undefined,
       budgetMin: values.budgetMin,
       budgetMax: values.budgetMax,
@@ -298,7 +312,8 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
   }
 
   return (
-    <section className="hire-form overflow-hidden rounded-xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,440px)] xl:items-start xl:gap-5">
+      <section className="hire-form min-w-0 overflow-hidden rounded-xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-line)] bg-gradient-to-br from-white via-white to-[var(--color-brand-soft)]/60 px-4 py-2.5 sm:px-5 sm:py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-sm">
@@ -546,22 +561,48 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
           </div>
 
           <div className="sm:col-span-2">
-            <Controller
-              name="address"
-              control={control}
-              render={({ field }) => (
-                <AddressMapPicker
-                  id="hire-address"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  error={errors.address?.message}
-                  disabled={!user}
-                  placeholder="Số nhà, đường, phường / quận…"
-                  compact
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-canvas)]/60 px-3 py-2.5">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-[var(--color-line)] text-[var(--color-brand)]"
+                {...register('schedulePublish')}
+              />
+              <span>
+                <span className="block text-[13px] font-semibold text-[var(--color-ink)]">
+                  Hẹn giờ đăng lên bảng tin
+                </span>
+                <span className="mt-0.5 block text-[11px] text-[var(--color-muted)]">
+                  Giữ đơn riêng đến giờ chọn — chưa hiện cho người làm. Xem lịch tại
+                  «Lịch đăng đơn».
+                </span>
+              </span>
+            </label>
+            {schedulePublish ? (
+              <div className="mt-2">
+                <FieldLabel htmlFor="hire-publish">Giờ đăng bảng tin</FieldLabel>
+                <Controller
+                  name="publishAt"
+                  control={control}
+                  render={({ field }) => (
+                    <DatetimeLocalField
+                      id="hire-publish"
+                      name={field.name}
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      invalid={Boolean(errors.publishAt)}
+                      className="is-compact"
+                    />
+                  )}
                 />
-              )}
-            />
+                {errors.publishAt ? (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.publishAt.message}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="sm:col-span-2">
@@ -609,5 +650,19 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
         </form>
       </div>
     </section>
+
+      <HireBookingPreview
+        service={activeService}
+        customerName={customerName ?? ''}
+        customerPhone={customerPhone ?? ''}
+        scheduledAt={scheduledAt ?? ''}
+        schedulePublish={Boolean(schedulePublish)}
+        publishAt={publishAt ?? ''}
+        budgetMin={budgetMin ?? 0}
+        budgetMax={budgetMax ?? 0}
+        applyDepositPercent={depositPercent}
+        tasks={tasks}
+      />
+    </div>
   );
 }

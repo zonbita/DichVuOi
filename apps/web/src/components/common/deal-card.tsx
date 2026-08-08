@@ -50,7 +50,9 @@ export function DealCard({ service }: { service: Service }) {
           <span className="flex min-w-0 items-center gap-1 text-sm text-[var(--color-muted)]">
             <StarIcon className="h-4 w-4 shrink-0" tone="gold" />
             <strong className="font-bold text-[var(--color-ink)]">{stats.rating}</strong>
-            <span>({stats.reviews})</span>
+            <span className="truncate">
+              · {service._count?.partners ?? 0} người làm
+            </span>
           </span>
           <span className="shrink-0 rounded-md bg-[var(--color-brand)] px-3 py-1.5 text-sm font-bold !text-white transition group-hover:bg-[var(--color-brand-deep)]">
             Đặt ngay

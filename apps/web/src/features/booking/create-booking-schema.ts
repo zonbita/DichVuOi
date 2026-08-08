@@ -66,8 +66,11 @@ export const createBookingSchema = z.object({
 export type CreateBookingFormValues = z.infer<typeof createBookingSchema>;
 
 export const hireServiceSchema = createBookingSchema
+  .omit({ address: true })
   .extend({
     serviceSlug: z.string().min(1, 'Chọn nghề cần thuê'),
+    /** Địa chỉ không thu lúc đăng — gửi placeholder khi tạo đơn. */
+    address: z.string().optional(),
     budgetMin: z.number().int().min(0, 'Giá tối thiểu không hợp lệ'),
     budgetMax: z.number().int().min(0, 'Giá tối đa không hợp lệ'),
     applyDepositPercent: z
@@ -75,6 +78,8 @@ export const hireServiceSchema = createBookingSchema
       .int('Chọn số nguyên')
       .min(0, 'Tối thiểu 0%')
       .max(100, 'Tối đa 100%'),
+    schedulePublish: z.boolean().optional(),
+    publishAt: z.string().optional().or(z.literal('')),
   })
   .refine((data) => data.budgetMin <= data.budgetMax, {
     message: 'Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu',
@@ -92,6 +97,49 @@ export const hireServiceSchema = createBookingSchema
             : `Ngân sách từ 5 triệu trở xuống: cọc ứng tuyển từ ${min}% đến ${max}%`,
       });
     }
+
+    if (!data.schedulePublish) return;
+
+    const publishRaw = (data.publishAt ?? '').trim();
+    if (!publishRaw) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publishAt'],
+        message: 'Chọn giờ đăng lên bảng tin',
+      });
+      return;
+    }
+    const publishMs = new Date(publishRaw).getTime();
+    if (Number.isNaN(publishMs)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publishAt'],
+        message: 'Thời gian đăng không hợp lệ',
+      });
+      return;
+    }
+    if (publishMs <= Date.now() - 60_000) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publishAt'],
+        message: 'Giờ đăng không được ở quá khứ',
+      });
+    }
+    const workMs = new Date(data.scheduledAt).getTime();
+    if (!Number.isNaN(workMs) && publishMs >= workMs) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publishAt'],
+        message: 'Giờ đăng phải trước thời gian mong muốn làm việc',
+      });
+    }
   });
 
 export type HireServiceFormValues = z.infer<typeof hireServiceSchema>;
+
+/** Mặc định giờ đăng = hiện tại + 1 giờ (làm tròn phút). */
+export function defaultPublishAtLocal() {
+  const d = new Date(Date.now() + 60 * 60_000);
+  d.setSeconds(0, 0);
+  return toDatetimeLocalValue(d);
+}

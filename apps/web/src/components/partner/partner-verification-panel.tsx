@@ -84,7 +84,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
       <div>
         <h3 className="text-lg font-extrabold text-[var(--color-navy)]">Xác minh danh tính</h3>
         <p className="mt-1 text-sm text-[var(--color-muted)]">
-          SĐT dùng key một lần (tên + mã). Ngân hàng: VietQR mock. eKYC hồ sơ do admin duyệt.
+          SĐT dùng key một lần (tên + mã). Ngân hàng: VietQR mock. Hồ sơ «Đã xác thực» do admin duyệt — không yêu cầu CCCD.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <VerificationBadge verified={Boolean(profile.isVerified)} />

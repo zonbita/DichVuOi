@@ -1,5 +1,6 @@
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from '../auth/auth.service';
+import { CreatePartnerServicePostDto, UpdatePartnerServicePostDto } from './dto/partner-service-post.dto';
 import { EnablePartnerDto, SyncPartnerOfferingsDto, UpdatePartnerProfileDto } from './dto/update-partner-profile.dto';
 import { ConfirmBankVerifyDto, ConfirmPhoneOtpDto, LinkBankAccountDto, RequestPhoneOtpDto } from './dto/partner-verify.dto';
 import { PartnersService } from './partners.service';
@@ -23,8 +24,106 @@ export declare class PartnersController {
         unit: string | null;
         matchReason: "name" | "profession";
     }[]>;
+    getPublicPost(userId: string, postId: string): Promise<{
+        post: {
+            createdAt: Date;
+            updatedAt: Date;
+            service: unknown;
+            reviewedAt?: Date | null | undefined;
+            rejectReason?: string | null | undefined;
+            status?: import("@prisma/client").$Enums.PartnerServicePostStatus | undefined;
+            id: string;
+            title: string;
+            body: string;
+            coverUrl: string;
+            images: string[];
+            serviceId: string;
+            price: number | null;
+        };
+        seller: {
+            userId: string;
+            fullName: string;
+            headline: string | null;
+            city: string | null;
+            avatarUrl: string | null;
+            level: number;
+            isVerified: boolean;
+            phoneVerified: boolean;
+            bankVerified: boolean;
+            ratingAvg: number;
+            ratingCount: number;
+            responseMinutes: number;
+            acceptingJobs: boolean;
+        };
+        offering: {
+            id: string;
+            price: number | null;
+            headline: string | null;
+            experienceYears: number;
+            includes: string | null;
+            excludes: string | null;
+            coverageNote: string | null;
+            ratingAvg: number;
+            ratingCount: number;
+            unit: string;
+        } | null;
+        reviews: {
+            id: string;
+            rating: number;
+            comment: string | null;
+            createdAt: Date;
+            fromName: string;
+        }[];
+    }>;
+    listApprovedPosts(page?: string, pageSize?: string): Promise<{
+        items: {
+            seller: {
+                userId: string;
+                fullName: string;
+                headline: string | null;
+                city: string | null;
+                avatarUrl: string | null;
+                level: number;
+                isVerified: boolean;
+                ratingAvg: number;
+                ratingCount: number;
+            };
+            createdAt: Date;
+            updatedAt: Date;
+            service: unknown;
+            reviewedAt?: Date | null | undefined;
+            rejectReason?: string | null | undefined;
+            status?: import("@prisma/client").$Enums.PartnerServicePostStatus | undefined;
+            id: string;
+            title: string;
+            body: string;
+            coverUrl: string;
+            images: string[];
+            serviceId: string;
+            price: number | null;
+        }[];
+        total: number;
+        page: number;
+        pageSize: number;
+        pageCount: number;
+    }>;
     getPublic(userId: string): Promise<{
         reputation: import("../../common/reputation.service").PartnerReputationSnapshot;
+        servicePosts: {
+            createdAt: Date;
+            updatedAt: Date;
+            service: unknown;
+            reviewedAt?: Date | null | undefined;
+            rejectReason?: string | null | undefined;
+            status?: import("@prisma/client").$Enums.PartnerServicePostStatus | undefined;
+            id: string;
+            title: string;
+            body: string;
+            coverUrl: string;
+            images: string[];
+            serviceId: string;
+            price: number | null;
+        }[];
         id: string;
         userId: string;
         fullName: string;
@@ -34,7 +133,7 @@ export declare class PartnersController {
         districts: string[];
         skills: string[];
         acceptingJobs: boolean;
-        workModes: ("onsite" | "online")[];
+        workModes: ("online" | "onsite")[];
         responseMinutes: number;
         ratingAvg: number;
         ratingCount: number;
@@ -80,6 +179,7 @@ export declare class PartnersController {
             comment: string | null;
             createdAt: Date;
             fromName: string;
+            serviceId: string;
             serviceName: string;
             serviceSlug: string;
             groupSlug: string | null;
@@ -126,7 +226,9 @@ export declare class PartnersController {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
     }>;
@@ -135,7 +237,7 @@ export declare class PartnersController {
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
@@ -143,9 +245,6 @@ export declare class PartnersController {
                 id: string;
                 name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -156,15 +255,18 @@ export declare class PartnersController {
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            headline: string | null;
             includes: string | null;
-            serviceId: string;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -172,10 +274,10 @@ export declare class PartnersController {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -186,6 +288,7 @@ export declare class PartnersController {
         bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         headline: string | null;
         bio: string | null;
         city: string | null;
@@ -202,7 +305,6 @@ export declare class PartnersController {
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
-        userId: string;
     }>;
     getLevel(user: AuthUser): Promise<{
         inputs: {
@@ -264,7 +366,7 @@ export declare class PartnersController {
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
@@ -272,9 +374,6 @@ export declare class PartnersController {
                 id: string;
                 name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -285,15 +384,18 @@ export declare class PartnersController {
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            headline: string | null;
             includes: string | null;
-            serviceId: string;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -301,10 +403,10 @@ export declare class PartnersController {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -315,6 +417,7 @@ export declare class PartnersController {
         bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         headline: string | null;
         bio: string | null;
         city: string | null;
@@ -331,14 +434,13 @@ export declare class PartnersController {
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
-        userId: string;
     }>;
     syncOfferings(user: AuthUser, dto: SyncPartnerOfferingsDto): Promise<{
         phoneVerified: boolean;
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
@@ -346,9 +448,6 @@ export declare class PartnersController {
                 id: string;
                 name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -359,15 +458,18 @@ export declare class PartnersController {
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            headline: string | null;
             includes: string | null;
-            serviceId: string;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -375,10 +477,10 @@ export declare class PartnersController {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -389,6 +491,7 @@ export declare class PartnersController {
         bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         headline: string | null;
         bio: string | null;
         city: string | null;
@@ -405,7 +508,54 @@ export declare class PartnersController {
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
-        userId: string;
+    }>;
+    listMyPosts(user: AuthUser, serviceId?: string): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        service: unknown;
+        reviewedAt?: Date | null | undefined;
+        rejectReason?: string | null | undefined;
+        status?: import("@prisma/client").$Enums.PartnerServicePostStatus | undefined;
+        id: string;
+        title: string;
+        body: string;
+        coverUrl: string;
+        images: string[];
+        serviceId: string;
+        price: number | null;
+    }[]>;
+    createMyPost(user: AuthUser, dto: CreatePartnerServicePostDto): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        service: unknown;
+        reviewedAt?: Date | null | undefined;
+        rejectReason?: string | null | undefined;
+        status?: import("@prisma/client").$Enums.PartnerServicePostStatus | undefined;
+        id: string;
+        title: string;
+        body: string;
+        coverUrl: string;
+        images: string[];
+        serviceId: string;
+        price: number | null;
+    }>;
+    updateMyPost(user: AuthUser, id: string, dto: UpdatePartnerServicePostDto): Promise<{
+        createdAt: Date;
+        updatedAt: Date;
+        service: unknown;
+        reviewedAt?: Date | null | undefined;
+        rejectReason?: string | null | undefined;
+        status?: import("@prisma/client").$Enums.PartnerServicePostStatus | undefined;
+        id: string;
+        title: string;
+        body: string;
+        coverUrl: string;
+        images: string[];
+        serviceId: string;
+        price: number | null;
+    }>;
+    deleteMyPost(user: AuthUser, id: string): Promise<{
+        ok: boolean;
     }>;
     requestPhoneOtp(user: AuthUser, dto: RequestPhoneOtpDto): Promise<{
         debugCode: string | undefined;
@@ -431,7 +581,7 @@ export declare class PartnersController {
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
@@ -439,9 +589,6 @@ export declare class PartnersController {
                 id: string;
                 name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -452,15 +599,18 @@ export declare class PartnersController {
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            headline: string | null;
             includes: string | null;
-            serviceId: string;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -468,10 +618,10 @@ export declare class PartnersController {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -482,6 +632,7 @@ export declare class PartnersController {
         bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         headline: string | null;
         bio: string | null;
         city: string | null;
@@ -498,7 +649,6 @@ export declare class PartnersController {
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
-        userId: string;
     }>;
     linkBank(user: AuthUser, dto: LinkBankAccountDto): Promise<{
         ok: boolean;
@@ -517,7 +667,7 @@ export declare class PartnersController {
         skills: string[];
         gallery: string[];
         districtsList: string[];
-        workModesList: ("onsite" | "online")[];
+        workModesList: ("online" | "onsite")[];
         serviceIds: string[];
         offerings: {
             hoursWorked: number;
@@ -525,9 +675,6 @@ export declare class PartnersController {
                 id: string;
                 name: string;
                 slug: string;
-                basePrice: number;
-                unit: string;
-                isActive: boolean;
                 category: {
                     id: string;
                     name: string;
@@ -538,15 +685,18 @@ export declare class PartnersController {
                         slug: string;
                     };
                 };
+                basePrice: number;
+                unit: string;
+                isActive: boolean;
             };
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            headline: string | null;
             includes: string | null;
-            serviceId: string;
+            headline: string | null;
             isActive: boolean;
             partnerProfileId: string;
+            serviceId: string;
             price: number | null;
             experienceYears: number;
             excludes: string | null;
@@ -554,10 +704,10 @@ export declare class PartnersController {
         }[];
         bankVerifyPending: boolean;
         user: {
+            id: string;
             email: string;
             fullName: string;
             phone: string | null;
-            id: string;
             phoneVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
         };
@@ -568,6 +718,7 @@ export declare class PartnersController {
         bankVerified: boolean;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         headline: string | null;
         bio: string | null;
         city: string | null;
@@ -584,6 +735,5 @@ export declare class PartnersController {
         acceptingJobs: boolean;
         workModes: string | null;
         responseMinutes: number;
-        userId: string;
     }>;
 }

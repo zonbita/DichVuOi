@@ -1,5 +1,5 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { BookingStatus, PaymentStatus, Role } from '@prisma/client';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { BookingStatus, PaymentStatus, Role, PartnerServicePostStatus } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -41,6 +41,24 @@ export class AdminPageQueryDto {
   pageSize?: number;
 }
 
+export class AdminServicePostQueryDto extends AdminPageQueryDto {
+  @ApiPropertyOptional({ enum: ['PENDING', 'APPROVED', 'REJECTED'] })
+  @IsOptional()
+  @IsEnum(PartnerServicePostStatus)
+  status?: PartnerServicePostStatus;
+}
+
+export class AdminReviewServicePostDto {
+  @ApiProperty({ enum: ['APPROVED', 'REJECTED'] })
+  @IsEnum(PartnerServicePostStatus)
+  status!: PartnerServicePostStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  rejectReason?: string;
+}
+
 export class AdminUserQueryDto extends AdminPageQueryDto {
   @ApiPropertyOptional({ enum: Role })
   @IsOptional()
@@ -60,6 +78,12 @@ export class AdminPartnerQueryDto extends AdminPageQueryDto {
   @Transform(toOptionalBoolean)
   @IsBoolean()
   acceptingJobs?: boolean;
+
+  @ApiPropertyOptional({ description: 'Lọc theo tài khoản bị admin chặn' })
+  @IsOptional()
+  @Transform(toOptionalBoolean)
+  @IsBoolean()
+  blocked?: boolean;
 
   @ApiPropertyOptional({ description: 'Tỉnh / thành phố' })
   @IsOptional()
@@ -112,6 +136,13 @@ export class AdminUpdateUserDto {
   @IsOptional()
   @IsEnum(Role)
   role?: Role;
+
+  @ApiPropertyOptional({
+    description: 'Khóa / mở chat đơn (sau tin PII hoặc cảnh cáo)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  chatBanned?: boolean;
 }
 
 export class AdminUpdatePartnerDto {
@@ -124,6 +155,14 @@ export class AdminUpdatePartnerDto {
   @IsOptional()
   @IsBoolean()
   acceptingJobs?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Admin chặn / mở chặn tài khoản (dashboard bị hạn chế; vẫn khiếu nại + chat support)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isBlocked?: boolean;
 
   @ApiPropertyOptional({ description: 'Admin bật/tắt xác minh SĐT' })
   @IsOptional()

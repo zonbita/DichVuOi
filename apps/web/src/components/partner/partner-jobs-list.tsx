@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Booking } from '../../types/catalog';
+import {
+  DashboardPageHeader,
+  dashboardSurfaceClass,
+} from '../dashboard/dashboard-chrome';
 import { Icon } from '../ui/icon';
 import { ListPagination } from '../ui/list-pagination';
 import { PartnerBookingCard } from './partner-booking-card';
@@ -133,37 +137,6 @@ function emptyCopy(tab: TabId, poolSize: number, filteredPool: number) {
     },
   };
   return { ...byTab[tab], showCta: tab === 'action' || tab === 'all' || tab === 'applied' };
-}
-
-/** Icon briefcase trong ô teal — header. */
-function JobsHeaderIcon() {
-  return (
-    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[var(--color-brand)] text-white shadow-[0_8px_18px_rgba(0,156,149,0.28)]">
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
-        <rect
-          x="3"
-          y="7"
-          width="18"
-          height="13"
-          rx="2.5"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <path
-          d="M9 7V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8V7"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M3 12h18"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-    </span>
-  );
 }
 
 /** Empty state: cặp mở + badge check, tone xanh nhạt. */
@@ -312,20 +285,13 @@ export function PartnerJobsList({
 
   return (
     <section className="space-y-4">
-      <header className="flex items-start gap-3.5">
-        <JobsHeaderIcon />
-        <div className="min-w-0">
-          <h2 className="text-2xl font-extrabold tracking-tight text-[var(--color-navy)]">
-            Việc của tôi
-          </h2>
-          <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">
-            Đơn đã ứng tuyển và việc đã được chọn. Chat / địa chỉ khi khách đã
-            cọc. Hoa hồng 15% khi giải ngân.
-          </p>
-        </div>
-      </header>
+      <DashboardPageHeader
+        icon="briefcase"
+        title="Việc của tôi"
+        description="Đơn đã ứng tuyển và việc đã được chọn. Chat / địa chỉ khi khách đã cọc. Hoa hồng 15% khi giải ngân."
+      />
 
-      <div className="overflow-x-auto rounded-2xl border border-[var(--color-line)] bg-white shadow-[0_4px_16px_rgba(24,49,63,0.05)]">
+      <div className={`overflow-x-auto ${dashboardSurfaceClass}`}>
         <div className="flex min-w-max items-stretch px-1.5 py-1.5 sm:min-w-0 sm:flex-wrap">
           {TABS.map((item, index) => {
             const count = tabCounts[item.id];

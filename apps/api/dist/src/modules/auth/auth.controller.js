@@ -18,6 +18,7 @@ const swagger_1 = require("@nestjs/swagger");
 const throttler_1 = require("@nestjs/throttler");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
+const security_env_1 = require("../../common/security-env");
 const auth_service_1 = require("./auth.service");
 const auth_dto_1 = require("./dto/auth.dto");
 let AuthController = class AuthController {
@@ -26,9 +27,15 @@ let AuthController = class AuthController {
         this.authService = authService;
     }
     register(dto) {
+        if (!(0, security_env_1.allowPasswordAuth)()) {
+            throw new common_1.GoneException('Đăng ký bằng email/mật khẩu đã tắt — dùng Google.');
+        }
         return this.authService.register(dto);
     }
     login(dto) {
+        if (!(0, security_env_1.allowPasswordAuth)()) {
+            throw new common_1.GoneException('Đăng nhập bằng email/mật khẩu đã tắt — dùng Google.');
+        }
         return this.authService.login(dto);
     }
     loginWithGoogle(dto) {
@@ -36,6 +43,9 @@ let AuthController = class AuthController {
     }
     me(user) {
         return this.authService.me(user.id);
+    }
+    acceptTerms(user) {
+        return this.authService.acceptTerms(user.id);
     }
     requestPhoneOtp(user, dto) {
         return this.authService.requestPhoneOtp(user.id, dto);
@@ -84,6 +94,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "me", null);
+__decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60_000 } }),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('accept-terms'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "acceptTerms", null);
 __decorate([
     (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60_000 } }),
     (0, swagger_1.ApiBearerAuth)(),

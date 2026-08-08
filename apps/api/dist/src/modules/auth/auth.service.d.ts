@@ -24,7 +24,9 @@ export declare class AuthService {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
     }>;
@@ -39,7 +41,9 @@ export declare class AuthService {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
     }>;
@@ -54,9 +58,25 @@ export declare class AuthService {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
+    }>;
+    acceptTerms(userId: string): Promise<{
+        id: string;
+        email: string;
+        fullName: string;
+        phone: string | null;
+        phoneVerified: boolean;
+        emailVerified: boolean;
+        bankVerified: boolean;
+        role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
+        walletBalance: number;
+        termsAcceptedAt: string | null;
+        partnerProfile: {} | null;
     }>;
     me(userId: string): Promise<{
         id: string;
@@ -67,7 +87,9 @@ export declare class AuthService {
         emailVerified: boolean;
         bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
         walletBalance: number;
+        termsAcceptedAt: string | null;
         partnerProfile: {} | null;
     }>;
     sessionFor(userId: string): Promise<{
@@ -81,7 +103,9 @@ export declare class AuthService {
             emailVerified: boolean;
             bankVerified: boolean;
             role: import("@prisma/client").$Enums.Role;
+            isBlocked: boolean;
             walletBalance: number;
+            termsAcceptedAt: string | null;
             partnerProfile: {} | null;
         };
     }>;
@@ -111,7 +135,9 @@ export declare class AuthService {
         emailVerified: boolean;
         bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
         walletBalance: number;
+        termsAcceptedAt: string | null;
         partnerProfile: {} | null;
     }>;
     requestEmailOtp(userId: string, dto: RequestEmailOtpDto): Promise<{
@@ -145,7 +171,9 @@ export declare class AuthService {
         emailVerified: boolean;
         bankVerified: boolean;
         role: import("@prisma/client").$Enums.Role;
+        isBlocked: boolean;
         walletBalance: number;
+        termsAcceptedAt: string | null;
         partnerProfile: {} | null;
     }>;
 }

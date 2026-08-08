@@ -4,12 +4,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
+import {
+  DashboardEmpty,
+  DashboardPageHeader,
+  DashboardSurface,
+} from '../components/dashboard/dashboard-chrome';
 import { PartnerAvatarUpload } from '../components/partner/partner-avatar-upload';
 import { PartnerIncomingList } from '../components/partner/partner-incoming-list';
 import { PartnerJobsList } from '../components/partner/partner-jobs-list';
 import { PartnerLevelPanel } from '../components/partner/partner-level-panel';
 import { PartnerScheduleBoard } from '../components/partner/partner-schedule-board';
 import { PartnerStatsBar } from '../components/partner/partner-stats-bar';
+import { PartnerGalleryPanel } from '../components/partner/partner-gallery-panel';
 import { PartnerVerificationPanel } from '../components/partner/partner-verification-panel';
 import { ProfessionTagsInput } from '../components/ui/profession-tags-input';
 import type { ProfessionOption } from '../components/ui/profession-tags-input';
@@ -315,25 +321,34 @@ export function PartnerDashboardPage() {
   // Chưa có hồ sơ: vẫn mở được «Hồ sơ»; tab khác gợi ý sang hồ sơ (không form «Bật nhận việc»).
   if (!canOffer && tab !== 'profile') {
     return (
-      <div className="w-full rounded-2xl border border-[var(--color-line)] bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-extrabold">
-          {tab === 'incoming'
-            ? 'Đơn thuê realtime'
-            : tab === 'jobs'
-              ? 'Việc của tôi'
-              : tab === 'level'
-                ? 'Cấp độ'
-                : 'Tổng quan'}
-        </h1>
-        <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-          Điền hồ sơ người làm (SĐT, nghề, ảnh) rồi lưu — sau đó nhận việc bình thường.
-        </p>
-        <Link
-          to="/doi-tac/ho-so"
-          className="mt-5 inline-flex rounded-xl bg-[var(--color-brand)] px-5 py-3 text-sm font-bold text-white"
-        >
-          Mở Hồ sơ
-        </Link>
+      <div className="space-y-4">
+        <DashboardPageHeader
+          icon={
+            tab === 'incoming'
+              ? 'sparkles'
+              : tab === 'jobs'
+                ? 'briefcase'
+                : tab === 'level'
+                  ? 'chart'
+                  : 'home'
+          }
+          title={
+            tab === 'incoming'
+              ? 'Đơn thuê realtime'
+              : tab === 'jobs'
+                ? 'Việc của tôi'
+                : tab === 'level'
+                  ? 'Cấp độ'
+                  : 'Tổng quan'
+          }
+          description="Điền hồ sơ người làm (SĐT, nghề, ảnh) rồi lưu — sau đó nhận việc bình thường."
+        />
+        <DashboardEmpty
+          title="Chưa có hồ sơ người làm"
+          body="Hoàn tất hồ sơ để xem đơn, việc và cấp độ của bạn."
+          ctaTo="/doi-tac/ho-so"
+          ctaLabel="Mở Hồ sơ"
+        />
       </div>
     );
   }
@@ -364,14 +379,11 @@ export function PartnerDashboardPage() {
       }
     >
       {tab === 'level' ? (
-        <header className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-extrabold sm:text-3xl">Cấp độ</h1>
-            <p className="mt-2 text-[15px] text-[var(--color-muted)]">
-              Cấp merit 1–100 từ giờ online, đơn, đánh giá và hồ sơ.
-            </p>
-          </div>
-        </header>
+        <DashboardPageHeader
+          icon="chart"
+          title="Cấp độ"
+          description="Cấp merit 1–100 từ giờ online, đơn, đánh giá và hồ sơ."
+        />
       ) : null}
 
       {(tab === 'overview' || !tab) && (
@@ -465,27 +477,24 @@ export function PartnerDashboardPage() {
       ) : null}
 
       {tab === 'profile' && (
-        <section className="space-y-4 rounded-[18px] bg-[#F4F8FA] p-4 sm:space-y-5 sm:p-5">
-          <header className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-[32px] font-bold tracking-tight text-[#0F2F4A] sm:text-[34px]">
-                Hồ sơ cá nhân
-              </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#64748B] sm:text-[15px]">
-                Cập nhật thông tin để hồ sơ của bạn đầy đủ và chuyên nghiệp hơn.
-              </p>
-            </div>
-            <Link
-              to={`/user/${user.id}`}
-              className="inline-flex h-11 items-center gap-2 rounded-[12px] border border-[#DCE6EC] bg-[rgba(255,255,255,0.92)] px-4 text-sm font-semibold text-[#0F2F4A] shadow-[0_1px_2px_rgba(15,47,74,0.04)] transition hover:border-[#13B8B0]/50 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#13B8B0]/35"
-            >
-              <Icon name="eye" className="h-4 w-4 text-[#079A9A]" />
-              Xem hồ sơ công khai
-              <Icon name="chevronRight" className="h-4 w-4 text-[#64748B]" />
-            </Link>
-          </header>
+        <section className="space-y-4">
+          <DashboardPageHeader
+            icon="user"
+            title="Hồ sơ cá nhân"
+            description="Cập nhật thông tin để hồ sơ của bạn đầy đủ và chuyên nghiệp hơn."
+            actions={
+              <Link
+                to={`/user/${user.id}`}
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-navy)] shadow-[0_4px_16px_rgba(24,49,63,0.05)] transition hover:border-[var(--color-brand)]"
+              >
+                <Icon name="eye" className="h-4 w-4 text-[var(--color-brand)]" />
+                Xem hồ sơ công khai
+                <Icon name="chevronRight" className="h-4 w-4 text-[var(--color-muted)]" />
+              </Link>
+            }
+          />
 
-          <div className="overflow-hidden rounded-[18px] border border-[#DCE6EC] bg-[rgba(255,255,255,0.92)] shadow-[0_4px_16px_rgba(15,47,74,0.05)]">
+          <DashboardSurface className="overflow-hidden">
             <form
               className="grid gap-0 lg:grid-cols-[minmax(240px,30%)_1fr]"
               onSubmit={handleSubmit(async (values) => {
@@ -493,7 +502,7 @@ export function PartnerDashboardPage() {
                 reset(values);
               })}
             >
-              <div className="border-b border-[#DCE6EC] p-4 sm:p-5 lg:border-r lg:border-b-0">
+              <div className="border-b border-[var(--color-line)] p-4 sm:p-5 lg:border-r lg:border-b-0">
                 <PartnerAvatarUpload
                   name={user?.fullName ?? 'Người làm'}
                   avatarUrl={profileQuery.data?.avatarUrl}
@@ -505,7 +514,7 @@ export function PartnerDashboardPage() {
                 <div className="space-y-4">
                   <div>
                     <label
-                      className="mb-2 block text-sm font-medium text-[#0F2F4A]"
+                      className="mb-2 block text-sm font-medium text-[var(--color-navy)]"
                       htmlFor="profile-phone"
                     >
                       Số điện thoại
@@ -514,7 +523,7 @@ export function PartnerDashboardPage() {
                       id="profile-phone"
                       {...register('phone')}
                       placeholder="0901234567"
-                      className="h-11 w-full rounded-[12px] border border-[#DCE6EC] bg-white px-3 text-sm text-[#0F2F4A] outline-none transition placeholder:text-[#64748B] focus:border-[#079A9A] focus:ring-2 focus:ring-[#13B8B0]/25"
+                      className="h-11 w-full rounded-[12px] border border-[var(--color-line)] bg-white px-3 text-sm text-[var(--color-navy)] outline-none transition placeholder:text-[var(--color-muted)] focus:border-[var(--color-brand)] focus:ring-2 focus:ring-[var(--color-brand)]/25"
                       inputMode="tel"
                       autoComplete="tel"
                     />
@@ -539,7 +548,7 @@ export function PartnerDashboardPage() {
                   />
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-[#0F2F4A]">
+                    <label className="mb-2 block text-sm font-medium text-[var(--color-navy)]">
                       Nghề bạn làm
                     </label>
                     <ProfessionTagsInput
@@ -553,7 +562,7 @@ export function PartnerDashboardPage() {
 
                   <div>
                     <label
-                      className="mb-2 block text-sm font-medium text-[#0F2F4A]"
+                      className="mb-2 block text-sm font-medium text-[var(--color-navy)]"
                       htmlFor="profile-bio"
                     >
                       Giới thiệu kỹ năng, kinh nghiệm
@@ -563,7 +572,7 @@ export function PartnerDashboardPage() {
                       {...register('bio')}
                       rows={5}
                       placeholder="Giới thiệu kỹ năng, kinh nghiệm..."
-                      className="min-h-[120px] w-full resize-y rounded-[12px] border border-[#DCE6EC] bg-white px-3 py-2.5 text-sm text-[#0F2F4A] outline-none transition placeholder:text-[#64748B] focus:border-[#079A9A] focus:ring-2 focus:ring-[#13B8B0]/25"
+                      className="min-h-[120px] w-full resize-y rounded-[12px] border border-[var(--color-line)] bg-white px-3 py-2.5 text-sm text-[var(--color-navy)] outline-none transition placeholder:text-[var(--color-muted)] focus:border-[var(--color-brand)] focus:ring-2 focus:ring-[var(--color-brand)]/25"
                     />
                   </div>
 
@@ -574,11 +583,11 @@ export function PartnerDashboardPage() {
                   ) : null}
                 </div>
 
-                <div className="mt-6 flex flex-col gap-3 border-t border-[#DCE6EC] pt-5 sm:flex-row sm:items-center">
+                <div className="mt-6 flex flex-col gap-3 border-t border-[var(--color-line)] pt-5 sm:flex-row sm:items-center">
                   <button
                     type="submit"
                     disabled={isSubmitting || profileMutation.isPending}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#079A9A] px-5 text-sm font-bold !text-white shadow-[0_2px_8px_rgba(7,154,154,0.22)] transition hover:bg-[#068787] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#13B8B0]/40 focus-visible:ring-offset-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--color-brand)] px-5 text-sm font-bold !text-white shadow-[0_2px_8px_rgba(7,154,154,0.22)] transition hover:bg-[var(--color-brand-deep)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]/40 focus-visible:ring-offset-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                   >
                     <Icon name="save" className="h-4 w-4 !text-white" />
                     {profileMutation.isPending ? 'Đang lưu…' : 'Lưu hồ sơ'}
@@ -593,21 +602,25 @@ export function PartnerDashboardPage() {
                           [],
                       );
                     }}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[#DCE6EC] bg-white px-5 text-sm font-semibold text-[#0F2F4A] transition hover:bg-[#F4F8FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#13B8B0]/30 focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto"
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--color-line)] bg-white px-5 text-sm font-semibold text-[var(--color-navy)] transition hover:bg-[var(--color-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]/30 focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto"
                   >
-                    <Icon name="rotateCcw" className="h-4 w-4 text-[#64748B]" />
+                    <Icon name="rotateCcw" className="h-4 w-4 text-[var(--color-muted)]" />
                     Khôi phục
                   </button>
                 </div>
               </div>
             </form>
-          </div>
+          </DashboardSurface>
 
-          {profileQuery.data ? (
+          {profileQuery.data && !pathname.startsWith('/don-cua-toi') ? (
             <PartnerVerificationPanel
               profile={profileQuery.data}
               defaultPhone={profileQuery.data.user?.phone ?? user?.phone ?? ''}
             />
+          ) : null}
+
+          {profileQuery.data && pathname.includes('/ho-so') ? (
+            <PartnerGalleryPanel />
           ) : null}
         </section>
       )}

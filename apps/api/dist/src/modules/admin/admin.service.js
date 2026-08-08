@@ -45,7 +45,7 @@ let AdminService = class AdminService {
         this.catalog = catalog;
     }
     async stats() {
-        const [users, partners, partnersPendingVerify, bookings, held, released, completed, cancelled, reviews, redactedMessages, openJobs, complaintsPending,] = await Promise.all([
+        const [users, partners, partnersPendingVerify, bookings, held, released, completed, cancelled, reviews, redactedMessages, openJobs, complaintsPending, servicePostsPending, supportOpen,] = await Promise.all([
             this.prisma.user.count(),
             this.prisma.partnerProfile.count(),
             this.prisma.partnerProfile.count({ where: { isVerified: false } }),
@@ -71,6 +71,12 @@ let AdminService = class AdminService {
                 where: {
                     status: { in: [client_1.ComplaintStatus.SUBMITTED, client_1.ComplaintStatus.UNDER_REVIEW] },
                 },
+            }),
+            this.prisma.partnerServicePost.count({
+                where: { status: client_1.PartnerServicePostStatus.PENDING },
+            }),
+            this.prisma.supportThread.count({
+                where: { status: client_1.SupportThreadStatus.OPEN },
             }),
         ]);
         const escrowAgg = await this.prisma.booking.aggregate({
@@ -101,6 +107,8 @@ let AdminService = class AdminService {
             reviews,
             redactedMessages,
             complaintsPending,
+            servicePostsPending,
+            supportOpen,
         };
     }
     async financeOverview() {
@@ -278,20 +286,113 @@ let AdminService = class AdminService {
         const user = await this.prisma.user.findUnique({ where: { id } });
         if (!user)
             throw new common_1.NotFoundException('Không tìm thấy user');
-        if (!dto.role)
-            throw new common_1.BadRequestException('Thiếu role');
-        return this.prisma.user.update({
+        if (dto.role === undefined && dto.chatBanned === undefined) {
+            throw new common_1.BadRequestException('Thiếu trường cập nhật');
+        }
+        const updated = await this.prisma.user.update({
             where: { id },
-            data: { role: dto.role },
+            data: {
+                ...(dto.role !== undefined ? { role: dto.role } : {}),
+                ...(dto.chatBanned !== undefined
+                    ? { chatBanned: dto.chatBanned }
+                    : {}),
+            },
             select: {
                 id: true,
                 email: true,
                 fullName: true,
                 phone: true,
                 role: true,
+                isBlocked: true,
+                chatBanned: true,
                 createdAt: true,
             },
         });
+        return updated;
+    }
+    async gmvSeries(days = 30) {
+        const safeDays = Math.min(90, Math.max(7, days));
+        const since = new Date();
+        since.setHours(0, 0, 0, 0);
+        since.setDate(since.getDate() - (safeDays - 1));
+        const rows = await this.prisma.booking.findMany({
+            where: {
+                status: client_1.BookingStatus.COMPLETED,
+                OR: [
+                    { releasedAt: { gte: since } },
+                    { releasedAt: null, updatedAt: { gte: since } },
+                ],
+            },
+            select: { releasedAt: true, updatedAt: true, totalPrice: true },
+        });
+        const byDay = new Map();
+        for (let i = 0; i < safeDays; i++) {
+            const d = new Date(since);
+            d.setDate(since.getDate() + i);
+            const key = d.toISOString().slice(0, 10);
+            byDay.set(key, 0);
+        }
+        for (const row of rows) {
+            const at = row.releasedAt ?? row.updatedAt;
+            const key = at.toISOString().slice(0, 10);
+            if (byDay.has(key)) {
+                byDay.set(key, (byDay.get(key) ?? 0) + (row.totalPrice ?? 0));
+            }
+        }
+        return {
+            days: safeDays,
+            points: [...byDay.entries()].map(([date, gmv]) => ({ date, gmv })),
+            total: [...byDay.values()].reduce((a, b) => a + b, 0),
+        };
+    }
+    async writeAudit(input) {
+        return this.prisma.adminAuditLog.create({
+            data: {
+                actorId: input.actorId,
+                action: input.action,
+                targetType: input.targetType,
+                targetId: input.targetId,
+                metaJson: input.meta ? JSON.stringify(input.meta) : null,
+            },
+        });
+    }
+    async listAuditLogs(query) {
+        const page = resolvePage(query);
+        const q = query.q?.trim();
+        const where = q
+            ? {
+                OR: [
+                    { action: { contains: q } },
+                    { targetType: { contains: q } },
+                    { targetId: { contains: q } },
+                    { actor: { fullName: { contains: q } } },
+                    { actor: { email: { contains: q } } },
+                ],
+            }
+            : {};
+        const [items, total] = await Promise.all([
+            this.prisma.adminAuditLog.findMany({
+                where,
+                skip: page.skip,
+                take: page.take,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    actor: { select: { id: true, fullName: true, email: true } },
+                },
+            }),
+            this.prisma.adminAuditLog.count({ where }),
+        ]);
+        return paginated(items.map((row) => ({
+            id: row.id,
+            action: row.action,
+            targetType: row.targetType,
+            targetId: row.targetId,
+            meta: row.metaJson
+                ? JSON.parse(row.metaJson)
+                : null,
+            createdAt: row.createdAt,
+            actor: row.actor,
+        })), total, page);
     }
     async listPartners(query) {
         const page = resolvePage(query);
@@ -300,6 +401,9 @@ let AdminService = class AdminService {
             ...(query.verified !== undefined ? { isVerified: query.verified } : {}),
             ...(query.acceptingJobs !== undefined
                 ? { acceptingJobs: query.acceptingJobs }
+                : {}),
+            ...(query.blocked !== undefined
+                ? { user: { isBlocked: query.blocked } }
                 : {}),
             ...(query.city ? { city: query.city } : {}),
             ...(q
@@ -327,6 +431,7 @@ let AdminService = class AdminService {
                             fullName: true,
                             phone: true,
                             role: true,
+                            isBlocked: true,
                         },
                     },
                     _count: { select: { offerings: true } },
@@ -342,13 +447,25 @@ let AdminService = class AdminService {
         });
         if (!profile)
             throw new common_1.NotFoundException('Không tìm thấy hồ sơ partner');
+        if (dto.isBlocked !== undefined) {
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { isBlocked: dto.isBlocked },
+            });
+            if (dto.isBlocked) {
+                await this.prisma.partnerProfile.update({
+                    where: { userId },
+                    data: { acceptingJobs: false },
+                });
+            }
+        }
         const updated = await this.prisma.partnerProfile.update({
             where: { userId },
             data: {
                 ...(dto.isVerified !== undefined
                     ? { isVerified: dto.isVerified }
                     : {}),
-                ...(dto.acceptingJobs !== undefined
+                ...(dto.acceptingJobs !== undefined && dto.isBlocked !== true
                     ? { acceptingJobs: dto.acceptingJobs }
                     : {}),
                 ...(dto.phoneVerified !== undefined
@@ -376,6 +493,7 @@ let AdminService = class AdminService {
                         fullName: true,
                         phone: true,
                         role: true,
+                        isBlocked: true,
                     },
                 },
                 _count: { select: { offerings: true } },
@@ -590,7 +708,14 @@ let AdminService = class AdminService {
                 take: page.take,
                 orderBy: { createdAt: 'desc' },
                 include: {
-                    sender: { select: { id: true, fullName: true, email: true } },
+                    sender: {
+                        select: {
+                            id: true,
+                            fullName: true,
+                            email: true,
+                            chatBanned: true,
+                        },
+                    },
                     booking: {
                         select: {
                             id: true,
@@ -798,6 +923,366 @@ let AdminService = class AdminService {
         });
         this.catalog.invalidateCache();
         return updated;
+    }
+    async listServicePostQueue(query) {
+        const page = resolvePage(query);
+        const q = query.q?.trim();
+        const pendingWhere = {
+            status: client_1.PartnerServicePostStatus.PENDING,
+            ...(q
+                ? {
+                    OR: [
+                        {
+                            partnerProfile: {
+                                user: {
+                                    OR: [
+                                        { fullName: { contains: q } },
+                                        { email: { contains: q } },
+                                    ],
+                                },
+                            },
+                        },
+                        { title: { contains: q } },
+                        { service: { name: { contains: q } } },
+                    ],
+                }
+                : {}),
+        };
+        const grouped = await this.prisma.partnerServicePost.groupBy({
+            by: ['partnerProfileId'],
+            where: pendingWhere,
+            _count: { _all: true },
+            _min: { createdAt: true },
+            orderBy: { _min: { createdAt: 'asc' } },
+            skip: page.skip,
+            take: page.take,
+        });
+        const totalGroups = await this.prisma.partnerServicePost.groupBy({
+            by: ['partnerProfileId'],
+            where: pendingWhere,
+        });
+        const profileIds = grouped.map((g) => g.partnerProfileId);
+        const profiles = await this.prisma.partnerProfile.findMany({
+            where: { id: { in: profileIds } },
+            select: {
+                id: true,
+                userId: true,
+                avatarUrl: true,
+                level: true,
+                user: { select: { id: true, fullName: true, email: true } },
+            },
+        });
+        const profileById = new Map(profiles.map((p) => [p.id, p]));
+        const pendingPosts = await this.prisma.partnerServicePost.findMany({
+            where: {
+                partnerProfileId: { in: profileIds },
+                status: client_1.PartnerServicePostStatus.PENDING,
+            },
+            orderBy: { createdAt: 'asc' },
+            select: {
+                id: true,
+                title: true,
+                createdAt: true,
+                partnerProfileId: true,
+                service: { select: { name: true } },
+            },
+        });
+        const postsByProfile = new Map();
+        for (const post of pendingPosts) {
+            const list = postsByProfile.get(post.partnerProfileId) ?? [];
+            list.push(post);
+            postsByProfile.set(post.partnerProfileId, list);
+        }
+        const items = grouped.map((g) => {
+            const profile = profileById.get(g.partnerProfileId);
+            const posts = postsByProfile.get(g.partnerProfileId) ?? [];
+            return {
+                partnerProfileId: g.partnerProfileId,
+                userId: profile?.userId ?? '',
+                fullName: profile?.user.fullName ?? '—',
+                email: profile?.user.email ?? '',
+                avatarUrl: profile?.avatarUrl ?? null,
+                level: profile?.level ?? 1,
+                pendingCount: g._count._all,
+                oldestPendingAt: g._min.createdAt,
+                firstPostId: posts[0]?.id ?? null,
+                posts: posts.map((p) => ({
+                    id: p.id,
+                    title: p.title,
+                    serviceName: p.service.name,
+                    createdAt: p.createdAt,
+                })),
+            };
+        });
+        return paginated(items, totalGroups.length, page);
+    }
+    async getServicePostDetail(id) {
+        const item = await this.prisma.partnerServicePost.findUnique({
+            where: { id },
+            include: {
+                service: {
+                    select: {
+                        id: true,
+                        slug: true,
+                        name: true,
+                        unit: true,
+                        category: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                                group: { select: { id: true, name: true, slug: true } },
+                            },
+                        },
+                    },
+                },
+                partnerProfile: {
+                    select: {
+                        id: true,
+                        userId: true,
+                        headline: true,
+                        city: true,
+                        responseMinutes: true,
+                        ratingAvg: true,
+                        ratingCount: true,
+                        level: true,
+                        isVerified: true,
+                        phoneVerified: true,
+                        bankVerified: true,
+                        avatarUrl: true,
+                        acceptingJobs: true,
+                        user: { select: { id: true, fullName: true, email: true } },
+                    },
+                },
+            },
+        });
+        if (!item)
+            throw new common_1.NotFoundException('Không tìm thấy bài đăng');
+        let images = [];
+        if (item.imagesJson) {
+            try {
+                const parsed = JSON.parse(item.imagesJson);
+                if (Array.isArray(parsed)) {
+                    images = parsed.filter((u) => typeof u === 'string');
+                }
+            }
+            catch {
+            }
+        }
+        if (!images.length && item.coverUrl)
+            images = [item.coverUrl];
+        const offering = await this.prisma.partnerService.findFirst({
+            where: {
+                partnerProfileId: item.partnerProfileId,
+                serviceId: item.serviceId,
+                isActive: true,
+            },
+            select: {
+                id: true,
+                price: true,
+                headline: true,
+                experienceYears: true,
+                includes: true,
+                excludes: true,
+                coverageNote: true,
+            },
+        });
+        const siblingPending = await this.prisma.partnerServicePost.findMany({
+            where: {
+                partnerProfileId: item.partnerProfileId,
+                status: client_1.PartnerServicePostStatus.PENDING,
+            },
+            orderBy: { createdAt: 'asc' },
+            select: {
+                id: true,
+                title: true,
+                service: { select: { name: true } },
+            },
+        });
+        return {
+            post: {
+                id: item.id,
+                title: item.title,
+                body: item.body,
+                coverUrl: images[0] ?? item.coverUrl,
+                images,
+                serviceId: item.serviceId,
+                status: item.status,
+                rejectReason: item.rejectReason,
+                reviewedAt: item.reviewedAt,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                service: item.service,
+            },
+            seller: {
+                userId: item.partnerProfile.userId,
+                fullName: item.partnerProfile.user.fullName,
+                email: item.partnerProfile.user.email,
+                headline: item.partnerProfile.headline,
+                city: item.partnerProfile.city,
+                avatarUrl: item.partnerProfile.avatarUrl,
+                level: item.partnerProfile.level,
+                isVerified: item.partnerProfile.isVerified,
+                phoneVerified: item.partnerProfile.phoneVerified,
+                bankVerified: item.partnerProfile.bankVerified,
+                ratingAvg: item.partnerProfile.ratingAvg,
+                ratingCount: item.partnerProfile.ratingCount,
+                responseMinutes: item.partnerProfile.responseMinutes,
+                acceptingJobs: item.partnerProfile.acceptingJobs,
+            },
+            offering: offering
+                ? {
+                    id: offering.id,
+                    price: offering.price,
+                    headline: offering.headline,
+                    experienceYears: offering.experienceYears,
+                    includes: offering.includes,
+                    excludes: offering.excludes,
+                    coverageNote: offering.coverageNote,
+                    unit: item.service.unit,
+                }
+                : null,
+            siblingPending: siblingPending.map((p) => ({
+                id: p.id,
+                title: p.title,
+                serviceName: p.service.name,
+            })),
+        };
+    }
+    async listServicePosts(query) {
+        const page = resolvePage(query);
+        const q = query.q?.trim();
+        const status = query.status;
+        const where = {
+            ...(status ? { status } : {}),
+            ...(q
+                ? {
+                    OR: [
+                        { title: { contains: q } },
+                        { body: { contains: q } },
+                        {
+                            partnerProfile: {
+                                user: { fullName: { contains: q } },
+                            },
+                        },
+                        { service: { name: { contains: q } } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await Promise.all([
+            this.prisma.partnerServicePost.findMany({
+                where,
+                skip: page.skip,
+                take: page.take,
+                orderBy: [
+                    { status: 'asc' },
+                    { createdAt: 'desc' },
+                ],
+                include: {
+                    service: {
+                        select: {
+                            id: true,
+                            slug: true,
+                            name: true,
+                            category: {
+                                select: {
+                                    name: true,
+                                    group: { select: { name: true, slug: true } },
+                                },
+                            },
+                        },
+                    },
+                    partnerProfile: {
+                        select: {
+                            userId: true,
+                            user: { select: { id: true, fullName: true, email: true } },
+                        },
+                    },
+                },
+            }),
+            this.prisma.partnerServicePost.count({ where }),
+        ]);
+        return paginated(items.map((item) => {
+            let images = [];
+            if (item.imagesJson) {
+                try {
+                    const parsed = JSON.parse(item.imagesJson);
+                    if (Array.isArray(parsed)) {
+                        images = parsed.filter((u) => typeof u === 'string');
+                    }
+                }
+                catch {
+                }
+            }
+            if (!images.length && item.coverUrl)
+                images = [item.coverUrl];
+            return {
+                id: item.id,
+                title: item.title,
+                body: item.body,
+                coverUrl: images[0] ?? item.coverUrl,
+                images,
+                status: item.status,
+                rejectReason: item.rejectReason,
+                reviewedAt: item.reviewedAt,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt,
+                service: item.service,
+                partner: {
+                    userId: item.partnerProfile.userId,
+                    fullName: item.partnerProfile.user.fullName,
+                    email: item.partnerProfile.user.email,
+                },
+            };
+        }), total, page);
+    }
+    async reviewServicePost(id, adminUserId, dto) {
+        const post = await this.prisma.partnerServicePost.findUnique({
+            where: { id },
+        });
+        if (!post)
+            throw new common_1.NotFoundException('Không tìm thấy bài đăng');
+        if (dto.status !== client_1.PartnerServicePostStatus.APPROVED &&
+            dto.status !== client_1.PartnerServicePostStatus.REJECTED) {
+            throw new common_1.BadRequestException('Chỉ duyệt hoặc từ chối bài đăng.');
+        }
+        if (dto.status === client_1.PartnerServicePostStatus.REJECTED &&
+            !dto.rejectReason?.trim()) {
+            throw new common_1.BadRequestException('Cần ghi lý do từ chối.');
+        }
+        const updated = await this.prisma.partnerServicePost.update({
+            where: { id },
+            data: {
+                status: dto.status,
+                rejectReason: dto.status === client_1.PartnerServicePostStatus.REJECTED
+                    ? dto.rejectReason.trim()
+                    : null,
+                reviewedAt: new Date(),
+                reviewedById: adminUserId,
+            },
+            include: {
+                service: { select: { id: true, slug: true, name: true } },
+                partnerProfile: {
+                    select: {
+                        userId: true,
+                        user: { select: { id: true, fullName: true } },
+                    },
+                },
+            },
+        });
+        return {
+            id: updated.id,
+            title: updated.title,
+            status: updated.status,
+            rejectReason: updated.rejectReason,
+            reviewedAt: updated.reviewedAt,
+            service: updated.service,
+            partner: {
+                userId: updated.partnerProfile.userId,
+                fullName: updated.partnerProfile.user.fullName,
+            },
+        };
     }
 };
 exports.AdminService = AdminService;

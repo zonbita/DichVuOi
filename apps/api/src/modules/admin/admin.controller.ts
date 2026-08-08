@@ -10,7 +10,9 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { AdminService } from './admin.service';
@@ -22,6 +24,8 @@ import {
   AdminFinanceWalletQueryDto,
   AdminPageQueryDto,
   AdminPartnerQueryDto,
+  AdminReviewServicePostDto,
+  AdminServicePostQueryDto,
   AdminServiceQueryDto,
   AdminUpdateBookingDto,
   AdminUpdateGroupDto,
@@ -42,6 +46,17 @@ export class AdminController {
   @Get('stats')
   stats() {
     return this.adminService.stats();
+  }
+
+  @Get('stats/gmv-series')
+  gmvSeries(@Query('days') days?: string) {
+    const n = days ? Number(days) : 30;
+    return this.adminService.gmvSeries(Number.isFinite(n) ? n : 30);
+  }
+
+  @Get('audit-logs')
+  listAuditLogs(@Query() query: AdminPageQueryDto) {
+    return this.adminService.listAuditLogs(query);
   }
 
   @Get('finance/overview')
@@ -73,8 +88,26 @@ export class AdminController {
   }
 
   @Patch('users/:id')
-  updateUser(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
-    return this.adminService.updateUser(id, dto);
+  updateUser(
+    @CurrentUser() actor: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: AdminUpdateUserDto,
+  ) {
+    return this.adminService.updateUser(id, dto).then(async (user) => {
+      await this.adminService.writeAudit({
+        actorId: actor.id,
+        action:
+          dto.chatBanned === true
+            ? 'user.chat_ban'
+            : dto.chatBanned === false
+              ? 'user.chat_unban'
+              : 'user.update_role',
+        targetType: 'User',
+        targetId: id,
+        meta: { ...dto },
+      });
+      return user;
+    });
   }
 
   @Get('partners')
@@ -108,6 +141,32 @@ export class AdminController {
   @Get('reviews')
   listReviews(@Query() query: AdminPageQueryDto) {
     return this.adminService.listReviews(query);
+  }
+
+  /** Hàng chờ: người làm đang có bài PENDING. */
+  @Get('service-posts/queue')
+  listServicePostQueue(@Query() query: AdminPageQueryDto) {
+    return this.adminService.listServicePostQueue(query);
+  }
+
+  @Get('service-posts')
+  listServicePosts(@Query() query: AdminServicePostQueryDto) {
+    return this.adminService.listServicePosts(query);
+  }
+
+  /** Chi tiết bài (kể cả PENDING) — trang duyệt kiểu gig. */
+  @Get('service-posts/:id')
+  getServicePost(@Param('id') id: string) {
+    return this.adminService.getServicePostDetail(id);
+  }
+
+  @Patch('service-posts/:id')
+  reviewServicePost(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: AdminReviewServicePostDto,
+  ) {
+    return this.adminService.reviewServicePost(id, user.id, dto);
   }
 
   @Get('messages/flagged')

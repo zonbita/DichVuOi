@@ -16,6 +16,7 @@ exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const client_1 = require("@prisma/client");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
@@ -28,6 +29,13 @@ let AdminController = class AdminController {
     }
     stats() {
         return this.adminService.stats();
+    }
+    gmvSeries(days) {
+        const n = days ? Number(days) : 30;
+        return this.adminService.gmvSeries(Number.isFinite(n) ? n : 30);
+    }
+    listAuditLogs(query) {
+        return this.adminService.listAuditLogs(query);
     }
     financeOverview() {
         return this.adminService.financeOverview();
@@ -44,8 +52,21 @@ let AdminController = class AdminController {
     listUsers(query) {
         return this.adminService.listUsers(query);
     }
-    updateUser(id, dto) {
-        return this.adminService.updateUser(id, dto);
+    updateUser(actor, id, dto) {
+        return this.adminService.updateUser(id, dto).then(async (user) => {
+            await this.adminService.writeAudit({
+                actorId: actor.id,
+                action: dto.chatBanned === true
+                    ? 'user.chat_ban'
+                    : dto.chatBanned === false
+                        ? 'user.chat_unban'
+                        : 'user.update_role',
+                targetType: 'User',
+                targetId: id,
+                meta: { ...dto },
+            });
+            return user;
+        });
     }
     listPartners(query) {
         return this.adminService.listPartners(query);
@@ -64,6 +85,18 @@ let AdminController = class AdminController {
     }
     listReviews(query) {
         return this.adminService.listReviews(query);
+    }
+    listServicePostQueue(query) {
+        return this.adminService.listServicePostQueue(query);
+    }
+    listServicePosts(query) {
+        return this.adminService.listServicePosts(query);
+    }
+    getServicePost(id) {
+        return this.adminService.getServicePostDetail(id);
+    }
+    reviewServicePost(user, id, dto) {
+        return this.adminService.reviewServicePost(id, user.id, dto);
     }
     listFlagged(query) {
         return this.adminService.listFlaggedMessages(query);
@@ -94,6 +127,20 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "stats", null);
+__decorate([
+    (0, common_1.Get)('stats/gmv-series'),
+    __param(0, (0, common_1.Query)('days')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "gmvSeries", null);
+__decorate([
+    (0, common_1.Get)('audit-logs'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_dto_1.AdminPageQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "listAuditLogs", null);
 __decorate([
     (0, common_1.Get)('finance/overview'),
     __metadata("design:type", Function),
@@ -131,10 +178,11 @@ __decorate([
 ], AdminController.prototype, "listUsers", null);
 __decorate([
     (0, common_1.Patch)('users/:id'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, admin_dto_1.AdminUpdateUserDto]),
+    __metadata("design:paramtypes", [Object, String, admin_dto_1.AdminUpdateUserDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "updateUser", null);
 __decorate([
@@ -181,6 +229,36 @@ __decorate([
     __metadata("design:paramtypes", [admin_dto_1.AdminPageQueryDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "listReviews", null);
+__decorate([
+    (0, common_1.Get)('service-posts/queue'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_dto_1.AdminPageQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "listServicePostQueue", null);
+__decorate([
+    (0, common_1.Get)('service-posts'),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_dto_1.AdminServicePostQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "listServicePosts", null);
+__decorate([
+    (0, common_1.Get)('service-posts/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getServicePost", null);
+__decorate([
+    (0, common_1.Patch)('service-posts/:id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, admin_dto_1.AdminReviewServicePostDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "reviewServicePost", null);
 __decorate([
     (0, common_1.Get)('messages/flagged'),
     __param(0, (0, common_1.Query)()),

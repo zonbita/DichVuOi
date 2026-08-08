@@ -17,6 +17,8 @@ enum Role {
 }
 
 enum BookingStatus {
+  /** Đơn mở đã tạo — chờ tới publishAt mới lên bảng tin (PENDING). */
+  SCHEDULED
   PENDING
   CONFIRMED
   IN_PROGRESS
@@ -82,6 +84,12 @@ enum ApplicationStatus {
   REFUNDED
 }
 
+enum PartnerServicePostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum InvoiceStatus {
   PAID
   SETTLED
@@ -112,6 +120,15 @@ model User {
   emailOtpSendCount Int          @default(0)
   emailOtpWindowStartedAt DateTime?
   role           Role            @default(CUSTOMER)
+  /**
+   * Admin chặn tài khoản: không dùng dashboard (đơn/ví/hồ sơ…),
+   * vẫn đăng nhập được để khiếu nại + chat hỗ trợ admin.
+   */
+  isBlocked      Boolean         @default(false)
+  /** Khóa chat đơn (PII / vi phạm) — vẫn dùng được khiếu nại + support. */
+  chatBanned     Boolean         @default(false)
+  /** Đã đồng ý Nội quy & quy tắc (bắt buộc trước khi dùng sàn lần đầu). */
+  termsAcceptedAt DateTime?
   /** Số dư ví nội bộ, đơn vị VNĐ (số nguyên). */
   walletBalance  Int             @default(0)
   /** TK nhận khi rút ví (khách / người làm). */
@@ -146,6 +163,23 @@ model User {
   supportThreadsAsCustomer SupportThread[] @relation("SupportCustomer")
   supportThreadsAssigned   SupportThread[] @relation("SupportAssignee")
   supportMessages          SupportMessage[]
+  adminAuditLogs           AdminAuditLog[] @relation("AdminAuditActor")
+}
+
+/** Nhật ký thao tác admin / moderator. */
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String?
+  targetId   String?
+  metaJson   String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([action])
 }
 
 /** Khách lưu người làm quen — hỗ trợ thuê lại / cá nhân hóa trang chủ. */
@@ -209,8 +243,36 @@ model PartnerProfile {
   /** Thời gian phản hồi ước tính (phút). */
   responseMinutes Int          @default(30)
   offerings   PartnerService[]
+  servicePosts PartnerServicePost[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+}
+
+/** Bài đăng dịch vụ do người làm viết — cần BQT duyệt trước khi hiện công khai. */
+model PartnerServicePost {
+  id               String                   @id @default(cuid())
+  partnerProfileId String
+  partnerProfile   PartnerProfile           @relation(fields: [partnerProfileId], references: [id], onDelete: Cascade)
+  serviceId        String
+  service          Service                  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  title            String
+  body             String
+  /** Ảnh đầu tiên — đồng bộ từ imagesJson[0]. */
+  coverUrl         String?
+  /** JSON array URL ảnh bài đăng, vd. ["/uploads/…"]. Ít nhất 1 khi đăng. */
+  imagesJson       String?
+  status           PartnerServicePostStatus @default(PENDING)
+  rejectReason     String?
+  reviewedAt       DateTime?
+  reviewedById     String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  /** Mỗi nghề trên hồ sơ chỉ có một bài đăng. */
+  @@unique([partnerProfileId, serviceId])
+  @@index([partnerProfileId, status])
+  @@index([serviceId])
+  @@index([status, createdAt])
 }
 
 model PartnerService {
@@ -285,6 +347,7 @@ model Service {
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   bookings    Booking[]
   partners    PartnerService[]
+  servicePosts PartnerServicePost[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -301,6 +364,11 @@ model Booking {
   service       Service       @relation(fields: [serviceId], references: [id])
   address       String
   scheduledAt   DateTime
+  /**
+   * Thời điểm đăng lên bảng tin đơn mở.
+   * Có giá trị + status SCHEDULED → chưa public; tới giờ → PENDING.
+   */
+  publishAt     DateTime?
   note          String?
   budgetMin     Int?
   budgetMax     Int?
@@ -359,6 +427,7 @@ model Booking {
   @@index([status])
   @@index([paymentStatus])
   @@index([scheduledAt])
+  @@index([publishAt])
   @@index([matchingDeadlineAt])
   @@index([responseDeadlineAt])
 }

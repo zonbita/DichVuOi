@@ -1,9 +1,17 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  GoneException,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
+import { allowPasswordAuth } from '../../common/security-env';
 import { AuthService } from './auth.service';
 import {
   ConfirmEmailOtpDto,
@@ -20,15 +28,26 @@ import {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /** Local: email/mật khẩu; production: chỉ Google. */
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('register')
   register(@Body() dto: RegisterDto) {
+    if (!allowPasswordAuth()) {
+      throw new GoneException(
+        'Đăng ký bằng email/mật khẩu đã tắt — dùng Google.',
+      );
+    }
     return this.authService.register(dto);
   }
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
   login(@Body() dto: LoginDto) {
+    if (!allowPasswordAuth()) {
+      throw new GoneException(
+        'Đăng nhập bằng email/mật khẩu đã tắt — dùng Google.',
+      );
+    }
     return this.authService.login(dto);
   }
 
@@ -44,6 +63,15 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.authService.me(user.id);
+  }
+
+  /** Đồng ý Nội quy (user cũ chưa có termsAcceptedAt). */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('accept-terms')
+  acceptTerms(@CurrentUser() user: AuthUser) {
+    return this.authService.acceptTerms(user.id);
   }
 
   /** OTP SĐT: eSMS Brandname khi cấu hình, không thì mock key trên web. */

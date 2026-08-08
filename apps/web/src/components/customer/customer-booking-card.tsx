@@ -40,12 +40,24 @@ function shortRef(id: string) {
 function partnerLabel(booking: Booking) {
   if (booking.partner) return booking.partner.fullName;
   if (booking.status === 'CANCELLED') return 'Đã hủy trước khi có người nhận';
+  if (booking.status === 'SCHEDULED') {
+    return booking.publishAt
+      ? `Hẹn đăng ${new Date(booking.publishAt).toLocaleString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}`
+      : 'Đã hẹn giờ đăng';
+  }
   if (booking.paymentStatus === 'HELD') return 'Đang chờ người làm nhận việc…';
   return 'Chưa có người làm nhận';
 }
 
 function statusBadgeClass(status: string) {
   switch (status) {
+    case 'SCHEDULED':
+      return 'bg-violet-50 text-violet-700';
     case 'PENDING':
       return 'bg-[#FFF7E8] text-[#C98518]';
     case 'CONFIRMED':
@@ -94,7 +106,9 @@ export function CustomerBookingCard({
   const canPay =
     booking.paymentStatus === 'UNPAID' && booking.status !== 'CANCELLED';
   const canCancel =
-    booking.status === 'PENDING' || booking.status === 'CONFIRMED';
+    booking.status === 'SCHEDULED' ||
+    booking.status === 'PENDING' ||
+    booking.status === 'CONFIRMED';
   const showChat =
     Boolean(booking.partnerId) &&
     (booking.paymentStatus === 'HELD' || booking.paymentStatus === 'RELEASED') &&

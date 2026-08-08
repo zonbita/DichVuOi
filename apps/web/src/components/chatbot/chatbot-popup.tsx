@@ -1,9 +1,14 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import type { FormEvent } from 'react';
+import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { io, type Socket } from 'socket.io-client';
 import { useAuth } from '../../features/auth/auth-context';
+import {
+  markSupportChatRead,
+  OPEN_CHATBOT_EVENT,
+  type OpenChatbotDetail,
+} from '../../lib/support-chat-read';
 import { api } from '../../services/api';
 import type { ChatbotSource } from '../../types/chatbot';
 import type { SupportMessage } from '../../types/support';
@@ -34,6 +39,80 @@ function newSessionId() {
 }
 
 const TOKEN_KEY = 'dichvuoi_token';
+const FAB_POS_KEY = 'dichvuoi_chatbot_fab_pos';
+const FAB_SIZE = 56;
+const FAB_GAP = 12;
+const DRAG_THRESHOLD = 6;
+
+type FabPos = { x: number; y: number };
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function defaultFabPos(): FabPos {
+  if (typeof window === 'undefined') return { x: 24, y: 24 };
+  return {
+    x: Math.max(8, window.innerWidth - FAB_SIZE - 24),
+    y: Math.max(8, window.innerHeight - FAB_SIZE - 24),
+  };
+}
+
+function loadFabPos(): FabPos {
+  try {
+    const raw = sessionStorage.getItem(FAB_POS_KEY);
+    if (!raw) return defaultFabPos();
+    const parsed = JSON.parse(raw) as FabPos;
+    if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+      return clampFabPos(parsed);
+    }
+  } catch {
+    /* ignore */
+  }
+  return defaultFabPos();
+}
+
+function saveFabPos(pos: FabPos) {
+  try {
+    sessionStorage.setItem(FAB_POS_KEY, JSON.stringify(pos));
+  } catch {
+    /* ignore */
+  }
+}
+
+function clampFabPos(pos: FabPos): FabPos {
+  if (typeof window === 'undefined') return pos;
+  const margin = 8;
+  return {
+    x: clamp(pos.x, margin, Math.max(margin, window.innerWidth - FAB_SIZE - margin)),
+    y: clamp(pos.y, margin, Math.max(margin, window.innerHeight - FAB_SIZE - margin)),
+  };
+}
+
+/** Panel neo cạnh FAB — ưu tiên phía trên, canh mép phải với nút. */
+function panelStyleFromFab(fab: FabPos): CSSProperties {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const panelW = Math.min(380, vw - 16);
+  const panelH = Math.min(vh * 0.7, 560);
+  const margin = 8;
+
+  let left = fab.x + FAB_SIZE - panelW;
+  left = clamp(left, margin, Math.max(margin, vw - panelW - margin));
+
+  let top = fab.y - FAB_GAP - panelH;
+  if (top < margin) {
+    top = fab.y + FAB_SIZE + FAB_GAP;
+  }
+  top = clamp(top, margin, Math.max(margin, vh - Math.min(panelH, vh - margin * 2) - margin));
+
+  return {
+    left,
+    top,
+    width: panelW,
+    height: Math.min(panelH, vh - margin * 2),
+  };
+}
 
 export function ChatbotPopup() {
   const titleId = useId();
@@ -51,7 +130,16 @@ export function ChatbotPopup() {
       source: 'faq',
     },
   ]);
+  const [fabPos, setFabPos] = useState<FabPos>(() => loadFabPos());
   const listRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    moved: boolean;
+  } | null>(null);
   const isStaff = user?.role === 'ADMIN' || user?.role === 'MODERATOR';
 
   const suggestionsQuery = useQuery({
@@ -122,6 +210,25 @@ export function ChatbotPopup() {
   }, [messages, supportQuery.data?.messages, askMutation.isPending, tab]);
 
   useEffect(() => {
+    function onOpen(event: Event) {
+      const detail = (event as CustomEvent<OpenChatbotDetail>).detail;
+      const nextTab = detail?.tab ?? 'support';
+      setTab(nextTab);
+      setOpen(true);
+      if (nextTab === 'support' && user && !isStaff) {
+        markSupportChatRead(user.id);
+      }
+    }
+    window.addEventListener(OPEN_CHATBOT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_CHATBOT_EVENT, onOpen);
+  }, [user, isStaff]);
+
+  useEffect(() => {
+    if (!open || tab !== 'support' || !user || isStaff) return;
+    markSupportChatRead(user.id);
+  }, [open, tab, user, isStaff]);
+
+  useEffect(() => {
     if (!open || tab !== 'support' || !user || isStaff) return;
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) return;
@@ -139,6 +246,7 @@ export function ChatbotPopup() {
         if (prev.messages.some((m) => m.id === message.id)) return prev;
         return { ...prev, messages: [...prev.messages, message] };
       });
+      if (user) markSupportChatRead(user.id);
     });
     return () => {
       socket.removeAllListeners();
@@ -170,6 +278,61 @@ export function ChatbotPopup() {
     else sendSupport(draft);
   }
 
+  function onFabPointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: fabPos.x,
+      origY: fabPos.y,
+      moved: false,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onFabPointerMove(e: ReactPointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    drag.moved = true;
+    setFabPos(
+      clampFabPos({
+        x: drag.origX + dx,
+        y: drag.origY + dy,
+      }),
+    );
+  }
+
+  function onFabPointerUp(e: ReactPointerEvent<HTMLButtonElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    dragRef.current = null;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    if (drag.moved) {
+      setFabPos((current) => {
+        const next = clampFabPos(current);
+        saveFabPos(next);
+        return next;
+      });
+      return;
+    }
+    setOpen((v) => !v);
+  }
+
+  useEffect(() => {
+    function onResize() {
+      setFabPos((current) => clampFabPos(current));
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const headerSubtitle =
     tab === 'ai'
       ? statsQuery.data
@@ -179,14 +342,17 @@ export function ChatbotPopup() {
         : 'FAQ + ChatGPT'
       : 'Chat với admin / kỹ thuật viên';
 
+  const panelStyle = panelStyleFromFab(fabPos);
+
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[80] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    <>
       {open ? (
         <section
           role="dialog"
           aria-modal="false"
           aria-labelledby={titleId}
-          className="pointer-events-auto flex h-[min(70vh,560px)] w-[min(380px,calc(100dvw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl"
+          style={panelStyle}
+          className="pointer-events-auto fixed z-[99999] flex flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl"
         >
           <header className="bg-[linear-gradient(135deg,var(--color-brand),var(--color-sea))] px-4 pt-3 text-white">
             <div className="flex items-start justify-between gap-3">
@@ -417,14 +583,19 @@ export function ChatbotPopup() {
 
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-brand)] text-2xl !text-white shadow-lg shadow-[var(--color-brand)]/30 transition hover:bg-[var(--color-brand-deep)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)]"
+        onPointerDown={onFabPointerDown}
+        onPointerMove={onFabPointerMove}
+        onPointerUp={onFabPointerUp}
+        onPointerCancel={onFabPointerUp}
+        style={{ left: fabPos.x, top: fabPos.y }}
+        className="pointer-events-auto fixed z-[100000] flex h-14 w-14 cursor-grab touch-none items-center justify-center rounded-2xl bg-[var(--color-brand)] text-2xl !text-white shadow-lg shadow-[var(--color-brand)]/30 transition hover:bg-[var(--color-brand-deep)] active:cursor-grabbing focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand)]"
         aria-expanded={open}
         aria-controls={open ? titleId : undefined}
-        aria-label={open ? 'Đóng trợ lý chat' : 'Mở trợ lý chat'}
+        aria-label={open ? 'Đóng trợ lý chat' : 'Mở trợ lý chat — kéo để di chuyển'}
+        title="Kéo để di chuyển · nhấp để mở/đóng"
       >
         {open ? '✕' : '💬'}
       </button>
-    </div>
+    </>
   );
 }

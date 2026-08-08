@@ -135,6 +135,8 @@ export type Booking = {
   status: string;
   address: string;
   scheduledAt: string;
+  /** Giờ đăng lên bảng tin (đơn mở hẹn giờ). */
+  publishAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
   totalPrice: number;
@@ -180,6 +182,13 @@ export type Booking = {
     phone: string | null;
     email: string;
   } | null;
+  /** Chủ đơn (khách thuê) — có thể che SĐT trên hàng chờ. */
+  user?: {
+    id: string;
+    fullName: string;
+    phone?: string | null;
+    email?: string;
+  } | null;
 };
 
 /** Slot lịch tháng partner (API schedule). */
@@ -214,6 +223,8 @@ export type CreateBookingInput = {
   customerEmail?: string;
   address: string;
   scheduledAt: string;
+  /** Hẹn giờ đăng lên bảng tin (ISO). Chỉ đơn mở. */
+  publishAt?: string;
   partnerId?: string;
   note?: string;
   budgetMin?: number;

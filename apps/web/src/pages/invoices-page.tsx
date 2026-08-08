@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, Navigate, useParams } from 'react-router-dom';
+import {
+  DashboardEmpty,
+  DashboardPageHeader,
+} from '../components/dashboard/dashboard-chrome';
 import { ListPagination } from '../components/ui/list-pagination';
 import { useAuth } from '../features/auth/auth-context';
 import { api, formatPrice } from '../services/api';
@@ -40,37 +44,39 @@ export function InvoicesPage({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
-      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold">Hóa đơn VNĐ</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Mỗi lần đặt cọc tạo một hóa đơn. Giải ngân / hoàn cập nhật trạng thái.
-          </p>
-        </div>
-        <Link
-          to={`${basePath}/vi`}
-          className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
-        >
-          ← Ví VNĐ
-        </Link>
-      </div>
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+      <DashboardPageHeader
+        icon="receipt"
+        title="Hóa đơn VNĐ"
+        description="Mỗi lần đặt cọc tạo một hóa đơn. Giải ngân / hoàn cập nhật trạng thái."
+        actions={
+          <Link
+            to={`${basePath}/vi`}
+            className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
+          >
+            ← Ví VNĐ
+          </Link>
+        }
+      />
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
         {invoicesQuery.isLoading ? (
           <p className="text-sm text-[var(--color-muted)]">Đang tải…</p>
         ) : null}
         {items.length === 0 && !invoicesQuery.isLoading ? (
-          <p className="border border-dashed border-[var(--color-line)] bg-white px-4 py-10 text-center text-[var(--color-muted)]">
-            Chưa có hóa đơn. Đặt cọc đơn thuê để phát hành.
-          </p>
+          <DashboardEmpty
+            title="Chưa có hóa đơn"
+            body="Đặt cọc đơn thuê để phát hành hóa đơn trên sàn."
+            ctaTo="/don-cua-toi/thue"
+            ctaLabel="Thuê dịch vụ"
+          />
         ) : null}
 
         {pagedItems.map((invoice) => (
           <Link
             key={invoice.id}
             to={`${basePath}/hoa-don/${invoice.id}`}
-            className="block border border-[var(--color-line)] bg-white p-4 shadow-sm transition hover:border-[var(--color-brand)]"
+            className="block rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.05)] transition hover:border-[var(--color-brand)]"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -145,20 +151,21 @@ export function InvoiceDetailPage({
 
   return (
     <div className="space-y-4 pb-8">
-      <div>
-        <Link
-          to={`${basePath}/hoa-don`}
-          className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
-        >
-          ← Hóa đơn
-        </Link>
-        <h1 className="mt-2 text-2xl font-extrabold">Chi tiết hóa đơn</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          {invoice.invoiceNumber}
-        </p>
-      </div>
+      <DashboardPageHeader
+        icon="receipt"
+        title="Chi tiết hóa đơn"
+        description={invoice.invoiceNumber}
+        actions={
+          <Link
+            to={`${basePath}/hoa-don`}
+            className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
+          >
+            ← Hóa đơn
+          </Link>
+        }
+      />
 
-      <article className="border border-[var(--color-line)] bg-white p-5 shadow-sm">
+      <article className="rounded-2xl border border-[var(--color-line)] bg-white p-5 shadow-[0_4px_16px_rgba(24,49,63,0.05)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-lg font-extrabold">{invoice.serviceName}</p>

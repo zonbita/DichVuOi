@@ -23,6 +23,9 @@ export type AdminStats = {
   reviews: number;
   redactedMessages: number;
   complaintsPending: number;
+  servicePostsPending: number;
+  /** Thread chat hỗ trợ còn OPEN. */
+  supportOpen: number;
 };
 
 export type AdminUser = {
@@ -67,6 +70,7 @@ export type AdminPartner = {
     fullName: string;
     phone: string | null;
     role: string;
+    isBlocked?: boolean;
   };
   _count: { offerings: number };
 };
@@ -145,12 +149,123 @@ export type AdminReview = {
   booking: { id: string; status: string; service: { name: string } };
 };
 
+export type AdminServicePost = {
+  id: string;
+  title: string;
+  body: string;
+  coverUrl: string | null;
+  images: string[];
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectReason: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  service: {
+    id: string;
+    slug: string;
+    name: string;
+    category: {
+      name: string;
+      group: { name: string; slug: string };
+    } | null;
+  };
+  partner: {
+    userId: string;
+    fullName: string;
+    email: string;
+  };
+};
+
+/** Hàng chờ duyệt — nhóm theo người làm. */
+export type AdminServicePostQueueItem = {
+  partnerProfileId: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  avatarUrl: string | null;
+  level: number;
+  pendingCount: number;
+  oldestPendingAt: string | null;
+  firstPostId: string | null;
+  posts: Array<{
+    id: string;
+    title: string;
+    serviceName: string;
+    createdAt: string;
+  }>;
+};
+
+/** Chi tiết bài admin duyệt (layout gig). */
+export type AdminServicePostDetail = {
+  post: {
+    id: string;
+    title: string;
+    body: string;
+    coverUrl: string | null;
+    images: string[];
+    serviceId: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    rejectReason: string | null;
+    reviewedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+    service: {
+      id: string;
+      slug: string;
+      name: string;
+      unit: string;
+      category: {
+        id: string;
+        name: string;
+        slug: string;
+        group: { id: string; name: string; slug: string };
+      } | null;
+    };
+  };
+  seller: {
+    userId: string;
+    fullName: string;
+    email: string;
+    headline: string | null;
+    city: string | null;
+    avatarUrl: string | null;
+    level: number;
+    isVerified: boolean;
+    phoneVerified?: boolean;
+    bankVerified?: boolean;
+    ratingAvg: number;
+    ratingCount: number;
+    responseMinutes: number;
+    acceptingJobs: boolean;
+  };
+  offering: {
+    id: string;
+    price: number | null;
+    headline: string | null;
+    experienceYears: number;
+    includes: string | null;
+    excludes: string | null;
+    coverageNote: string | null;
+    unit: string;
+  } | null;
+  siblingPending: Array<{
+    id: string;
+    title: string;
+    serviceName: string;
+  }>;
+};
+
 export type AdminFlaggedMessage = {
   id: string;
   body: string;
   redacted: boolean;
   createdAt: string;
-  sender: { id: string; fullName: string; email: string };
+  sender: {
+    id: string;
+    fullName: string;
+    email: string;
+    chatBanned?: boolean;
+  };
   booking: { id: string; status: string; service: { name: string } };
 };
 

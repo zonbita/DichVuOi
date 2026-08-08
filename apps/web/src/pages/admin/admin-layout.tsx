@@ -12,22 +12,46 @@ type NavItem = {
   label: string;
   icon: IconName;
   end?: boolean;
-  badge?: 'partners' | 'flagged' | 'complaints';
+  badge?:
+    | 'partners'
+    | 'flagged'
+    | 'complaints'
+    | 'servicePosts'
+    | 'bookings'
+    | 'support';
   /** Chỉ ADMIN thấy (MODERATOR ẩn). */
   adminOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
   { to: '/admin', label: 'Tổng quan', icon: 'home', end: true, adminOnly: true },
-  { to: '/admin/support', label: 'Chat với khách', icon: 'headset' },
+  {
+    to: '/admin/support',
+    label: 'Chat với khách',
+    icon: 'headset',
+    badge: 'support',
+  },
   { to: '/admin/finance', label: 'Tiền', icon: 'wallet', adminOnly: true },
-  { to: '/admin/bookings', label: 'Đơn hàng', icon: 'calendar', adminOnly: true },
+  {
+    to: '/admin/bookings',
+    label: 'Đơn hàng',
+    icon: 'calendar',
+    badge: 'bookings',
+    adminOnly: true,
+  },
   { to: '/admin/catalog', label: 'Dịch vụ', icon: 'sparkles', adminOnly: true },
   {
     to: '/admin/partners',
     label: 'Đối tác',
     icon: 'briefcase',
     badge: 'partners',
+    adminOnly: true,
+  },
+  {
+    to: '/admin/service-posts',
+    label: 'Bài đăng DV',
+    icon: 'pencil',
+    badge: 'servicePosts',
     adminOnly: true,
   },
   { to: '/admin/users', label: 'Khách hàng', icon: 'users', adminOnly: true },
@@ -39,10 +63,22 @@ const navItems: NavItem[] = [
     badge: 'complaints',
     adminOnly: true,
   },
+  {
+    to: '/admin/flagged',
+    label: 'Tin PII',
+    icon: 'shield',
+    badge: 'flagged',
+    adminOnly: true,
+  },
+  {
+    to: '/admin/audit',
+    label: 'Nhật ký',
+    icon: 'receipt',
+    adminOnly: true,
+  },
 ];
 
 const soonItems: Array<{ label: string; icon: IconName }> = [
-  { label: 'Báo cáo', icon: 'chart' },
   { label: 'Cài đặt', icon: 'settings' },
 ];
 
@@ -59,6 +95,15 @@ export function AdminLayout() {
     queryKey: ['admin', 'stats'],
     queryFn: api.adminStats,
     enabled: isAdmin,
+    refetchInterval: 30_000,
+  });
+
+  /** Moderator không gọi /admin/stats — lấy số chat OPEN riêng. */
+  const supportOpenQuery = useQuery({
+    queryKey: ['support', 'threads', 'OPEN'],
+    queryFn: () => api.listSupportThreads('OPEN'),
+    enabled: isStaff && !isAdmin,
+    refetchInterval: 30_000,
   });
 
   if (loading) {
@@ -70,19 +115,7 @@ export function AdminLayout() {
   }
   if (!user) return <Navigate to="/dang-nhap?redirect=/admin" replace />;
   if (!isStaff) {
-    return (
-      <div className="admin-shell mx-auto flex max-w-lg items-center p-8">
-        <div className="admin-card w-full p-6">
-          <h1 className="text-xl font-extrabold">Không có quyền truy cập</h1>
-          <p className="mt-2 text-[var(--color-muted)]">
-            Cần tài khoản ADMIN hoặc MODERATOR.{' '}
-            <Link to="/" className="font-semibold text-[var(--color-brand-deep)]">
-              Về trang chủ
-            </Link>
-          </p>
-        </div>
-      </div>
-    );
+    return <Navigate to="/don-cua-toi" replace />;
   }
 
   const visibleNav = navItems.filter((item) => isAdmin || !item.adminOnly);
@@ -97,23 +130,25 @@ export function AdminLayout() {
   const pendingVerify = statsQuery.data?.partnersPendingVerify ?? 0;
   const flagged = statsQuery.data?.redactedMessages ?? 0;
   const complaintsPending = statsQuery.data?.complaintsPending ?? 0;
+  const servicePostsPending = statsQuery.data?.servicePostsPending ?? 0;
+  const openJobs = statsQuery.data?.openJobs ?? 0;
+  const supportOpen =
+    statsQuery.data?.supportOpen ?? supportOpenQuery.data?.length ?? 0;
+
+  function badgePill(count: number, tone: 'amber' | 'red' = 'amber') {
+    if (count <= 0) return null;
+    return (
+      <span className={`admin-badge admin-badge-${tone} ml-auto`}>{count}</span>
+    );
+  }
 
   function badgeFor(kind?: NavItem['badge']) {
-    if (kind === 'partners' && pendingVerify > 0) {
-      return (
-        <span className="admin-badge admin-badge-amber ml-auto">{pendingVerify}</span>
-      );
-    }
-    if (kind === 'complaints' && complaintsPending > 0) {
-      return (
-        <span className="admin-badge admin-badge-red ml-auto">{complaintsPending}</span>
-      );
-    }
-    if (kind === 'flagged' && flagged > 0) {
-      return (
-        <span className="admin-badge admin-badge-red ml-auto">{flagged}</span>
-      );
-    }
+    if (kind === 'partners') return badgePill(pendingVerify);
+    if (kind === 'servicePosts') return badgePill(servicePostsPending);
+    if (kind === 'bookings') return badgePill(openJobs);
+    if (kind === 'support') return badgePill(supportOpen);
+    if (kind === 'complaints') return badgePill(complaintsPending, 'red');
+    if (kind === 'flagged') return badgePill(flagged, 'red');
     return null;
   }
 
@@ -208,7 +243,7 @@ export function AdminLayout() {
 
   return (
     <div className="admin-shell flex">
-      <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 border-r border-[var(--admin-border)] bg-white lg:block">
+      <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 border-r border-[var(--admin-border)] bg-white shadow-[0_0_0_1px_rgba(112,144,176,0.04)] lg:block">
         {sidebar}
       </aside>
 
@@ -242,8 +277,8 @@ export function AdminLayout() {
           </p>
         </header>
 
-        <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-          <div className="mx-auto w-full max-w-[1600px]">
+        <main className="flex min-h-0 flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
+          <div className="mx-auto flex w-full max-w-[1600px] min-h-0 flex-1 flex-col">
             <Outlet />
           </div>
         </main>

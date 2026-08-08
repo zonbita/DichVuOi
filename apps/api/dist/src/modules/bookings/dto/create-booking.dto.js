@@ -19,6 +19,7 @@ class CreateBookingDto {
     customerEmail;
     address;
     scheduledAt;
+    publishAt;
     partnerId;
     note;
     budgetMin;
@@ -60,6 +61,15 @@ __decorate([
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", String)
 ], CreateBookingDto.prototype, "scheduledAt", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: '2026-08-01T08:00:00.000Z',
+        description: 'Hẹn giờ đăng lên bảng tin (chỉ đơn mở). Phải ở tương lai và trước scheduledAt.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], CreateBookingDto.prototype, "publishAt", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'userId của partner được chọn để thuê trực tiếp' }),
     (0, class_validator_1.IsOptional)(),

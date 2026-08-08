@@ -97,15 +97,7 @@ export function AdminSupportChatPage() {
   const detail = detailQuery.data;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-extrabold text-[var(--color-navy)]">Chat với khách</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          Inbox hỗ trợ kỹ thuật — admin và moderator trả lời khách từ popup web.
-        </p>
-      </div>
-
-      <div className="grid min-h-[min(70vh,560px)] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-sm lg:grid-cols-[280px_1fr]">
+    <div className="grid min-h-[min(70vh,560px)] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-sm lg:grid-cols-[280px_1fr]">
         <aside className="border-b border-[var(--admin-border)] lg:border-b-0 lg:border-r">
           <div className="border-b border-[var(--admin-border)] px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-[var(--color-muted)]">
             Hội thoại ({threads.length})
@@ -247,10 +239,9 @@ export function AdminSupportChatPage() {
               )}
             </>
           ) : (
-            <p className="m-auto text-sm text-[var(--color-invoice)]">Không tải được hội thoại.</p>
+            <p className="m-auto text-sm text-[var(--color-muted)]">Không tải được hội thoại.</p>
           )}
         </div>
-      </div>
     </div>
   );
 }

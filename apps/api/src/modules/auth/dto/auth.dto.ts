@@ -36,6 +36,13 @@ export class RegisterDto {
   @IsOptional()
   @IsBoolean()
   enableOffering?: boolean;
+
+  @ApiProperty({
+    example: true,
+    description: 'Bắt buộc đồng ý Nội quy và các quy tắc trước khi tạo tài khoản',
+  })
+  @IsBoolean()
+  acceptedTerms!: boolean;
 }
 
 export class LoginDto {
@@ -56,6 +63,15 @@ export class GoogleLoginDto {
   @IsString()
   @MinLength(20)
   idToken!: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Bắt buộc khi tạo tài khoản Google lần đầu — đồng ý Nội quy và các quy tắc',
+  })
+  @IsOptional()
+  @IsBoolean()
+  acceptedTerms?: boolean;
 }
 
 export class RequestPhoneOtpDto {

@@ -16,6 +16,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   // Dashboard khách thuê / người làm: cột sidebar full-bleed dưới header.
   const isUserDash =
     pathname.startsWith('/don-cua-toi') || pathname.startsWith('/doi-tac');
+  const isPartnerPublicProfile = pathname.startsWith('/user/');
   const hideFooter =
     pathname.startsWith('/don-cua-toi') || pathname.startsWith('/doi-tac');
 
@@ -38,7 +39,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             ? 'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip'
             : isUserDash
               ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
-              : 'page-shell flex-1 py-6'
+              : isPartnerPublicProfile
+                ? 'page-shell glass-page min-w-0 flex-1 py-6'
+                : 'page-shell flex-1 py-6'
         }
       >
         {isHome || isUserDash ? (

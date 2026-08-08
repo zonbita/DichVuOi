@@ -22,6 +22,20 @@ const security_env_1 = require("../../common/security-env");
 const portrait_avatar_1 = require("../../common/portrait-avatar");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
 const auth_service_1 = require("../auth/auth.service");
+const servicePostServiceSelect = {
+    id: true,
+    slug: true,
+    name: true,
+    unit: true,
+    category: {
+        select: {
+            id: true,
+            name: true,
+            slug: true,
+            group: { select: { id: true, name: true, slug: true } },
+        },
+    },
+};
 const BANK_VERIFY_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_VIETQR_BIN = process.env.VIETQR_BANK_ID ?? '970436';
 const userPublicSelect = {
@@ -141,6 +155,7 @@ let PartnersService = class PartnersService {
                 comment: r.comment,
                 createdAt: r.createdAt,
                 fromName: r.fromUser.fullName,
+                serviceId: r.booking.service.id,
                 serviceName: r.booking.service.name,
                 serviceSlug: r.booking.service.slug,
                 groupSlug: r.booking.service.category?.group.slug ?? null,
@@ -282,7 +297,7 @@ let PartnersService = class PartnersService {
         if (!profile)
             throw new common_1.NotFoundException('Không tìm thấy hồ sơ người làm');
         const offeringServiceIds = profile.offerings.map((o) => o.serviceId);
-        const [completedJobs, reviews, hoursByServiceId, reputation] = await Promise.all([
+        const [completedJobs, reviews, hoursByServiceId, reputation, servicePosts] = await Promise.all([
             this.prisma.booking.count({
                 where: { partnerId: userId, status: 'COMPLETED' },
             }),
@@ -300,6 +315,7 @@ let PartnersService = class PartnersService {
                         select: {
                             service: {
                                 select: {
+                                    id: true,
                                     name: true,
                                     slug: true,
                                     category: {
@@ -315,9 +331,447 @@ let PartnersService = class PartnersService {
             }),
             (0, partner_work_hours_1.hoursWorkedByServiceIds)(this.prisma, userId, offeringServiceIds),
             this.reputation.getSnapshot(userId),
+            this.prisma.partnerServicePost.findMany({
+                where: {
+                    partnerProfileId: profile.id,
+                    status: client_1.PartnerServicePostStatus.APPROVED,
+                },
+                orderBy: { updatedAt: 'desc' },
+                take: 40,
+                select: {
+                    id: true,
+                    title: true,
+                    body: true,
+                    coverUrl: true,
+                    imagesJson: true,
+                    serviceId: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    service: { select: servicePostServiceSelect },
+                },
+            }),
         ]);
         const shaped = this.shapePublic(profile, completedJobs, reviews, hoursByServiceId);
-        return { ...shaped, reputation };
+        const priceByService = new Map(profile.offerings.map((o) => [o.serviceId, o.price]));
+        return {
+            ...shaped,
+            reputation,
+            servicePosts: servicePosts.map((post) => this.shapeServicePost(post, priceByService.get(post.serviceId) ?? null)),
+        };
+    }
+    async listApprovedServicePosts(page = 1, pageSize = 12) {
+        const take = Math.min(24, Math.max(1, pageSize));
+        const safePage = Math.max(1, page);
+        const skip = (safePage - 1) * take;
+        const where = { status: client_1.PartnerServicePostStatus.APPROVED };
+        const [total, posts] = await Promise.all([
+            this.prisma.partnerServicePost.count({ where }),
+            this.prisma.partnerServicePost.findMany({
+                where,
+                orderBy: [{ reviewedAt: 'desc' }, { updatedAt: 'desc' }],
+                skip,
+                take,
+                select: {
+                    id: true,
+                    title: true,
+                    body: true,
+                    coverUrl: true,
+                    imagesJson: true,
+                    serviceId: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    service: { select: servicePostServiceSelect },
+                    partnerProfile: {
+                        select: {
+                            userId: true,
+                            headline: true,
+                            city: true,
+                            avatarUrl: true,
+                            level: true,
+                            isVerified: true,
+                            ratingAvg: true,
+                            ratingCount: true,
+                            user: { select: { fullName: true } },
+                            offerings: {
+                                where: { isActive: true },
+                                select: { serviceId: true, price: true },
+                            },
+                        },
+                    },
+                },
+            }),
+        ]);
+        return {
+            items: posts.map((post) => {
+                const price = post.partnerProfile.offerings.find((o) => o.serviceId === post.serviceId)
+                    ?.price ?? null;
+                const shaped = this.shapeServicePost(post, price);
+                return {
+                    ...shaped,
+                    seller: {
+                        userId: post.partnerProfile.userId,
+                        fullName: post.partnerProfile.user.fullName,
+                        headline: post.partnerProfile.headline,
+                        city: post.partnerProfile.city,
+                        avatarUrl: post.partnerProfile.avatarUrl,
+                        level: post.partnerProfile.level,
+                        isVerified: post.partnerProfile.isVerified,
+                        ratingAvg: post.partnerProfile.ratingAvg,
+                        ratingCount: post.partnerProfile.ratingCount,
+                    },
+                };
+            }),
+            total,
+            page: safePage,
+            pageSize: take,
+            pageCount: Math.max(1, Math.ceil(total / take)),
+        };
+    }
+    async getPublicServicePost(userId, postId) {
+        const profile = await this.prisma.partnerProfile.findUnique({
+            where: { userId },
+            select: {
+                id: true,
+                userId: true,
+                headline: true,
+                city: true,
+                responseMinutes: true,
+                ratingAvg: true,
+                ratingCount: true,
+                level: true,
+                isVerified: true,
+                phoneVerified: true,
+                bankVerified: true,
+                avatarUrl: true,
+                acceptingJobs: true,
+                user: { select: { id: true, fullName: true } },
+            },
+        });
+        if (!profile) {
+            throw new common_1.NotFoundException('Không tìm thấy hồ sơ người làm');
+        }
+        const post = await this.prisma.partnerServicePost.findFirst({
+            where: {
+                id: postId,
+                partnerProfileId: profile.id,
+                status: client_1.PartnerServicePostStatus.APPROVED,
+            },
+            select: {
+                id: true,
+                title: true,
+                body: true,
+                coverUrl: true,
+                imagesJson: true,
+                serviceId: true,
+                createdAt: true,
+                updatedAt: true,
+                service: { select: servicePostServiceSelect },
+            },
+        });
+        if (!post) {
+            throw new common_1.NotFoundException('Không tìm thấy bài đăng');
+        }
+        const [offering, reviews] = await Promise.all([
+            this.prisma.partnerService.findFirst({
+                where: {
+                    partnerProfileId: profile.id,
+                    serviceId: post.serviceId,
+                    isActive: true,
+                },
+                select: {
+                    id: true,
+                    price: true,
+                    headline: true,
+                    experienceYears: true,
+                    includes: true,
+                    excludes: true,
+                    coverageNote: true,
+                },
+            }),
+            this.prisma.review.findMany({
+                where: {
+                    toUserId: userId,
+                    booking: { serviceId: post.serviceId },
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 24,
+                select: {
+                    id: true,
+                    rating: true,
+                    comment: true,
+                    createdAt: true,
+                    fromUser: { select: { id: true, fullName: true } },
+                },
+            }),
+        ]);
+        const ratingCount = reviews.length;
+        const ratingAvg = ratingCount > 0
+            ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / ratingCount) * 10) / 10
+            : 0;
+        return {
+            post: this.shapeServicePost(post),
+            seller: {
+                userId: profile.userId,
+                fullName: profile.user.fullName,
+                headline: profile.headline,
+                city: profile.city,
+                avatarUrl: profile.avatarUrl,
+                level: profile.level,
+                isVerified: profile.isVerified,
+                phoneVerified: profile.phoneVerified,
+                bankVerified: profile.bankVerified,
+                ratingAvg: profile.ratingAvg,
+                ratingCount: profile.ratingCount,
+                responseMinutes: profile.responseMinutes,
+                acceptingJobs: profile.acceptingJobs,
+            },
+            offering: offering
+                ? {
+                    id: offering.id,
+                    price: offering.price,
+                    headline: offering.headline,
+                    experienceYears: offering.experienceYears,
+                    includes: offering.includes,
+                    excludes: offering.excludes,
+                    coverageNote: offering.coverageNote,
+                    ratingAvg,
+                    ratingCount,
+                    unit: post.service.unit,
+                }
+                : null,
+            reviews: reviews.map((r) => ({
+                id: r.id,
+                rating: r.rating,
+                comment: r.comment,
+                createdAt: r.createdAt,
+                fromName: r.fromUser.fullName,
+            })),
+        };
+    }
+    parsePostImages(imagesJson, coverUrl) {
+        if (imagesJson) {
+            try {
+                const parsed = JSON.parse(imagesJson);
+                if (Array.isArray(parsed)) {
+                    const urls = parsed
+                        .filter((u) => typeof u === 'string')
+                        .map((u) => u.trim())
+                        .filter(Boolean);
+                    if (urls.length)
+                        return urls.slice(0, 8);
+                }
+            }
+            catch {
+            }
+        }
+        return coverUrl?.trim() ? [coverUrl.trim()] : [];
+    }
+    serializePostImages(images) {
+        const urls = images
+            .map((u) => u.trim())
+            .filter(Boolean)
+            .slice(0, 8);
+        if (!urls.length) {
+            throw new common_1.BadRequestException('Cần ít nhất một ảnh');
+        }
+        return {
+            images: urls,
+            imagesJson: JSON.stringify(urls),
+            coverUrl: urls[0],
+        };
+    }
+    normalizePostBody(raw) {
+        let html = raw.trim();
+        html = html
+            .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+            .replace(/<\/?a\b[^>]*>/gi, '')
+            .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+            .replace(/javascript:/gi, '');
+        const plain = html
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (plain.length < 20) {
+            throw new common_1.BadRequestException('Nội dung cần ít nhất 20 ký tự');
+        }
+        if (html.length > 8000) {
+            throw new common_1.BadRequestException('Nội dung quá dài (tối đa 8000 ký tự)');
+        }
+        return html;
+    }
+    shapeServicePost(post, price) {
+        const images = this.parsePostImages(post.imagesJson, post.coverUrl);
+        return {
+            id: post.id,
+            title: post.title,
+            body: post.body,
+            coverUrl: images[0] ?? post.coverUrl,
+            images,
+            serviceId: post.serviceId,
+            price: price ?? null,
+            ...(post.status !== undefined ? { status: post.status } : {}),
+            ...(post.rejectReason !== undefined
+                ? { rejectReason: post.rejectReason }
+                : {}),
+            ...(post.reviewedAt !== undefined
+                ? { reviewedAt: post.reviewedAt }
+                : {}),
+            createdAt: post.createdAt,
+            updatedAt: post.updatedAt,
+            service: post.service,
+        };
+    }
+    async listMyServicePosts(userId, serviceId) {
+        const profile = await this.prisma.partnerProfile.findUnique({
+            where: { userId },
+            select: { id: true },
+        });
+        if (!profile)
+            throw new common_1.NotFoundException('Chưa có hồ sơ đối tác');
+        const posts = await this.prisma.partnerServicePost.findMany({
+            where: {
+                partnerProfileId: profile.id,
+                ...(serviceId ? { serviceId } : {}),
+            },
+            orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+            include: { service: { select: servicePostServiceSelect } },
+        });
+        const offerings = await this.prisma.partnerService.findMany({
+            where: {
+                partnerProfileId: profile.id,
+                serviceId: { in: posts.map((p) => p.serviceId) },
+            },
+            select: { serviceId: true, price: true },
+        });
+        const priceByService = new Map(offerings.map((o) => [o.serviceId, o.price]));
+        return posts.map((p) => this.shapeServicePost(p, priceByService.get(p.serviceId) ?? null));
+    }
+    async createServicePost(userId, dto) {
+        const profile = await this.prisma.partnerProfile.findUnique({
+            where: { userId },
+            select: { id: true },
+        });
+        if (!profile)
+            throw new common_1.NotFoundException('Chưa có hồ sơ đối tác');
+        const offering = await this.prisma.partnerService.findFirst({
+            where: {
+                partnerProfileId: profile.id,
+                serviceId: dto.serviceId,
+                isActive: true,
+            },
+        });
+        if (!offering) {
+            throw new common_1.BadRequestException('Chỉ đăng bài cho nghề đang gắn trên hồ sơ. Cập nhật nghề ở Hồ sơ trước.');
+        }
+        const existingForService = await this.prisma.partnerServicePost.findFirst({
+            where: {
+                partnerProfileId: profile.id,
+                serviceId: dto.serviceId,
+            },
+            select: { id: true },
+        });
+        if (existingForService) {
+            throw new common_1.ConflictException('Nghề này đã có bài đăng. Chỉ được sửa bài hiện có, không tạo mới.');
+        }
+        const { imagesJson, coverUrl } = this.serializePostImages(dto.images);
+        const body = this.normalizePostBody(dto.body);
+        const price = Math.round(dto.price);
+        const post = await this.prisma.$transaction(async (tx) => {
+            await tx.partnerService.update({
+                where: { id: offering.id },
+                data: { price },
+            });
+            return tx.partnerServicePost.create({
+                data: {
+                    partnerProfileId: profile.id,
+                    serviceId: dto.serviceId,
+                    title: dto.title.trim(),
+                    body,
+                    coverUrl,
+                    imagesJson,
+                    status: client_1.PartnerServicePostStatus.PENDING,
+                    rejectReason: null,
+                    reviewedAt: null,
+                    reviewedById: null,
+                },
+                include: { service: { select: servicePostServiceSelect } },
+            });
+        });
+        return this.shapeServicePost(post, price);
+    }
+    async updateServicePost(userId, postId, dto) {
+        const profile = await this.prisma.partnerProfile.findUnique({
+            where: { userId },
+            select: { id: true },
+        });
+        if (!profile)
+            throw new common_1.NotFoundException('Chưa có hồ sơ đối tác');
+        const existing = await this.prisma.partnerServicePost.findFirst({
+            where: { id: postId, partnerProfileId: profile.id },
+        });
+        if (!existing)
+            throw new common_1.NotFoundException('Không tìm thấy bài đăng');
+        const imageFields = dto.images !== undefined
+            ? this.serializePostImages(dto.images)
+            : null;
+        const price = dto.price !== undefined ? Math.round(dto.price) : undefined;
+        const post = await this.prisma.$transaction(async (tx) => {
+            if (price !== undefined) {
+                await tx.partnerService.updateMany({
+                    where: {
+                        partnerProfileId: profile.id,
+                        serviceId: existing.serviceId,
+                    },
+                    data: { price },
+                });
+            }
+            return tx.partnerServicePost.update({
+                where: { id: postId },
+                data: {
+                    ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
+                    ...(dto.body !== undefined
+                        ? { body: this.normalizePostBody(dto.body) }
+                        : {}),
+                    ...(imageFields
+                        ? {
+                            coverUrl: imageFields.coverUrl,
+                            imagesJson: imageFields.imagesJson,
+                        }
+                        : {}),
+                    status: client_1.PartnerServicePostStatus.PENDING,
+                    rejectReason: null,
+                    reviewedAt: null,
+                    reviewedById: null,
+                },
+                include: { service: { select: servicePostServiceSelect } },
+            });
+        });
+        const offering = await this.prisma.partnerService.findFirst({
+            where: {
+                partnerProfileId: profile.id,
+                serviceId: existing.serviceId,
+            },
+            select: { price: true },
+        });
+        return this.shapeServicePost(post, offering?.price ?? price ?? null);
+    }
+    async deleteServicePost(userId, postId) {
+        const profile = await this.prisma.partnerProfile.findUnique({
+            where: { userId },
+            select: { id: true },
+        });
+        if (!profile)
+            throw new common_1.NotFoundException('Chưa có hồ sơ đối tác');
+        const existing = await this.prisma.partnerServicePost.findFirst({
+            where: { id: postId, partnerProfileId: profile.id },
+            select: { id: true },
+        });
+        if (!existing)
+            throw new common_1.NotFoundException('Không tìm thấy bài đăng');
+        await this.prisma.partnerServicePost.delete({ where: { id: postId } });
+        return { ok: true };
     }
     async getMine(userId) {
         const profile = await this.prisma.partnerProfile.findUnique({

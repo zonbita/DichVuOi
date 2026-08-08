@@ -108,4 +108,17 @@ export class UploadsController {
   uploadAvatar(@UploadedFile() file?: Express.Multer.File) {
     return uploadedPayload('avatars', file);
   }
+
+  @Post('service-post')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @UseInterceptors(imageInterceptor('service-posts'))
+  uploadServicePost(@UploadedFile() file?: Express.Multer.File) {
+    return uploadedPayload('service-posts', file);
+  }
 }

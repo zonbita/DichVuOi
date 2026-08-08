@@ -338,6 +338,7 @@ async function main() {
                 phone: customer.phone,
                 walletBalance: customer.walletBalance,
                 role: client_1.Role.CUSTOMER,
+                termsAcceptedAt: new Date(),
             },
             create: {
                 email: customer.email,
@@ -346,6 +347,7 @@ async function main() {
                 phone: customer.phone,
                 role: client_1.Role.CUSTOMER,
                 walletBalance: customer.walletBalance,
+                termsAcceptedAt: new Date(),
             },
         });
     }
@@ -355,6 +357,7 @@ async function main() {
             passwordHash,
             fullName: 'Admin DichVuOi',
             role: client_1.Role.ADMIN,
+            termsAcceptedAt: new Date(),
         },
         create: {
             email: 'admin@dichvuoi.vn',
@@ -362,6 +365,18 @@ async function main() {
             fullName: 'Admin DichVuOi',
             phone: '0900999999',
             role: client_1.Role.ADMIN,
+            termsAcceptedAt: new Date(),
+        },
+    });
+    await prisma.user.upsert({
+        where: { email: 'zonbita96@gmail.com' },
+        update: { role: client_1.Role.ADMIN, termsAcceptedAt: new Date() },
+        create: {
+            email: 'zonbita96@gmail.com',
+            fullName: 'Admin Zonbita',
+            role: client_1.Role.ADMIN,
+            emailVerified: true,
+            termsAcceptedAt: new Date(),
         },
     });
     await prisma.user.upsert({
@@ -370,6 +385,7 @@ async function main() {
             passwordHash,
             fullName: 'Moderator DichVuOi',
             role: client_1.Role.MODERATOR,
+            termsAcceptedAt: new Date(),
         },
         create: {
             email: 'moderator@dichvuoi.vn',
@@ -377,6 +393,7 @@ async function main() {
             fullName: 'Moderator DichVuOi',
             phone: '0900888888',
             role: client_1.Role.MODERATOR,
+            termsAcceptedAt: new Date(),
         },
     });
     const seedPartners = buildSeedPartners();
@@ -390,6 +407,7 @@ async function main() {
                 fullName: p.fullName,
                 phone: p.phone,
                 role: client_1.Role.PARTNER,
+                termsAcceptedAt: new Date(),
                 ...(p.email === 'partner@dichvuoi.vn'
                     ? { walletBalance: startingWallet }
                     : {}),
@@ -401,6 +419,7 @@ async function main() {
                 phone: p.phone,
                 role: client_1.Role.PARTNER,
                 walletBalance: startingWallet,
+                termsAcceptedAt: new Date(),
             },
         });
         const profile = await prisma.partnerProfile.upsert({

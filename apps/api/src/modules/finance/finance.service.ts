@@ -22,6 +22,7 @@ import {
   resolveVietQrIntentSecret,
 } from '../../common/security-env';
 import { takeEmailOtpSlot } from '../../common/email-otp-rate';
+import { assertUserNotBlocked } from '../../common/assert-not-blocked';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 
@@ -196,6 +197,7 @@ export class FinanceService {
       accountName: string;
     },
   ) {
+    await assertUserNotBlocked(this.prisma, userId);
     const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
     const accountName = dto.accountName.trim().toUpperCase();
     const bankBin = dto.bankBin.trim();

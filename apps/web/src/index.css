@@ -32,6 +32,12 @@
   --shadow-hover: 0 10px 32px rgba(7, 59, 92, 0.12);
   --transition-ui: 180ms ease;
 
+  /* Scrollbar glass-page (toàn site) */
+  --scrollbar-size: 10px;
+  --scrollbar-track: rgba(230, 235, 243, 0.72);
+  --scrollbar-thumb: rgba(73, 119, 232, 0.38);
+  --scrollbar-thumb-hover: rgba(0, 156, 149, 0.55);
+
   --container-page: 1280px;
   --container-chrome: 1280px;
   --container-section: 1280px;
@@ -218,6 +224,99 @@ select {
     #e8f0f8;
 }
 
+/**
+ * Scrollbar glass-page — toàn site (html + mọi vùng overflow).
+ * Track mist / thumb xanh kính; `.no-scrollbar` vẫn ẩn.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(125, 211, 252, 0.55),
+    var(--scrollbar-thumb)
+  );
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(125, 211, 252, 0.7),
+    var(--scrollbar-thumb-hover)
+  );
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/**
+ * Mega-menu — shell glass-page + panel frosted (khớp dashboard).
+ */
+.mega-menu-shell {
+  --glass-ink: #172033;
+  --glass-muted: #7c8799;
+  --glass-accent: #4977e8;
+  --glass-line: rgba(23, 32, 51, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse 90% 55% at 88% -8%, rgba(125, 211, 252, 0.28), transparent 58%),
+    radial-gradient(ellipse 75% 50% at 8% 0%, rgba(73, 119, 232, 0.14), transparent 52%),
+    radial-gradient(ellipse 55% 40% at 55% 105%, rgba(0, 156, 149, 0.08), transparent 55%),
+    rgba(232, 240, 248, 0.92);
+  box-shadow:
+    0 18px 48px rgba(15, 39, 71, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  color: var(--glass-ink);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+
+.mega-menu-aside {
+  border-right: 1px solid var(--glass-line, rgba(23, 32, 51, 0.08));
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.mega-menu-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.88) 100%);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  color: var(--glass-ink, #172033);
+}
+
+.mega-menu-item-active {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 6px 18px rgba(15, 39, 71, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
 
 .icon-tile {
   display: flex;
@@ -545,11 +644,14 @@ select {
 
 .no-scrollbar {
   -ms-overflow-style: none;
-  scrollbar-width: none;
+  scrollbar-width: none !important;
+  scrollbar-color: transparent transparent !important;
 }
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }
 
 @keyframes fade-up {
@@ -660,14 +762,25 @@ select {
   }
 }
 
-/* —— Admin shell —— */
+/* —— Admin shell (soft UI — palette đậm theo mock Tổng quan) —— */
 .admin-shell {
-  --admin-bg: #f7f9fa;
+  --admin-bg: #f0f4f8;
   --admin-card: #ffffff;
-  --admin-border: #e2e9ec;
-  --admin-shadow: var(--shadow-card);
+  --admin-border: #e2e8f0;
+  --admin-ink: #1a2b48;
+  --admin-muted: #64748b;
+  --admin-accent: #3b82f6;
+  --admin-green: #10b981;
+  --admin-purple: #8b5cf6;
+  --admin-yellow: #f59e0b;
+  --admin-red: #ef4444;
+  --admin-shadow: 0 16px 40px rgba(26, 43, 72, 0.1);
+  --admin-shadow-sm: 0 10px 28px rgba(26, 43, 72, 0.08);
   min-height: 100vh;
-  background: var(--admin-bg);
+  background:
+    radial-gradient(ellipse 70% 45% at 92% -6%, rgba(59, 130, 246, 0.14), transparent 55%),
+    var(--admin-bg);
+  color: var(--admin-ink);
 }
 
 /** Dashboard khách/đối tác: nền glass full shell (đè --admin-bg). */
@@ -795,10 +908,101 @@ select {
 }
 
 .admin-card {
-  border: 1px solid var(--admin-border);
-  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  border-radius: 20px;
   background: var(--admin-card);
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-metric-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--admin-card);
+  box-shadow: var(--admin-shadow-sm);
+  padding: 1.15rem 1.25rem;
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.admin-metric-card:hover {
+  transform: translateY(-2px);
   box-shadow: var(--admin-shadow);
+}
+
+.admin-metric-icon {
+  display: flex;
+  height: 3rem;
+  width: 3rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+
+.admin-metric-icon svg,
+.admin-quick-icon svg,
+.admin-chip svg,
+.admin-section-label svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.admin-quick-icon {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.admin-section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  color: var(--admin-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: filter 160ms ease;
+}
+
+.admin-chip:hover {
+  filter: brightness(0.97);
+}
+
+.admin-chip-amber {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.admin-chip-sky {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.admin-chip-violet {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.admin-chip-rose {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .admin-btn {
@@ -856,21 +1060,21 @@ select {
   gap: 0.75rem;
   margin-inline: 0.5rem;
   padding: 0.65rem 0.85rem;
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-muted);
+  color: var(--admin-muted);
   transition: background var(--transition-ui), color var(--transition-ui);
 }
 
 .admin-nav-link:hover {
-  background: var(--admin-bg);
-  color: var(--color-ink);
+  background: #eef1fb;
+  color: var(--admin-ink);
 }
 
 .admin-nav-link.is-active {
-  background: var(--color-brand-soft);
-  color: var(--color-navy);
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .admin-nav-link.is-active::before {
@@ -881,7 +1085,7 @@ select {
   left: -0.5rem;
   width: 3px;
   border-radius: 999px;
-  background: var(--color-brand);
+  background: var(--admin-accent);
 }
 
 .admin-badge {
@@ -1188,4 +1392,80 @@ select {
   .rx-notify-confetti__bit {
     animation: none !important;
   }
+}
+
+/* TipTap rich post editor (không link) */
+.simple-rich-editor .ProseMirror,
+.simple-rich-editor.ProseMirror {
+  min-height: 200px;
+  outline: none;
+}
+
+.simple-rich-editor.ProseMirror p.is-editor-empty:first-child::before,
+.simple-rich-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.simple-rich-editor h2,
+.simple-rich-content h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0.75rem 0 0.35rem;
+  color: var(--color-navy);
+}
+
+.simple-rich-editor h3,
+.simple-rich-content h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0.65rem 0 0.3rem;
+  color: var(--color-navy);
+}
+
+.simple-rich-editor p,
+.simple-rich-content p {
+  margin: 0.35rem 0;
+}
+
+.simple-rich-editor ul,
+.simple-rich-content ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.4rem 0;
+}
+
+.simple-rich-editor ol,
+.simple-rich-content ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  margin: 0.4rem 0;
+}
+
+.simple-rich-editor blockquote,
+.simple-rich-content blockquote {
+  border-left: 3px solid var(--color-brand);
+  margin: 0.5rem 0;
+  padding-left: 0.85rem;
+  color: var(--color-muted);
+}
+
+.simple-rich-editor hr,
+.simple-rich-content hr {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin: 0.75rem 0;
+}
+
+.simple-rich-editor strong,
+.simple-rich-content strong {
+  font-weight: 800;
+}
+
+.simple-rich-editor u,
+.simple-rich-content u {
+  text-decoration: underline;
 }

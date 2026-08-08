@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
+import {
+  DashboardPageHeader,
+  DashboardSurface,
+} from '../components/dashboard/dashboard-chrome';
 import { useAuth } from '../features/auth/auth-context';
 import { toast } from '../lib/notify';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
@@ -164,8 +168,21 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 pb-2 lg:h-full">
+      <DashboardPageHeader
+        icon="wallet"
+        title="Ví VNĐ"
+        description="Nạp tiền qua VietQR (mô phỏng) và theo dõi biến động số dư."
+        actions={
+          <Link
+            to={`${basePath}/rut-tien`}
+            className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
+          >
+            Rút tiền →
+          </Link>
+        }
+      />
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:overflow-hidden">
-      <section className="no-scrollbar border border-[var(--color-line)] bg-white p-4 shadow-sm lg:min-h-0 lg:overflow-y-auto">
+      <DashboardSurface className="no-scrollbar p-4 lg:min-h-0 lg:overflow-y-auto">
         <div className="grid gap-4 lg:grid-cols-2">
           <div>
             <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-3">
@@ -312,9 +329,9 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
             )}
           </div>
         </div>
-      </section>
+      </DashboardSurface>
 
-      <section className="flex min-h-0 flex-col border border-[var(--color-line)] bg-white p-4 shadow-sm lg:h-full lg:max-h-full">
+      <DashboardSurface className="flex min-h-0 flex-col p-4 lg:h-full lg:max-h-full">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
           <h2 className="font-extrabold">Lịch sử ví</h2>
           <div className="flex flex-wrap gap-1.5">
@@ -452,7 +469,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
             </nav>
           </div>
         ) : null}
-      </section>
+      </DashboardSurface>
       </div>
     </div>
   );

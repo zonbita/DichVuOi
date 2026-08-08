@@ -19,6 +19,10 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { AuthService } from '../auth/auth.service';
 import {
+  CreatePartnerServicePostDto,
+  UpdatePartnerServicePostDto,
+} from './dto/partner-service-post.dto';
+import {
   EnablePartnerDto,
   SyncPartnerOfferingsDto,
   UpdatePartnerProfileDto,
@@ -51,6 +55,31 @@ export class PartnersController {
     return this.partnersService.searchPublic(
       q,
       Number.isFinite(parsed) ? parsed : 24,
+    );
+  }
+
+  /** Chi tiết bài đăng dịch vụ đã duyệt (gig). */
+  @Get('public/:userId/posts/:postId')
+  getPublicPost(
+    @Param('userId') userId: string,
+    @Param('postId') postId: string,
+  ) {
+    return this.partnersService.getPublicServicePost(userId, postId);
+  }
+
+  /** Danh sách bài đăng dịch vụ đã duyệt (trang chủ / khám phá). */
+  @Get('posts')
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'pageSize', required: false, example: 12 })
+  listApprovedPosts(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
+    const p = page ? Number(page) : 1;
+    const ps = pageSize ? Number(pageSize) : 12;
+    return this.partnersService.listApprovedServicePosts(
+      Number.isFinite(p) ? p : 1,
+      Number.isFinite(ps) ? ps : 12,
     );
   }
 
@@ -105,7 +134,7 @@ export class PartnersController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Get('me')
   getMine(@CurrentUser() user: AuthUser) {
     return this.partnersService.getMine(user.id);
@@ -114,7 +143,7 @@ export class PartnersController {
   /** Chi tiết điểm cấp (giờ nghề + điểm khác). */
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Get('me/level')
   getLevel(@CurrentUser() user: AuthUser) {
     return this.partnersService.getLevelBreakdown(user.id);
@@ -122,7 +151,7 @@ export class PartnersController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Patch('me')
   updateMine(@CurrentUser() user: AuthUser, @Body() dto: UpdatePartnerProfileDto) {
     return this.partnersService.updateMine(user.id, dto);
@@ -131,7 +160,7 @@ export class PartnersController {
   /** Chọn nhiều nghề (Service) — đồng bộ PartnerService như tags. */
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Put('me/offerings')
   syncOfferings(
     @CurrentUser() user: AuthUser,
@@ -140,9 +169,53 @@ export class PartnersController {
     return this.partnersService.syncOfferings(user.id, dto);
   }
 
+  /** Bài đăng dịch vụ của tôi (mọi trạng thái duyệt). */
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
+  @Get('me/posts')
+  @ApiQuery({ name: 'serviceId', required: false })
+  listMyPosts(
+    @CurrentUser() user: AuthUser,
+    @Query('serviceId') serviceId?: string,
+  ) {
+    return this.partnersService.listMyServicePosts(user.id, serviceId);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
+  @Post('me/posts')
+  createMyPost(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CreatePartnerServicePostDto,
+  ) {
+    return this.partnersService.createServicePost(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
+  @Patch('me/posts/:id')
+  updateMyPost(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: UpdatePartnerServicePostDto,
+  ) {
+    return this.partnersService.updateServicePost(user.id, id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
+  @Delete('me/posts/:id')
+  deleteMyPost(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.partnersService.deleteServicePost(user.id, id);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Post('me/verify-phone/request')
   requestPhoneOtp(
     @CurrentUser() user: AuthUser,
@@ -153,7 +226,7 @@ export class PartnersController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Post('me/verify-phone/confirm')
   confirmPhoneOtp(
     @CurrentUser() user: AuthUser,
@@ -164,7 +237,7 @@ export class PartnersController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Post('me/verify-bank/link')
   linkBank(@CurrentUser() user: AuthUser, @Body() dto: LinkBankAccountDto) {
     return this.partnersService.linkBankAccount(user.id, dto);
@@ -172,7 +245,7 @@ export class PartnersController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.PARTNER, Role.ADMIN)
+  @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Post('me/verify-bank/mock-confirm')
   confirmBank(
     @CurrentUser() user: AuthUser,

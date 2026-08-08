@@ -6,8 +6,9 @@ import { useAuth } from '../features/auth/auth-context';
 import { toast } from '../lib/notify';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import type { VietQrBank } from '../types/finance';
-import { Icon } from '../components/ui/icon';
 import { WithdrawEmailVerifyStep } from '../components/auth/withdraw-email-verify-step';
+import { DashboardPageHeader } from '../components/dashboard/dashboard-chrome';
+import { Icon } from '../components/ui/icon';
 
 type Props = {
   basePath: '/don-cua-toi' | '/doi-tac';
@@ -192,25 +193,24 @@ export function WithdrawPage({ basePath }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain pb-4">
-      <header className="flex shrink-0 flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold text-[var(--color-navy)] sm:text-3xl">
-            Rút tiền
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            {canEnterBank
-              ? 'Bước 2: chọn ngân hàng và STK nhận — trừ Ví ngay (mock).'
-              : 'Bước 1: xác minh email tài khoản trước khi nhập ngân hàng.'}
-          </p>
-        </div>
-        <Link
-          to={`${basePath}/vi`}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-[var(--color-brand-deep)] transition hover:bg-[var(--color-brand-soft)]"
-        >
-          <Icon name="chevronLeft" className="h-4 w-4" />
-          Về Ví VNĐ
-        </Link>
-      </header>
+      <DashboardPageHeader
+        icon="bank"
+        title="Rút tiền"
+        description={
+          canEnterBank
+            ? 'Bước 2: chọn ngân hàng và STK nhận — trừ Ví ngay (mock).'
+            : 'Bước 1: xác minh email tài khoản trước khi nhập ngân hàng.'
+        }
+        actions={
+          <Link
+            to={`${basePath}/vi`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-line)] bg-white px-4 py-2 text-sm font-semibold text-[var(--color-navy)] shadow-[0_4px_16px_rgba(24,49,63,0.05)] transition hover:border-[var(--color-brand)]"
+          >
+            <Icon name="chevronLeft" className="h-4 w-4" />
+            Về Ví VNĐ
+          </Link>
+        }
+      />
 
       <div className="flex shrink-0 flex-wrap items-center gap-4 rounded-2xl border border-[var(--color-brand)]/20 bg-gradient-to-r from-[var(--color-brand-soft)] via-[#f0faf9] to-white px-4 py-4 sm:px-5">
         <WalletVerifiedIcon className="h-12 w-12 shrink-0" />

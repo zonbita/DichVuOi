@@ -95,7 +95,7 @@ export const termsPage: DocContent = {
 export const privacyPage: DocContent = {
   title: 'Chính sách bảo mật',
   subtitle: 'Cách Dịch Vụ Ơi thu thập, sử dụng và bảo vệ dữ liệu cá nhân của bạn.',
-  updatedAt: '07/2026',
+  updatedAt: '08/2026',
   sections: [
     {
       heading: '1. Dữ liệu chúng tôi thu thập',
@@ -131,6 +131,125 @@ export const privacyPage: DocContent = {
       heading: '5. Liên hệ',
       paragraphs: [
         'Câu hỏi về dữ liệu cá nhân: support@dichvuoi.vn hoặc hotline 1900 2888.',
+      ],
+    },
+  ],
+};
+
+/** Nội quy & quy tắc — bắt buộc đồng ý trước khi tạo / dùng tài khoản lần đầu. */
+export const rulesPage: DocContent = {
+  title: 'Nội quy và các quy tắc',
+  subtitle:
+    'Cam kết bảo vệ dữ liệu cá nhân và quy tắc sử dụng sàn Dịch Vụ Ơi. Bạn cần đọc và đồng ý trước khi đăng ký hoặc đăng nhập lần đầu.',
+  updatedAt: '08/2026',
+  sections: [
+    {
+      heading: 'Giới thiệu chung',
+      paragraphs: [
+        'Công ty TNHH Dịch Vụ Ơi (“Chúng tôi” hoặc “Dịch Vụ Ơi”) — chủ quản nền tảng DichVuOi — tôn trọng và cam kết bảo vệ dữ liệu cá nhân của người dùng theo quy định pháp luật Việt Nam về bảo vệ dữ liệu cá nhân (gồm Nghị định 13/2023/NĐ-CP và văn bản liên quan).',
+        'Tài liệu này giải thích cách chúng tôi thu thập, lưu trữ, sử dụng, chia sẻ và bảo vệ dữ liệu khi bạn dùng website hoặc ứng dụng Dịch Vụ Ơi, đồng thời nêu nội quy hành vi trên sàn.',
+      ],
+    },
+    {
+      heading: 'Phạm vi và đối tượng áp dụng',
+      bullets: [
+        'Tất cả người dùng truy cập nền tảng (khách thuê, người làm, khách chưa đăng nhập).',
+        'Các dịch vụ, tính năng, nội dung mà Dịch Vụ Ơi cung cấp trên web/app.',
+      ],
+    },
+    {
+      heading: 'Căn cứ và mục đích xử lý dữ liệu',
+      paragraphs: [
+        'Chúng tôi xử lý dữ liệu dựa trên sự đồng ý rõ ràng của bạn và các căn cứ hợp pháp để duy trì, cung cấp, cải thiện dịch vụ và hỗ trợ người dùng.',
+      ],
+      bullets: [
+        'Tạo và quản lý tài khoản người dùng.',
+        'Liên hệ, xác minh thông tin, hỗ trợ khách hàng / khiếu nại.',
+        'Gửi thông báo hệ thống, cập nhật đơn thuê, hướng dẫn sử dụng.',
+        'Cải thiện trải nghiệm và chất lượng dịch vụ; chống gian lận.',
+        'Đáp ứng yêu cầu pháp lý từ cơ quan nhà nước có thẩm quyền.',
+      ],
+    },
+    {
+      heading: 'Loại dữ liệu thu thập',
+      bullets: [
+        'Định danh: họ tên, email, số điện thoại, ID tài khoản, ảnh đại diện.',
+        'Hồ sơ nghề nghiệp (người làm): kỹ năng, khu vực, gallery, lịch sử nhận việc.',
+        'Giao dịch: đơn thuê, lịch, địa chỉ/link họp, lịch sử ví / thanh toán trên sàn.',
+        'Kỹ thuật: địa chỉ IP, thiết bị, trình duyệt, thời gian đăng nhập.',
+        'Thanh toán: xử lý qua bên thứ ba khi tích hợp cổng; Dịch Vụ Ơi không lưu số thẻ đầy đủ.',
+      ],
+    },
+    {
+      heading: 'Nguồn dữ liệu',
+      bullets: [
+        'Bạn cung cấp khi đăng ký, cập nhật hồ sơ, đặt đơn hoặc liên hệ hỗ trợ.',
+        'Tự động qua cookie / nhật ký hệ thống khi bạn dùng website.',
+        'Đối tác tích hợp (cổng thanh toán, hạ tầng lưu trữ) trong phạm vi cần thiết.',
+      ],
+    },
+    {
+      heading: 'Thời gian lưu trữ',
+      paragraphs: [
+        'Dữ liệu được lưu đến khi bạn xóa tài khoản / yêu cầu chấm dứt sử dụng, hoặc khi không còn cần thiết cho mục đích đã nêu và nghĩa vụ pháp lý. Hết hạn lưu trữ, dữ liệu được xóa hoặc ẩn danh hóa.',
+      ],
+    },
+    {
+      heading: 'Chia sẻ dữ liệu',
+      paragraphs: [
+        'Chúng tôi không bán, trao đổi hay cho thuê dữ liệu cá nhân của bạn.',
+      ],
+      bullets: [
+        'Đối tác kỹ thuật / hạ tầng vận hành hệ thống.',
+        'Đơn vị thanh toán hoặc ngân hàng liên kết khi có giao dịch.',
+        'Cơ quan nhà nước khi có yêu cầu hợp pháp.',
+        'Khách thuê ↔ người làm trong phạm vi cần thiết để thực hiện đơn (sau khi đặt cọc theo quy trình).',
+        'Nhân sự hỗ trợ vận hành trong giới hạn nhiệm vụ.',
+      ],
+    },
+    {
+      heading: 'Quyền của chủ thể dữ liệu',
+      bullets: [
+        'Được biết về việc xử lý dữ liệu cá nhân.',
+        'Đồng ý hoặc từ chối một số xử lý (trong phạm vi luật cho phép).',
+        'Truy cập, chỉnh sửa, cập nhật dữ liệu của mình.',
+        'Yêu cầu xóa hoặc ngừng xử lý khi đủ điều kiện pháp lý.',
+        'Rút lại sự đồng ý (có thể ảnh hưởng khả năng dùng một số tính năng).',
+        'Khiếu nại, tố cáo, khởi kiện nếu dữ liệu bị lạm dụng.',
+      ],
+      paragraphs: [
+        'Liên hệ thực hiện quyền: support@dichvuoi.vn hoặc hotline 1900 2888.',
+      ],
+    },
+    {
+      heading: 'Nội quy sử dụng sàn',
+      bullets: [
+        'Thông tin đăng ký phải chính xác; bảo mật tài khoản là trách nhiệm của bạn.',
+        'Dịch Vụ Ơi là sàn trung gian: người làm là đối tác độc lập, không phải nhân viên của công ty vận hành sàn.',
+        'Cấm gian lận đánh giá, spam, lừa đảo, đe dọa, nội dung bất hợp pháp.',
+        'Cấm đưa giao dịch ra ngoài sàn nhằm né phí / né bảo vệ cọc (trừ khi hai bên đã hoàn tất đúng quy trình).',
+        'Đặt cọc và giải ngân theo trạng thái đơn; khiếu nại theo quy trình công bố.',
+        'Vi phạm có thể dẫn tới hạn chế hoặc chặn tài khoản.',
+      ],
+    },
+    {
+      heading: 'Biện pháp bảo mật',
+      bullets: [
+        'Mã hóa kênh truyền tải khi phù hợp; phân quyền truy cập nội bộ.',
+        'Giám sát, sao lưu và kiểm tra bảo mật định kỳ theo khả năng vận hành.',
+      ],
+    },
+    {
+      heading: 'Thay đổi chính sách',
+      paragraphs: [
+        'Chúng tôi có thể cập nhật Nội quy này để phù hợp pháp luật hoặc hoạt động. Bản mới có hiệu lực khi đăng trên trang này; có thể yêu cầu bạn xác nhận lại đồng ý nếu cần.',
+      ],
+    },
+    {
+      heading: 'Thông tin liên hệ',
+      paragraphs: [
+        'Công ty TNHH Dịch Vụ Ơi · Website: https://dichvuoi.vn · Email: support@dichvuoi.vn · Điện thoại: 1900 2888.',
+        'Chi tiết pháp nhân xem trang Thông tin công ty. Điều khoản sử dụng và Chính sách bảo mật rút gọn cũng được công bố riêng trên website.',
       ],
     },
   ],

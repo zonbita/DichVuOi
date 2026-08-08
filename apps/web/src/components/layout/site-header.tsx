@@ -6,6 +6,7 @@ import { useAuth } from '../../features/auth/auth-context';
 import { Icon } from '../ui/icon';
 import { HeaderGroupsMenu } from './header-groups-menu';
 import { LocationPicker } from './location-picker';
+import { HeaderQuickNav } from './header-quick-nav';
 import { ModeSwitcher } from './mode-switcher';
 
 function SearchBox({ className = '', onDark = false }: { className?: string; onDark?: boolean }) {
@@ -52,18 +53,18 @@ export function SiteHeader() {
         <div className="page-shell w-full max-w-none overflow-x-clip">
           <div className="flex w-full min-w-0 flex-col">
             <div className="flex w-full min-w-0 items-center gap-2 py-3 sm:gap-4 sm:py-3.5 lg:gap-5">
-              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden sm:gap-2">
-                <Link to="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-visible sm:gap-2">
+                <Link to="/" className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5">
                   <img
                     src={logo}
                     alt="Dịch Vụ Ơi"
-                    className="h-9 w-9 rounded-xl ring-1 ring-white/15 sm:h-10 sm:w-10"
+                    className="h-9 w-9 shrink-0 rounded-xl ring-1 ring-white/15 sm:h-10 sm:w-10"
                     width={40}
                     height={40}
                     decoding="async"
                     fetchPriority="high"
                   />
-                  <span className="hidden whitespace-nowrap text-[1.35rem] font-bold leading-none tracking-tight min-[380px]:inline sm:text-[1.5rem]">
+                  <span className="hidden truncate whitespace-nowrap text-[1.35rem] font-bold leading-none tracking-tight min-[380px]:inline sm:text-[1.5rem]">
                     Dịch Vụ <span className="text-[var(--color-brand)]">Ơi</span>
                   </span>
                 </Link>
@@ -77,9 +78,11 @@ export function SiteHeader() {
                   onDark
                   className="shrink-0 rounded-full border border-white/15 bg-white/10 px-3.5 py-2.5"
                 />
+                <HeaderQuickNav />
               </div>
 
               <div className="ml-auto flex min-w-0 shrink items-center gap-1.5 sm:gap-2.5">
+                <HeaderQuickNav className="md:hidden" />
                 {user ? (
                   <>
                     {user.role === 'ADMIN' || user.role === 'MODERATOR' ? (
