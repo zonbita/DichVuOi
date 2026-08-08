@@ -106,16 +106,8 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   );
 }
 
-/** Header ngang gọn — avatar | meta | CTA */
-function ProfileHeader({
-  data,
-  offerings,
-  onViewGigs,
-}: {
-  data: PublicPartnerProfile;
-  offerings: PartnerOffering[];
-  onViewGigs: () => void;
-}) {
+/** Header ngang gọn — avatar | meta */
+function ProfileHeader({ data }: { data: PublicPartnerProfile }) {
   const locationLabel = [
     data.city,
     ...data.districts.filter(
@@ -126,7 +118,6 @@ function ProfileHeader({
   ]
     .filter(Boolean)
     .join(' · ');
-  const top = offerings[0];
 
   return (
     <section className="glass-card overflow-hidden">
@@ -207,47 +198,6 @@ function ProfileHeader({
           ) : null}
         </div>
 
-        {top ? (
-          <div className="flex shrink-0 flex-col justify-center gap-2 border-t border-white/50 px-4 py-3 sm:w-[200px] sm:border-t-0 sm:border-l sm:py-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                Giá chào
-              </p>
-              {(() => {
-                const range = resolveOfferingPriceRange({
-                  price: top.price,
-                  priceMin: top.priceMin,
-                  priceMax: top.priceMax,
-                });
-                if (!range) {
-                  return (
-                    <p className="mt-0.5 text-sm font-semibold text-[var(--color-muted)]">
-                      Liên hệ
-                    </p>
-                  );
-                }
-                return (
-                  <p className="mt-0.5 whitespace-nowrap text-lg font-extrabold leading-tight text-[var(--color-sale)]">
-                    {range.max > range.min ? (
-                      <>
-                        {formatPriceNumber(range.min)}
-                        <span className="mx-0.5 font-semibold text-[var(--color-muted)]">–</span>
-                        {formatPriceNumber(range.max)}
-                        <span className="ml-0.5">VNĐ</span>
-                      </>
-                    ) : (
-                      formatPrice(range.min)
-                    )}
-                  </p>
-                );
-              })()}
-              <p className="text-xs font-semibold text-[var(--color-muted)]">/{top.service.unit}</p>
-            </div>
-            <button type="button" onClick={onViewGigs} className="btn-primary w-full py-2 text-sm">
-              Xem dịch vụ
-            </button>
-          </div>
-        ) : null}
       </div>
     </section>
   );
@@ -583,13 +533,9 @@ export function PartnerProfilePage() {
     );
   }
 
-  const scrollToGigs = () => {
-    document.getElementById('partner-gigs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   return (
     <div className={`space-y-5 sm:space-y-6 ${isFetching ? 'opacity-95' : ''}`}>
-      <ProfileHeader data={data} offerings={offerings} onViewGigs={scrollToGigs} />
+      <ProfileHeader data={data} />
       <GigsGrid
         offerings={offerings}
         posts={data.servicePosts ?? []}

@@ -51,7 +51,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         )}
       </main>
       {!hideFooter ? <SiteFooter /> : null}
-      <ChatbotPopup />
+      {isHome ? <ChatbotPopup /> : null}
     </div>
   );
 }

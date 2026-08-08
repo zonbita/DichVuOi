@@ -222,27 +222,27 @@ export function PartnerServicePostDetailPage() {
           </section>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-          <section className="glass-card p-4 sm:p-5">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <section className="glass-card min-w-0 overflow-hidden p-4 sm:p-5">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
               Giá chào
             </p>
             {priceMin != null ? (
-              <p className="mt-1 text-xl font-extrabold leading-tight text-[var(--color-sale)] sm:whitespace-nowrap sm:text-2xl">
+              <p className="mt-1 min-w-0 break-words text-base font-extrabold leading-snug tabular-nums text-[var(--color-sale)] sm:text-lg lg:text-xl">
                 {priceMax != null && priceMax > priceMin ? (
                   <>
                     {formatPriceNumber(priceMin)}
-                    <span className="mx-1 font-semibold text-[var(--color-muted)]">–</span>
+                    <span className="mx-0.5 font-semibold text-[var(--color-muted)]">–</span>
                     {formatPriceNumber(priceMax)}
-                    <span className="ml-1">VNĐ</span>
+                    <span className="ml-1 text-sm font-bold sm:text-base">VNĐ</span>
                   </>
                 ) : (
                   formatPrice(priceMin)
                 )}
-                <span className="text-base font-semibold text-[var(--color-muted)]">/{unit}</span>
+                <span className="text-sm font-semibold text-[var(--color-muted)]">/{unit}</span>
               </p>
             ) : (
-              <p className="mt-1 text-lg font-bold text-[var(--color-muted)]">Liên hệ đặt lịch</p>
+              <p className="mt-1 text-base font-bold text-[var(--color-muted)]">Liên hệ đặt lịch</p>
             )}
             {offering?.headline ? (
               <p className="mt-2 text-sm text-[var(--color-muted)]">{offering.headline}</p>
@@ -316,22 +316,24 @@ export function PartnerServicePostDetailPage() {
       </div>
 
       {/* Sticky CTA — mobile / tablet */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-line)] bg-white/95 px-3 py-3 shadow-[0_-8px_24px_rgba(5,45,71,0.12)] backdrop-blur-md lg:hidden">
-        <div className="mx-auto flex max-w-[1396px] items-center gap-3">
-          <div className="min-w-0 flex-1">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-line)] bg-white/95 px-3 py-2.5 shadow-[0_-8px_24px_rgba(5,45,71,0.12)] backdrop-blur-md sm:py-3 lg:hidden">
+        <div className="mx-auto flex max-w-[1396px] items-center gap-2.5 sm:gap-3">
+          <div className="min-w-0 flex-1 overflow-hidden">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
               Giá chào
             </p>
-            <p className="truncate text-base font-extrabold text-[var(--color-sale)]">
+            <p className="truncate text-sm font-extrabold tabular-nums leading-snug text-[var(--color-sale)] sm:text-base">
               {priceLabel}
               {priceMin != null ? (
-                <span className="text-sm font-semibold text-[var(--color-muted)]">/{unit}</span>
+                <span className="text-xs font-semibold text-[var(--color-muted)] sm:text-sm">
+                  /{unit}
+                </span>
               ) : null}
             </p>
           </div>
           <Link
             to={hireTo}
-            className="btn-primary shrink-0 px-4 py-2.5 text-sm whitespace-nowrap"
+            className="btn-primary shrink-0 px-3 py-2 text-xs whitespace-nowrap sm:px-4 sm:py-2.5 sm:text-sm"
           >
             Thuê dịch vụ
           </Link>

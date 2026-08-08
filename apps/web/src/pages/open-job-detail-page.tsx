@@ -51,7 +51,7 @@ function MetaTile({
   hint?: string;
 }) {
   return (
-    <div className="group flex items-start gap-3 rounded-2xl border border-white/80 bg-white/60 px-3.5 py-3 shadow-[0_1px_0_rgba(255,255,255,0.8)] transition hover:border-[var(--color-brand)]/25 hover:bg-white/80">
+    <div className="group flex min-w-[200px] flex-1 items-start gap-3 rounded-2xl border border-white/80 bg-white/60 px-3.5 py-3 shadow-[0_1px_0_rgba(255,255,255,0.8)] transition hover:border-[var(--color-brand)]/25 hover:bg-white/80 lg:min-w-0">
       <span
         className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconClass}`}
       >
@@ -167,20 +167,6 @@ export function OpenJobDetailPage() {
 
   return (
     <div className="animate-fade-up space-y-4">
-      <nav className="flex flex-wrap items-center gap-1.5 text-sm text-[var(--color-muted)]">
-        <Link
-          to="/doi-tac/don-thue"
-          className="inline-flex items-center gap-1 font-medium transition hover:text-[var(--color-brand-deep)]"
-        >
-          <Icon name="chevronRight" className="h-3.5 w-3.5 rotate-180" />
-          Đơn thuê realtime
-        </Link>
-        <span className="opacity-40">/</span>
-        <span className="truncate font-semibold text-[var(--color-ink)]">
-          {booking.service.name}
-        </span>
-      </nav>
-
       <section className="glass-card overflow-hidden">
         <div className="grid lg:h-[500px] lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)]">
           {/* Hero */}
@@ -324,7 +310,7 @@ export function OpenJobDetailPage() {
             <h2 className="text-base font-extrabold text-[var(--color-navy)]">
               Về đơn thuê này
             </h2>
-            <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            <div className="no-scrollbar mt-3 flex gap-2.5 overflow-x-auto overscroll-x-contain pb-0.5">
               <MetaTile
                 icon="clock"
                 iconClass="bg-sky-50 text-sky-700"
