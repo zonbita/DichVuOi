@@ -67,7 +67,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
     onSuccess: (data) => {
       setIntent(data);
       paidHandledRef.current = null;
-      toast.info('Đã tạo mã VietQR', {
+      toast.info('Đã tạo mã QR', {
         description: `Quét QR để nạp ${formatPrice(data.amount)}`,
       });
     },
@@ -171,7 +171,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
       <DashboardPageHeader
         icon="wallet"
         title="Ví VNĐ"
-        description="Nạp tiền qua VietQR (mô phỏng) và theo dõi biến động số dư."
+        description="Nạp tiền qua mã QR (mô phỏng) và theo dõi biến động số dư."
         actions={
           <Link
             to={`${basePath}/rut-tien`}
@@ -198,7 +198,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
             </div>
             <h2 className="mt-3 font-extrabold">Nạp VNĐ</h2>
             <p className="mt-0.5 text-sm text-[var(--color-muted)]">
-              Chọn mức hoặc nhập số tiền rồi tạo mã VietQR (tối thiểu 20.000 VNĐ).{' '}
+              Chọn mức hoặc nhập số tiền rồi tạo mã QR (tối thiểu 20.000 VNĐ).{' '}
               <Link to={`${basePath}/rut-tien`} className="font-semibold text-[var(--color-brand-deep)] underline">
                 Rút tiền →
               </Link>
@@ -252,7 +252,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                 <div className="flex flex-col items-center gap-2">
                   <img
                     src={intent.qrImageUrl}
-                    alt="VietQR nạp ví"
+                    alt="Mã QR nạp ví"
                     className="h-[220px] w-[165px] rounded-lg border border-[var(--color-line)] bg-white p-1 object-contain"
                   />
                   <div className="w-full space-y-0.5 text-sm">

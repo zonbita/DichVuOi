@@ -374,6 +374,13 @@ const shapes = {
       <path d="M9 8h6M9 11.5h6M9 15h4" />
     </>
   ),
+  logOut: (
+    <>
+      <path d="M10 4.5H7.5A2.5 2.5 0 0 0 5 7v10a2.5 2.5 0 0 0 2.5 2.5H10" />
+      <path d="M13.5 12H20" />
+      <path d="M17 8.5 20.5 12 17 15.5" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof shapes;

@@ -296,7 +296,7 @@ export function WithdrawPage({ basePath }: Props) {
 
             <div className="space-y-2.5">
               <label className="block text-sm font-semibold" htmlFor="bank-search">
-                Ngân hàng (VietQR – {banks.length || '…'} ngân hàng)
+                Ngân hàng ({banks.length || '…'} ngân hàng)
               </label>
               <div className="relative">
                 <input
@@ -304,7 +304,7 @@ export function WithdrawPage({ basePath }: Props) {
                   value={bankQuery}
                   onChange={(e) => setBankQuery(e.target.value)}
                   className="field-input w-full pr-10 text-sm"
-                  placeholder="Tìm ngân hàng (VietQR)..."
+                  placeholder="Tìm ngân hàng..."
                 />
                 <Icon
                   name="search"

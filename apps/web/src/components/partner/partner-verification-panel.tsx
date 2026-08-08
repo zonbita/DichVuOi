@@ -58,7 +58,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
         amount: data.amount,
         mockConfirmEnabled: data.mockConfirmEnabled,
       });
-      toast.success('Đã tạo VietQR xác minh NH');
+      toast.success('Đã tạo mã QR xác minh ngân hàng');
       invalidate();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -84,7 +84,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
       <div>
         <h3 className="text-lg font-extrabold text-[var(--color-navy)]">Xác minh danh tính</h3>
         <p className="mt-1 text-sm text-[var(--color-muted)]">
-          SĐT dùng key một lần (tên + mã). Ngân hàng: VietQR mock. Hồ sơ «Đã xác thực» do admin duyệt — không yêu cầu CCCD.
+          SĐT dùng key một lần (tên + mã). Ngân hàng: quét QR mô phỏng. Hồ sơ «Đã xác thực» do admin duyệt — không yêu cầu CCCD.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <VerificationBadge verified={Boolean(profile.isVerified)} />
@@ -100,7 +100,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
 
         <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)]/60 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="font-bold text-[var(--color-ink)]">Liên kết ngân hàng (VietQR)</p>
+            <p className="font-bold text-[var(--color-ink)]">Liên kết ngân hàng</p>
             <BankVerificationBadge verified={Boolean(profile.bankVerified)} />
           </div>
           {profile.bankVerified ? (
@@ -120,7 +120,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
                 value={bankBin}
                 onChange={(e) => setBankBin(e.target.value)}
                 className="field-input w-full text-sm"
-                placeholder="BIN VietQR (VD 970436 = VCB)"
+                placeholder="Mã BIN ngân hàng (VD 970436 = VCB)"
               />
               <input
                 value={accountNo}
@@ -143,7 +143,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
                 }
                 className="btn-primary px-4 py-2 text-sm !text-white disabled:opacity-50"
               >
-                {bankLink.isPending ? 'Đang tạo QR…' : 'Tạo VietQR xác minh'}
+                {bankLink.isPending ? 'Đang tạo QR…' : 'Tạo mã QR xác minh'}
               </button>
             </form>
           )}
@@ -152,7 +152,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
             <div className="mt-4 space-y-2">
               <img
                 src={qr.qrImageUrl}
-                alt="VietQR xác minh NH"
+                alt="Mã QR xác minh ngân hàng"
                 className="mx-auto h-44 w-44 rounded-lg border border-[var(--color-line)] bg-white object-contain"
               />
               {qr.mockConfirmEnabled !== false ? (
