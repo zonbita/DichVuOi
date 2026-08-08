@@ -150,15 +150,15 @@ const SPECIALTIES = [
     },
     {
         groupSlug: 'ngon-ngu',
-        headline: 'Biên dịch · phiên dịch online',
-        skills: ['dịch thuật', 'phụ đề', 'hiệu đính'],
-        bio: 'Dịch tài liệu, làm phụ đề và phiên dịch họp trực tuyến.',
+        headline: 'Biên dịch · CV · phiên dịch online',
+        skills: ['dịch thuật', 'CV LinkedIn', 'phụ đề'],
+        bio: 'Dịch tài liệu, tối ưu CV–LinkedIn, làm phụ đề và phiên dịch họp trực tuyến.',
     },
     {
         groupSlug: 'tro-ly-tu-xa',
-        headline: 'Trợ lý từ xa · nhập liệu · báo cáo',
-        skills: ['trợ lý ảo', 'nhập liệu', 'báo cáo'],
-        bio: 'Hỗ trợ hành chính, dữ liệu và lịch hẹn hoàn toàn từ xa.',
+        headline: 'Trợ lý từ xa · Notion · nhập liệu',
+        skills: ['trợ lý ảo', 'Notion', 'nhập liệu'],
+        bio: 'Hỗ trợ hành chính, workspace Notion/Airtable, dữ liệu và lịch hẹn từ xa.',
     },
     {
         groupSlug: 'tu-van-phat-trien',
