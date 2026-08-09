@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { BookingApplicantsList } from '../components/booking/booking-applicants-list';
 import { BookingChecklist } from '../components/booking/booking-checklist';
 import { BookingComplaintForm } from '../components/booking/booking-complaint-form';
+import { BookingStatusTimeline } from '../components/booking/booking-status-timeline';
 import { CustomerBookingCard } from '../components/customer/customer-booking-card';
 import { useAuth } from '../features/auth/auth-context';
 import { useCustomerRealtime } from '../hooks/use-customer-realtime';
@@ -125,6 +126,8 @@ export function CustomerBookingDetailPage() {
           Hướng dẫn khiếu nại
         </Link>
       </div>
+
+      <BookingStatusTimeline booking={booking} />
 
       <div className="overflow-hidden">
         <CustomerBookingCard

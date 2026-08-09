@@ -14,6 +14,7 @@ import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { SupportModule } from './modules/support/support.module';
+import { HomeLobbyModule } from './modules/home-lobby/home-lobby.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SupportModule } from './modules/support/support.module';
     ChatbotModule,
     UploadsModule,
     SupportModule,
+    HomeLobbyModule,
   ],
   providers: [
     {

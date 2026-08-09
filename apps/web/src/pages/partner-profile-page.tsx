@@ -152,8 +152,21 @@ function ProfileHeader({ data }: { data: PublicPartnerProfile }) {
             <span>
               {data.ratingAvg.toFixed(1)} ({data.ratingCount}) · {data.completedJobs} việc
             </span>
+            {data.onTimeRate != null ? (
+              <>
+                <span className="text-[var(--color-line)]">·</span>
+                <span className="font-semibold text-[var(--color-navy)]">
+                  Đúng hạn {data.onTimeRate}%
+                </span>
+              </>
+            ) : null}
             <span className="text-[var(--color-line)]">·</span>
-            {data.acceptingJobs ? (
+            {data.isOnline ? (
+              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Online
+              </span>
+            ) : data.acceptingJobs ? (
               <span className="font-semibold text-[var(--color-brand-deep)]">Đang nhận việc</span>
             ) : (
               <span className="font-semibold text-amber-700">Tạm nghỉ</span>
@@ -532,6 +545,23 @@ export function PartnerProfilePage() {
   return (
     <div className={`space-y-5 sm:space-y-6 ${isFetching ? 'opacity-95' : ''}`}>
       <ProfileHeader data={data} />
+      {(data.gallery?.length ?? 0) > 0 ? (
+        <section className="glass-card overflow-hidden p-4 sm:p-5">
+          <h2 className="text-base font-extrabold text-[var(--color-navy)]">
+            Portfolio
+          </h2>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">
+            Ảnh minh họa công việc đã làm (không phải nhật ký cá nhân).
+          </p>
+          <div className="mt-3">
+            <SquareImageSlider
+              images={data.gallery}
+              resolveSrc={mediaSrc}
+              variant="gallery"
+            />
+          </div>
+        </section>
+      ) : null}
       <GigsGrid
         offerings={offerings}
         posts={data.servicePosts ?? []}

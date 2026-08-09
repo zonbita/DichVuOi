@@ -23,6 +23,7 @@ const chatbot_module_1 = require("./modules/chatbot/chatbot.module");
 const finance_module_1 = require("./modules/finance/finance.module");
 const uploads_module_1 = require("./modules/uploads/uploads.module");
 const support_module_1 = require("./modules/support/support.module");
+const home_lobby_module_1 = require("./modules/home-lobby/home-lobby.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -49,6 +50,7 @@ exports.AppModule = AppModule = __decorate([
             chatbot_module_1.ChatbotModule,
             uploads_module_1.UploadsModule,
             support_module_1.SupportModule,
+            home_lobby_module_1.HomeLobbyModule,
         ],
         providers: [
             {

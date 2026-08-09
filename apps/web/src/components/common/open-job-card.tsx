@@ -15,6 +15,12 @@ function formatRemainingTime(deadlineIso: string) {
   return `Còn ${totalDays} ngày`;
 }
 
+/** Tiêu đề đơn mở: jobTitle khách đặt, fallback tên dịch vụ. */
+export function openJobTitle(booking: Booking) {
+  const title = booking.jobTitle?.trim();
+  return title || booking.service.name;
+}
+
 /** Trạng thái “room” giống lobby game — badge viền màu. */
 export function openJobRoomTone(booking: Booking) {
   const apps = booking.applicationCount ?? 0;
@@ -51,18 +57,20 @@ type OpenJobCardProps = {
   detailTo?: string;
   footerLeft?: ReactNode;
   footerRight: ReactNode;
+  /**
+   * horizontal — hàng ngang (dashboard).
+   * portrait — 300×400, wrap ngang trên trang chủ.
+   */
+  layout?: 'horizontal' | 'portrait';
 };
 
 const metaPill =
   '!gap-1.5 !rounded-xl !border-transparent !px-3 !py-1.5 text-[13px] leading-none';
 
-/** Card đơn mở — ~668×178: ảnh | tiêu đề + meta | giá + CTA. */
-export function OpenJobCard({
-  booking,
-  detailTo,
-  footerLeft,
-  footerRight,
-}: OpenJobCardProps) {
+const metaPillPortrait =
+  '!gap-1 !rounded-lg !border-transparent !px-2 !py-1 text-[11px] leading-none';
+
+function getOpenJobLabels(booking: Booking) {
   const durationLabel = booking.service.durationMin
     ? `~${Math.round((booking.service.durationMin / 60) * 10) / 10}h`
     : null;
@@ -95,12 +103,215 @@ export function OpenJobCard({
     booking.applyDepositPercent ??
     Math.round((booking.applyDepositBps ?? 1000) / 100);
 
+  return {
+    durationLabel,
+    applicationsLabel,
+    budgetLabel,
+    matchingDeadlineLabel,
+    depositAmount,
+    depositPercent,
+  };
+}
+
+function MetaPills({
+  booking,
+  compact,
+}: {
+  booking: Booking;
+  compact?: boolean;
+}) {
+  const {
+    durationLabel,
+    applicationsLabel,
+    matchingDeadlineLabel,
+    depositAmount,
+    depositPercent,
+  } = getOpenJobLabels(booking);
+  const pill = compact ? metaPillPortrait : metaPill;
+
+  return (
+    <div className="flex w-full flex-wrap items-center gap-1.5">
+      {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
+        <JobMetaPill
+          icon="clock"
+          iconClassName={
+            compact ? '!h-3 !w-3 text-[#E11D48]' : '!h-3.5 !w-3.5 text-[#E11D48]'
+          }
+          className={`${pill} !bg-[#FFF1F2]`}
+          title={new Date(booking.matchingDeadlineAt).toLocaleString('vi-VN')}
+        >
+          <span className="font-semibold text-[#BE123C]">
+            {matchingDeadlineLabel}
+          </span>
+        </JobMetaPill>
+      ) : null}
+
+      <ScheduleTimePill
+        date={booking.scheduledAt}
+        className={`${pill} !bg-[#EFF6FF] [&_svg]:!h-3 [&_svg]:!w-3`}
+      />
+
+      {durationLabel ? (
+        <JobMetaPill
+          icon="clock"
+          iconClassName={
+            compact ? '!h-3 !w-3 text-[#7C3AED]' : '!h-3.5 !w-3.5 text-[#7C3AED]'
+          }
+          className={`${pill} !bg-[#F5F3FF]`}
+        >
+          <span className="font-semibold text-[#6D28D9]">{durationLabel}</span>
+        </JobMetaPill>
+      ) : null}
+
+      <JobMetaPill
+        icon="users"
+        iconClassName={
+          compact ? '!h-3 !w-3 text-[#059669]' : '!h-3.5 !w-3.5 text-[#059669]'
+        }
+        className={`${pill} !bg-[#ECFDF5]`}
+      >
+        <span className="font-semibold text-[#047857]">{applicationsLabel}</span>
+      </JobMetaPill>
+
+      <JobMetaPill
+        icon="shield"
+        iconClassName={
+          compact ? '!h-3 !w-3 text-[#0F766E]' : '!h-3.5 !w-3.5 text-[#0F766E]'
+        }
+        className={`${pill} !bg-[#F0FDFA]`}
+      >
+        <span className="whitespace-nowrap font-semibold text-[#0F766E]">
+          {depositAmount <= 0
+            ? `Cọc 0% · miễn`
+            : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
+        </span>
+      </JobMetaPill>
+    </div>
+  );
+}
+
+function BudgetChip({
+  label,
+  to,
+  className = '',
+}: {
+  label: string;
+  to?: string;
+  className?: string;
+}) {
+  const cls = `inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[#FFF7ED] px-3 py-2 text-[12px] font-extrabold text-[#C2410C] outline-none hover:bg-[#FFEDD5] focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] ${className}`;
+  const inner = (
+    <>
+      <Icon name="wallet" className="h-3.5 w-3.5 shrink-0 text-[#EA580C]" />
+      <span className="min-w-0 truncate tabular-nums leading-snug">{label}</span>
+    </>
+  );
+  if (to) {
+    return (
+      <Link to={to} className={cls} title={label}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <p className={cls} title={label}>
+      {inner}
+    </p>
+  );
+}
+
+/** Card đơn mở — horizontal (dashboard) hoặc portrait 300×400 (trang chủ). */
+export function OpenJobCard({
+  booking,
+  detailTo,
+  footerLeft,
+  footerRight,
+  layout = 'horizontal',
+}: OpenJobCardProps) {
+  const { budgetLabel } = getOpenJobLabels(booking);
+  const title = openJobTitle(booking);
+
+  if (layout === 'portrait') {
+    const body = (
+      <>
+        <div className="relative h-[148px] w-full shrink-0 overflow-hidden rounded-[14px]">
+          <img
+            src={serviceImage(booking.service)}
+            alt={title}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+          <span className="absolute bottom-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
+            <Icon name="briefcase" className="h-3.5 w-3.5" />
+          </span>
+        </div>
+
+        <div className="mt-2.5 min-w-0 flex-1">
+          <h3
+            className="line-clamp-2 text-[17px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)]"
+            title={title}
+          >
+            {title}
+          </h3>
+          {booking.jobTitle?.trim() ? (
+            <p className="mt-0.5 truncate text-[11px] text-[var(--color-muted)]">
+              {booking.service.name}
+            </p>
+          ) : null}
+          <p className="mt-1 flex min-w-0 items-center gap-1 truncate text-[12px] text-[var(--color-muted)]">
+            <Icon name="user" className="h-3 w-3 shrink-0 opacity-70" />
+            <span className="truncate">
+              {booking.customerName}
+              {booking.customerPhoneMasked
+                ? ` · ${booking.customerPhone}`
+                : null}
+            </span>
+          </p>
+          <div className="mt-2">
+            <MetaPills booking={booking} compact />
+          </div>
+        </div>
+      </>
+    );
+
+    return (
+      <article className="flex h-[400px] w-full min-w-0 flex-col overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white p-3 shadow-[0_4px_14px_rgba(24,49,63,0.07)] transition hover:border-[var(--color-brand)]/35 hover:shadow-[0_6px_18px_rgba(24,49,63,0.1)]">
+        {detailTo ? (
+          <Link
+            to={detailTo}
+            className="flex min-h-0 flex-1 flex-col rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
+          >
+            {body}
+          </Link>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col">{body}</div>
+        )}
+
+        <div className="mt-auto flex shrink-0 flex-col gap-2 pt-2">
+          <BudgetChip label={budgetLabel} to={detailTo} />
+          <div
+            className={`flex w-full flex-wrap items-center gap-2 ${
+              footerLeft != null ? 'justify-between' : 'justify-stretch'
+            }`}
+            onClick={(e: MouseEvent) => e.stopPropagation()}
+          >
+            {footerLeft}
+            <div className="min-w-0 flex-1 [&_a]:w-full [&_button]:w-full">
+              {footerRight}
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   const main = (
     <>
       <div className="relative h-[100px] w-[100px] shrink-0 self-start sm:h-[142px] sm:w-[142px] sm:self-center">
         <img
           src={serviceImage(booking.service)}
-          alt={booking.service.name}
+          alt={title}
           className="h-full w-full rounded-[14px] object-cover"
           loading="lazy"
           decoding="async"
@@ -113,10 +324,15 @@ export function OpenJobCard({
       <div className="flex min-w-0 flex-1 flex-col justify-start">
         <h3
           className="shrink-0 truncate text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]"
-          title={booking.service.name}
+          title={title}
         >
-          {booking.service.name}
+          {title}
         </h3>
+        {booking.jobTitle?.trim() ? (
+          <p className="mt-0.5 truncate text-xs text-[var(--color-muted)]">
+            {booking.service.name}
+          </p>
+        ) : null}
         <p className="mt-1 flex min-w-0 shrink-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
           <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
           <span className="truncate">
@@ -125,56 +341,8 @@ export function OpenJobCard({
           </span>
         </p>
 
-        <div className="mt-2.5 flex w-full flex-wrap items-center gap-2">
-          {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
-            <JobMetaPill
-              icon="clock"
-              iconClassName="!h-3.5 !w-3.5 text-[#E11D48]"
-              className={`${metaPill} !bg-[#FFF1F2]`}
-              title={new Date(booking.matchingDeadlineAt).toLocaleString('vi-VN')}
-            >
-              <span className="font-semibold text-[#BE123C]">
-                {matchingDeadlineLabel}
-              </span>
-            </JobMetaPill>
-          ) : null}
-
-          <ScheduleTimePill
-            date={booking.scheduledAt}
-            className={`${metaPill} !bg-[#EFF6FF] [&_svg]:!h-3.5 [&_svg]:!w-3.5`}
-          />
-
-          {durationLabel ? (
-            <JobMetaPill
-              icon="clock"
-              iconClassName="!h-3.5 !w-3.5 text-[#7C3AED]"
-              className={`${metaPill} !bg-[#F5F3FF]`}
-            >
-              <span className="font-semibold text-[#6D28D9]">{durationLabel}</span>
-            </JobMetaPill>
-          ) : null}
-
-          <JobMetaPill
-            icon="users"
-            iconClassName="!h-3.5 !w-3.5 text-[#059669]"
-            className={`${metaPill} !bg-[#ECFDF5]`}
-          >
-            <span className="font-semibold text-[#047857]">
-              {applicationsLabel}
-            </span>
-          </JobMetaPill>
-
-          <JobMetaPill
-            icon="shield"
-            iconClassName="!h-3.5 !w-3.5 text-[#0F766E]"
-            className={`${metaPill} !bg-[#F0FDFA]`}
-          >
-            <span className="whitespace-nowrap font-semibold text-[#0F766E]">
-              {depositAmount <= 0
-                ? `Cọc 0% · miễn`
-                : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
-            </span>
-          </JobMetaPill>
+        <div className="mt-2.5">
+          <MetaPills booking={booking} />
         </div>
       </div>
     </>
@@ -200,28 +368,11 @@ export function OpenJobCard({
         )}
 
         <div className="flex shrink-0 flex-col items-stretch justify-between gap-2.5 sm:w-[210px] sm:items-end sm:py-0.5">
-          {detailTo ? (
-            <Link
-              to={detailTo}
-              className="inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[#FFF7ED] px-3.5 py-2.5 text-[13px] font-extrabold text-[#C2410C] outline-none hover:bg-[#FFEDD5] focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] sm:justify-start"
-              title={budgetLabel}
-            >
-              <Icon name="wallet" className="h-4 w-4 shrink-0 text-[#EA580C]" />
-              <span className="min-w-0 truncate tabular-nums leading-snug">
-                {budgetLabel}
-              </span>
-            </Link>
-          ) : (
-            <p
-              className="inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[#FFF7ED] px-3.5 py-2.5 text-[13px] font-extrabold text-[#C2410C] sm:justify-start"
-              title={budgetLabel}
-            >
-              <Icon name="wallet" className="h-4 w-4 shrink-0 text-[#EA580C]" />
-              <span className="min-w-0 truncate tabular-nums leading-snug">
-                {budgetLabel}
-              </span>
-            </p>
-          )}
+          <BudgetChip
+            label={budgetLabel}
+            to={detailTo}
+            className="!px-3.5 !py-2.5 !text-[13px] sm:justify-start"
+          />
 
           <div
             className={`flex w-full flex-wrap items-center gap-2 ${

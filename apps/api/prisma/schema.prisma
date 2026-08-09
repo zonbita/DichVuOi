@@ -90,6 +90,15 @@ enum PartnerServicePostStatus {
   REJECTED
 }
 
+/** Loại thông báo sảnh trang chủ (không chat tự do). */
+enum HomeShoutKind {
+  GREETING
+  AVAILABLE
+  PROMO
+  LOOKING
+  THANKS
+}
+
 enum InvoiceStatus {
   PAID
   SETTLED
@@ -164,6 +173,7 @@ model User {
   supportThreadsAssigned   SupportThread[] @relation("SupportAssignee")
   supportMessages          SupportMessage[]
   adminAuditLogs           AdminAuditLog[] @relation("AdminAuditActor")
+  homeShouts               HomeShout[]
 }
 
 /** Nhật ký thao tác admin / moderator. */
@@ -267,12 +277,28 @@ model PartnerServicePost {
   reviewedById     String?
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
+  homeShouts       HomeShout[]
 
   /** Mỗi nghề trên hồ sơ chỉ có một bài đăng. */
   @@unique([partnerProfileId, serviceId])
   @@index([partnerProfileId, status])
   @@index([serviceId])
   @@index([status, createdAt])
+}
+
+/** Thông báo sảnh trang chủ — gắn 1 bài dịch vụ đã duyệt, không nhập chat tự do. */
+model HomeShout {
+  id           String                   @id @default(cuid())
+  userId       String
+  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  servicePostId String
+  servicePost  PartnerServicePost       @relation(fields: [servicePostId], references: [id], onDelete: Cascade)
+  kind         HomeShoutKind
+  createdAt    DateTime                 @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([servicePostId])
 }
 
 model PartnerService {
@@ -374,6 +400,8 @@ model Booking {
    * Có giá trị + status SCHEDULED → chưa public; tới giờ → PENDING.
    */
   publishAt     DateTime?
+  /** Tiêu đề công việc khách đặt (hiện trên bảng tin; fallback = service.name). */
+  jobTitle      String?
   note          String?
   budgetMin     Int?
   budgetMax     Int?

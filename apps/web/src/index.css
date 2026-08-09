@@ -755,6 +755,35 @@ select {
   }
 }
 
+/** Smile bay xuyên vùng chat — kiểu TikTok livestream. */
+@keyframes lobby-float-smile {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(calc(var(--lobby-scale, 1) * 0.55));
+  }
+  10% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--lobby-drift, 0px), -280px, 0)
+      scale(var(--lobby-scale, 1));
+  }
+}
+
+.lobby-float-smile {
+  animation: lobby-float-smile 2.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  filter: drop-shadow(0 4px 10px rgba(15, 39, 71, 0.2));
+  will-change: transform, opacity;
+}
+
+.lobby-smile-btn:active {
+  transform: scale(0.88);
+}
+
 .marquee {
   overflow: hidden;
 }

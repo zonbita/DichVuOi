@@ -103,7 +103,7 @@ const offerNav: NavItem[] = [
   },
   {
     to: '/doi-tac/don-thue',
-    label: 'Đơn thuê realtime',
+    label: 'Đơn thuê',
     icon: 'sparkles',
     iconClass: 'text-emerald-600',
     badge: 'openJobs',

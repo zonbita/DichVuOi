@@ -7,6 +7,7 @@ export declare class CreateBookingDto {
     scheduledAt: string;
     publishAt?: string;
     partnerId?: string;
+    jobTitle?: string;
     note?: string;
     budgetMin?: number;
     budgetMax?: number;

@@ -8,12 +8,13 @@ import { SectionHeaderBar, SectionHeaderViewAll } from './section-header-bar';
 
 export function HomeOpenJobsSection() {
   const [page, setPage] = useState(1);
-  const pageSize = 8;
+  const pageSize = 10;
 
   const openJobsQuery = useQuery({
     queryKey: ['open-jobs-board', page, pageSize],
     queryFn: () => api.getOpenJobsBoard(page, pageSize),
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchInterval: 12_000,
     placeholderData: keepPreviousData,
   });
 
@@ -52,16 +53,17 @@ export function HomeOpenJobsSection() {
 
         {jobs.length > 0 ? (
           <>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
               {jobs.map((booking) => (
                 <OpenJobCard
                   key={booking.id}
                   booking={booking}
-                  detailTo={`/doi-tac/don-thue/${booking.id}`}
+                  layout="portrait"
+                  detailTo={`/viec-moi/${booking.id}`}
                   footerRight={
                     <Link
-                      to={`/doi-tac/don-thue/${booking.id}`}
-                      className="inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-brand-deep)]"
+                      to={`/viec-moi/${booking.id}`}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-brand-deep)]"
                     >
                       Xem đơn
                       <Icon name="chevronRight" className="h-4 w-4" />

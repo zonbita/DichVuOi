@@ -233,6 +233,11 @@ function RedirectNguoiToUser() {
   return <Navigate to={`/user/${userId}`} replace />;
 }
 
+function RedirectDonThueToViecMoi() {
+  const { id = '' } = useParams();
+  return <Navigate to={`/viec-moi/${id}`} replace />;
+}
+
 function RouteFallback() {
   return (
     <div className="flex min-h-[40vh] items-center justify-center text-sm text-[var(--color-muted)]">
@@ -267,6 +272,11 @@ export default function App() {
             <Route path="/chinh-sach-doi-tac" element={<PartnerPolicyPage />} />
             <Route path="/nhom" element={<GroupsPage />} />
             <Route path="/bai-dang" element={<ServicePostsPage />} />
+            <Route path="/viec-moi/:id" element={<OpenJobDetailPage />} />
+            <Route
+              path="/doi-tac/don-thue/:id"
+              element={<RedirectDonThueToViecMoi />}
+            />
             <Route path="/nhom/:slug" element={<GroupDetailPage />} />
             <Route path="/dich-vu/:slug" element={<ServiceDetailPage />} />
             <Route path="/user/:userId" element={<PartnerProfilePage />} />
@@ -314,10 +324,6 @@ export default function App() {
               <Route path="/don-cua-toi/noi-quy" element={<RulesPage />} />
               <Route path="/doi-tac" element={<PartnerDashboardPage />} />
               <Route path="/doi-tac/don-thue" element={<PartnerDashboardPage />} />
-              <Route
-                path="/doi-tac/don-thue/:id"
-                element={<OpenJobDetailPage />}
-              />
               <Route path="/doi-tac/viec" element={<PartnerDashboardPage />} />
               <Route
                 path="/doi-tac/viec/:id"

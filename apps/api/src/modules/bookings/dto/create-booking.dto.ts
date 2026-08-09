@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
   MinLength,
 } from 'class-validator';
@@ -52,6 +53,16 @@ export class CreateBookingDto {
   @IsOptional()
   @IsString()
   partnerId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Sửa máy lạnh bị chảy nước',
+    description: 'Tên / mô tả ngắn công việc cần làm (hiện trên bảng tin)',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(120)
+  jobTitle?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

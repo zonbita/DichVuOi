@@ -39,6 +39,13 @@ import type {
 import type { Complaint, ComplaintStatus } from '../types/complaint';
 import type { ChatbotReply, ChatbotStats } from '../types/chatbot';
 import type { SupportMessage, SupportThread, SupportThreadDetail } from '../types/support';
+import type {
+  HomeLobbyFeed,
+  HomeLobbyPresence,
+  HomeLobbyReaction,
+  HomeShout,
+  HomeShoutKind,
+} from '../types/home-lobby';
 import type { PartnerServicePost } from '../types/partner-service-post';
 import type { PublicServicePostDetail, PublicServicePostListItem } from '../types/public-service-post';
 import type {
@@ -188,6 +195,63 @@ export const api = {
       pageSize: number;
       pageCount: number;
     }>(`/api/bookings/open/board${queryString({ page, pageSize })}`),
+  getPublicOpenBooking: (id: string) =>
+    request<Booking>(`/api/bookings/public/open/${id}`),
+  getPublicActivity: (limit = 12) =>
+    request<{
+      items: Array<{
+        id: string;
+        kind: 'open' | 'apply' | 'completed';
+        label: string;
+        serviceName: string;
+        at: string;
+      }>;
+    }>(`/api/bookings/public/activity${queryString({ limit })}`),
+  getHomeLobby: (limit = 24) =>
+    request<HomeLobbyFeed>(`/api/home/lobby${queryString({ limit })}`),
+  getHomeLobbyPresence: () =>
+    request<HomeLobbyPresence>('/api/home/lobby/presence'),
+  createHomeShout: (payload: { kind: HomeShoutKind; servicePostId: string }) =>
+    request<HomeShout>('/api/home/lobby/shouts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  createHomeReaction: (payload: { emoji: string; guestId?: string }) =>
+    request<HomeLobbyReaction>('/api/home/lobby/reactions', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getRecentCompletedPublic: (limit = 8) =>
+    request<{
+      items: Array<{
+        id: string;
+        serviceName: string;
+        serviceSlug: string;
+        completedAt: string;
+        partnerUserId: string;
+        partnerName: string;
+        partnerAvatarUrl: string | null;
+      }>;
+    }>(`/api/bookings/public/recent-completed${queryString({ limit })}`),
+  getFeaturedReviews: (limit = 8) =>
+    request<{
+      items: Array<{
+        id: string;
+        rating: number;
+        comment: string;
+        createdAt: string;
+        fromNameMasked: string;
+        serviceName: string;
+        serviceSlug: string;
+        partner: {
+          userId: string;
+          fullName: string;
+          avatarUrl: string | null;
+          level: number;
+          city: string | null;
+        };
+      }>;
+    }>(`/api/partners/reviews/featured${queryString({ limit })}`),
   getPartnerBookings: () => request<Booking[]>('/api/bookings/partner/mine'),
   getPartnerSchedule: (year: number, month: number) =>
     request<PartnerSchedule>(

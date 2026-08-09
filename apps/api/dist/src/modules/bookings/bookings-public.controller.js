@@ -26,6 +26,17 @@ let BookingsPublicController = class BookingsPublicController {
         const parsedSize = pageSize ? Number(pageSize) : 8;
         return this.bookingsService.listOpenBoard(Number.isFinite(parsedPage) ? parsedPage : 1, Number.isFinite(parsedSize) ? parsedSize : 8);
     }
+    getPublicOpen(id) {
+        return this.bookingsService.getPublicOpenBooking(id);
+    }
+    listPublicActivity(limit) {
+        const parsed = limit ? Number(limit) : 12;
+        return this.bookingsService.listPublicActivity(Number.isFinite(parsed) ? parsed : 12);
+    }
+    listRecentCompleted(limit) {
+        const parsed = limit ? Number(limit) : 8;
+        return this.bookingsService.listRecentCompletedPublic(Number.isFinite(parsed) ? parsed : 8);
+    }
 };
 exports.BookingsPublicController = BookingsPublicController;
 __decorate([
@@ -38,6 +49,29 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], BookingsPublicController.prototype, "listOpenBoard", null);
+__decorate([
+    (0, common_1.Get)('public/open/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BookingsPublicController.prototype, "getPublicOpen", null);
+__decorate([
+    (0, common_1.Get)('public/activity'),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, example: 12 }),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BookingsPublicController.prototype, "listPublicActivity", null);
+__decorate([
+    (0, common_1.Get)('public/recent-completed'),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, example: 8 }),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BookingsPublicController.prototype, "listRecentCompleted", null);
 exports.BookingsPublicController = BookingsPublicController = __decorate([
     (0, swagger_1.ApiTags)('bookings'),
     (0, common_1.Controller)('bookings'),

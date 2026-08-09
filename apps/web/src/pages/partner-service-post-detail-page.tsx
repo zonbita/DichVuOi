@@ -257,59 +257,62 @@ export function PartnerServicePostDetailPage() {
             </Link>
           </section>
 
-          <section className="glass-card p-4">
-            <div className="flex gap-3">
-              <AvatarLevelOverlay level={seller.level} className="block w-16 shrink-0">
-                <div className="aspect-square w-full overflow-hidden rounded-2xl">
-                  <SellerAvatar
-                    name={seller.fullName}
-                    src={seller.avatarUrl ? mediaSrc(seller.avatarUrl) : null}
+          <section className="glass-card p-4 transition hover:bg-white/90">
+            <Link
+              to={`/user/${seller.userId}`}
+              className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
+              aria-label={`Xem hồ sơ ${seller.fullName}`}
+            >
+              <div className="flex gap-3">
+                <AvatarLevelOverlay level={seller.level} className="block w-16 shrink-0">
+                  <div className="aspect-square w-full overflow-hidden rounded-2xl">
+                    <SellerAvatar
+                      name={seller.fullName}
+                      src={seller.avatarUrl ? mediaSrc(seller.avatarUrl) : null}
+                    />
+                  </div>
+                </AvatarLevelOverlay>
+                <div className="min-w-0 flex-1">
+                  <p className="font-extrabold text-[var(--color-navy)] hover:text-[var(--color-brand-deep)]">
+                    {seller.fullName}
+                  </p>
+                  <PartnerVerificationBadges
+                    isVerified={seller.isVerified}
+                    phoneVerified={seller.phoneVerified}
+                    bankVerified={seller.bankVerified}
+                    className="!mt-1 !justify-start"
                   />
+                  <p className="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-[var(--color-muted)]">
+                    <StarRow rating={Math.round(seller.ratingAvg)} />
+                    <span>
+                      {seller.ratingAvg.toFixed(1)} ({seller.ratingCount})
+                    </span>
+                  </p>
                 </div>
-              </AvatarLevelOverlay>
-              <div className="min-w-0 flex-1">
-                <Link
-                  to={`/user/${seller.userId}`}
-                  className="font-extrabold text-[var(--color-navy)] hover:text-[var(--color-brand-deep)]"
-                >
-                  {seller.fullName}
-                </Link>
-                <PartnerVerificationBadges
-                  isVerified={seller.isVerified}
-                  phoneVerified={seller.phoneVerified}
-                  bankVerified={seller.bankVerified}
-                  className="!mt-1 !justify-start"
-                />
-                <p className="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-[var(--color-muted)]">
-                  <StarRow rating={Math.round(seller.ratingAvg)} />
-                  <span>
-                    {seller.ratingAvg.toFixed(1)} ({seller.ratingCount})
-                  </span>
-                </p>
               </div>
-            </div>
-            {seller.headline ? (
-              <p className="mt-3 text-sm font-semibold text-[var(--color-brand-deep)]">
-                {seller.headline}
-              </p>
-            ) : null}
-            <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--color-muted)]">
-              {seller.city ? (
-                <span className="inline-flex items-center gap-1">
-                  <Icon name="pin" className="h-3.5 w-3.5" />
-                  {seller.city}
-                </span>
+              {seller.headline ? (
+                <p className="mt-3 text-sm font-semibold text-[var(--color-brand-deep)]">
+                  {seller.headline}
+                </p>
               ) : null}
-              <span className="inline-flex items-center gap-1">
-                <Icon name="clock" className="h-3.5 w-3.5" />
-                Phản hồi ~{seller.responseMinutes} phút
-              </span>
-              {seller.acceptingJobs ? (
-                <span className="font-semibold text-[var(--color-brand-deep)]">Đang nhận việc</span>
-              ) : (
-                <span className="font-semibold text-amber-700">Tạm nghỉ</span>
-              )}
-            </p>
+              <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--color-muted)]">
+                {seller.city ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Icon name="pin" className="h-3.5 w-3.5" />
+                    {seller.city}
+                  </span>
+                ) : null}
+                <span className="inline-flex items-center gap-1">
+                  <Icon name="clock" className="h-3.5 w-3.5" />
+                  Phản hồi ~{seller.responseMinutes} phút
+                </span>
+                {seller.acceptingJobs ? (
+                  <span className="font-semibold text-[var(--color-brand-deep)]">Đang nhận việc</span>
+                ) : (
+                  <span className="font-semibold text-amber-700">Tạm nghỉ</span>
+                )}
+              </p>
+            </Link>
           </section>
         </aside>
       </div>

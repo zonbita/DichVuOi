@@ -647,6 +647,7 @@ export class BookingsService {
         address: dto.address,
         scheduledAt: new Date(dto.scheduledAt),
         publishAt,
+        jobTitle: dto.jobTitle?.trim() || null,
         note: noteResult.text,
         budgetMin,
         budgetMax,
@@ -1116,6 +1117,177 @@ export class BookingsService {
     };
   }
 
+  /** Chi tiết đơn mở công khai — chỉ khi còn trên bảng tin. */
+  async getPublicOpenBooking(id: string) {
+    await this.publishDueScheduledBookings();
+    await this.settleExpiredMatching(id);
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: bookingInclude,
+    });
+    if (!booking) {
+      throw new NotFoundException('Không tìm thấy đơn');
+    }
+    const now = new Date();
+    const isOpen =
+      booking.status === BookingStatus.PENDING &&
+      !booking.partnerId &&
+      booking.paymentStatus === PaymentStatus.HELD &&
+      (booking.matchingDeadlineAt == null ||
+        booking.matchingDeadlineAt > now);
+    if (!isOpen) {
+      throw new NotFoundException('Đơn không còn mở trên bảng tin');
+    }
+    return this.shape(booking, undefined, 'open_queue');
+  }
+
+  /**
+   * Ticker trang chủ — sự kiện gần đây, không PII (không tên/SĐT/địa chỉ).
+   */
+  async listPublicActivity(limit = 12) {
+    const take = Math.min(Math.max(Math.floor(limit) || 12, 1), 24);
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [opens, apps, dones] = await Promise.all([
+      this.prisma.booking.findMany({
+        where: {
+          status: BookingStatus.PENDING,
+          partnerId: null,
+          paymentStatus: PaymentStatus.HELD,
+          createdAt: { gte: since },
+        },
+        orderBy: { createdAt: 'desc' },
+        take,
+        select: {
+          id: true,
+          createdAt: true,
+          service: { select: { name: true } },
+        },
+      }),
+      this.prisma.bookingApplication.findMany({
+        where: { createdAt: { gte: since }, status: ApplicationStatus.APPLIED },
+        orderBy: { createdAt: 'desc' },
+        take,
+        select: {
+          id: true,
+          createdAt: true,
+          booking: { select: { service: { select: { name: true } } } },
+        },
+      }),
+      this.prisma.booking.findMany({
+        where: {
+          status: BookingStatus.COMPLETED,
+          OR: [
+            { releasedAt: { gte: since } },
+            { updatedAt: { gte: since } },
+          ],
+        },
+        orderBy: [{ releasedAt: 'desc' }, { updatedAt: 'desc' }],
+        take,
+        select: {
+          id: true,
+          releasedAt: true,
+          updatedAt: true,
+          service: { select: { name: true } },
+        },
+      }),
+    ]);
+
+    type Item = {
+      id: string;
+      kind: 'open' | 'apply' | 'completed';
+      label: string;
+      serviceName: string;
+      at: string;
+    };
+
+    const items: Item[] = [
+      ...opens.map((b) => ({
+        id: `open-${b.id}`,
+        kind: 'open' as const,
+        label: 'Đơn mới mở',
+        serviceName: b.service.name,
+        at: b.createdAt.toISOString(),
+      })),
+      ...apps.map((a) => ({
+        id: `apply-${a.id}`,
+        kind: 'apply' as const,
+        label: 'Có người ứng tuyển',
+        serviceName: a.booking.service.name,
+        at: a.createdAt.toISOString(),
+      })),
+      ...dones.map((b) => ({
+        id: `done-${b.id}`,
+        kind: 'completed' as const,
+        label: 'Vừa hoàn thành',
+        serviceName: b.service.name,
+        at: (b.releasedAt ?? b.updatedAt).toISOString(),
+      })),
+    ]
+      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+      .slice(0, take);
+
+    return { items };
+  }
+
+  /** Đơn vừa xong — dịch vụ + người làm (link hồ sơ), không PII khách. */
+  async listRecentCompletedPublic(limit = 8) {
+    const take = Math.min(Math.max(Math.floor(limit) || 8, 1), 24);
+    const rows = await this.prisma.booking.findMany({
+      where: {
+        status: BookingStatus.COMPLETED,
+        partnerId: { not: null },
+        partner: { partnerProfile: { isNot: null } },
+      },
+      orderBy: [{ releasedAt: 'desc' }, { updatedAt: 'desc' }],
+      take: take * 3,
+      select: {
+        id: true,
+        partnerId: true,
+        releasedAt: true,
+        updatedAt: true,
+        service: { select: { name: true, slug: true } },
+        partner: {
+          select: {
+            id: true,
+            fullName: true,
+            partnerProfile: { select: { avatarUrl: true } },
+          },
+        },
+      },
+    });
+
+    // Ưu tiên mỗi người làm 1 lần gần nhất — feed đa dạng hơn.
+    const seenPartners = new Set<string>();
+    const items: Array<{
+      id: string;
+      serviceName: string;
+      serviceSlug: string;
+      completedAt: string;
+      partnerUserId: string;
+      partnerName: string;
+      partnerAvatarUrl: string | null;
+    }> = [];
+
+    for (const b of rows) {
+      if (!b.partnerId || !b.partner) continue;
+      if (seenPartners.has(b.partnerId)) continue;
+      seenPartners.add(b.partnerId);
+      items.push({
+        id: b.id,
+        serviceName: b.service.name,
+        serviceSlug: b.service.slug,
+        completedAt: (b.releasedAt ?? b.updatedAt).toISOString(),
+        partnerUserId: b.partnerId,
+        partnerName: b.partner.fullName,
+        partnerAvatarUrl: b.partner.partnerProfile?.avatarUrl ?? null,
+      });
+      if (items.length >= take) break;
+    }
+
+    return { items };
+  }
+
   async accept(id: string, partnerId: string) {
     // Legacy: chuyển sang ứng tuyển (cọc 10%) — chủ đơn mới chọn người.
     return this.apply(id, partnerId, {});
@@ -1222,6 +1394,10 @@ export class BookingsService {
       role: Role.CUSTOMER,
     });
     this.realtime.emitCustomerBooking(fresh.userId, shapedCustomer);
+    // Cập nhật số ứng viên trên bảng tin / hàng chờ realtime.
+    if (!fresh.partnerId && fresh.status === BookingStatus.PENDING) {
+      this.realtime.emitOpenCreated(this.shape(fresh, undefined, 'open_queue'));
+    }
     return {
       booking: this.shape(fresh, { id: partnerId, role: Role.PARTNER }),
       application: fresh.applications.find((a) => a.partnerId === partnerId),

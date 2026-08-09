@@ -15,7 +15,7 @@ type Props = {
   tabs: ProfessionTab[];
   value: string;
   onChange: (id: string) => void;
-  /** `vertical` = dropdown góc phải bảng Đơn thuê realtime. */
+  /** `vertical` = dropdown góc phải bảng Đơn thuê. */
   orientation?: 'horizontal' | 'vertical';
 };
 
@@ -37,7 +37,7 @@ function groupProfessionTabs(tabs: ProfessionTab[]) {
   }));
 }
 
-/** Dropdown lọc theo nghề (service) — dùng trong Đơn thuê realtime. */
+/** Dropdown lọc theo nghề (service) — dùng trong Đơn thuê. */
 export function PartnerProfessionTabs({
   tabs,
   value,

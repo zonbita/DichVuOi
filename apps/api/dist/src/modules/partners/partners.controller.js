@@ -36,6 +36,10 @@ let PartnersController = class PartnersController {
         const parsed = limit ? Number(limit) : 24;
         return this.partnersService.searchPublic(q, Number.isFinite(parsed) ? parsed : 24);
     }
+    listFeaturedReviews(limit) {
+        const parsed = limit ? Number(limit) : 8;
+        return this.partnersService.listFeaturedReviews(Number.isFinite(parsed) ? parsed : 8);
+    }
     getPublicPost(userId, postId) {
         return this.partnersService.getPublicServicePost(userId, postId);
     }
@@ -111,6 +115,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], PartnersController.prototype, "searchPublic", null);
+__decorate([
+    (0, common_1.Get)('reviews/featured'),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, example: 8 }),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PartnersController.prototype, "listFeaturedReviews", null);
 __decorate([
     (0, common_1.Get)('public/:userId/posts/:postId'),
     __param(0, (0, common_1.Param)('userId')),

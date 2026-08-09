@@ -17,6 +17,7 @@ type Props = {
   budgetMin: number;
   budgetMax: number;
   applyDepositPercent: number;
+  jobTitle?: string;
   tasks: string[];
 };
 
@@ -58,6 +59,7 @@ function buildDemoBooking(props: Props): Booking | null {
   );
 
   const note = props.tasks.map((t) => t.trim()).filter(Boolean).join('\n') || null;
+  const jobTitle = props.jobTitle?.trim() || null;
 
   return {
     id: 'demo-preview',
@@ -73,6 +75,7 @@ function buildDemoBooking(props: Props): Booking | null {
     customerPhone: phone ? maskPhone(phone) : '••••••••',
     customerPhoneMasked: true,
     addressMasked: true,
+    jobTitle,
     note,
     budgetMin,
     budgetMax,

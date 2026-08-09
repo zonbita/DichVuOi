@@ -166,6 +166,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
       scheduledAt: defaultScheduledAtLocal(),
       schedulePublish: false,
       publishAt: '',
+      jobTitle: '',
       note: '',
       budgetMin: PRICE_SLIDER_MIN,
       budgetMax: 5_000_000,
@@ -183,6 +184,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
   const scheduledAt = watch('scheduledAt');
   const schedulePublish = watch('schedulePublish');
   const publishAt = watch('publishAt');
+  const jobTitle = watch('jobTitle');
 
   useEffect(() => {
     if (!schedulePublish) return;
@@ -305,6 +307,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
           ? new Date(values.publishAt).toISOString()
           : undefined,
       note: taskNote || undefined,
+      jobTitle: values.jobTitle.trim(),
       budgetMin: values.budgetMin,
       budgetMax: values.budgetMax,
       applyDepositPercent: values.applyDepositPercent,
@@ -606,6 +609,26 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
           </div>
 
           <div className="sm:col-span-2">
+            <FieldLabel htmlFor="hire-job-title">Tên công việc cần làm</FieldLabel>
+            <p className="mb-1.5 text-[11px] text-[var(--color-muted)]">
+              Tiêu đề ngắn hiện trên bảng tin — ví dụ «Sửa máy lạnh chảy nước».
+            </p>
+            <input
+              id="hire-job-title"
+              {...register('jobTitle')}
+              placeholder="Mô tả ngắn tên công việc cần làm"
+              maxLength={120}
+              className="field-input hire-field-input"
+              disabled={bookingMutation.isPending || !user}
+            />
+            {errors.jobTitle ? (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.jobTitle.message}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="sm:col-span-2">
             <FieldLabel htmlFor="hire-task-draft">Công việc cần làm</FieldLabel>
             <p className="mb-1.5 text-[11px] text-[var(--color-muted)]">
               Thêm từng mục trước khi gửi. Sau khi đăng đơn danh sách bị khóa.
@@ -661,6 +684,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
         budgetMin={budgetMin ?? 0}
         budgetMax={budgetMax ?? 0}
         applyDepositPercent={depositPercent}
+        jobTitle={jobTitle ?? ''}
         tasks={tasks}
       />
     </div>

@@ -132,7 +132,27 @@ export function PartnerLevelPanel({ data }: Props) {
 
         <p className="mt-4 text-sm text-[var(--color-muted)]">
           Online gần nhất: {formatLastOnline(data.inputs.lastOnlineAt)}
+          {data.inputs.isOnline ? (
+            <span className="ml-2 inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Đang online
+            </span>
+          ) : null}
         </p>
+        {data.onTimeRate != null ? (
+          <p className="mt-2 text-sm text-[var(--color-muted)]">
+            Đúng hạn:{' '}
+            <strong className="text-[var(--color-navy)]">{data.onTimeRate}%</strong>
+            <span className="text-[var(--color-muted)]">
+              {' '}
+              ({data.onTimeSampleSize ?? 0} đơn gần đây)
+            </span>
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-[var(--color-muted)]">
+            Đúng hạn: chưa có đơn hoàn thành để tính.
+          </p>
+        )}
       </DashboardSurface>
 
       <DashboardSurface className="p-5">

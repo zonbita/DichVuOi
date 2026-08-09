@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { formatPrice } from '../../services/api';
 import type { BookingApplication } from '../../types/catalog';
 import {
@@ -30,6 +31,8 @@ function ApplicantCard({
   onSelect: (id: string) => void;
 }) {
   const profile = app.partner?.partnerProfile;
+  const partnerId = app.partner?.id ?? app.partnerId;
+  const profileTo = partnerId ? `/user/${partnerId}` : null;
   const avatarUrl = profile?.avatarUrl;
   const level = profile?.level;
   const isVerified = profile?.isVerified;
@@ -58,83 +61,99 @@ function ApplicantCard({
     </div>
   );
 
+  const profileBlock = (
+    <>
+      <div className="shrink-0">
+        {level != null ? (
+          <AvatarLevelOverlay level={level}>{avatar}</AvatarLevelOverlay>
+        ) : (
+          avatar
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="truncate text-base font-extrabold text-[var(--color-ink)]">
+            {app.partner?.fullName ?? 'Người làm'}
+          </p>
+          <PartnerVerificationBadges
+            isVerified={!!isVerified}
+            phoneVerified={!!phoneVerified}
+            bankVerified={!!bankVerified}
+            className="!justify-start"
+          />
+        </div>
+
+        <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+          {profile?.headline || 'Freelancer trên Dich Vụ Ơi'}
+        </p>
+
+        {/* Stats row */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          {reputationPoints != null ? (
+            <span className="text-[var(--color-ink)]">
+              <span className="font-semibold text-[var(--color-muted)]">
+                UY TÍN
+              </span>{' '}
+              <span className="font-extrabold">{reputationPoints}</span>
+              <span className="text-xs text-[var(--color-muted)]">
+                /1000
+              </span>
+            </span>
+          ) : null}
+
+          {ratingAvg != null && ratingAvg > 0 ? (
+            <span className="inline-flex items-center gap-1">
+              <span className="text-amber-500">★</span>
+              <span className="font-bold">{ratingAvg.toFixed(1)}</span>
+              <span className="text-xs text-[var(--color-muted)]">
+                ({ratingCount})
+              </span>
+            </span>
+          ) : null}
+
+          <span className="inline-flex items-center gap-1 text-[var(--color-muted)]">
+            ◷ {formatWorkHours(onlineSeconds)}
+          </span>
+        </div>
+
+        {/* Offering price */}
+        {offeringPrice != null ? (
+          <p className="mt-2 text-lg font-extrabold text-amber-600">
+            {formatPrice(offeringPrice)}
+            <span className="text-xs font-semibold text-[var(--color-muted)]">
+              /gói
+            </span>
+          </p>
+        ) : null}
+
+        {app.note ? (
+          <p className="mt-1.5 line-clamp-2 text-xs text-[var(--color-ink)]">
+            {app.note}
+          </p>
+        ) : null}
+
+        <p className="mt-1 text-[11px] text-[var(--color-muted)]">
+          Cọc ứng tuyển: {formatPrice(app.depositAmount)}
+        </p>
+      </div>
+    </>
+  );
+
   return (
     <li className="overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-sm">
       <div className="flex gap-4 p-4">
-        <div className="shrink-0">
-          {level != null ? (
-            <AvatarLevelOverlay level={level}>{avatar}</AvatarLevelOverlay>
-          ) : (
-            avatar
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-base font-extrabold text-[var(--color-ink)]">
-              {app.partner?.fullName ?? 'Người làm'}
-            </p>
-            <PartnerVerificationBadges
-              isVerified={!!isVerified}
-              phoneVerified={!!phoneVerified}
-              bankVerified={!!bankVerified}
-              className="!justify-start"
-            />
-          </div>
-
-          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-            {profile?.headline || 'Freelancer trên Dich Vụ Ơi'}
-          </p>
-
-          {/* Stats row */}
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-            {reputationPoints != null ? (
-              <span className="text-[var(--color-ink)]">
-                <span className="font-semibold text-[var(--color-muted)]">
-                  UY TÍN
-                </span>{' '}
-                <span className="font-extrabold">{reputationPoints}</span>
-                <span className="text-xs text-[var(--color-muted)]">
-                  /1000
-                </span>
-              </span>
-            ) : null}
-
-            {ratingAvg != null && ratingAvg > 0 ? (
-              <span className="inline-flex items-center gap-1">
-                <span className="text-amber-500">★</span>
-                <span className="font-bold">{ratingAvg.toFixed(1)}</span>
-                <span className="text-xs text-[var(--color-muted)]">
-                  ({ratingCount})
-                </span>
-              </span>
-            ) : null}
-
-            <span className="inline-flex items-center gap-1 text-[var(--color-muted)]">
-              ◷ {formatWorkHours(onlineSeconds)}
-            </span>
-          </div>
-
-          {/* Offering price */}
-          {offeringPrice != null ? (
-            <p className="mt-2 text-lg font-extrabold text-amber-600">
-              {formatPrice(offeringPrice)}
-              <span className="text-xs font-semibold text-[var(--color-muted)]">
-                /gói
-              </span>
-            </p>
-          ) : null}
-
-          {app.note ? (
-            <p className="mt-1.5 line-clamp-2 text-xs text-[var(--color-ink)]">
-              {app.note}
-            </p>
-          ) : null}
-
-          <p className="mt-1 text-[11px] text-[var(--color-muted)]">
-            Cọc ứng tuyển: {formatPrice(app.depositAmount)}
-          </p>
-        </div>
+        {profileTo ? (
+          <Link
+            to={profileTo}
+            className="flex min-w-0 flex-1 gap-4 rounded-xl outline-none transition hover:bg-[var(--color-canvas)]/60 focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
+            aria-label={`Xem hồ sơ ${app.partner?.fullName ?? 'người làm'}`}
+          >
+            {profileBlock}
+          </Link>
+        ) : (
+          <div className="flex min-w-0 flex-1 gap-4">{profileBlock}</div>
+        )}
 
         {/* CTA */}
         <div className="flex shrink-0 items-start">

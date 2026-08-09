@@ -38,6 +38,8 @@ export function usePartnerRealtime(enabled: boolean, currentUserId?: string) {
 
     const invalidateOpen = () => {
       void queryClient.invalidateQueries({ queryKey: ['bookings', 'open'] });
+      void queryClient.invalidateQueries({ queryKey: ['open-jobs-board'] });
+      void queryClient.invalidateQueries({ queryKey: ['public-activity'] });
     };
     const invalidateMine = () => {
       void queryClient.invalidateQueries({ queryKey: ['bookings', 'partner'] });

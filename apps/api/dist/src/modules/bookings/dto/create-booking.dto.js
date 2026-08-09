@@ -21,6 +21,7 @@ class CreateBookingDto {
     scheduledAt;
     publishAt;
     partnerId;
+    jobTitle;
     note;
     budgetMin;
     budgetMax;
@@ -76,6 +77,17 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateBookingDto.prototype, "partnerId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        example: 'Sửa máy lạnh bị chảy nước',
+        description: 'Tên / mô tả ngắn công việc cần làm (hiện trên bảng tin)',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], CreateBookingDto.prototype, "jobTitle", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),

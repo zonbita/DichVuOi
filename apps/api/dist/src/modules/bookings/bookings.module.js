@@ -16,6 +16,7 @@ const bookings_gateway_1 = require("./bookings.gateway");
 const bookings_service_1 = require("./bookings.service");
 const partner_presence_service_1 = require("./partner-presence.service");
 const partner_realtime_service_1 = require("./partner-realtime.service");
+const lobby_presence_service_1 = require("../home-lobby/lobby-presence.service");
 let BookingsModule = class BookingsModule {
 };
 exports.BookingsModule = BookingsModule;
@@ -27,9 +28,10 @@ exports.BookingsModule = BookingsModule = __decorate([
             bookings_service_1.BookingsService,
             partner_realtime_service_1.PartnerRealtimeService,
             partner_presence_service_1.PartnerPresenceService,
+            lobby_presence_service_1.LobbyPresenceService,
             bookings_gateway_1.BookingsGateway,
         ],
-        exports: [bookings_service_1.BookingsService, partner_realtime_service_1.PartnerRealtimeService],
+        exports: [bookings_service_1.BookingsService, partner_realtime_service_1.PartnerRealtimeService, lobby_presence_service_1.LobbyPresenceService],
     })
 ], BookingsModule);
 //# sourceMappingURL=bookings.module.js.map

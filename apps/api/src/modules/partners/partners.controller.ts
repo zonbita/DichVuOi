@@ -58,6 +58,16 @@ export class PartnersController {
     );
   }
 
+  /** Review nổi bật (trang chủ) — tên khách đã che. */
+  @Get('reviews/featured')
+  @ApiQuery({ name: 'limit', required: false, example: 8 })
+  listFeaturedReviews(@Query('limit') limit?: string) {
+    const parsed = limit ? Number(limit) : 8;
+    return this.partnersService.listFeaturedReviews(
+      Number.isFinite(parsed) ? parsed : 8,
+    );
+  }
+
   /** Chi tiết bài đăng dịch vụ đã duyệt (gig). */
   @Get('public/:userId/posts/:postId')
   getPublicPost(

@@ -14,6 +14,8 @@ export type PartnerLevelBreakdown = {
   reviewCountPoints: number;
   verifiedBonus: number;
   diversityBonus: number;
+  onTimeRate?: number | null;
+  onTimeSampleSize?: number;
   inputs: {
     completedJobs: number;
     ratingAvg: number;
@@ -23,6 +25,7 @@ export type PartnerLevelBreakdown = {
     onlineSeconds: number;
     onlineHours: number;
     lastOnlineAt: string | null;
+    isOnline?: boolean;
   };
   formula: {
     online: { perHour: number; hoursCap: number; totalCap: number };
@@ -134,6 +137,12 @@ export type PublicPartnerProfile = {
   avatarUrl: string | null;
   gallery: string[];
   completedJobs: number;
+  /** Online theo heartbeat gần đây (không lộ socket). */
+  isOnline?: boolean;
+  lastOnlineAt?: string | null;
+  /** % đúng hạn (null nếu chưa có đơn COMPLETED). */
+  onTimeRate?: number | null;
+  onTimeSampleSize?: number;
   offerings: Array<{
     id: string;
     price: number;

@@ -47,7 +47,7 @@ export function PartnerStatsBar({ mine, openCount }: Props) {
           Đơn mở (hàng chờ)
         </p>
         <p className="mt-1 text-2xl font-extrabold text-emerald-700">{stats.openCount}</p>
-        <p className="mt-1 text-xs text-[var(--color-muted)]">Xem Đơn thuê realtime →</p>
+        <p className="mt-1 text-xs text-[var(--color-muted)]">Xem Đơn thuê →</p>
       </Link>
       <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">

@@ -77,6 +77,21 @@ const userPrivateSelect = {
   role: true,
 } as const;
 
+/** Online nếu có heartbeat trong 2 phút (presence:ping ~45s). */
+const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+
+function isPartnerOnline(lastOnlineAt: Date | null | undefined) {
+  if (!lastOnlineAt) return false;
+  return Date.now() - lastOnlineAt.getTime() < ONLINE_WINDOW_MS;
+}
+
+function maskReviewerName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'Khách';
+  if (parts.length === 1) return `${parts[0].slice(0, 1)}***`;
+  return `${parts[0]} ${parts[parts.length - 1].slice(0, 1)}.`;
+}
+
 const offeringInclude = {
   service: {
     select: {
@@ -127,6 +142,7 @@ export class PartnersService {
       workModes: string | null;
       responseMinutes: number;
       user: { id: string; fullName: string };
+      lastOnlineAt?: Date | null;
       offerings?: Array<{
         id: string;
         price: number | null;
@@ -260,6 +276,8 @@ export class PartnersService {
       avatarUrl: profile.avatarUrl,
       gallery: parseGallery(profile.galleryJson),
       completedJobs,
+      isOnline: isPartnerOnline(profile.lastOnlineAt),
+      lastOnlineAt: profile.lastOnlineAt?.toISOString() ?? null,
       offerings,
       reviews: reviews.map((r) => ({
         id: r.id,
@@ -402,6 +420,7 @@ export class PartnersService {
         bankVerified: true,
         avatarUrl: true,
         galleryJson: true,
+        lastOnlineAt: true,
         user: { select: userPublicSelect },
         offerings: {
           where: { isActive: true },
@@ -442,7 +461,7 @@ export class PartnersService {
 
     const offeringServiceIds = profile.offerings.map((o) => o.serviceId);
 
-    const [completedJobs, reviews, hoursByServiceId, reputation, servicePosts] =
+    const [completedJobs, reviews, hoursByServiceId, reputation, servicePosts, onTimeStats] =
       await Promise.all([
         this.prisma.booking.count({
           where: { partnerId: userId, status: 'COMPLETED' },
@@ -496,6 +515,7 @@ export class PartnersService {
             service: { select: servicePostServiceSelect },
           },
         }),
+        this.computeOnTimeStats(userId),
       ]);
 
     const shaped = this.shapePublic(
@@ -510,6 +530,8 @@ export class PartnersService {
 
     return {
       ...shaped,
+      onTimeRate: onTimeStats.onTimeRate,
+      onTimeSampleSize: onTimeStats.sampleSize,
       reputation,
       servicePosts: servicePosts.map((post) =>
         this.shapeServicePost(post, priceByService.get(post.serviceId) ?? null),
@@ -551,6 +573,8 @@ export class PartnersService {
               isVerified: true,
               ratingAvg: true,
               ratingCount: true,
+              lastOnlineAt: true,
+              acceptingJobs: true,
               user: { select: { fullName: true } },
               offerings: {
                 where: { isActive: true },
@@ -584,6 +608,8 @@ export class PartnersService {
             isVerified: post.partnerProfile.isVerified,
             ratingAvg: post.partnerProfile.ratingAvg,
             ratingCount: post.partnerProfile.ratingCount,
+            isOnline: isPartnerOnline(post.partnerProfile.lastOnlineAt),
+            acceptingJobs: post.partnerProfile.acceptingJobs,
             reputation: reputations.get(post.partnerProfile.userId) ?? null,
           },
         };
@@ -1307,9 +1333,12 @@ export class PartnersService {
     });
     if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
 
-    const completedJobs = await this.prisma.booking.count({
-      where: { partnerId: userId, status: 'COMPLETED' },
-    });
+    const [completedJobs, onTimeStats] = await Promise.all([
+      this.prisma.booking.count({
+        where: { partnerId: userId, status: 'COMPLETED' },
+      }),
+      this.computeOnTimeStats(userId),
+    ]);
 
     const breakdown = computePartnerLevel({
       onlineHours: profile.onlineSeconds / 3600,
@@ -1324,6 +1353,8 @@ export class PartnersService {
       storedLevel: profile.level,
       formula: PARTNER_LEVEL_FORMULA,
       ...breakdown,
+      onTimeRate: onTimeStats.onTimeRate,
+      onTimeSampleSize: onTimeStats.sampleSize,
       inputs: {
         completedJobs,
         ratingAvg: profile.ratingAvg,
@@ -1333,8 +1364,96 @@ export class PartnersService {
         onlineSeconds: profile.onlineSeconds,
         onlineHours: breakdown.onlineHours,
         lastOnlineAt: profile.lastOnlineAt,
+        isOnline: isPartnerOnline(profile.lastOnlineAt),
       },
     };
+  }
+
+  /** % đúng hạn: hoàn tất (released/updated) ≤ lịch hẹn + thời lượng + 1h grace. */
+  private async computeOnTimeStats(partnerId: string) {
+    const rows = await this.prisma.booking.findMany({
+      where: { partnerId, status: 'COMPLETED' },
+      orderBy: { updatedAt: 'desc' },
+      take: 100,
+      select: {
+        scheduledAt: true,
+        releasedAt: true,
+        updatedAt: true,
+        service: { select: { durationMin: true } },
+      },
+    });
+    if (rows.length === 0) {
+      return { onTimeRate: null as number | null, sampleSize: 0 };
+    }
+    const graceMs = 60 * 60 * 1000;
+    let onTime = 0;
+    for (const b of rows) {
+      const durationMin = b.service.durationMin > 0 ? b.service.durationMin : 60;
+      const deadline =
+        b.scheduledAt.getTime() + durationMin * 60_000 + graceMs;
+      const done = (b.releasedAt ?? b.updatedAt).getTime();
+      if (done <= deadline) onTime += 1;
+    }
+    return {
+      onTimeRate: Math.round((onTime / rows.length) * 100),
+      sampleSize: rows.length,
+    };
+  }
+
+  /** Review nổi bật trang chủ — ẩn tên đầy đủ. */
+  async listFeaturedReviews(limit = 8) {
+    const take = Math.min(Math.max(Math.floor(limit) || 8, 1), 16);
+    const rows = await this.prisma.review.findMany({
+      where: {
+        rating: { gte: 4 },
+        comment: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: take * 3,
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        fromUser: { select: { fullName: true } },
+        toUser: {
+          select: {
+            id: true,
+            fullName: true,
+            partnerProfile: {
+              select: { avatarUrl: true, level: true, city: true },
+            },
+          },
+        },
+        booking: {
+          select: {
+            service: { select: { name: true, slug: true } },
+          },
+        },
+      },
+    });
+
+    const items = rows
+      .filter((r) => (r.comment ?? '').trim().length >= 12)
+      .slice(0, take)
+      .map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        comment: (r.comment ?? '').trim().slice(0, 220),
+        createdAt: r.createdAt.toISOString(),
+        fromNameMasked: maskReviewerName(r.fromUser.fullName),
+        serviceName: r.booking.service.name,
+        serviceSlug: r.booking.service.slug,
+        partner: {
+          userId: r.toUser.id,
+          fullName: r.toUser.fullName,
+          avatarUrl: r.toUser.partnerProfile?.avatarUrl ?? null,
+          level: r.toUser.partnerProfile?.level ?? 1,
+          city: r.toUser.partnerProfile?.city ?? null,
+        },
+      }));
+
+    return { items };
   }
 
   private async syncOfferingsForProfile(

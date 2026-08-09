@@ -95,6 +95,8 @@ export type PublicServicePostListItem = {
     isVerified: boolean;
     ratingAvg: number;
     ratingCount: number;
+    isOnline?: boolean;
+    acceptingJobs?: boolean;
     /** Uy tín chu kỳ — tách biệt level (1–100). */
     reputation: {
       currentPoints: number;

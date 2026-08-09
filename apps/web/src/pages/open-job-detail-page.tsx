@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, Navigate, useParams } from 'react-router-dom';
-import { openJobRoomTone } from '../components/common/open-job-card';
+import { Link, useParams } from 'react-router-dom';
+import { openJobRoomTone, openJobTitle } from '../components/common/open-job-card';
 import { Icon } from '../components/ui/icon';
 import type { IconName } from '../components/ui/icon';
 import { useAuth } from '../features/auth/auth-context';
@@ -77,20 +77,23 @@ export function OpenJobDetailPage() {
   const { id = '' } = useParams();
   const { user, loading, canOffer } = useAuth();
   const queryClient = useQueryClient();
+  const detailPath = `/viec-moi/${id}`;
 
   usePartnerRealtime(Boolean(user) && canOffer, user?.id);
 
   const bookingQuery = useQuery({
-    queryKey: ['booking', id],
-    queryFn: () => api.getBooking(id),
-    enabled: Boolean(id) && Boolean(user),
+    queryKey: ['booking', 'open-public', id, user?.id ?? 'guest'],
+    queryFn: () =>
+      user ? api.getBooking(id) : api.getPublicOpenBooking(id),
+    enabled: Boolean(id) && !loading,
   });
 
   const applyMutation = useMutation({
     mutationFn: () => api.applyBooking(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      void queryClient.invalidateQueries({ queryKey: ['booking'] });
       void queryClient.invalidateQueries({ queryKey: ['bookings', 'open'] });
+      void queryClient.invalidateQueries({ queryKey: ['open-jobs-board'] });
       void queryClient.invalidateQueries({ queryKey: ['bookings', 'partner'] });
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
     },
@@ -98,32 +101,36 @@ export function OpenJobDetailPage() {
 
   if (loading || bookingQuery.isLoading) {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="Đang tải đơn">
-        <div className="h-4 w-40 animate-pulse rounded-full bg-white/50" />
-        <div className="h-[500px] animate-pulse rounded-[20px] bg-white/45" />
-        <div className="h-40 animate-pulse rounded-[20px] bg-white/40" />
+      <div className="page-shell py-6">
+        <div
+          className="section-container space-y-4"
+          aria-busy="true"
+          aria-label="Đang tải đơn"
+        >
+          <div className="h-4 w-40 animate-pulse rounded-full bg-[var(--color-line)]" />
+          <div className="h-[500px] animate-pulse rounded-[20px] bg-[var(--color-line)]/60" />
+          <div className="h-40 animate-pulse rounded-[20px] bg-[var(--color-line)]/50" />
+        </div>
       </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <Navigate to={`/dang-nhap?redirect=/doi-tac/don-thue/${id}`} replace />
     );
   }
 
   if (bookingQuery.isError || !bookingQuery.data) {
     return (
-      <div className="glass-card p-5 sm:p-6">
-        <p className="text-red-600">
-          Không tìm thấy đơn hoặc đơn đã đóng / hết hạn ghép.
-        </p>
-        <Link
-          to="/doi-tac/don-thue"
-          className="mt-3 inline-block font-semibold text-[var(--color-brand-deep)]"
-        >
-          Về đơn thuê realtime
-        </Link>
+      <div className="page-shell py-8">
+        <div className="section-container">
+          <div className="glass-card p-5 sm:p-6">
+            <p className="text-red-600">
+              Không tìm thấy đơn hoặc đơn đã đóng / hết hạn ghép.
+            </p>
+            <Link
+              to="/"
+              className="mt-3 inline-block font-semibold text-[var(--color-brand-deep)]"
+            >
+              Về trang chủ
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -146,6 +153,8 @@ export function OpenJobDetailPage() {
     : openJobRoomTone(booking);
 
   const posterName = booking.user?.fullName || booking.customerName;
+  const posterUserId = booking.user?.id ?? booking.userId ?? null;
+  const posterProfileTo = posterUserId ? `/user/${posterUserId}` : null;
   const tasks = (booking.note ?? '')
     .split('\n')
     .map((line) => line.trim())
@@ -165,15 +174,70 @@ export function OpenJobDetailPage() {
 
   const depositLabel = `${booking.applyDepositPercent ?? 10}% · ${formatPrice(booking.applyDepositAmount ?? 0)}`;
 
+  const applyCta = (() => {
+    if (!isOpen) {
+      return (
+        <Link
+          to="/"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-[14px] border border-[var(--color-line)] bg-white/70 py-2.5 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-white"
+        >
+          Đơn đã đóng
+        </Link>
+      );
+    }
+    if (!user) {
+      return (
+        <Link
+          to={`/dang-nhap?redirect=${encodeURIComponent(detailPath)}`}
+          className="btn-primary mt-3 inline-flex w-full items-center justify-center gap-2 py-2.5 text-sm shadow-md"
+        >
+          Đăng nhập để ứng tuyển
+          <Icon name="chevronRight" className="h-4 w-4" />
+        </Link>
+      );
+    }
+    if (!canOffer) {
+      return (
+        <Link
+          to={`/doi-tac?redirect=${encodeURIComponent(detailPath)}`}
+          className="mt-3 inline-flex w-full items-center justify-center rounded-[14px] border border-[var(--color-line)] bg-white/70 py-2.5 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-white"
+        >
+          Mở hồ sơ người làm để ứng tuyển
+        </Link>
+      );
+    }
+    return (
+      <button
+        type="button"
+        disabled={applyMutation.isPending || isApplied}
+        onClick={() => applyMutation.mutate()}
+        className={`btn-primary mt-3 inline-flex w-full items-center justify-center gap-2 py-2.5 text-sm shadow-md disabled:opacity-70 ${
+          isApplied ? '!bg-amber-500 hover:!bg-amber-600' : ''
+        }`}
+      >
+        {isApplied
+          ? 'Đã ứng tuyển'
+          : applyMutation.isPending
+            ? 'Đang ứng tuyển…'
+            : 'Ứng tuyển đơn này'}
+        <Icon
+          name={isApplied ? 'check' : 'chevronRight'}
+          className="h-4 w-4"
+        />
+      </button>
+    );
+  })();
+
   return (
-    <div className="animate-fade-up space-y-4">
+    <div className="page-shell animate-fade-up py-6">
+      <div className="section-container space-y-4">
       <section className="glass-card overflow-hidden">
         <div className="grid lg:h-[500px] lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)]">
           {/* Hero */}
           <div className="relative h-[220px] overflow-hidden bg-[var(--color-brand-soft)] sm:h-[300px] lg:h-full">
             <img
               src={cover}
-              alt={booking.service.name}
+              alt={openJobTitle(booking)}
               className="catalog-photo h-full w-full object-cover"
             />
             <div
@@ -217,39 +281,13 @@ export function OpenJobDetailPage() {
                 <strong className="text-[var(--color-ink)]">{depositLabel}</strong>
               </p>
 
-              {canOffer && isOpen ? (
-                <button
-                  type="button"
-                  disabled={applyMutation.isPending || isApplied}
-                  onClick={() => applyMutation.mutate()}
-                  className={`btn-primary mt-3 inline-flex w-full items-center justify-center gap-2 py-2.5 text-sm shadow-md disabled:opacity-70 ${
-                    isApplied ? '!bg-amber-500 hover:!bg-amber-600' : ''
-                  }`}
-                >
-                  {isApplied
-                    ? 'Đã ứng tuyển'
-                    : applyMutation.isPending
-                      ? 'Đang ứng tuyển…'
-                      : 'Ứng tuyển đơn này'}
-                  <Icon
-                    name={isApplied ? 'check' : 'chevronRight'}
-                    className="h-4 w-4"
-                  />
-                </button>
-              ) : (
-                <Link
-                  to={canOffer ? '/doi-tac/don-thue' : '/doi-tac'}
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-[14px] border border-[var(--color-line)] bg-white/70 py-2.5 text-sm font-semibold text-[var(--color-ink)] transition hover:bg-white"
-                >
-                  {isOpen ? 'Cần hồ sơ người làm' : 'Đơn đã đóng'}
-                </Link>
-              )}
+              {applyCta}
 
               <Link
-                to="/doi-tac/don-thue"
+                to="/"
                 className="mt-2 inline-flex w-full items-center justify-center rounded-[14px] border border-transparent py-2 text-sm font-semibold text-[var(--color-muted)] transition hover:bg-white/60 hover:text-[var(--color-ink)]"
               >
-                Quay lại danh sách
+                Về trang chủ
               </Link>
 
               {applyMutation.isError ? (
@@ -260,28 +298,55 @@ export function OpenJobDetailPage() {
               ) : null}
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/80 bg-white/75 p-3.5 shadow-[0_8px_24px_rgba(15,39,71,0.06)] backdrop-blur-md">
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/80 bg-white/75 p-3.5 shadow-[0_8px_24px_rgba(15,39,71,0.06)] backdrop-blur-md transition hover:bg-white/90">
               <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--color-muted)]">
                 Người làm đơn
               </p>
-              <div className="mt-2.5 flex gap-3">
-                <div className="aspect-square w-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white shadow-sm sm:w-14">
-                  <PosterAvatar name={posterName} />
+              {posterProfileTo ? (
+                <Link
+                  to={posterProfileTo}
+                  className="mt-2.5 block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
+                  aria-label={`Xem hồ sơ ${posterName}`}
+                >
+                  <div className="flex gap-3">
+                    <div className="aspect-square w-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white shadow-sm sm:w-14">
+                      <PosterAvatar name={posterName} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-base font-extrabold text-[var(--color-navy)] hover:text-[var(--color-brand-deep)]">
+                        {posterName}
+                      </p>
+                      <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                        Khách thuê trên DichVuOi
+                      </p>
+                      <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-soft)]/70 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-brand-deep)]">
+                        <Icon name="user" className="h-3 w-3" />
+                        {booking.customerPhone}
+                        {booking.customerPhoneMasked ? ' · che' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <div className="mt-2.5 flex gap-3">
+                  <div className="aspect-square w-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-white shadow-sm sm:w-14">
+                    <PosterAvatar name={posterName} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-extrabold text-[var(--color-navy)]">
+                      {posterName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                      Khách thuê trên DichVuOi
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-soft)]/70 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-brand-deep)]">
+                      <Icon name="user" className="h-3 w-3" />
+                      {booking.customerPhone}
+                      {booking.customerPhoneMasked ? ' · che' : ''}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-extrabold text-[var(--color-navy)]">
-                    {posterName}
-                  </p>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-                    Khách thuê trên DichVuOi
-                  </p>
-                  <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--color-brand-soft)]/70 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-brand-deep)]">
-                    <Icon name="user" className="h-3 w-3" />
-                    {booking.customerPhone}
-                    {booking.customerPhoneMasked ? ' · che' : ''}
-                  </p>
-                </div>
-              </div>
+              )}
               <p className="mt-auto pt-2.5 text-[11px] leading-relaxed text-[var(--color-muted)]">
                 {booking.contactPolicy?.hint ??
                   'SĐT/địa chỉ đủ sau khi nhận việc — chat trên DichVuOi.'}
@@ -294,7 +359,7 @@ export function OpenJobDetailPage() {
         <div className="space-y-5 border-t border-white/60 p-4 sm:p-6">
           <header className="flex flex-wrap items-start justify-between gap-3">
             <h1 className="min-w-0 text-2xl font-extrabold tracking-tight text-[var(--color-navy)] sm:text-[1.75rem]">
-              {booking.service.name}
+              {openJobTitle(booking)}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[var(--color-ink)] ring-1 ring-[var(--color-line)]">
@@ -381,6 +446,7 @@ export function OpenJobDetailPage() {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }

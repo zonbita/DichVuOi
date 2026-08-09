@@ -46,4 +46,19 @@ export class PartnerRealtimeService {
     this.server?.to(`customer:${customerId}`).emit('support:message', payload);
     this.server?.to('staff:support').emit('support:message', payload);
   }
+
+  /** Sảnh trang chủ — hô dịch vụ (template). */
+  emitHomeShout(payload: unknown) {
+    this.server?.to('home:lobby').emit('home:shout', payload);
+  }
+
+  /** Smile / reaction kiểu livestream. */
+  emitHomeReaction(payload: unknown) {
+    this.server?.to('home:lobby').emit('home:reaction', payload);
+  }
+
+  /** Ai đang trong sảnh (online count + danh sách). */
+  emitHomePresence(payload: unknown) {
+    this.server?.to('home:lobby').emit('home:presence', payload);
+  }
 }

@@ -71,6 +71,11 @@ export const hireServiceSchema = createBookingSchema
     serviceSlug: z.string().min(1, 'Chọn nghề cần thuê'),
     /** Địa chỉ không thu lúc đăng — gửi placeholder khi tạo đơn. */
     address: z.string().optional(),
+    jobTitle: z
+      .string()
+      .trim()
+      .min(3, 'Tên công việc cần ít nhất 3 ký tự')
+      .max(120, 'Tối đa 120 ký tự'),
     budgetMin: z.number().int().min(0, 'Giá tối thiểu không hợp lệ'),
     budgetMax: z.number().int().min(0, 'Giá tối đa không hợp lệ'),
     applyDepositPercent: z

@@ -24,6 +24,24 @@ export declare class PartnersController {
         unit: string | null;
         matchReason: "name" | "profession";
     }[]>;
+    listFeaturedReviews(limit?: string): Promise<{
+        items: {
+            id: string;
+            rating: number;
+            comment: string;
+            createdAt: string;
+            fromNameMasked: string;
+            serviceName: string;
+            serviceSlug: string;
+            partner: {
+                userId: string;
+                fullName: string;
+                avatarUrl: string | null;
+                level: number;
+                city: string | null;
+            };
+        }[];
+    }>;
     getPublicPost(userId: string, postId: string): Promise<{
         post: {
             createdAt: Date;
@@ -91,6 +109,8 @@ export declare class PartnersController {
                 isVerified: boolean;
                 ratingAvg: number;
                 ratingCount: number;
+                isOnline: boolean;
+                acceptingJobs: boolean;
                 reputation: import("../../common/reputation.service").PartnerReputationSnapshot | null;
             };
             createdAt: Date;
@@ -115,6 +135,8 @@ export declare class PartnersController {
         pageCount: number;
     }>;
     getPublic(userId: string): Promise<{
+        onTimeRate: number | null;
+        onTimeSampleSize: number;
         reputation: import("../../common/reputation.service").PartnerReputationSnapshot;
         servicePosts: {
             createdAt: Date;
@@ -153,6 +175,8 @@ export declare class PartnersController {
         avatarUrl: string | null;
         gallery: string[];
         completedJobs: number;
+        isOnline: boolean;
+        lastOnlineAt: string | null;
         offerings: {
             id: string;
             price: number;
@@ -320,6 +344,8 @@ export declare class PartnersController {
         responseMinutes: number;
     }>;
     getLevel(user: AuthUser): Promise<{
+        onTimeRate: number | null;
+        onTimeSampleSize: number;
         inputs: {
             completedJobs: number;
             ratingAvg: number;
@@ -329,6 +355,7 @@ export declare class PartnersController {
             onlineSeconds: number;
             onlineHours: number;
             lastOnlineAt: Date | null;
+            isOnline: boolean;
         };
         level: number;
         totalPoints: number;

@@ -242,7 +242,6 @@ export function PartnerDashboardPage() {
 
   const jobsProfessionTabs = useMemo(() => {
     const open = openQuery.data ?? [];
-    const mine = mineQuery.data ?? [];
 
     /** Chỉ nghề user đã gắn trên hồ sơ — không suy từ đơn lạ. */
     const fromOfferings = (profileQuery.data?.offerings ?? [])
@@ -258,8 +257,7 @@ export function PartnerDashboardPage() {
           });
 
     const countFor = (serviceId: string) =>
-      open.filter((b) => b.service?.id === serviceId).length +
-      mine.filter((b) => b.service?.id === serviceId).length;
+      open.filter((b) => b.service?.id === serviceId).length;
 
     const professionTabs = selected
       .map((s) => {
@@ -279,7 +277,7 @@ export function PartnerDashboardPage() {
       {
         id: 'all',
         label: 'Tất cả nghề',
-        count: open.length + mine.length,
+        count: open.length,
         groupSlug: undefined,
         groupName: undefined,
         categoryName: undefined,
@@ -288,7 +286,6 @@ export function PartnerDashboardPage() {
     ];
   }, [
     openQuery.data,
-    mineQuery.data,
     profileQuery.data?.offerings,
     profileQuery.data?.serviceIds,
     profileServiceIds,
@@ -334,7 +331,7 @@ export function PartnerDashboardPage() {
           }
           title={
             tab === 'incoming'
-              ? 'Đơn thuê realtime'
+              ? 'Đơn thuê'
               : tab === 'jobs'
                 ? 'Việc của tôi'
                 : tab === 'level'

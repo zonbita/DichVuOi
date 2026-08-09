@@ -7,6 +7,10 @@ import { Icon } from '../components/ui/icon';
 import type { IconName } from '../components/ui/icon';
 import { useAuth } from '../features/auth/auth-context';
 import { useCustomerRealtime } from '../hooks/use-customer-realtime';
+import {
+  requestScheduleNotificationPermission,
+  useScheduleReminders,
+} from '../hooks/use-schedule-reminders';
 import { api, formatPrice } from '../services/api';
 import type { Booking } from '../types/catalog';
 
@@ -71,6 +75,9 @@ export function MyBookingsPage() {
   const { user, loading, refreshMe } = useAuth();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabId>('all');
+  const [notifState, setNotifState] = useState<NotificationPermission | 'unsupported'>(() =>
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+  );
 
   useCustomerRealtime(Boolean(user), user?.id);
 
@@ -81,6 +88,7 @@ export function MyBookingsPage() {
   });
 
   const bookings = bookingsQuery.data ?? [];
+  useScheduleReminders(Boolean(user) && notifState === 'granted', bookings);
 
   const stats = useMemo(() => {
     const total = bookings.length;
@@ -164,6 +172,25 @@ export function MyBookingsPage() {
 
   return (
     <div className="space-y-5 pb-6">
+      {notifState === 'default' ? (
+        <div
+          className={`${dashboardSurfaceClass} flex flex-wrap items-center justify-between gap-3 px-4 py-3`}
+        >
+          <p className="text-sm text-[var(--color-ink)]">
+            Bật nhắc lịch để nhận thông báo đơn sắp diễn ra (trong 24 giờ).
+          </p>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--color-brand-deep)]"
+            onClick={() => {
+              void requestScheduleNotificationPermission().then(setNotifState);
+            }}
+          >
+            <Icon name="clock" className="h-4 w-4" />
+            Bật nhắc lịch
+          </button>
+        </div>
+      ) : null}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(
           [

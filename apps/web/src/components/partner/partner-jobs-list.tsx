@@ -91,21 +91,21 @@ function emptyCopy(tab: TabId, poolSize: number, filteredPool: number) {
   if (poolSize === 0) {
     return {
       title: 'Chưa nhận việc nào',
-      body: 'Ứng tuyển tại Đơn thuê realtime để bắt đầu nhận việc.',
+      body: 'Ứng tuyển tại Đơn thuê để bắt đầu nhận việc.',
       showCta: true,
     };
   }
   if (filteredPool === 0) {
     return {
       title: 'Không có đơn thuộc nghề đang chọn',
-      body: 'Đổi bộ lọc nghề hoặc tìm việc mới tại Đơn thuê realtime.',
+      body: 'Đổi bộ lọc nghề hoặc tìm việc mới tại Đơn thuê.',
       showCta: true,
     };
   }
   const byTab: Record<TabId, { title: string; body: string }> = {
     all: {
       title: 'Chưa có việc',
-      body: 'Ứng tuyển tại Đơn thuê realtime để bắt đầu nhận việc.',
+      body: 'Ứng tuyển tại Đơn thuê để bắt đầu nhận việc.',
     },
     applied: {
       title: 'Chưa có đơn chờ chọn',
@@ -113,7 +113,7 @@ function emptyCopy(tab: TabId, poolSize: number, filteredPool: number) {
     },
     action: {
       title: 'Chưa có công việc cần làm',
-      body: 'Ứng tuyển tại Đơn thuê realtime để bắt đầu nhận việc.',
+      body: 'Ứng tuyển tại Đơn thuê để bắt đầu nhận việc.',
     },
     active: {
       title: 'Chưa có việc đang diễn ra',

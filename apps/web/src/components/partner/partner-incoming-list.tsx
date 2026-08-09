@@ -13,7 +13,7 @@ import {
   type ProfessionTab,
 } from './partner-profession-tabs';
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 10;
 
 type Props = {
   bookings: Booking[];
@@ -27,7 +27,7 @@ type Props = {
   onProfessionChange?: (id: string) => void;
 };
 
-/** Danh sách đơn mở — partner ứng tuyển (cọc theo % chủ thuê set). */
+/** Danh sách đơn mở — portrait card giống trang chủ (5/hàng). */
 export function PartnerIncomingList({
   bookings,
   loading,
@@ -63,91 +63,97 @@ export function PartnerIncomingList({
     <section
       className={`${dashboardSurfaceClass} flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5`}
     >
-      <div className="flex shrink-0 flex-wrap items-start justify-between gap-3 sm:gap-4">
-        <div className="min-w-0 flex-1">
-          <DashboardPageHeader
-            icon="sparkles"
-            title="Đơn thuê realtime"
-            description="Việc mở trên sàn — ứng tuyển để khách chọn bạn."
-            actions={
-              <Link
-                to="/doi-tac/ho-so"
-                className="text-sm font-semibold text-[var(--color-brand)] underline-offset-2 hover:underline"
-              >
-                Thêm nghề →
-              </Link>
-            }
-          />
-        </div>
-        {showProfessionFilter ? (
-          <div className="w-full max-w-[360px] shrink-0 sm:ml-auto">
-            <PartnerProfessionTabs
-              tabs={professionTabs!}
-              value={professionId}
-              onChange={onProfessionChange!}
-              orientation="vertical"
-            />
-          </div>
-        ) : null}
+      <div className="shrink-0">
+        <DashboardPageHeader
+          icon="sparkles"
+          title="Đơn thuê"
+          description="Việc mở trên sàn — lọc theo nghề bạn đang nhận, rồi ứng tuyển."
+          actions={
+            <Link
+              to="/doi-tac/ho-so"
+              className="text-sm font-semibold text-[var(--color-brand)] underline-offset-2 hover:underline"
+            >
+              Thêm nghề →
+            </Link>
+          }
+        />
       </div>
 
-      <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-0.5">
-        {paged.map((booking) => {
-          const isApplying = applyingId === booking.id;
-          const isApplied =
-            appliedIds.includes(booking.id) ||
-            (booking.applications?.some((application) =>
-              ['APPLIED', 'SELECTED'].includes(application.status),
-            ) ??
-              false);
-          const tone = isApplied
-            ? {
-                label: 'Đã vào phòng',
-                badge: 'border border-amber-400 bg-amber-50 text-amber-800',
-                dot: 'bg-amber-500',
-              }
-            : openJobRoomTone(booking);
+      {showProfessionFilter ? (
+        <div className="mt-3 shrink-0">
+          <PartnerProfessionTabs
+            tabs={professionTabs!}
+            value={professionId}
+            onChange={onProfessionChange!}
+            orientation="horizontal"
+          />
+        </div>
+      ) : null}
 
-          return (
-            <OpenJobCard
-              key={booking.id}
-              booking={booking}
-              detailTo={`/doi-tac/don-thue/${booking.id}`}
-              footerLeft={
-                <span
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-extrabold tracking-wide uppercase ${tone.badge}`}
-                >
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
-                  {tone.label}
-                </span>
-              }
-              footerRight={
-                <button
-                  type="button"
-                  disabled={isApplying || isApplied}
-                  onClick={() => onApply(booking.id)}
-                  className={`inline-flex min-w-[132px] items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold transition ${
-                    isApplied
-                      ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-200'
-                      : isApplying
-                        ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-200'
-                        : 'bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-deep)]'
-                  } disabled:opacity-100`}
-                >
-                  {isApplied
-                    ? 'Đã ứng tuyển'
-                    : isApplying
-                      ? 'Đang ứng tuyển…'
-                      : 'Ứng tuyển'}
-                  <Icon
-                    name={isApplied ? 'check' : 'chevronRight'}
-                    className="h-4 w-4"
-                  />
-                </button>
-              }
-            />
-          );
-        })}
+      <div className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5">
+        {paged.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+            {paged.map((booking) => {
+              const isApplying = applyingId === booking.id;
+              const isApplied =
+                appliedIds.includes(booking.id) ||
+                (booking.applications?.some((application) =>
+                  ['APPLIED', 'SELECTED'].includes(application.status),
+                ) ??
+                  false);
+              const tone = isApplied
+                ? {
+                    label: 'Đã vào phòng',
+                    badge: 'border border-amber-400 bg-amber-50 text-amber-800',
+                    dot: 'bg-amber-500',
+                  }
+                : openJobRoomTone(booking);
+
+              return (
+                <OpenJobCard
+                  key={booking.id}
+                  booking={booking}
+                  layout="portrait"
+                  detailTo={`/viec-moi/${booking.id}`}
+                  footerRight={
+                    <div className="flex w-full flex-col gap-1.5">
+                      <span
+                        className={`inline-flex w-full items-center justify-center gap-1.5 truncate rounded-full px-2.5 py-1 text-[10px] font-extrabold tracking-wide uppercase ${tone.badge}`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone.dot}`}
+                        />
+                        <span className="truncate">{tone.label}</span>
+                      </span>
+                      <button
+                        type="button"
+                        disabled={isApplying || isApplied}
+                        onClick={() => onApply(booking.id)}
+                        className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-2.5 text-sm font-bold transition ${
+                          isApplied
+                            ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-200'
+                            : isApplying
+                              ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-200'
+                              : 'bg-[var(--color-brand)] text-white hover:bg-[var(--color-brand-deep)]'
+                        } disabled:opacity-100`}
+                      >
+                        {isApplied
+                          ? 'Đã ứng tuyển'
+                          : isApplying
+                            ? 'Đang ứng tuyển…'
+                            : 'Ứng tuyển'}
+                        <Icon
+                          name={isApplied ? 'check' : 'chevronRight'}
+                          className="h-4 w-4"
+                        />
+                      </button>
+                    </div>
+                  }
+                />
+              );
+            })}
+          </div>
+        ) : null}
 
         {loading ? (
           <p className="text-sm text-[var(--color-muted)]">Đang tải…</p>
@@ -167,7 +173,7 @@ export function PartnerIncomingList({
           total={bookings.length}
           unitLabel="đơn"
           onChange={setPage}
-          ariaLabel="Phân trang đơn thuê realtime"
+          ariaLabel="Phân trang đơn thuê"
         />
       </div>
     </section>

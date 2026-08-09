@@ -142,6 +142,8 @@ export type Booking = {
   totalPrice: number;
   customerName: string;
   customerPhone: string;
+  /** Tiêu đề công việc khách đặt; fallback UI = service.name. */
+  jobTitle?: string | null;
   note: string | null;
   budgetMin?: number | null;
   budgetMax?: number | null;
@@ -226,6 +228,8 @@ export type CreateBookingInput = {
   /** Hẹn giờ đăng lên bảng tin (ISO). Chỉ đơn mở. */
   publishAt?: string;
   partnerId?: string;
+  /** Tên / mô tả ngắn công việc cần làm. */
+  jobTitle?: string;
   note?: string;
   budgetMin?: number;
   budgetMax?: number;

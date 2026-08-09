@@ -448,7 +448,7 @@ export const partnerProcessPage: DocContent = {
         'Đăng ký / đăng nhập tài khoản Dịch Vụ Ơi.',
         'Vào mục Đối tác, hoàn thiện hồ sơ (giới thiệu, khu vực, dịch vụ nhận).',
         'Chọn dịch vụ muốn nhận việc; chờ duyệt nếu dịch vụ yêu cầu xác minh.',
-        'Theo dõi đơn mở realtime tại Đơn thuê realtime; lịch tháng trên Tổng quan.',
+        'Theo dõi đơn mở tại Đơn thuê; lịch tháng trên Tổng quan.',
         'Nhận việc → cập nhật trạng thái → hoàn thành → nhận giải ngân (sau hoa hồng sàn).',
       ],
     },

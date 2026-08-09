@@ -79,16 +79,24 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
         <div className="flex items-start gap-3">
           <Link
             to={`/user/${post.seller.userId}`}
-            className="flex w-[52px] shrink-0 flex-col items-center gap-1"
+            className="relative flex w-[52px] shrink-0 flex-col items-center gap-1"
             aria-label={post.seller.fullName}
           >
-            <UserAvatar
-              name={post.seller.fullName}
-              src={post.seller.avatarUrl}
-              userId={post.seller.userId}
-              size="sm"
-              className="!h-10 !w-10 !ring-2 !ring-[var(--color-line)] shadow-[0_3px_10px_rgba(5,45,71,0.12)]"
-            />
+            <span className="relative">
+              <UserAvatar
+                name={post.seller.fullName}
+                src={post.seller.avatarUrl}
+                userId={post.seller.userId}
+                size="sm"
+                className="!h-10 !w-10 !ring-2 !ring-[var(--color-line)] shadow-[0_3px_10px_rgba(5,45,71,0.12)]"
+              />
+              {post.seller.isOnline ? (
+                <span
+                  className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"
+                  title="Đang online"
+                />
+              ) : null}
+            </span>
             <LevelBadgeGold
               level={post.seller.level}
               variant="overlay"
@@ -138,6 +146,35 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
             variant="compact"
             className="mt-3"
           />
+        ) : null}
+
+        {(post.images?.length ?? 0) > 1 ? (
+          <div className="mt-3 flex gap-1.5 overflow-hidden">
+            {post.images.slice(1, 4).map((src) => (
+              <Link
+                key={src}
+                to={detailTo}
+                className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-[var(--color-line)]"
+                aria-label="Xem thêm ảnh portfolio"
+              >
+                <img
+                  src={mediaSrc(src)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </Link>
+            ))}
+            {(post.images?.length ?? 0) > 4 ? (
+              <Link
+                to={detailTo}
+                className="inline-flex h-11 min-w-11 items-center justify-center rounded-lg bg-[var(--color-canvas)] text-[11px] font-bold text-[var(--color-muted)] ring-1 ring-[var(--color-line)]"
+              >
+                +{(post.images?.length ?? 0) - 4}
+              </Link>
+            ) : null}
+          </div>
         ) : null}
 
         <div className="mt-auto flex items-center justify-end border-t border-[var(--color-line)]/70 pt-3">

@@ -1,9 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { ServiceCard } from '../components/common/service-card';
+import { HomeActivityTicker } from '../components/home/home-activity-ticker';
 import { HomeHotJobsSection } from '../components/home/home-hot-jobs-section';
+import { HomeLobbySection } from '../components/home/home-lobby-section';
 import { HomeOpenJobsSection } from '../components/home/home-open-jobs-section';
 import { HomeServicePostsSection } from '../components/home/home-service-posts-section';
+import {
+  HomeFeaturedReviewsSection,
+  HomeRecentCompletedSection,
+} from '../components/home/home-social-proof-section';
 import { FamiliarPartnersSection, RebookSection } from '../components/home/retention-sections';
 import {
   SectionHeaderBar,
@@ -75,11 +81,15 @@ export function HomePage() {
 
   return (
     <div className="min-w-0 overflow-x-clip pb-4">
+      <HomeActivityTicker />
+      <HomeLobbySection />
       <HomeServicePostsSection />
 
       <RebookSection />
       <HomeOpenJobsSection />
+      <HomeRecentCompletedSection />
       <FamiliarPartnersSection />
+      <HomeFeaturedReviewsSection />
 
       {(apiDown || servingStale) && (
         <div className="page-shell mt-4">

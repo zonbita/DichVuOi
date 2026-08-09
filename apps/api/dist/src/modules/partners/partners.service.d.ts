@@ -27,6 +27,8 @@ export declare class PartnersService {
         matchReason: "name" | "profession";
     }[]>;
     getPublicProfile(userId: string): Promise<{
+        onTimeRate: number | null;
+        onTimeSampleSize: number;
         reputation: import("../../common/reputation.service").PartnerReputationSnapshot;
         servicePosts: {
             createdAt: Date;
@@ -65,6 +67,8 @@ export declare class PartnersService {
         avatarUrl: string | null;
         gallery: string[];
         completedJobs: number;
+        isOnline: boolean;
+        lastOnlineAt: string | null;
         offerings: {
             id: string;
             price: number;
@@ -121,6 +125,8 @@ export declare class PartnersService {
                 isVerified: boolean;
                 ratingAvg: number;
                 ratingCount: number;
+                isOnline: boolean;
+                acceptingJobs: boolean;
                 reputation: import("../../common/reputation.service").PartnerReputationSnapshot | null;
             };
             createdAt: Date;
@@ -565,6 +571,8 @@ export declare class PartnersService {
         responseMinutes: number;
     }>;
     getLevelBreakdown(userId: string): Promise<{
+        onTimeRate: number | null;
+        onTimeSampleSize: number;
         inputs: {
             completedJobs: number;
             ratingAvg: number;
@@ -574,6 +582,7 @@ export declare class PartnersService {
             onlineSeconds: number;
             onlineHours: number;
             lastOnlineAt: Date | null;
+            isOnline: boolean;
         };
         level: number;
         totalPoints: number;
@@ -618,6 +627,25 @@ export declare class PartnersService {
                 readonly max: 100;
             };
         };
+    }>;
+    private computeOnTimeStats;
+    listFeaturedReviews(limit?: number): Promise<{
+        items: {
+            id: string;
+            rating: number;
+            comment: string;
+            createdAt: string;
+            fromNameMasked: string;
+            serviceName: string;
+            serviceSlug: string;
+            partner: {
+                userId: string;
+                fullName: string;
+                avatarUrl: string | null;
+                level: number;
+                city: string | null;
+            };
+        }[];
     }>;
     private syncOfferingsForProfile;
     listFavoriteIds(userId: string): Promise<string[]>;

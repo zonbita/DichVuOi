@@ -752,6 +752,71 @@ async function main() {
   console.log(
     `Seeded ${openSeed} OPEN PENDING bookings for homepage board (demo@dichvuoi.vn)`,
   );
+
+  // --- Demo: đơn COMPLETED cho block «Vừa hoàn thành» trên trang chủ ---
+  await prisma.booking.deleteMany({
+    where: { note: { startsWith: '[seed-home-completed]' } },
+  });
+
+  const homePartners = await prisma.partnerProfile.findMany({
+    where: { acceptingJobs: true },
+    select: {
+      userId: true,
+      avatarUrl: true,
+      user: { select: { fullName: true } },
+      offerings: {
+        where: { isActive: true },
+        take: 1,
+        select: {
+          serviceId: true,
+          price: true,
+          service: { select: { name: true, basePrice: true } },
+        },
+      },
+    },
+    orderBy: { ratingAvg: 'desc' },
+    take: 12,
+  });
+
+  let homeCompletedSeed = 0;
+  for (let i = 0; i < homePartners.length; i += 1) {
+    const profile = homePartners[i];
+    const offering = profile.offerings[0];
+    if (!offering) continue;
+    const price = offering.price ?? offering.service.basePrice;
+    const commissionBps = 1500;
+    const commissionAmount = Math.round((price * commissionBps) / 10000);
+    const partnerPayout = price - commissionAmount;
+    const hoursAgo = 2 + i * 5;
+    const releasedAt = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+    const scheduledAt = new Date(releasedAt.getTime() - 3 * 60 * 60 * 1000);
+
+    await prisma.booking.create({
+      data: {
+        userId: demoCustomer.id,
+        partnerId: profile.userId,
+        serviceId: offering.serviceId,
+        address: addresses[i % addresses.length],
+        scheduledAt,
+        note: `[seed-home-completed] Demo vừa xong · ${offering.service.name}`,
+        status: 'COMPLETED',
+        totalPrice: price,
+        customerName: demoCustomer.fullName,
+        customerPhone: demoCustomer.phone ?? '0900000000',
+        paymentStatus: 'RELEASED',
+        commissionBps,
+        commissionAmount,
+        partnerPayout,
+        paidAt: scheduledAt,
+        releasedAt,
+      },
+    });
+    homeCompletedSeed += 1;
+  }
+
+  console.log(
+    `Seeded ${homeCompletedSeed} COMPLETED bookings for homepage «Vừa hoàn thành»`,
+  );
 }
 
 main()

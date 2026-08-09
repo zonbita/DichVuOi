@@ -7,6 +7,7 @@ import { BookingsGateway } from './bookings.gateway';
 import { BookingsService } from './bookings.service';
 import { PartnerPresenceService } from './partner-presence.service';
 import { PartnerRealtimeService } from './partner-realtime.service';
+import { LobbyPresenceService } from '../home-lobby/lobby-presence.service';
 
 @Module({
   imports: [AuthModule, FinanceModule],
@@ -15,8 +16,9 @@ import { PartnerRealtimeService } from './partner-realtime.service';
     BookingsService,
     PartnerRealtimeService,
     PartnerPresenceService,
+    LobbyPresenceService,
     BookingsGateway,
   ],
-  exports: [BookingsService, PartnerRealtimeService],
+  exports: [BookingsService, PartnerRealtimeService, LobbyPresenceService],
 })
 export class BookingsModule {}
