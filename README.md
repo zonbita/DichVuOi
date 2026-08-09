@@ -308,7 +308,7 @@ Giao diện công khai theo hướng **sàn dịch vụ đáng tin cậy**: navy
 | `--color-line` | `#E2E9EC` | Viền card, divider |
 | `--color-canvas` | `#F7F9FA` | Nền trang |
 | `--color-card` | `#FFFFFF` | Nền card |
-| `--color-sale` | `#B42318` | **Giá**, số tiền đơn — không đổi theo ngành |
+| `--color-sale` | `#b77700` | **Giá**, số tiền đơn — không đổi theo ngành |
 
 Shadow: `--shadow-card` = `0 6px 24px rgba(7,59,92,0.08)` · `--shadow-hover` khi hover card/nút.
 

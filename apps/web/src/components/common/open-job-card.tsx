@@ -110,11 +110,14 @@ export function OpenJobCard({
         </span>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-center">
-        <h3 className="truncate text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]">
+      <div className="flex min-w-0 flex-1 flex-col justify-start">
+        <h3
+          className="shrink-0 truncate text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]"
+          title={booking.service.name}
+        >
           {booking.service.name}
         </h3>
-        <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
+        <p className="mt-1 flex min-w-0 shrink-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
           <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
           <span className="truncate">
             {booking.customerName}
@@ -122,7 +125,7 @@ export function OpenJobCard({
           </span>
         </p>
 
-        <div className="mt-3 flex w-full flex-wrap items-center gap-2">
+        <div className="mt-2.5 flex w-full flex-wrap items-center gap-2">
           {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
             <JobMetaPill
               icon="clock"
@@ -178,11 +181,11 @@ export function OpenJobCard({
   );
 
   const shellClass =
-    'w-full max-w-[668px] overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white shadow-[0_4px_14px_rgba(24,49,63,0.07)] transition hover:border-[var(--color-brand)]/35 hover:shadow-[0_6px_18px_rgba(24,49,63,0.1)]';
+    'w-full max-w-[668px] rounded-[16px] border border-[var(--color-line)] bg-white shadow-[0_4px_14px_rgba(24,49,63,0.07)] transition hover:border-[var(--color-brand)]/35 hover:shadow-[0_6px_18px_rgba(24,49,63,0.1)]';
 
   return (
     <article className={shellClass}>
-      <div className="flex flex-col gap-3.5 p-4 sm:h-[178px] sm:flex-row sm:items-stretch sm:gap-4 sm:px-5 sm:py-[18px]">
+      <div className="flex flex-col gap-3.5 p-4 sm:min-h-[178px] sm:flex-row sm:items-stretch sm:gap-4 sm:px-5 sm:py-[18px]">
         {detailTo ? (
           <Link
             to={detailTo}
