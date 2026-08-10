@@ -16,21 +16,22 @@ logger.error = (msg, options) => {
 };
 
 function quietSocketProxy(proxy: {
-  on: (event: string, listener: (...args: unknown[]) => void) => void;
+  on: (event: string, listener: (...args: never[]) => void) => void;
 }) {
   const silent = new Set(['ECONNABORTED', 'ECONNRESET', 'EPIPE']);
-  proxy.on('error', (err: unknown) => {
-    const code = (err as NodeJS.ErrnoException | undefined)?.code;
-    if (code && silent.has(code)) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (proxy as any).on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code && silent.has(err.code)) return;
   });
-  proxy.on('proxyReqWs', (_proxyReq: unknown, _req: unknown, socket: unknown) => {
-    const sock = socket as {
-      on?: (event: string, cb: (err: NodeJS.ErrnoException) => void) => void;
-    };
-    sock.on?.('error', (err) => {
-      if (err.code && silent.has(err.code)) return;
-    });
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (proxy as any).on(
+    'proxyReqWs',
+    (_proxyReq: unknown, _req: unknown, socket: { on: (e: string, cb: (err: NodeJS.ErrnoException) => void) => void }) => {
+      socket.on('error', (err) => {
+        if (err.code && silent.has(err.code)) return;
+      });
+    },
+  );
 }
 
 export default defineConfig({
@@ -51,7 +52,8 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
         ws: true,
-        configure: quietSocketProxy,
+        // Vitest/http-proxy event typings are stricter than runtime — cast keep quiet.
+        configure: quietSocketProxy as never,
       },
     },
   },

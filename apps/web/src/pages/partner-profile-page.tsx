@@ -6,7 +6,10 @@ import { ReputationProgressBar } from '../components/partner/reputation-progress
 import { SquareImageSlider } from '../components/partner/square-image-slider';
 import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { StarIcon, Icon } from '../components/ui/icon';
-import { prefetchPublicPartnerPost } from '../lib/prefetch-public-partner-post';
+import {
+  prefetchPublicPartnerPost,
+  seedDetailFromPublicProfile,
+} from '../lib/prefetch-public-partner-post';
 import { publicPartnerQueryOptions } from '../lib/query-client';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import { resolveOfferingPriceRange } from '../utils/market-price';
@@ -262,7 +265,15 @@ function GigCard({
   const unit = offering?.service.unit ?? post.service.unit;
 
   const warmDetail = () => {
-    prefetchPublicPartnerPost(queryClient, partnerUserId, post.id);
+    const profile = queryClient.getQueryData<PublicPartnerProfile>([
+      'partner',
+      'public',
+      partnerUserId,
+    ]);
+    prefetchPublicPartnerPost(queryClient, partnerUserId, post.id, {
+      seed: profile ? seedDetailFromPublicProfile(profile, post.id) : null,
+      images: imgs,
+    });
   };
 
   return (

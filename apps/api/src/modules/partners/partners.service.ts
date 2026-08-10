@@ -638,52 +638,52 @@ export class PartnersService {
 
   /** Chi tiết 1 bài đăng đã duyệt — trang gig công khai. */
   async getPublicServicePost(userId: string, postId: string) {
-    const profile = await this.prisma.partnerProfile.findUnique({
-      where: { userId },
-      select: {
-        id: true,
-        userId: true,
-        headline: true,
-        city: true,
-        responseMinutes: true,
-        ratingAvg: true,
-        ratingCount: true,
-        level: true,
-        isVerified: true,
-        phoneVerified: true,
-        bankVerified: true,
-        avatarUrl: true,
-        acceptingJobs: true,
-        user: { select: { id: true, fullName: true } },
-      },
-    });
-    if (!profile) {
-      throw new NotFoundException('Không tìm thấy hồ sơ người làm');
-    }
-
-    const post = await this.prisma.partnerServicePost.findFirst({
-      where: {
-        id: postId,
-        partnerProfileId: profile.id,
-        status: PartnerServicePostStatus.APPROVED,
-      },
-      select: {
-        id: true,
-        title: true,
-        body: true,
-        coverUrl: true,
-        imagesJson: true,
-        serviceId: true,
-        createdAt: true,
-        updatedAt: true,
-        service: { select: servicePostServiceSelect },
-      },
-    });
+    // Profile+post chung 1 query; rank chạy song song (không phụ thuộc post).
+    const [post, rankInfo] = await Promise.all([
+      this.prisma.partnerServicePost.findFirst({
+        where: {
+          id: postId,
+          status: PartnerServicePostStatus.APPROVED,
+          partnerProfile: { userId },
+        },
+        select: {
+          id: true,
+          title: true,
+          body: true,
+          coverUrl: true,
+          imagesJson: true,
+          serviceId: true,
+          createdAt: true,
+          updatedAt: true,
+          service: { select: servicePostServiceSelect },
+          partnerProfile: {
+            select: {
+              id: true,
+              userId: true,
+              headline: true,
+              city: true,
+              responseMinutes: true,
+              ratingAvg: true,
+              ratingCount: true,
+              level: true,
+              isVerified: true,
+              phoneVerified: true,
+              bankVerified: true,
+              avatarUrl: true,
+              acceptingJobs: true,
+              user: { select: { id: true, fullName: true } },
+            },
+          },
+        },
+      }),
+      this.getPartnerRankScore(userId),
+    ]);
     if (!post) {
       throw new NotFoundException('Không tìm thấy bài đăng');
     }
+    const profile = post.partnerProfile;
 
-    const [offering, reviews, rankInfo] = await Promise.all([
+    const [offering, reviews] = await Promise.all([
       this.prisma.partnerService.findFirst({
         where: {
           partnerProfileId: profile.id,
@@ -717,7 +717,6 @@ export class PartnersService {
           fromUser: { select: { id: true, fullName: true } },
         },
       }),
-      this.getPartnerRankScore(userId),
     ]);
 
     const ratingCount = reviews.length;

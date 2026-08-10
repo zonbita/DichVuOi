@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { prefetchPublicPartnerPost } from '../../lib/prefetch-public-partner-post';
+import { prefetchPublicPartnerPost, seedDetailFromListItem } from '../../lib/prefetch-public-partner-post';
 import { formatPrice, formatPriceNumber } from '../../services/api';
 import type { PublicServicePostListItem } from '../../types/public-service-post';
 import { offeringColor } from '../../utils/catalog-colors';
@@ -41,7 +41,16 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
   const soft = color?.soft ?? 'var(--color-brand-soft)';
 
   const warmDetail = () => {
-    prefetchPublicPartnerPost(queryClient, post.seller.userId, post.id);
+    const images =
+      post.images?.length > 0
+        ? post.images
+        : post.coverUrl
+          ? [post.coverUrl]
+          : [];
+    prefetchPublicPartnerPost(queryClient, post.seller.userId, post.id, {
+      seed: seedDetailFromListItem(post),
+      images,
+    });
   };
 
   return (

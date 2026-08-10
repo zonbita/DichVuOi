@@ -1,6 +1,7 @@
 import { Suspense, lazy, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { TermsAcceptGate } from './components/auth/terms-accept-gate';
+import { ScrollToTop } from './components/layout/scroll-to-top';
 import { SiteLayout } from './components/layout/site-layout';
 import { UserDashboardLayout } from './components/layout/user-dashboard-layout';
 
@@ -253,6 +254,7 @@ function Lazy({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <TermsAcceptGate>
         <SiteLayout>
           <Lazy>

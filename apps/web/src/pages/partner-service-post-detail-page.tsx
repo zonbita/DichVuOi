@@ -6,6 +6,7 @@ import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/
 import { Icon, StarIcon } from '../components/ui/icon';
 import { RichPostBody } from '../components/ui/rich-post-body';
 import { publicPartnerQueryOptions } from '../lib/query-client';
+import { publicPartnerPostQueryKey } from '../lib/prefetch-public-partner-post';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import { mediaSrc } from '../utils/media-src';
 
@@ -50,7 +51,7 @@ export function PartnerServicePostDetailPage() {
   const { userId = '', postId = '' } = useParams();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['partner', 'public-post', userId, postId],
+    queryKey: publicPartnerPostQueryKey(userId, postId),
     queryFn: () => api.getPublicPartnerPost(userId, postId),
     enabled: Boolean(userId && postId),
     ...publicPartnerQueryOptions,
