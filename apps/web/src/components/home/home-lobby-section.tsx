@@ -13,9 +13,9 @@ import type {
   HomeShoutKind,
 } from '../../types/home-lobby';
 import { DEFAULT_LOBBY_SMILES } from '../../types/home-lobby';
+import { offeringColor } from '../../utils/catalog-colors';
 import { Icon } from '../ui/icon';
 import { UserAvatar } from '../ui/user-avatar';
-import { SectionHeaderBar } from './section-header-bar';
 
 const TOKEN_KEY = 'dichvuoi_token';
 const GUEST_KEY = 'dichvuoi_lobby_guest';
@@ -48,8 +48,15 @@ function ensureGuestId() {
   }
 }
 
-/** Message API dùng «tên dịch vụ» — hiện icon briefcase thay dấu << >>. */
-function ShoutMessage({ message }: { message: string }) {
+/** Message API dùng «tên dịch vụ» — hiện icon briefcase + màu nghề theo nhóm. */
+function ShoutMessage({
+  message,
+  groupSlug,
+}: {
+  message: string;
+  groupSlug?: string | null;
+}) {
+  const color = offeringColor(groupSlug);
   const parts = message.split(/(«[^»]+»)/g);
   return (
     <>
@@ -59,11 +66,13 @@ function ShoutMessage({ message }: { message: string }) {
         return (
           <span
             key={i}
-            className="mx-0.5 inline-flex items-center gap-1 align-middle font-semibold text-[var(--color-navy)]"
+            className="mx-0.5 inline-flex items-center gap-1 align-middle font-semibold"
+            style={{ color: color.ink }}
           >
             <Icon
               name="briefcase"
-              className="h-3.5 w-3.5 shrink-0 !text-[var(--color-teal)]"
+              className="h-3.5 w-3.5 shrink-0"
+              style={{ color: color.main }}
             />
             <span>{match[1]}</span>
           </span>
@@ -268,21 +277,6 @@ export function HomeLobbySection() {
   return (
     <section className="page-shell mt-4">
       <div className="section-container">
-        <SectionHeaderBar
-          title="Sảnh chào dịch vụ"
-          icon="message"
-          subtitle="Không chat tự do — hô dịch vụ + bấm smile như livestream"
-          badge={
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 ring-1 ring-emerald-200">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              Live
-            </span>
-          }
-        />
-
         <div className="flex h-[500px] flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-[0_8px_24px_rgba(15,39,71,0.06)] lg:grid lg:grid-cols-[minmax(200px,240px)_minmax(0,1fr)]">
           {/* Trái: người đang tham gia + tổng online */}
           <aside className="flex shrink-0 flex-col border-b border-[var(--color-line)] bg-[var(--color-canvas)]/50 lg:h-full lg:shrink lg:border-b-0 lg:border-r">
@@ -380,7 +374,10 @@ export function HomeLobbySection() {
                     <span className="mx-1 font-semibold text-[var(--color-muted)]">
                       :
                     </span>
-                    <ShoutMessage message={item.message} />
+                    <ShoutMessage
+                      message={item.message}
+                      groupSlug={item.servicePost.groupSlug}
+                    />
                   </p>
                 </Link>
               ))
@@ -429,9 +426,6 @@ export function HomeLobbySection() {
               </div>
             ) : (
               <div className="space-y-2.5">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                  Hô nhanh — chọn trạng thái + dịch vụ (không nhập chat)
-                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {kinds.map((item) => (
                     <button

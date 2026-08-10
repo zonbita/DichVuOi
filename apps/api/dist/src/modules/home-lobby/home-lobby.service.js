@@ -81,6 +81,7 @@ let HomeLobbyService = class HomeLobbyService {
                 title,
                 serviceName,
                 serviceSlug: row.servicePost.service.slug,
+                groupSlug: row.servicePost.service.category?.group.slug ?? null,
                 href: `/user/${row.user.id}/dich-vu/${row.servicePost.id}`,
                 profileHref: `/user/${row.user.id}`,
             },
@@ -109,7 +110,14 @@ let HomeLobbyService = class HomeLobbyService {
                     select: {
                         id: true,
                         title: true,
-                        service: { select: { id: true, slug: true, name: true } },
+                        service: {
+                            select: {
+                                id: true,
+                                slug: true,
+                                name: true,
+                                category: { select: { group: { select: { slug: true } } } },
+                            },
+                        },
                     },
                 },
             },
@@ -226,7 +234,14 @@ let HomeLobbyService = class HomeLobbyService {
                     select: {
                         id: true,
                         title: true,
-                        service: { select: { id: true, slug: true, name: true } },
+                        service: {
+                            select: {
+                                id: true,
+                                slug: true,
+                                name: true,
+                                category: { select: { group: { select: { slug: true } } } },
+                            },
+                        },
                     },
                 },
             },

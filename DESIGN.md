@@ -100,19 +100,27 @@ Ngon ngu do sau dung cho chrome thuong hieu — **giu mau navy cu**, khong doi s
 
 **Ap dung:**
 - Navbar (`site-header.tsx`)
-- Section header trang chu (`.section-header-bar` / `SectionHeaderBar`)
+- Section header trang chu + `/nhom` + `/nhom/:slug` (`.section-header-bar` / `SectionHeaderBar`)
 - Thanh footer **«Bạn cần hỗ trợ?»** (`.soft-3d-navy`)
 
 **Cong thuc:**
 - **Nen radial navy:** `#0a5678 → #073b5c → #052d47 → #041f32` (ellipse tu goc tren-trai)
 - **Bong mem:** shadow ngoai offset + blur; inset highlight top + inset dark day
 - **Highlight:** overlay radial trang nhe canh tren (`.section-header-bar__highlight` / `.soft-3d-navy__highlight`)
-- **Radius:** ~22px (squircle panel)
+- **Radius:** ~14px (section bar) / ~22px (soft-3d-navy panel)
+- **Overflow:** `.section-header-bar` = `visible` (dropdown action); `.soft-3d-navy` = `hidden`
 - **Squircle icon:** `.soft-3d-squircle` — border white/15, nen white/10, inset highlight
-  - Section: 1 icon theo chu de (sparkles / briefcase / chart…)
+  - Section: 1 icon theo chu de (sparkles / briefcase / chart / grid…)
   - Support bar: headset lon + 4 kenh (phone, message, Zalo, mail)
 
 **Token CSS:** `apps/web/src/index.css` — component: `apps/web/src/components/home/section-header-bar.tsx`
+
+### Cap vs Rank (partner)
+
+- **Cap** 1–100 (merit) — pill «Cấp N»
+- **Rank** 1–1000 = don hoan thanh + thue thanh cong — bar chu MEMBER…LEGEND
+- Avatar: Cap de mep avatar, Rank chu ben duoi (`AvatarLevelOverlay`)
+- Chi tiet: README muc *Cap vs Rank*
 
 ## Shapes
 

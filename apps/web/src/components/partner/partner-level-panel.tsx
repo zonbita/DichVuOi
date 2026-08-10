@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { PartnerLevelBreakdown } from '../../types/auth';
 import { DashboardSurface } from '../dashboard/dashboard-chrome';
-import { LevelBadgeGold, VerificationBadge } from '../ui/partner-badges';
+import { LevelBadgeGold, PartnerRankBadge, VerificationBadge } from '../ui/partner-badges';
 
 type Row = {
   id: string;
@@ -106,9 +106,18 @@ export function PartnerLevelPanel({ data }: Props) {
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <LevelBadgeGold level={data.level} />
+              <PartnerRankBadge
+                rank={data.rank}
+                completedJobs={data.inputs.completedJobs}
+                hireSuccessCount={data.inputs.hireSuccessCount}
+              />
               <VerificationBadge verified={data.inputs.isVerified} />
             </div>
             <p className="mt-3 text-sm text-[var(--color-muted)]">
+              Rank {data.rank}/1000 · {data.inputs.completedJobs} hoàn thành +{' '}
+              {data.inputs.hireSuccessCount} thuê thành công
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-muted)]">
               Tổng điểm{' '}
               <strong className="text-[var(--color-ink)]">{data.totalPoints}</strong>
               {' · '}

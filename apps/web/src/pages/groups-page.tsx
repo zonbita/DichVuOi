@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { GroupTile } from '../components/common/group-card';
 import { RetentionPartnerCard } from '../components/home/retention-partner-card';
+import { SectionHeaderBar } from '../components/home/section-header-bar';
 import { Icon } from '../components/ui/icon';
 import { catalogQueries } from '../lib/catalog-queries';
 import { api } from '../services/api';
@@ -70,78 +71,77 @@ export function GroupsPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-navy)] sm:text-3xl">
-            {keyword ? `Kết quả cho “${keyword}”` : 'Tất cả ngành nghề'}
-          </h1>
-          {!keyword ? (
-            <p className="mt-1.5 text-sm text-[var(--color-muted)] sm:text-base">
-              Khám phá dịch vụ phù hợp với nhu cầu của bạn
-            </p>
-          ) : null}
-        </div>
+      <SectionHeaderBar
+        icon="grid"
+        title={keyword ? `Kết quả cho “${keyword}”` : 'Tất cả ngành nghề'}
+        subtitle={
+          keyword ? null : 'Khám phá dịch vụ phù hợp với nhu cầu của bạn'
+        }
+        action={
+          <div className="flex w-full min-w-0 items-center gap-2">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Tìm kiếm ngành nghề</span>
+              <Icon
+                name="search"
+                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-muted)]"
+              />
+              <input
+                type="search"
+                value={draftQuery}
+                onChange={(event) => setDraftQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') commitSearch(draftQuery);
+                }}
+                placeholder="Tìm kiếm ngành nghề..."
+                className="w-full rounded-full border border-white/20 bg-white py-1.5 pr-3 pl-9 text-xs font-medium text-[var(--color-navy)] shadow-sm outline-none placeholder:text-[var(--color-muted)] focus:ring-2 focus:ring-white/40 sm:text-sm"
+              />
+            </label>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:max-w-xl">
-          <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Tìm kiếm ngành nghề</span>
-            <Icon
-              name="search"
-              className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
-            />
-            <input
-              type="search"
-              value={draftQuery}
-              onChange={(event) => setDraftQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') commitSearch(draftQuery);
-              }}
-              placeholder="Tìm kiếm ngành nghề..."
-              className="field-input w-full rounded-full py-2.5 pr-4 pl-10 text-sm"
-            />
-          </label>
-
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              aria-expanded={filterOpen}
-              onClick={() => setFilterOpen((open) => !open)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--color-line)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-navy)] shadow-sm transition hover:bg-[var(--color-canvas)] sm:w-auto"
-            >
-              <Icon name="settings" className="h-4 w-4" />
-              Bộ lọc
-              <Icon name="chevronDown" className="h-3.5 w-3.5 text-[var(--color-muted)]" />
-            </button>
-            {filterOpen ? (
-              <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-[var(--shadow-hover)]">
-                {(
-                  [
-                    ['default', 'Mặc định'],
-                    ['name-asc', 'Tên A → Z'],
-                    ['name-desc', 'Tên Z → A'],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => {
-                      setSortMode(value);
-                      setFilterOpen(false);
-                    }}
-                    className={`block w-full px-3.5 py-2 text-left text-sm font-medium transition hover:bg-[var(--color-canvas)] ${
-                      sortMode === value
-                        ? 'text-[var(--color-brand-deep)]'
-                        : 'text-[var(--color-ink)]'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                aria-expanded={filterOpen}
+                onClick={() => setFilterOpen((open) => !open)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/20 bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-navy)] shadow-sm transition hover:bg-white/95 sm:gap-2 sm:px-3.5 sm:text-sm"
+              >
+                <Icon name="settings" className="h-3.5 w-3.5" />
+                Bộ lọc
+                <Icon
+                  name="chevronDown"
+                  className="h-3.5 w-3.5 text-[var(--color-muted)]"
+                />
+              </button>
+              {filterOpen ? (
+                <div className="absolute right-0 z-[60] mt-2 w-48 overflow-hidden rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-[var(--shadow-hover)]">
+                  {(
+                    [
+                      ['default', 'Mặc định'],
+                      ['name-asc', 'Tên A → Z'],
+                      ['name-desc', 'Tên Z → A'],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => {
+                        setSortMode(value);
+                        setFilterOpen(false);
+                      }}
+                      className={`block w-full px-3.5 py-2 text-left text-sm font-medium transition hover:bg-[var(--color-canvas)] ${
+                        sortMode === value
+                          ? 'text-[var(--color-brand-deep)]'
+                          : 'text-[var(--color-ink)]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {isLoading && <p className="mt-6">Đang tải...</p>}
       {isError && <p className="mt-6 text-red-600">Lỗi tải danh mục.</p>}

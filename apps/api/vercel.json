@@ -2,8 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "cd ../.. && npm install",
   "buildCommand": "npx prisma generate && npm run build",
-  "regions": ["sin1"],
-  "outputFileTracingIncludes": {
-    "**": ["./uploads/**"]
-  }
+  "regions": ["sin1"]
 }

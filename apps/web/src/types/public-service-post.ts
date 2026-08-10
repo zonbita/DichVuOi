@@ -36,6 +36,9 @@ export type PublicServicePostDetail = {
     ratingCount: number;
     responseMinutes: number;
     acceptingJobs: boolean;
+    completedJobs?: number;
+    hireSuccessCount?: number;
+    rank?: number;
   };
   offering: {
     id: string;
@@ -91,12 +94,19 @@ export type PublicServicePostListItem = {
     headline: string | null;
     city: string | null;
     avatarUrl: string | null;
+    /** Cấp merit 1–100 — tách biệt rank đơn. */
     level: number;
     isVerified: boolean;
     ratingAvg: number;
     ratingCount: number;
     isOnline?: boolean;
     acceptingJobs?: boolean;
+    /** Đơn hoàn thành với tư cách người làm. */
+    completedJobs?: number;
+    /** Đơn thuê thành công (customer COMPLETED). */
+    hireSuccessCount?: number;
+    /** Rank 1–1000 = completedJobs + hireSuccessCount. */
+    rank?: number;
     /** Uy tín chu kỳ — tách biệt level (1–100). */
     reputation: {
       currentPoints: number;

@@ -89,7 +89,14 @@ export class HomeLobbyService {
     servicePost: {
       id: string;
       title: string;
-      service: { id: string; slug: string; name: string };
+      service: {
+        id: string;
+        slug: string;
+        name: string;
+        category: {
+          group: { slug: string };
+        } | null;
+      };
     };
   }) {
     const serviceName = row.servicePost.service.name;
@@ -112,6 +119,7 @@ export class HomeLobbyService {
         title,
         serviceName,
         serviceSlug: row.servicePost.service.slug,
+        groupSlug: row.servicePost.service.category?.group.slug ?? null,
         href: `/user/${row.user.id}/dich-vu/${row.servicePost.id}`,
         profileHref: `/user/${row.user.id}`,
       },
@@ -141,7 +149,14 @@ export class HomeLobbyService {
           select: {
             id: true,
             title: true,
-            service: { select: { id: true, slug: true, name: true } },
+            service: {
+              select: {
+                id: true,
+                slug: true,
+                name: true,
+                category: { select: { group: { select: { slug: true } } } },
+              },
+            },
           },
         },
       },
@@ -284,7 +299,14 @@ export class HomeLobbyService {
           select: {
             id: true,
             title: true,
-            service: { select: { id: true, slug: true, name: true } },
+            service: {
+              select: {
+                id: true,
+                slug: true,
+                name: true,
+                category: { select: { group: { select: { slug: true } } } },
+              },
+            },
           },
         },
       },

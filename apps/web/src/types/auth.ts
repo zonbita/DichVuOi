@@ -16,8 +16,12 @@ export type PartnerLevelBreakdown = {
   diversityBonus: number;
   onTimeRate?: number | null;
   onTimeSampleSize?: number;
+  /** Rank 1–1000 = completedJobs + hireSuccessCount. */
+  rank: number;
+  hireSuccessCount: number;
   inputs: {
     completedJobs: number;
+    hireSuccessCount: number;
     ratingAvg: number;
     ratingCount: number;
     isVerified: boolean;
@@ -137,6 +141,10 @@ export type PublicPartnerProfile = {
   avatarUrl: string | null;
   gallery: string[];
   completedJobs: number;
+  /** Đơn thuê thành công (customer COMPLETED). */
+  hireSuccessCount?: number;
+  /** Rank 1–1000 = completedJobs + hireSuccessCount. */
+  rank?: number;
   /** Online theo heartbeat gần đây (không lộ socket). */
   isOnline?: boolean;
   lastOnlineAt?: string | null;

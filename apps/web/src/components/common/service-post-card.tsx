@@ -5,7 +5,7 @@ import type { PublicServicePostListItem } from '../../types/public-service-post'
 import { offeringColor } from '../../utils/catalog-colors';
 import { resolveOfferingPriceRange } from '../../utils/market-price';
 import { ReputationProgressBar } from '../partner/reputation-progress-bar';
-import { LevelBadgeGold } from '../ui/partner-badges';
+import { AvatarLevelOverlay } from '../ui/partner-badges';
 import { StarIcon } from '../ui/icon';
 import { UserAvatar } from '../ui/user-avatar';
 import { mediaSrc } from '../../utils/media-src';
@@ -15,7 +15,7 @@ type Props = {
   layout?: 'rail' | 'fluid';
 };
 
-/** Card bài đăng — khớp mockup: cover sạch, avatar + cấp dưới ảnh. */
+/** Card bài đăng — cả card là 1 link; footer hiện giá (không còn «Báo giá»). */
 export function ServicePostCard({ post, layout = 'rail' }: Props) {
   const [imgBroken, setImgBroken] = useState(false);
   const cover = post.images?.[0] ?? post.coverUrl;
@@ -24,7 +24,6 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
   const color = groupSlug ? offeringColor(groupSlug) : null;
   const title = post.title?.trim() || post.service.name;
   const detailTo = `/user/${post.seller.userId}/dich-vu/${post.id}`;
-  const hireTo = `/dich-vu/${post.service.slug}?partner=${post.seller.userId}`;
   const ratingAvg = post.seller.ratingAvg ?? 0;
   const ratingCount = post.seller.ratingCount ?? 0;
   const unit = post.service.unit?.trim() || 'gói';
@@ -39,14 +38,16 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
   const soft = color?.soft ?? 'var(--color-brand-soft)';
 
   return (
-    <article
-      className={`group flex flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_12px_32px_rgba(5,45,71,0.11)] ring-1 ring-black/[0.04] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(5,45,71,0.15)] ${widthClass}`}
+    <Link
+      to={detailTo}
+      aria-label={`Xem ${title} — ${post.seller.fullName}`}
+      className={`group flex flex-col overflow-hidden rounded-sm bg-white shadow-[0_12px_32px_rgba(5,45,71,0.11)] ring-1 ring-black/[0.04] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(5,45,71,0.15)] ${widthClass}`}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-canvas)]">
         {showCover ? (
           <img
             src={mediaSrc(cover!)}
-            alt={title}
+            alt=""
             className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
             loading="lazy"
             decoding="async"
@@ -72,51 +73,42 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
             </span>
           </div>
         )}
-        <Link to={detailTo} className="absolute inset-0 z-[1]" aria-label={`Xem ${title}`} />
       </div>
 
       <div className="flex flex-1 flex-col px-3.5 pb-3.5 pt-3.5">
         <div className="flex items-start gap-3">
-          <Link
-            to={`/user/${post.seller.userId}`}
-            className="relative flex w-[52px] shrink-0 flex-col items-center gap-1"
-            aria-label={post.seller.fullName}
-          >
-            <span className="relative">
-              <UserAvatar
-                name={post.seller.fullName}
-                src={post.seller.avatarUrl}
-                userId={post.seller.userId}
-                size="sm"
-                className="!h-10 !w-10 !ring-2 !ring-[var(--color-line)] shadow-[0_3px_10px_rgba(5,45,71,0.12)]"
-              />
-              {post.seller.isOnline ? (
-                <span
-                  className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"
-                  title="Đang online"
-                />
-              ) : null}
-            </span>
-            <LevelBadgeGold
+          <div className="relative shrink-0">
+            <AvatarLevelOverlay
               level={post.seller.level}
-              variant="overlay"
-              className="whitespace-nowrap"
-            />
-          </Link>
+              rank={post.seller.rank ?? 1}
+              completedJobs={post.seller.completedJobs}
+              hireSuccessCount={post.seller.hireSuccessCount}
+            >
+              <span className="relative inline-block">
+                <UserAvatar
+                  name={post.seller.fullName}
+                  src={post.seller.avatarUrl}
+                  userId={post.seller.userId}
+                  size="sm"
+                  className="!h-10 !w-10 !ring-2 !ring-[var(--color-line)] shadow-[0_3px_10px_rgba(5,45,71,0.12)]"
+                />
+                {post.seller.isOnline ? (
+                  <span
+                    className="absolute right-0 top-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"
+                    title="Đang online"
+                  />
+                ) : null}
+              </span>
+            </AvatarLevelOverlay>
+          </div>
 
           <div className="min-w-0 flex-1 pt-0.5">
-            <Link
-              to={`/user/${post.seller.userId}`}
-              className="block truncate text-[13px] font-bold tracking-tight text-[var(--color-navy)] hover:text-[var(--color-brand-deep)]"
-            >
+            <p className="truncate text-[13px] font-bold tracking-tight text-[var(--color-navy)] group-hover:text-[var(--color-brand-deep)]">
               {post.seller.fullName}
-            </Link>
-            <Link
-              to={detailTo}
-              className="mt-1 line-clamp-2 text-[15px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)] transition hover:text-[var(--color-brand-deep)]"
-            >
+            </p>
+            <p className="mt-1 line-clamp-2 text-[15px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)] transition group-hover:text-[var(--color-brand-deep)]">
               {title}
-            </Link>
+            </p>
             <p className="mt-1.5 flex items-center gap-1.5 text-[12px]">
               <StarIcon
                 className="h-3.5 w-3.5"
@@ -148,41 +140,9 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
           />
         ) : null}
 
-        {(post.images?.length ?? 0) > 1 ? (
-          <div className="mt-3 flex gap-1.5 overflow-hidden">
-            {post.images.slice(1, 4).map((src) => (
-              <Link
-                key={src}
-                to={detailTo}
-                className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg ring-1 ring-[var(--color-line)]"
-                aria-label="Xem thêm ảnh portfolio"
-              >
-                <img
-                  src={mediaSrc(src)}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </Link>
-            ))}
-            {(post.images?.length ?? 0) > 4 ? (
-              <Link
-                to={detailTo}
-                className="inline-flex h-11 min-w-11 items-center justify-center rounded-lg bg-[var(--color-canvas)] text-[11px] font-bold text-[var(--color-muted)] ring-1 ring-[var(--color-line)]"
-              >
-                +{(post.images?.length ?? 0) - 4}
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
-
         <div className="mt-auto flex items-center justify-end border-t border-[var(--color-line)]/70 pt-3">
           {priceRange ? (
-            <Link
-              to={hireTo}
-              className="inline-flex max-w-full items-baseline gap-1 rounded-full border border-[var(--color-line)] bg-white px-3.5 py-2 text-[13px] shadow-sm transition hover:border-[var(--color-brand)]/40 hover:bg-[var(--color-brand-soft)]"
-            >
+            <span className="inline-flex max-w-full items-baseline gap-1 rounded-full border border-[var(--color-line)] bg-white px-3.5 py-2 text-[13px] shadow-sm transition group-hover:border-[var(--color-brand)]/40 group-hover:bg-[var(--color-brand-soft)]">
               <span className="whitespace-nowrap font-extrabold tabular-nums text-[var(--color-sale)]">
                 {priceRange.max > priceRange.min ? (
                   <>
@@ -200,17 +160,14 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
                   /{unit}
                 </span>
               </span>
-            </Link>
+            </span>
           ) : (
-            <Link
-              to={hireTo}
-              className="inline-flex items-center rounded-full border border-[var(--color-brand)]/45 bg-[var(--color-brand-soft)] px-4 py-2 text-[13px] font-bold text-[var(--color-brand-deep)] shadow-[0_2px_8px_rgba(0,156,149,0.12)] transition hover:border-[var(--color-brand)]/65 hover:bg-[var(--color-brand)]/15"
-            >
-              Báo giá
-            </Link>
+            <span className="inline-flex items-center rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-[13px] font-bold text-[var(--color-muted)] shadow-sm">
+              Thỏa thuận
+            </span>
           )}
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

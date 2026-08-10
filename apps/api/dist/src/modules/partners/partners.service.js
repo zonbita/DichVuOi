@@ -16,6 +16,7 @@ const partner_profile_fields_1 = require("../../common/partner-profile-fields");
 const text_match_1 = require("../../common/text-match");
 const partner_work_hours_1 = require("../../common/partner-work-hours");
 const partner_level_1 = require("../../common/partner-level");
+const partner_rank_1 = require("../../common/partner-rank");
 const recalculate_partner_level_1 = require("../../common/recalculate-partner-level");
 const reputation_service_1 = require("../../common/reputation.service");
 const security_env_1 = require("../../common/security-env");
@@ -94,7 +95,7 @@ let PartnersService = class PartnersService {
         this.reputation = reputation;
         this.authService = authService;
     }
-    shapePublic(profile, completedJobs, reviews = [], hoursByServiceId = new Map()) {
+    shapePublic(profile, completedJobs, reviews = [], hoursByServiceId = new Map(), hireSuccessCount = 0) {
         const reviewedBySlug = new Map();
         for (const r of reviews) {
             const slug = r.booking.service.slug;
@@ -172,6 +173,8 @@ let PartnersService = class PartnersService {
             avatarUrl: profile.avatarUrl,
             gallery: (0, partner_profile_fields_1.parseGallery)(profile.galleryJson),
             completedJobs,
+            hireSuccessCount,
+            rank: (0, partner_rank_1.computePartnerRankScore)(completedJobs, hireSuccessCount),
             isOnline: isPartnerOnline(profile.lastOnlineAt),
             lastOnlineAt: profile.lastOnlineAt?.toISOString() ?? null,
             offerings,
@@ -326,9 +329,12 @@ let PartnersService = class PartnersService {
         if (!profile)
             throw new common_1.NotFoundException('Không tìm thấy hồ sơ người làm');
         const offeringServiceIds = profile.offerings.map((o) => o.serviceId);
-        const [completedJobs, reviews, hoursByServiceId, reputation, servicePosts, onTimeStats] = await Promise.all([
+        const [completedJobs, hireSuccessCount, reviews, hoursByServiceId, reputation, servicePosts, onTimeStats] = await Promise.all([
             this.prisma.booking.count({
                 where: { partnerId: userId, status: 'COMPLETED' },
+            }),
+            this.prisma.booking.count({
+                where: { userId, status: 'COMPLETED' },
             }),
             this.prisma.review.findMany({
                 where: { toUserId: userId },
@@ -381,7 +387,7 @@ let PartnersService = class PartnersService {
             }),
             this.computeOnTimeStats(userId),
         ]);
-        const shaped = this.shapePublic(profile, completedJobs, reviews, hoursByServiceId);
+        const shaped = this.shapePublic(profile, completedJobs, reviews, hoursByServiceId, hireSuccessCount);
         const priceByService = new Map(profile.offerings.map((o) => [o.serviceId, this.offeringPriceRange(o)]));
         return {
             ...shaped,
@@ -436,10 +442,12 @@ let PartnersService = class PartnersService {
             }),
         ]);
         const reputations = await this.reputation.getSnapshotsBatch(posts.map((post) => post.partnerProfile.userId));
+        const rankByUserId = await this.getPartnerRankScoresBatch(posts.map((post) => post.partnerProfile.userId));
         return {
             items: posts.map((post) => {
                 const offering = post.partnerProfile.offerings.find((o) => o.serviceId === post.serviceId);
                 const shaped = this.shapeServicePost(post, this.offeringPriceRange(offering));
+                const rankInfo = rankByUserId.get(post.partnerProfile.userId);
                 return {
                     ...shaped,
                     seller: {
@@ -455,6 +463,9 @@ let PartnersService = class PartnersService {
                         isOnline: isPartnerOnline(post.partnerProfile.lastOnlineAt),
                         acceptingJobs: post.partnerProfile.acceptingJobs,
                         reputation: reputations.get(post.partnerProfile.userId) ?? null,
+                        completedJobs: rankInfo?.completedJobs ?? 0,
+                        hireSuccessCount: rankInfo?.hireSuccessCount ?? 0,
+                        rank: rankInfo?.rank ?? 1,
                     },
                 };
             }),
@@ -508,7 +519,7 @@ let PartnersService = class PartnersService {
         if (!post) {
             throw new common_1.NotFoundException('Không tìm thấy bài đăng');
         }
-        const [offering, reviews] = await Promise.all([
+        const [offering, reviews, rankInfo] = await Promise.all([
             this.prisma.partnerService.findFirst({
                 where: {
                     partnerProfileId: profile.id,
@@ -542,6 +553,7 @@ let PartnersService = class PartnersService {
                     fromUser: { select: { id: true, fullName: true } },
                 },
             }),
+            this.getPartnerRankScore(userId),
         ]);
         const ratingCount = reviews.length;
         const ratingAvg = ratingCount > 0
@@ -564,6 +576,9 @@ let PartnersService = class PartnersService {
                 ratingCount: profile.ratingCount,
                 responseMinutes: profile.responseMinutes,
                 acceptingJobs: profile.acceptingJobs,
+                completedJobs: rankInfo.completedJobs,
+                hireSuccessCount: rankInfo.hireSuccessCount,
+                rank: rankInfo.rank,
             },
             offering: offering
                 ? {
@@ -1055,9 +1070,12 @@ let PartnersService = class PartnersService {
         });
         if (!profile)
             throw new common_1.NotFoundException('Chưa có hồ sơ đối tác');
-        const [completedJobs, onTimeStats] = await Promise.all([
+        const [completedJobs, hireSuccessCount, onTimeStats] = await Promise.all([
             this.prisma.booking.count({
                 where: { partnerId: userId, status: 'COMPLETED' },
+            }),
+            this.prisma.booking.count({
+                where: { userId, status: 'COMPLETED' },
             }),
             this.computeOnTimeStats(userId),
         ]);
@@ -1069,14 +1087,18 @@ let PartnersService = class PartnersService {
             isVerified: profile.isVerified,
             activeOfferings: profile.offerings.length,
         });
+        const rank = (0, partner_rank_1.computePartnerRankScore)(completedJobs, hireSuccessCount);
         return {
             storedLevel: profile.level,
             formula: partner_level_1.PARTNER_LEVEL_FORMULA,
             ...breakdown,
             onTimeRate: onTimeStats.onTimeRate,
             onTimeSampleSize: onTimeStats.sampleSize,
+            rank,
+            hireSuccessCount,
             inputs: {
                 completedJobs,
+                hireSuccessCount,
                 ratingAvg: profile.ratingAvg,
                 ratingCount: profile.ratingCount,
                 isVerified: profile.isVerified,
@@ -1087,6 +1109,53 @@ let PartnersService = class PartnersService {
                 isOnline: isPartnerOnline(profile.lastOnlineAt),
             },
         };
+    }
+    async getPartnerRankScore(userId) {
+        const [completedJobs, hireSuccessCount] = await Promise.all([
+            this.prisma.booking.count({
+                where: { partnerId: userId, status: 'COMPLETED' },
+            }),
+            this.prisma.booking.count({
+                where: { userId, status: 'COMPLETED' },
+            }),
+        ]);
+        return {
+            completedJobs,
+            hireSuccessCount,
+            rank: (0, partner_rank_1.computePartnerRankScore)(completedJobs, hireSuccessCount),
+        };
+    }
+    async getPartnerRankScoresBatch(userIds) {
+        const unique = [...new Set(userIds.filter(Boolean))];
+        const result = new Map();
+        if (unique.length === 0)
+            return result;
+        const [asPartner, asCustomer] = await Promise.all([
+            this.prisma.booking.groupBy({
+                by: ['partnerId'],
+                where: { partnerId: { in: unique }, status: 'COMPLETED' },
+                _count: { _all: true },
+            }),
+            this.prisma.booking.groupBy({
+                by: ['userId'],
+                where: { userId: { in: unique }, status: 'COMPLETED' },
+                _count: { _all: true },
+            }),
+        ]);
+        const partnerMap = new Map(asPartner
+            .filter((row) => row.partnerId)
+            .map((row) => [row.partnerId, row._count._all]));
+        const customerMap = new Map(asCustomer.map((row) => [row.userId, row._count._all]));
+        for (const id of unique) {
+            const completedJobs = partnerMap.get(id) ?? 0;
+            const hireSuccessCount = customerMap.get(id) ?? 0;
+            result.set(id, {
+                completedJobs,
+                hireSuccessCount,
+                rank: (0, partner_rank_1.computePartnerRankScore)(completedJobs, hireSuccessCount),
+            });
+        }
+        return result;
     }
     async computeOnTimeStats(partnerId) {
         const rows = await this.prisma.booking.findMany({

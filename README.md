@@ -366,7 +366,7 @@ Shared: `apps/web/src/components/dashboard/dashboard-chrome.tsx` (`DashboardPage
 | `.btn-navy` | Nút navy solid |
 | `.btn-outline-gold` | Viền gold trên nền header tối |
 | `.icon-tile` | Ô icon trust strip: nền mint + icon teal (**không** dùng cho icon catalog ngành) |
-| `.section-header-bar` | Khối tiêu đề section bo `--radius-lg` |
+| `.section-header-bar` | Thanh tiêu đề soft-3D navy (`SectionHeaderBar`) — `overflow: visible` (dropdown/action không bị cắt) |
 | `.field-input` | Input bo `--radius-md`, focus ring teal |
 
 Radius token: `--radius-sm` 8px · `--radius-md` 12px · `--radius-lg` 14px · `--radius-xl` 16px.
@@ -405,9 +405,33 @@ Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): 
 
 - Header navy (`site-header.tsx`): logo trái · search giữa · tài khoản phải; dropdown khu vực / nhóm dịch vụ dùng prop `onDark`.
 - Hero banner + benefit cards + chip marquee dịch vụ (`service-tag-nav`) — nền/viền theo token hệ thống.
-- Tab «Dịch vụ nổi bật» trên home: active mint/teal (UI chung), **không** recolor theo ngành.
+- **`SectionHeaderBar`** (`.section-header-bar`): thanh tiêu đề section giống home — icon squircle + title + subtitle tùy chọn + `action` phải.
+  - Dùng trên: trang chủ (các section), `/nhom` (title + search + bộ lọc **trong** bar), `/nhom/:slug` (tiêu đề từng category nghề).
+  - Dropdown trong `action` cần `z-index` cao; bar **không** `overflow: hidden`.
+- Tab «Dịch vụ nổi bật» trên home: active mint/teal (UI chung), **không** recolor theo ngành; lưới **1 hàng · 4 card** (`limit = 4`).
+- **`/nhom/:slug`**: mỗi category tối đa **5 nghề**, lưới `lg:grid-cols-5` (1 hàng desktop).
 - **Card việc mới** (`OpenJobCard`): hàng đầu **Hạn ứng tuyển** (trái) + giá ví (phải) → hàng nội dung ảnh trái | tiêu đề + khách + pill meta **ngang** (lịch · thời lượng · ứng viên, cách bằng dấu ·) → footer trạng thái + CTA `rounded-full`. 8 việc / trang.
 - **Pill meta** (`JobMetaPill` / `ScheduleTimePill`): capsule viền mỏng màu theo loại — lịch hẹn xanh dương, thời lượng sky, ứng viên xanh lá, hạn ứng tuyển đỏ. Dùng chung home + danh sách đơn realtime người làm.
+
+### Cấp vs Rank (partner)
+
+Hai badge **tách biệt** — `apps/web/src/components/ui/partner-badges.tsx`:
+
+| Badge | Nguồn | Thang | UI |
+|-------|--------|-------|-----|
+| **Cấp** (`LevelBadge` / `LevelBadgeGold`) | Merit `PartnerProfile.level` | 1–100 | Pill navy + viền gold «Cấp N» |
+| **Rank** (`PartnerRankBadge`) | `completedJobs` (partner COMPLETED) + `hireSuccessCount` (customer COMPLETED) | 1–1000 | Khiên SVG + bar chữ tier (MEMBER…LEGEND); số rank trong tooltip |
+
+- Bố cục avatar (`AvatarLevelOverlay`): **Cấp** đè mép dưới avatar · **Rank** chữ ngay dưới Cấp.
+- API list bài đăng / hồ sơ công khai / `me/level` trả `rank`, `completedJobs`, `hireSuccessCount`.
+- Công thức: `apps/api/src/common/partner-rank.ts` · map tier trên web trong `partner-badges.tsx`.
+
+### Card bài đăng dịch vụ (`ServicePostCard`)
+
+- Cả card = **một** `Link` → `/user/:userId/dich-vu/:postId` (không lồng nhiều link).
+- Footer: hiện **giá** (`resolveOfferingPriceRange`); không giá → «Thỏa thuận» (không còn CTA «Báo giá» riêng).
+- Không hàng thumbnail phụ dưới uy tín; cover vẫn ở trên.
+- Nghề trong sảnh lobby: màu theo `offeringColor(groupSlug)` (`ShoutMessage`).
 
 ### Tách màu UI vs màu ngành (icon)
 

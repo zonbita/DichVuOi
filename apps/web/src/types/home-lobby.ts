@@ -23,6 +23,8 @@ export type HomeShout = {
     title: string;
     serviceName: string;
     serviceSlug: string;
+    /** Slug nhóm catalog — màu nghề. */
+    groupSlug?: string | null;
     href: string;
     profileHref: string;
   };

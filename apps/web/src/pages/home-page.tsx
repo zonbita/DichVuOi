@@ -66,7 +66,7 @@ export function HomePage() {
   const tabRailRef = useRef<HTMLDivElement>(null);
 
   const featuredServices = useMemo(() => {
-    const limit = activeTab === 'all' ? 8 : 16;
+    const limit = 4;
     const signals = signalsFromRebookHints(rebookQuery.data ?? []);
     return rankFeaturedServices(services, activeTab, signals, limit);
   }, [services, activeTab, rebookQuery.data]);

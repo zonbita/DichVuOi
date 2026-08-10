@@ -28,6 +28,7 @@ export declare class HomeLobbyService {
                 title: string;
                 serviceName: string;
                 serviceSlug: string;
+                groupSlug: string | null;
                 href: string;
                 profileHref: string;
             };
@@ -66,6 +67,7 @@ export declare class HomeLobbyService {
             title: string;
             serviceName: string;
             serviceSlug: string;
+            groupSlug: string | null;
             href: string;
             profileHref: string;
         };

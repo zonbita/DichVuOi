@@ -119,7 +119,13 @@ function ProfileHeader({ data }: { data: PublicPartnerProfile }) {
     <section className="glass-card overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-stretch">
         <div className="flex shrink-0 items-center justify-center border-b border-white/50 p-3 sm:border-b-0 sm:border-r sm:p-3">
-          <AvatarLevelOverlay level={data.level} className="block w-[96px] shrink-0 sm:w-[112px]">
+          <AvatarLevelOverlay
+            level={data.level}
+            rank={data.rank ?? 1}
+            completedJobs={data.completedJobs}
+            hireSuccessCount={data.hireSuccessCount}
+            className="block w-[96px] shrink-0 sm:w-[112px]"
+          >
             <div className="aspect-square w-full overflow-hidden rounded-2xl">
               <Avatar name={data.fullName} src={data.avatarUrl} />
             </div>

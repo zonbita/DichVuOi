@@ -30,6 +30,7 @@ export declare class HomeLobbyController {
                 title: string;
                 serviceName: string;
                 serviceSlug: string;
+                groupSlug: string | null;
                 href: string;
                 profileHref: string;
             };
@@ -62,6 +63,7 @@ export declare class HomeLobbyController {
             title: string;
             serviceName: string;
             serviceSlug: string;
+            groupSlug: string | null;
             href: string;
             profileHref: string;
         };

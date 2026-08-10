@@ -809,7 +809,6 @@ select {
 .soft-3d-navy,
 .section-header-bar {
   position: relative;
-  overflow: hidden;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 22px;
@@ -822,6 +821,22 @@ select {
     inset 0 -1px 0 rgba(2, 20, 32, 0.4);
 }
 
+.soft-3d-navy {
+  overflow: hidden;
+}
+
+.section-header-bar {
+  overflow: visible;
+  isolation: isolate;
+  z-index: 30;
+  border-radius: 14px;
+  box-shadow:
+    0 8px 20px rgba(5, 45, 71, 0.28),
+    0 2px 8px rgba(5, 45, 71, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(2, 20, 32, 0.4);
+}
+
 .soft-3d-navy__highlight,
 .section-header-bar__highlight {
   pointer-events: none;
@@ -830,6 +845,12 @@ select {
   top: 0;
   height: 4rem;
   background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
+}
+
+.section-header-bar__highlight {
+  height: 2.5rem;
+  border-radius: inherit;
+  overflow: hidden;
 }
 
 .section-header-bar > h2,

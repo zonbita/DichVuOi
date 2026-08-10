@@ -22,6 +22,7 @@ import {
   computePartnerLevel,
   PARTNER_LEVEL_FORMULA,
 } from '../../common/partner-level';
+import { computePartnerRankScore } from '../../common/partner-rank';
 import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
 import { ReputationService } from '../../common/reputation.service';
 import { allowMockPayments } from '../../common/security-env';
@@ -187,6 +188,7 @@ export class PartnersService {
       };
     }> = [],
     hoursByServiceId: Map<string, number> = new Map(),
+    hireSuccessCount = 0,
   ) {
     const reviewedBySlug = new Map<
       string,
@@ -276,6 +278,8 @@ export class PartnersService {
       avatarUrl: profile.avatarUrl,
       gallery: parseGallery(profile.galleryJson),
       completedJobs,
+      hireSuccessCount,
+      rank: computePartnerRankScore(completedJobs, hireSuccessCount),
       isOnline: isPartnerOnline(profile.lastOnlineAt),
       lastOnlineAt: profile.lastOnlineAt?.toISOString() ?? null,
       offerings,
@@ -461,10 +465,13 @@ export class PartnersService {
 
     const offeringServiceIds = profile.offerings.map((o) => o.serviceId);
 
-    const [completedJobs, reviews, hoursByServiceId, reputation, servicePosts, onTimeStats] =
+    const [completedJobs, hireSuccessCount, reviews, hoursByServiceId, reputation, servicePosts, onTimeStats] =
       await Promise.all([
         this.prisma.booking.count({
           where: { partnerId: userId, status: 'COMPLETED' },
+        }),
+        this.prisma.booking.count({
+          where: { userId, status: 'COMPLETED' },
         }),
         this.prisma.review.findMany({
           where: { toUserId: userId },
@@ -523,6 +530,7 @@ export class PartnersService {
       completedJobs,
       reviews,
       hoursByServiceId,
+      hireSuccessCount,
     );
     const priceByService = new Map(
       profile.offerings.map((o) => [o.serviceId, this.offeringPriceRange(o)] as const),
@@ -589,6 +597,9 @@ export class PartnersService {
     const reputations = await this.reputation.getSnapshotsBatch(
       posts.map((post) => post.partnerProfile.userId),
     );
+    const rankByUserId = await this.getPartnerRankScoresBatch(
+      posts.map((post) => post.partnerProfile.userId),
+    );
 
     return {
       items: posts.map((post) => {
@@ -596,6 +607,7 @@ export class PartnersService {
           (o) => o.serviceId === post.serviceId,
         );
         const shaped = this.shapeServicePost(post, this.offeringPriceRange(offering));
+        const rankInfo = rankByUserId.get(post.partnerProfile.userId);
         return {
           ...shaped,
           seller: {
@@ -611,6 +623,9 @@ export class PartnersService {
             isOnline: isPartnerOnline(post.partnerProfile.lastOnlineAt),
             acceptingJobs: post.partnerProfile.acceptingJobs,
             reputation: reputations.get(post.partnerProfile.userId) ?? null,
+            completedJobs: rankInfo?.completedJobs ?? 0,
+            hireSuccessCount: rankInfo?.hireSuccessCount ?? 0,
+            rank: rankInfo?.rank ?? 1,
           },
         };
       }),
@@ -668,7 +683,7 @@ export class PartnersService {
       throw new NotFoundException('Không tìm thấy bài đăng');
     }
 
-    const [offering, reviews] = await Promise.all([
+    const [offering, reviews, rankInfo] = await Promise.all([
       this.prisma.partnerService.findFirst({
         where: {
           partnerProfileId: profile.id,
@@ -702,6 +717,7 @@ export class PartnersService {
           fromUser: { select: { id: true, fullName: true } },
         },
       }),
+      this.getPartnerRankScore(userId),
     ]);
 
     const ratingCount = reviews.length;
@@ -730,6 +746,9 @@ export class PartnersService {
         ratingCount: profile.ratingCount,
         responseMinutes: profile.responseMinutes,
         acceptingJobs: profile.acceptingJobs,
+        completedJobs: rankInfo.completedJobs,
+        hireSuccessCount: rankInfo.hireSuccessCount,
+        rank: rankInfo.rank,
       },
       offering: offering
         ? {
@@ -1333,9 +1352,12 @@ export class PartnersService {
     });
     if (!profile) throw new NotFoundException('Chưa có hồ sơ đối tác');
 
-    const [completedJobs, onTimeStats] = await Promise.all([
+    const [completedJobs, hireSuccessCount, onTimeStats] = await Promise.all([
       this.prisma.booking.count({
         where: { partnerId: userId, status: 'COMPLETED' },
+      }),
+      this.prisma.booking.count({
+        where: { userId, status: 'COMPLETED' },
       }),
       this.computeOnTimeStats(userId),
     ]);
@@ -1349,14 +1371,19 @@ export class PartnersService {
       activeOfferings: profile.offerings.length,
     });
 
+    const rank = computePartnerRankScore(completedJobs, hireSuccessCount);
+
     return {
       storedLevel: profile.level,
       formula: PARTNER_LEVEL_FORMULA,
       ...breakdown,
       onTimeRate: onTimeStats.onTimeRate,
       onTimeSampleSize: onTimeStats.sampleSize,
+      rank,
+      hireSuccessCount,
       inputs: {
         completedJobs,
+        hireSuccessCount,
         ratingAvg: profile.ratingAvg,
         ratingCount: profile.ratingCount,
         isVerified: profile.isVerified,
@@ -1367,6 +1394,65 @@ export class PartnersService {
         isOnline: isPartnerOnline(profile.lastOnlineAt),
       },
     };
+  }
+
+  /** Rank 1–1000 = đơn hoàn thành (partner) + đơn thuê thành công (customer). */
+  private async getPartnerRankScore(userId: string) {
+    const [completedJobs, hireSuccessCount] = await Promise.all([
+      this.prisma.booking.count({
+        where: { partnerId: userId, status: 'COMPLETED' },
+      }),
+      this.prisma.booking.count({
+        where: { userId, status: 'COMPLETED' },
+      }),
+    ]);
+    return {
+      completedJobs,
+      hireSuccessCount,
+      rank: computePartnerRankScore(completedJobs, hireSuccessCount),
+    };
+  }
+
+  private async getPartnerRankScoresBatch(userIds: string[]) {
+    const unique = [...new Set(userIds.filter(Boolean))];
+    const result = new Map<
+      string,
+      { completedJobs: number; hireSuccessCount: number; rank: number }
+    >();
+    if (unique.length === 0) return result;
+
+    const [asPartner, asCustomer] = await Promise.all([
+      this.prisma.booking.groupBy({
+        by: ['partnerId'],
+        where: { partnerId: { in: unique }, status: 'COMPLETED' },
+        _count: { _all: true },
+      }),
+      this.prisma.booking.groupBy({
+        by: ['userId'],
+        where: { userId: { in: unique }, status: 'COMPLETED' },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const partnerMap = new Map(
+      asPartner
+        .filter((row) => row.partnerId)
+        .map((row) => [row.partnerId as string, row._count._all]),
+    );
+    const customerMap = new Map(
+      asCustomer.map((row) => [row.userId, row._count._all]),
+    );
+
+    for (const id of unique) {
+      const completedJobs = partnerMap.get(id) ?? 0;
+      const hireSuccessCount = customerMap.get(id) ?? 0;
+      result.set(id, {
+        completedJobs,
+        hireSuccessCount,
+        rank: computePartnerRankScore(completedJobs, hireSuccessCount),
+      });
+    }
+    return result;
   }
 
   /** % đúng hạn: hoàn tất (released/updated) ≤ lịch hẹn + thời lượng + 1h grace. */
