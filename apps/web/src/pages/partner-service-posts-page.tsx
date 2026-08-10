@@ -8,7 +8,8 @@ import {
   PRICE_SLIDER_MIN,
   PriceRangeSlider,
 } from '../components/ui/price-range-slider';
-import { RichPostBody, SimpleRichEditor } from '../components/ui/simple-rich-editor';
+import { RichPostBody } from '../components/ui/rich-post-body';
+import { SimpleRichEditor } from '../components/ui/simple-rich-editor';
 import { useAuth } from '../features/auth/auth-context';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import type { PartnerServicePost } from '../types/partner-service-post';

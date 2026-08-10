@@ -7,7 +7,7 @@ import {
   PartnerVerificationBadges,
 } from '../../components/ui/partner-badges';
 import { Icon, StarIcon } from '../../components/ui/icon';
-import { RichPostBody } from '../../components/ui/simple-rich-editor';
+import { RichPostBody } from '../../components/ui/rich-post-body';
 import { api, formatPrice } from '../../services/api';
 import { mediaSrc } from '../../utils/media-src';
 import { PageHeader } from './admin-ui';

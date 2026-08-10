@@ -4,7 +4,8 @@ import { Link, useParams } from 'react-router-dom';
 import { SquareImageSlider } from '../components/partner/square-image-slider';
 import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { Icon, StarIcon } from '../components/ui/icon';
-import { RichPostBody } from '../components/ui/simple-rich-editor';
+import { RichPostBody } from '../components/ui/rich-post-body';
+import { publicPartnerQueryOptions } from '../lib/query-client';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import { mediaSrc } from '../utils/media-src';
 
@@ -52,6 +53,7 @@ export function PartnerServicePostDetailPage() {
     queryKey: ['partner', 'public-post', userId, postId],
     queryFn: () => api.getPublicPartnerPost(userId, postId),
     enabled: Boolean(userId && postId),
+    ...publicPartnerQueryOptions,
   });
 
   if (isLoading) {

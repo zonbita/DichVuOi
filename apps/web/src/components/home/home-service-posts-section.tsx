@@ -26,24 +26,26 @@ export function HomeServicePostsSection() {
   return (
     <section className="page-shell mt-5 pt-1">
       <div className="section-container min-w-0">
-        <SectionHeaderBar
-          icon="sparkles"
-          title="Bài đăng dịch vụ"
-          subtitle="Đã xét duyệt · kéo ngang để xem thêm"
-          action={total > 0 ? <SectionHeaderViewAll to="/bai-dang" /> : null}
-        />
+        <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <SectionHeaderBar
+            icon="sparkles"
+            title="Bài đăng dịch vụ"
+            subtitle="Đã xét duyệt · kéo ngang để xem thêm"
+            action={total > 0 ? <SectionHeaderViewAll to="/bai-dang" /> : null}
+          />
 
-        {postsQuery.isLoading ? (
-          <p className="text-base text-[var(--color-muted)]">Đang tải bài đăng…</p>
-        ) : null}
+          {postsQuery.isLoading ? (
+            <p className="text-base text-[var(--color-muted)]">Đang tải bài đăng…</p>
+          ) : null}
 
-        {posts.length > 0 ? (
-          <ScrollRail showArrows>
-            {posts.map((post) => (
-              <ServicePostCard key={post.id} post={post} />
-            ))}
-          </ScrollRail>
-        ) : null}
+          {posts.length > 0 ? (
+            <ScrollRail showArrows>
+              {posts.map((post) => (
+                <ServicePostCard key={post.id} post={post} />
+              ))}
+            </ScrollRail>
+          ) : null}
+        </div>
       </div>
     </section>
   );

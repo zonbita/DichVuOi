@@ -24,8 +24,9 @@ function GlobeIcon({ className = 'h-4 w-4' }: { className?: string }) {
 }
 
 type CatalogOverlayHeroProps = {
-  image: string;
-  imageAlt: string;
+  /** Ảnh nền — chỉ dùng khi không compact. */
+  image?: string;
+  imageAlt?: string;
   backTo: string;
   backLabel: string;
   title: string;
@@ -38,7 +39,7 @@ type CatalogOverlayHeroProps = {
   aside?: ReactNode;
   footer?: ReactNode;
   tall?: boolean;
-  /** Thanh hero 80px — một hàng ngang (trang nghề). */
+  /** Thanh hero gọn — soft-3D navy, không ảnh (trang nghề). */
   compact?: boolean;
 };
 
@@ -79,32 +80,39 @@ export function CatalogOverlayHero({
 }: CatalogOverlayHeroProps) {
   if (compact) {
     return (
-      <div className="relative h-20 w-full overflow-hidden shadow-sm ring-1 ring-black/5">
-        <img
-          src={image}
-          alt={imageAlt}
-          className="catalog-photo absolute inset-0 h-full w-full object-cover"
-        />
+      <div
+        className="soft-3d-navy relative flex min-h-20 w-full items-center overflow-hidden rounded-[14px]"
+        style={{
+          background: `radial-gradient(ellipse 140% 200% at 12% -50%, color-mix(in srgb, ${color.main} 55%, #0a5678) 0%, #073b5c 46%, #052d47 78%, #041f32 100%)`,
+        }}
+      >
+        <div aria-hidden className="section-header-bar__highlight" />
         <div
-          className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/35"
           aria-hidden
+          className="absolute inset-y-3 left-0 w-1 rounded-r-full opacity-90"
+          style={{ backgroundColor: color.main }}
         />
-        <div className="relative flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5">
+        <div className="relative flex w-full items-center gap-2.5 px-3.5 py-3 sm:gap-3.5 sm:px-5 sm:py-3.5">
           <Link
             to={backTo}
-            className="inline-flex max-w-[38%] shrink-0 items-center truncate rounded-full bg-white px-2.5 py-1 text-[11px] font-bold shadow-sm transition hover:brightness-95 sm:max-w-none sm:px-3 sm:text-xs"
-            style={{ color: color.main }}
+            className="inline-flex max-w-[38%] shrink-0 items-center gap-1.5 truncate rounded-full bg-white px-2.5 py-1 text-[11px] font-bold shadow-sm transition hover:brightness-95 sm:max-w-none sm:px-3 sm:text-xs"
+            style={{ color: color.ink }}
             title={backLabel}
           >
-            {backLabel}
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: color.main }}
+              aria-hidden
+            />
+            {backLabel.replace(/^←\s*/, '')}
           </Link>
 
-          <div className="min-w-0 flex-1 text-white">
-            <h1 className="truncate text-sm font-extrabold tracking-tight drop-shadow-sm sm:text-base lg:text-lg">
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-sm font-extrabold tracking-tight text-white drop-shadow-sm sm:text-base lg:text-lg">
               {title}
             </h1>
             {subtitle ? (
-              <p className="mt-0.5 hidden truncate text-[11px] text-white/80 sm:block">
+              <p className="mt-0.5 hidden truncate text-[11px] text-white/75 sm:block sm:text-xs">
                 {subtitle}
               </p>
             ) : null}
@@ -117,11 +125,13 @@ export function CatalogOverlayHero({
   }
 
   const minH = tall ? 'min-h-[340px] sm:min-h-[380px]' : 'min-h-[280px] sm:min-h-[320px]';
+  const heroImage = image ?? '';
+  const heroAlt = imageAlt ?? title;
 
   return (
     <div className="relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5">
       <div className={`relative w-full ${minH}`}>
-        <img src={image} alt={imageAlt} className="catalog-photo absolute inset-0 h-full w-full object-cover" />
+        <img src={heroImage} alt={heroAlt} className="catalog-photo absolute inset-0 h-full w-full object-cover" />
         <div
           className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/15"
           aria-hidden

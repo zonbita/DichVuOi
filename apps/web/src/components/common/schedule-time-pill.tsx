@@ -34,7 +34,7 @@ export function JobMetaPill({
   );
 }
 
-/** Pill giờ · ngày (job card) — clock + giờ đậm · ngày nhạt. */
+/** Pill giờ · ngày (job card) — cùng tone muted với meta khác; chỉ hạn ứng tuyển giữ màu cảnh báo. */
 export function ScheduleTimePill({
   date,
   className = '',
@@ -49,13 +49,13 @@ export function ScheduleTimePill({
   return (
     <JobMetaPill
       icon="calendar"
-      iconClassName="text-[#2563EB]"
-      className={`!border-transparent !bg-[#EFF6FF] ${className}`}
+      iconClassName="text-[var(--color-muted)]"
+      className={className}
       title={d.toLocaleString('vi-VN')}
     >
-      <span className="font-bold tabular-nums text-[#1D4ED8]">{time}</span>
-      <span className="mx-1.5 text-[#93C5FD]">·</span>
-      <span className="font-medium tabular-nums text-[#3B82F6]">{day}</span>
+      <span className="font-bold tabular-nums text-[var(--color-navy)]">{time}</span>
+      <span className="mx-1.5 text-[var(--color-muted)]">·</span>
+      <span className="font-medium tabular-nums text-[var(--color-muted)]">{day}</span>
     </JobMetaPill>
   );
 }

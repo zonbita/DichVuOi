@@ -41,21 +41,21 @@ export function ServiceHeroPricePanel({
 
   if (compact) {
     return (
-      <div className="flex max-w-full items-center gap-2 rounded-lg border border-white/20 bg-black/55 px-2.5 py-1 text-white backdrop-blur-md sm:gap-3 sm:px-3">
+      <div className="flex max-w-full items-center gap-2 rounded-xl border border-white/18 bg-white/12 px-2.5 py-1.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md sm:gap-3 sm:px-3.5 sm:py-2">
         <div className="min-w-0">
-          <p className="truncate text-[10px] leading-tight text-white/70 sm:text-[11px]">
+          <p className="truncate text-[10px] font-medium leading-tight tracking-wide text-white/65 sm:text-[11px]">
             Giá tham khảo
           </p>
-          <p className="truncate text-sm font-extrabold leading-tight text-[var(--color-sale)] sm:text-[15px]">
+          <p className="truncate whitespace-nowrap text-sm font-extrabold leading-tight text-[var(--color-sale)] sm:text-[15px]">
             {priceText}
             {unit ? (
-              <span className="text-[11px] font-semibold text-white/70">/{unit}</span>
+              <span className="text-[11px] font-semibold text-white/65">/{unit}</span>
             ) : null}
           </p>
         </div>
-        <span className="hidden h-8 w-px shrink-0 bg-white/25 sm:block" aria-hidden />
-        <p className="hidden shrink-0 items-center gap-1 text-[11px] text-white/85 sm:flex">
-          <Icon name="clock" className="h-3.5 w-3.5 shrink-0" />
+        <span className="hidden h-8 w-px shrink-0 bg-white/20 sm:block" aria-hidden />
+        <p className="hidden shrink-0 items-center gap-1.5 text-[11px] font-semibold text-white/88 sm:flex">
+          <Icon name="clock" className="h-3.5 w-3.5 shrink-0 opacity-90" />
           ~{durationMin} phút
         </p>
       </div>

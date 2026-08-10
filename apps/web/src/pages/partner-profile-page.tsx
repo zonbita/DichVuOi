@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { FavoritePartnerButton } from '../components/partner/favorite-partner-button';
 import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
 import { SquareImageSlider } from '../components/partner/square-image-slider';
 import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
 import { StarIcon, Icon } from '../components/ui/icon';
+import { prefetchPublicPartnerPost } from '../lib/prefetch-public-partner-post';
 import { publicPartnerQueryOptions } from '../lib/query-client';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import { resolveOfferingPriceRange } from '../utils/market-price';
@@ -229,6 +230,7 @@ function GigCard({
   partnerUserId: string;
   partnerName: string;
 }) {
+  const queryClient = useQueryClient();
   const imgs = (() => {
     if (post.images?.length) return post.images;
     const raw = (post as { imagesJson?: string }).imagesJson;
@@ -259,8 +261,17 @@ function GigCard({
   });
   const unit = offering?.service.unit ?? post.service.unit;
 
+  const warmDetail = () => {
+    prefetchPublicPartnerPost(queryClient, partnerUserId, post.id);
+  };
+
   return (
-    <article className="glass-card flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(23,32,51,0.08)]">
+    <article
+      className="glass-card flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(23,32,51,0.08)]"
+      onMouseEnter={warmDetail}
+      onFocusCapture={warmDetail}
+      onTouchStart={warmDetail}
+    >
       <div className="relative">
         {imgs.length > 0 ? (
           <SquareImageSlider images={imgs} resolveSrc={mediaSrc} variant="cover" className="" />

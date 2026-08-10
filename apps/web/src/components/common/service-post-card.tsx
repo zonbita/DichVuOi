@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { prefetchPublicPartnerPost } from '../../lib/prefetch-public-partner-post';
 import { formatPrice, formatPriceNumber } from '../../services/api';
 import type { PublicServicePostListItem } from '../../types/public-service-post';
 import { offeringColor } from '../../utils/catalog-colors';
@@ -17,6 +19,7 @@ type Props = {
 
 /** Card bài đăng — cả card là 1 link; footer hiện giá (không còn «Báo giá»). */
 export function ServicePostCard({ post, layout = 'rail' }: Props) {
+  const queryClient = useQueryClient();
   const [imgBroken, setImgBroken] = useState(false);
   const cover = post.images?.[0] ?? post.coverUrl;
   const showCover = Boolean(cover) && !imgBroken;
@@ -37,10 +40,17 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
   const accent = color?.main ?? 'var(--color-brand)';
   const soft = color?.soft ?? 'var(--color-brand-soft)';
 
+  const warmDetail = () => {
+    prefetchPublicPartnerPost(queryClient, post.seller.userId, post.id);
+  };
+
   return (
     <Link
       to={detailTo}
       aria-label={`Xem ${title} — ${post.seller.fullName}`}
+      onMouseEnter={warmDetail}
+      onFocus={warmDetail}
+      onTouchStart={warmDetail}
       className={`group flex flex-col overflow-hidden rounded-sm bg-white shadow-[0_12px_32px_rgba(5,45,71,0.11)] ring-1 ring-black/[0.04] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(5,45,71,0.15)] ${widthClass}`}
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-canvas)]">

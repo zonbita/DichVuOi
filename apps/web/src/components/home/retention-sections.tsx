@@ -21,8 +21,10 @@ function SectionShell({
   return (
     <section className="page-shell mt-10">
       <div className="section-container min-w-0">
-        <SectionHeaderBar title={title} icon={icon} action={action} />
-        {children}
+        <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <SectionHeaderBar title={title} icon={icon} action={action} />
+          {children}
+        </div>
       </div>
     </section>
   );

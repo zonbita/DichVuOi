@@ -115,59 +115,63 @@ export function HomePage() {
 
       <section className="page-shell mt-10">
         <div className="section-container min-w-0">
-          <SectionHeaderBar
-            icon="star"
-            title="Dịch vụ nổi bật"
-            action={<SectionHeaderViewAll to="/nhom" />}
-          />
+          <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] p-4 shadow-[var(--shadow-card)] sm:p-5">
+            <SectionHeaderBar
+              icon="star"
+              title="Dịch vụ nổi bật"
+              action={<SectionHeaderViewAll to="/nhom" />}
+            />
 
-          <div className="relative mb-5 min-w-0 max-w-full overflow-hidden">
-            <div
-              ref={tabRailRef}
-              className="no-scrollbar flex gap-2.5 overflow-x-auto scroll-smooth pr-12 pb-0.5"
-            >
-              {tabs.map((tab) => {
-                const active = activeTab === tab.slug;
-                return (
-                  <button
-                    key={tab.slug}
-                    type="button"
-                    onClick={() => setActiveTab(tab.slug)}
-                    className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-[14px] font-semibold transition ${
-                      active
-                        ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-sm'
-                        : 'border-[var(--color-line)] bg-[#eef2f5] text-[var(--color-ink)] hover:border-[var(--color-navy)]/25 hover:bg-white'
-                    }`}
-                  >
-                    <Icon
-                      name={tab.icon}
-                      className={`h-4 w-4 shrink-0 ${active ? 'text-white' : 'text-[var(--color-navy)]'}`}
-                    />
-                    {tab.name}
-                  </button>
-                );
-              })}
+            <div className="relative mb-5 min-w-0 max-w-full overflow-hidden">
+              <div
+                ref={tabRailRef}
+                className="no-scrollbar flex gap-2.5 overflow-x-auto scroll-smooth pr-12 pb-0.5"
+              >
+                {tabs.map((tab) => {
+                  const active = activeTab === tab.slug;
+                  return (
+                    <button
+                      key={tab.slug}
+                      type="button"
+                      onClick={() => setActiveTab(tab.slug)}
+                      className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-[14px] font-semibold transition ${
+                        active
+                          ? 'border-[var(--color-navy)] bg-[var(--color-navy)] text-white shadow-sm'
+                          : 'border-[var(--color-line)] bg-[#eef2f5] text-[var(--color-ink)] hover:border-[var(--color-navy)]/25 hover:bg-white'
+                      }`}
+                    >
+                      <Icon
+                        name={tab.icon}
+                        className={`h-4 w-4 shrink-0 ${
+                          active ? 'text-white' : 'text-[var(--color-muted)]'
+                        }`}
+                      />
+                      {tab.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                aria-label="Cuộn danh mục tiếp"
+                onClick={() =>
+                  tabRailRef.current?.scrollBy({ left: 240, behavior: 'smooth' })
+                }
+                className="absolute top-1/2 right-0 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--color-line)] bg-white text-[var(--color-navy)] shadow-sm transition hover:bg-[var(--color-brand-soft)]"
+              >
+                <Icon name="chevronRight" className="h-4 w-4" />
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label="Cuộn danh mục tiếp"
-              onClick={() =>
-                tabRailRef.current?.scrollBy({ left: 240, behavior: 'smooth' })
-              }
-              className="absolute top-1/2 right-0 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--color-line)] bg-white text-[var(--color-navy)] shadow-sm transition hover:bg-[var(--color-brand-soft)]"
-            >
-              <Icon name="chevronRight" className="h-4 w-4" />
-            </button>
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredServices.map((service) => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredServices.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+            {!servicesQuery.isLoading && featuredServices.length === 0 && (
+              <p className="text-base text-[var(--color-muted)]">Nhóm này chưa có dịch vụ.</p>
+            )}
           </div>
-          {!servicesQuery.isLoading && featuredServices.length === 0 && (
-            <p className="text-base text-[var(--color-muted)]">Nhóm này chưa có dịch vụ.</p>
-          )}
         </div>
       </section>
 

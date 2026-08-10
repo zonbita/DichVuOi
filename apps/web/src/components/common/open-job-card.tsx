@@ -148,39 +148,45 @@ function MetaPills({
 
       <ScheduleTimePill
         date={booking.scheduledAt}
-        className={`${pill} !bg-[#EFF6FF] [&_svg]:!h-3 [&_svg]:!w-3`}
+        className={`${pill} [&_svg]:!h-3 [&_svg]:!w-3`}
       />
 
       {durationLabel ? (
         <JobMetaPill
           icon="clock"
           iconClassName={
-            compact ? '!h-3 !w-3 text-[#7C3AED]' : '!h-3.5 !w-3.5 text-[#7C3AED]'
+            compact
+              ? '!h-3 !w-3 text-[var(--color-muted)]'
+              : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
           }
-          className={`${pill} !bg-[#F5F3FF]`}
+          className={pill}
         >
-          <span className="font-semibold text-[#6D28D9]">{durationLabel}</span>
+          <span className="font-semibold text-[var(--color-navy)]">{durationLabel}</span>
         </JobMetaPill>
       ) : null}
 
       <JobMetaPill
         icon="users"
         iconClassName={
-          compact ? '!h-3 !w-3 text-[#059669]' : '!h-3.5 !w-3.5 text-[#059669]'
+          compact
+            ? '!h-3 !w-3 text-[var(--color-muted)]'
+            : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
         }
-        className={`${pill} !bg-[#ECFDF5]`}
+        className={pill}
       >
-        <span className="font-semibold text-[#047857]">{applicationsLabel}</span>
+        <span className="font-semibold text-[var(--color-navy)]">{applicationsLabel}</span>
       </JobMetaPill>
 
       <JobMetaPill
         icon="shield"
         iconClassName={
-          compact ? '!h-3 !w-3 text-[#0F766E]' : '!h-3.5 !w-3.5 text-[#0F766E]'
+          compact
+            ? '!h-3 !w-3 text-[var(--color-muted)]'
+            : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
         }
-        className={`${pill} !bg-[#F0FDFA]`}
+        className={pill}
       >
-        <span className="whitespace-nowrap font-semibold text-[#0F766E]">
+        <span className="whitespace-nowrap font-semibold text-[var(--color-navy)]">
           {depositAmount <= 0
             ? `Cọc 0% · miễn`
             : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
@@ -199,7 +205,7 @@ function BudgetChip({
   to?: string;
   className?: string;
 }) {
-  const cls = `inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[#FFF7ED] px-3 py-2 text-[12px] font-extrabold text-[#C2410C] outline-none hover:bg-[#FFEDD5] focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] ${className}`;
+  const cls = `inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[var(--color-brand-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--color-sale)] outline-none hover:brightness-95 focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] ${className}`;
   const inner = (
     <>
       <Icon name="wallet" className="h-3.5 w-3.5 shrink-0 text-[#EA580C]" />

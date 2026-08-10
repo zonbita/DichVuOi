@@ -1,8 +1,40 @@
-import { defineConfig } from 'vite';
+import { defineConfig, createLogger } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+/** Vite hay spam khi client Socket.IO disconnect (HMR / đổi trang) — không phải lỗi app. */
+const logger = createLogger();
+const logError = logger.error.bind(logger);
+logger.error = (msg, options) => {
+  if (
+    typeof msg === 'string' &&
+    /ECONNABORTED|ECONNRESET|EPIPE|ws proxy (socket )?error/i.test(msg)
+  ) {
+    return;
+  }
+  logError(msg, options);
+};
+
+function quietSocketProxy(proxy: {
+  on: (event: string, listener: (...args: unknown[]) => void) => void;
+}) {
+  const silent = new Set(['ECONNABORTED', 'ECONNRESET', 'EPIPE']);
+  proxy.on('error', (err: unknown) => {
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code && silent.has(code)) return;
+  });
+  proxy.on('proxyReqWs', (_proxyReq: unknown, _req: unknown, socket: unknown) => {
+    const sock = socket as {
+      on?: (event: string, cb: (err: NodeJS.ErrnoException) => void) => void;
+    };
+    sock.on?.('error', (err) => {
+      if (err.code && silent.has(err.code)) return;
+    });
+  });
+}
+
 export default defineConfig({
+  customLogger: logger,
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
@@ -19,6 +51,7 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
         ws: true,
+        configure: quietSocketProxy,
       },
     },
   },

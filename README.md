@@ -411,7 +411,8 @@ Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): 
 - Tab «Dịch vụ nổi bật» trên home: active mint/teal (UI chung), **không** recolor theo ngành; lưới **1 hàng · 4 card** (`limit = 4`).
 - **`/nhom/:slug`**: mỗi category tối đa **5 nghề**, lưới `lg:grid-cols-5` (1 hàng desktop).
 - **Card việc mới** (`OpenJobCard`): hàng đầu **Hạn ứng tuyển** (trái) + giá ví (phải) → hàng nội dung ảnh trái | tiêu đề + khách + pill meta **ngang** (lịch · thời lượng · ứng viên, cách bằng dấu ·) → footer trạng thái + CTA `rounded-full`. 8 việc / trang.
-- **Pill meta** (`JobMetaPill` / `ScheduleTimePill`): capsule viền mỏng màu theo loại — lịch hẹn xanh dương, thời lượng sky, ứng viên xanh lá, hạn ứng tuyển đỏ. Dùng chung home + danh sách đơn realtime người làm.
+- **Pill meta** (`JobMetaPill` / `ScheduleTimePill`): nền slate nhạt + chữ navy/muted; **chỉ hạn ứng tuyển** giữ pastel đỏ (cảnh báo). Giá ví dùng `--color-sale` / brand-soft. Dùng chung home + danh sách đơn realtime người làm.
+- **Giảm nhiễu màu trang chủ:** tab nổi bật inactive = icon muted; tag nghề trên `ServiceCard` = `soft`+`ink` (không solid `main`); sảnh lobby = chữ navy + gạch màu nghề mỏng.
 
 ### Cấp vs Rank (partner)
 

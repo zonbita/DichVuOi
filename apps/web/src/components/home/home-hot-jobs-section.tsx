@@ -30,7 +30,7 @@ export function HomeHotJobsSection() {
   return (
     <section className="page-shell mt-10">
       <div className="section-container min-w-0">
-        <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] bg-[var(--color-brand-soft)] p-4 shadow-[var(--shadow-card)] sm:p-5">
+        <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] p-4 shadow-[var(--shadow-card)] sm:p-5">
           <SectionHeaderBar
             icon="chart"
             title="Nghề nhiều người tham gia nhất"
@@ -51,7 +51,7 @@ export function HomeHotJobsSection() {
           ) : null}
 
           {hotServices.length > 0 ? (
-            <ScrollRail showArrows={false}>
+            <ScrollRail showArrows>
               {hotServices.map((service) => (
                 <DealCard key={service.id} service={service} />
               ))}

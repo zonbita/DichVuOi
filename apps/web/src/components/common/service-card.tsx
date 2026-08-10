@@ -25,8 +25,8 @@ export function ServiceCard({ service }: { service: Service }) {
           decoding="async"
         />
         <span
-          className="absolute bottom-3 left-3 inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-sm"
-          style={{ backgroundColor: color.main, color: '#ffffff' }}
+          className="absolute bottom-3 left-3 inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide shadow-sm ring-1 ring-black/[0.04]"
+          style={{ backgroundColor: color.soft, color: color.ink }}
         >
           {groupLabel}
         </span>

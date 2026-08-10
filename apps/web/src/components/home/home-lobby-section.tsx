@@ -48,7 +48,7 @@ function ensureGuestId() {
   }
 }
 
-/** Message API dùng «tên dịch vụ» — hiện icon briefcase + màu nghề theo nhóm. */
+/** Message API dùng «tên dịch vụ» — icon + chữ navy; màu nghề chỉ 1 gạch nhỏ (ít nhiễu). */
 function ShoutMessage({
   message,
   groupSlug,
@@ -66,13 +66,16 @@ function ShoutMessage({
         return (
           <span
             key={i}
-            className="mx-0.5 inline-flex items-center gap-1 align-middle font-semibold"
-            style={{ color: color.ink }}
+            className="mx-0.5 inline-flex items-center gap-1 align-middle font-semibold text-[var(--color-navy)]"
           >
+            <span
+              className="inline-block h-3 w-0.5 shrink-0 rounded-full"
+              style={{ backgroundColor: color.main }}
+              aria-hidden
+            />
             <Icon
               name="briefcase"
-              className="h-3.5 w-3.5 shrink-0"
-              style={{ color: color.main }}
+              className="h-3.5 w-3.5 shrink-0 !text-[var(--color-muted)]"
             />
             <span>{match[1]}</span>
           </span>

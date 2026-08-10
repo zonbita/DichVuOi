@@ -26,7 +26,6 @@ import { useAuth } from '../features/auth/auth-context';
 import { api, formatPrice, formatWorkHours } from '../services/api';
 import type { ServiceProvider } from '../types/catalog';
 import { groupColor } from '../utils/catalog-colors';
-import { serviceImage } from '../utils/catalog-images';
 import { fuzzyMatch } from '../utils/search';
 
 const TOOLTIP_W = 320;
@@ -473,17 +472,14 @@ export function ServiceDetailPage() {
   }
 
   const service = serviceQuery.data;
-  const image = serviceImage(service);
   const color = groupColor(service.category.group.slug);
 
   return (
     <div className="animate-fade-up space-y-8">
       <div className="full-bleed -mt-6">
         <CatalogOverlayHero
-          image={image}
-          imageAlt={service.name}
           backTo={`/nhom/${service.category.group.slug}`}
-          backLabel={`← ${service.category.group.name}`}
+          backLabel={service.category.group.name}
           title={service.name}
           subtitle={service.description ?? undefined}
           color={color}
