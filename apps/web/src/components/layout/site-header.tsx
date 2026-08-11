@@ -77,6 +77,7 @@ export function SiteHeader() {
                       width={40}
                       height={40}
                       decoding="async"
+                      loading="eager"
                       fetchPriority="high"
                     />
                   </span>

@@ -40,8 +40,12 @@ export function HomeServicePostsSection() {
 
           {posts.length > 0 ? (
             <ScrollRail showArrows>
-              {posts.map((post) => (
-                <ServicePostCard key={post.id} post={post} />
+              {posts.map((post, index) => (
+                <ServicePostCard
+                  key={post.id}
+                  post={post}
+                  priority={index === 0}
+                />
               ))}
             </ScrollRail>
           ) : null}

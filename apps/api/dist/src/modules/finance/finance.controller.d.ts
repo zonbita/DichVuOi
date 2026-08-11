@@ -33,8 +33,8 @@ export declare class FinanceController {
             createdAt: Date;
             userId: string;
             description: string;
-            bookingId: string | null;
             type: import("@prisma/client").$Enums.WalletTransactionType;
+            bookingId: string | null;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -116,8 +116,8 @@ export declare class FinanceController {
             createdAt: Date;
             userId: string;
             description: string;
-            bookingId: string | null;
             type: import("@prisma/client").$Enums.WalletTransactionType;
+            bookingId: string | null;
             amount: number;
             balanceAfter: number;
             reference: string;

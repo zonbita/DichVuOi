@@ -1,6 +1,7 @@
 import { defineConfig, createLogger } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { cardImagePlugin } from './vite-plugin-card-image.js';
 
 /** Vite hay spam khi client Socket.IO disconnect (HMR / đổi trang) — không phải lỗi app. */
 const logger = createLogger();
@@ -36,7 +37,23 @@ function quietSocketProxy(proxy: {
 
 export default defineConfig({
   customLogger: logger,
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    cardImagePlugin(),
+    react(),
+    tailwindcss(),
+    {
+      name: 'avatar-static-cache',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const path = req.url?.split('?')[0] ?? '';
+          if (path.startsWith('/avatars/')) {
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+          }
+          next();
+        });
+      },
+    },
+  ],
   server: {
     port: 5173,
     proxy: {

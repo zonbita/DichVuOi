@@ -5,8 +5,14 @@ import { serviceImage } from '../../utils/catalog-images';
 import { Icon } from '../ui/icon';
 import { ReferencePrice } from './reference-price';
 
-export function ServiceCard({ service }: { service: Service }) {
-  const image = serviceImage(service);
+export function ServiceCard({
+  service,
+  priority = false,
+}: {
+  service: Service;
+  priority?: boolean;
+}) {
+  const image = serviceImage(service, 'card');
   const color = groupColor(service.category.group.slug);
   const providerCount = service._count?.partners ?? 0;
   const groupLabel = service.category.group.name.replace(/\s*-\s*hỗ trợ$/i, '');
@@ -21,7 +27,8 @@ export function ServiceCard({ service }: { service: Service }) {
           src={image}
           alt={service.name}
           className="catalog-photo h-full w-full object-cover transition duration-500 group-hover:scale-105"
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'low'}
           decoding="async"
         />
         <span

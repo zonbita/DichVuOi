@@ -92,7 +92,7 @@ export function PartnerIncomingList({
 
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5">
         {paged.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {paged.map((booking) => {
               const isApplying = applyingId === booking.id;
               const isApplied =

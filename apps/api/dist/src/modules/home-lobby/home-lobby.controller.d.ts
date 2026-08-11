@@ -39,7 +39,7 @@ export declare class HomeLobbyController {
             kind: import("@prisma/client").$Enums.HomeShoutKind;
             label: string;
         }[];
-        smiles: ("❤️" | "🔥" | "👏" | "😂" | "😍" | "🎉" | "💯" | "🫶")[];
+        smiles: (":))" | ":)" | ":)))" | ":D" | "=))" | ";)" | ":P" | ":*" | "<3" | ":(" | ":((" | ":'(" | ":o" | ":/" | ":|" | "B)" | ":v" | ":3" | "3:)" | "O:)" | "@@" | "-_-" | "^_^" | "T_T" | ":x")[];
     }>;
     presence(): {
         onlineCount: number;

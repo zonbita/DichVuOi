@@ -19,5 +19,5 @@ export function resolveUserAvatarUrl(input: {
   avatarUrl?: string | null;
 }): string {
   if (input.avatarUrl) return mediaSrc(input.avatarUrl);
-  return portraitAvatarUrl(input.id || input.email || 'guest');
+  return mediaSrc(portraitAvatarUrl(input.id || input.email || 'guest'));
 }

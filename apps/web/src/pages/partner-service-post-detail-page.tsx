@@ -27,6 +27,7 @@ function SellerAvatar({ name, src }: { name: string; src?: string | null }) {
       <img
         src={src}
         alt={name}
+        decoding="async"
         onError={() => setBroken(true)}
         className="h-full w-full object-cover"
       />

@@ -125,11 +125,11 @@ function panelStyleFromFab(fab: FabPos): CSSProperties {
   };
 }
 
-export function ChatbotPopup() {
+export function ChatbotPopup({ initialOpen = false }: { initialOpen?: boolean }) {
   const titleId = useId();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [tab, setTab] = useState<ChatTab>('ai');
   const [draft, setDraft] = useState('');
   const [sessionId] = useState(newSessionId);

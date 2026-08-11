@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../features/auth/auth-context';
 import { usePartnerPresence } from '../../hooks/use-partner-presence';
-import { ChatbotPopup } from '../chatbot/chatbot-popup';
+import { ChatbotHost } from '../chatbot/chatbot-host';
 import { SiteFooter } from './site-footer';
 import { SiteHeader } from './site-header';
 
@@ -51,7 +51,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         )}
       </main>
       {!hideFooter ? <SiteFooter /> : null}
-      {isHome ? <ChatbotPopup /> : null}
+      {isHome ? <ChatbotHost /> : null}
     </div>
   );
 }

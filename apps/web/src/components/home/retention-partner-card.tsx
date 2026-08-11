@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../../services/api';
+import { resolveUserAvatarUrl } from '../../utils/portrait-avatar';
 import { AvatarLevelOverlay, PartnerVerificationBadges } from '../ui/partner-badges';
 
 type Props = {
@@ -24,8 +25,9 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   if (src) {
     return (
       <img
-        src={src}
+        src={resolveUserAvatarUrl({ avatarUrl: src })}
         alt={name}
+        decoding="async"
         className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm"
       />
     );

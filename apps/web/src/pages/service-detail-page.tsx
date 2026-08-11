@@ -26,6 +26,7 @@ import { useAuth } from '../features/auth/auth-context';
 import { api, formatPrice, formatWorkHours } from '../services/api';
 import type { ServiceProvider } from '../types/catalog';
 import { groupColor } from '../utils/catalog-colors';
+import { resolveUserAvatarUrl } from '../utils/portrait-avatar';
 import { fuzzyMatch } from '../utils/search';
 
 const TOOLTIP_W = 320;
@@ -74,11 +75,14 @@ function PartnerAvatar({
   const shape = round ? 'rounded-full' : 'rounded-2xl';
   const ring = round ? 'ring-4 ring-white shadow-md' : 'ring-1 ring-[var(--color-brand)]/20';
 
+  const resolved = resolveUserAvatarUrl({ avatarUrl: src });
+
   if (src && !broken) {
     return (
       <img
-        src={src}
+        src={resolved}
         alt={name}
+        decoding="async"
         onError={() => setBroken(true)}
         className={`${box} ${shape} object-cover ${ring}`}
       />

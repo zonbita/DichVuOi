@@ -75,8 +75,8 @@ export declare class AdminController {
             createdAt: Date;
             userId: string;
             description: string;
-            bookingId: string | null;
             type: import("@prisma/client").$Enums.WalletTransactionType;
+            bookingId: string | null;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -118,8 +118,8 @@ export declare class AdminController {
             createdAt: Date;
             userId: string;
             description: string;
-            bookingId: string | null;
             type: import("@prisma/client").$Enums.WalletTransactionType;
+            bookingId: string | null;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -364,11 +364,11 @@ export declare class AdminController {
             senderId: string;
         })[];
         reviews: ({
-            toUser: {
+            fromUser: {
                 id: string;
                 fullName: string;
             };
-            fromUser: {
+            toUser: {
                 id: string;
                 fullName: string;
             };
@@ -376,10 +376,10 @@ export declare class AdminController {
             id: string;
             createdAt: Date;
             bookingId: string;
-            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
+            comment: string | null;
         })[];
         complaints: ({
             reporter: {
@@ -402,14 +402,14 @@ export declare class AdminController {
             category: string;
             status: import("@prisma/client").$Enums.ComplaintStatus;
             bookingId: string;
-            partnerUserId: string;
-            evidenceNote: string | null;
-            resolutionAction: import("@prisma/client").$Enums.ComplaintResolutionAction | null;
-            deductionPoints: number | null;
-            adminNote: string | null;
             reporterUserId: string;
+            partnerUserId: string;
             againstUserId: string | null;
             requirementIdsJson: string | null;
+            evidenceNote: string | null;
+            deductionPoints: number | null;
+            adminNote: string | null;
+            resolutionAction: import("@prisma/client").$Enums.ComplaintResolutionAction | null;
             resolvedAt: Date | null;
             resolvedByUserId: string | null;
         })[];
@@ -528,12 +528,12 @@ export declare class AdminController {
                 };
                 status: import("@prisma/client").$Enums.BookingStatus;
             };
-            toUser: {
+            fromUser: {
                 id: string;
                 email: string;
                 fullName: string;
             };
-            fromUser: {
+            toUser: {
                 id: string;
                 email: string;
                 fullName: string;
@@ -542,10 +542,10 @@ export declare class AdminController {
             id: string;
             createdAt: Date;
             bookingId: string;
-            comment: string | null;
             fromUserId: string;
             toUserId: string;
             rating: number;
+            comment: string | null;
         })[];
         total: number;
         page: number;

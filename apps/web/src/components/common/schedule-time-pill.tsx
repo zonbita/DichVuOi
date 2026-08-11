@@ -38,13 +38,19 @@ export function JobMetaPill({
 export function ScheduleTimePill({
   date,
   className = '',
+  compact = false,
 }: {
   date: string | Date;
   className?: string;
+  compact?: boolean;
 }) {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
-  const day = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  const time = compact
+    ? `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+    : `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  const day = compact
+    ? `${d.getDate()}/${d.getMonth() + 1}`
+    : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 
   return (
     <JobMetaPill

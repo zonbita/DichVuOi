@@ -56,13 +56,43 @@ type OpenJobCardProps = {
   /** Điều hướng tới trang chi tiết khi bấm phần nội dung card. */
   detailTo?: string;
   footerLeft?: ReactNode;
-  footerRight: ReactNode;
+  /** Nút tương tác (Ứng tuyển…) — nằm ngoài Link. Bỏ trống để hiện CTA visual trong Link. */
+  footerRight?: ReactNode;
   /**
    * horizontal — hàng ngang (dashboard).
-   * portrait — 300×400, wrap ngang trên trang chủ.
+   * portrait — lưới trang chủ / danh sách nhận việc.
    */
   layout?: 'horizontal' | 'portrait';
+  /** Ảnh đầu tiên (LCP) — eager + fetchPriority high. */
+  priority?: boolean;
 };
+
+function compactAmount(value: number): { n: string; unit: 'tr' | 'vnd' } {
+  if (value >= 1_000_000) {
+    return {
+      n: new Intl.NumberFormat('vi-VN', {
+        maximumFractionDigits: 2,
+      }).format(value / 1_000_000),
+      unit: 'tr',
+    };
+  }
+  return { n: formatPriceNumber(value), unit: 'vnd' };
+}
+
+/** Ngân sách ngắn, luôn 1 hàng — vd. `1,08–1,38 tr`. */
+function formatCompactBudget(min: number, max: number) {
+  const a = compactAmount(min);
+  const b = compactAmount(max);
+  if (min === max) {
+    return b.unit === 'tr' ? `${b.n} tr` : `${b.n} VNĐ`;
+  }
+  if (a.unit === 'tr' && b.unit === 'tr') {
+    return `${a.n}–${b.n} tr`;
+  }
+  const left = a.unit === 'tr' ? `${a.n} tr` : a.n;
+  const right = b.unit === 'tr' ? `${b.n} tr` : `${b.n} VNĐ`;
+  return `${left}–${right}`;
+}
 
 const metaPill =
   '!gap-1.5 !rounded-xl !border-transparent !px-3 !py-1.5 text-[13px] leading-none';
@@ -78,10 +108,16 @@ function getOpenJobLabels(booking: Booking) {
     booking.applicationCount != null
       ? `${booking.applicationCount} ứng viên`
       : '0 ứng viên';
-  const budgetLabel =
+  const budgetFull =
     booking.budgetMin != null && booking.budgetMax != null
       ? `${formatPriceNumber(booking.budgetMin)} - ${formatPriceNumber(booking.budgetMax)} VNĐ`
       : formatPrice(booking.totalPrice);
+  const budgetCompact =
+    booking.budgetMin != null && booking.budgetMax != null
+      ? formatCompactBudget(booking.budgetMin, booking.budgetMax)
+      : compactAmount(booking.totalPrice).unit === 'tr'
+        ? `${compactAmount(booking.totalPrice).n} tr`
+        : formatPrice(booking.totalPrice);
   const matchingDeadlineLabel = booking.matchingDeadlineAt
     ? formatRemainingTime(booking.matchingDeadlineAt)
     : null;
@@ -106,7 +142,8 @@ function getOpenJobLabels(booking: Booking) {
   return {
     durationLabel,
     applicationsLabel,
-    budgetLabel,
+    budgetFull,
+    budgetCompact,
     matchingDeadlineLabel,
     depositAmount,
     depositPercent,
@@ -116,9 +153,11 @@ function getOpenJobLabels(booking: Booking) {
 function MetaPills({
   booking,
   compact,
+  hideDeposit,
 }: {
   booking: Booking;
   compact?: boolean;
+  hideDeposit?: boolean;
 }) {
   const {
     durationLabel,
@@ -148,6 +187,7 @@ function MetaPills({
 
       <ScheduleTimePill
         date={booking.scheduledAt}
+        compact={compact}
         className={`${pill} [&_svg]:!h-3 [&_svg]:!w-3`}
       />
 
@@ -177,85 +217,86 @@ function MetaPills({
         <span className="font-semibold text-[var(--color-navy)]">{applicationsLabel}</span>
       </JobMetaPill>
 
-      <JobMetaPill
-        icon="shield"
-        iconClassName={
-          compact
-            ? '!h-3 !w-3 text-[var(--color-muted)]'
-            : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
-        }
-        className={pill}
-      >
-        <span className="whitespace-nowrap font-semibold text-[var(--color-navy)]">
-          {depositAmount <= 0
-            ? `Cọc 0% · miễn`
-            : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
-        </span>
-      </JobMetaPill>
+      {hideDeposit ? null : (
+        <JobMetaPill
+          icon="shield"
+          iconClassName={
+            compact
+              ? '!h-3 !w-3 text-[var(--color-muted)]'
+              : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
+          }
+          className={pill}
+        >
+          <span className="whitespace-nowrap font-semibold text-[var(--color-navy)]">
+            {depositAmount <= 0
+              ? `Cọc 0% · miễn`
+              : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
+          </span>
+        </JobMetaPill>
+      )}
     </div>
   );
 }
 
 function BudgetChip({
   label,
-  to,
   className = '',
 }: {
   label: string;
-  to?: string;
   className?: string;
 }) {
-  const cls = `inline-flex w-full max-w-full items-center justify-center gap-1.5 truncate rounded-xl bg-[var(--color-brand-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--color-sale)] outline-none hover:brightness-95 focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] ${className}`;
-  const inner = (
-    <>
-      <Icon name="wallet" className="h-3.5 w-3.5 shrink-0 text-[#EA580C]" />
-      <span className="min-w-0 truncate tabular-nums leading-snug">{label}</span>
-    </>
-  );
-  if (to) {
-    return (
-      <Link to={to} className={cls} title={label}>
-        {inner}
-      </Link>
-    );
-  }
   return (
-    <p className={cls} title={label}>
-      {inner}
+    <p
+      className={`inline-flex w-full max-w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--color-brand-soft)] px-3 py-2 text-[12px] font-extrabold text-[var(--color-sale)] ${className}`}
+      title={label}
+    >
+      <Icon name="wallet" className="h-3.5 w-3.5 shrink-0 text-[#EA580C]" />
+      <span className="whitespace-nowrap tabular-nums leading-none">{label}</span>
     </p>
   );
 }
 
-/** Card đơn mở — horizontal (dashboard) hoặc portrait 300×400 (trang chủ). */
+/** Card đơn mở — horizontal (dashboard) hoặc portrait (trang chủ). */
 export function OpenJobCard({
   booking,
   detailTo,
   footerLeft,
   footerRight,
   layout = 'horizontal',
+  priority = false,
 }: OpenJobCardProps) {
-  const { budgetLabel } = getOpenJobLabels(booking);
+  const { budgetFull, budgetCompact, depositAmount, depositPercent } =
+    getOpenJobLabels(booking);
   const title = openJobTitle(booking);
+  const room = openJobRoomTone(booking);
+  const depositLabel =
+    depositAmount <= 0
+      ? 'Cọc miễn'
+      : `Cọc ${depositPercent}%`;
 
   if (layout === 'portrait') {
     const body = (
       <>
-        <div className="relative h-[148px] w-full shrink-0 overflow-hidden rounded-[14px]">
+        <div className="relative h-[132px] w-full shrink-0 overflow-hidden rounded-[14px]">
           <img
-            src={serviceImage(booking.service)}
+            src={serviceImage(booking.service, 'card')}
             alt={title}
             className="h-full w-full object-cover"
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : undefined}
             decoding="async"
           />
-          <span className="absolute bottom-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
-            <Icon name="briefcase" className="h-3.5 w-3.5" />
+          <span
+            className={`absolute top-2 left-2 inline-flex max-w-[calc(100%-1rem)] items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wide uppercase ${room.badge}`}
+          >
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${room.dot}`} />
+            <span className="truncate">{room.label}</span>
           </span>
         </div>
 
-        <div className="mt-2.5 min-w-0 flex-1">
+        <div className="mt-2.5 min-w-0">
           <h3
-            className="line-clamp-2 text-[17px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)]"
+            className="line-clamp-2 break-all text-[16px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)]"
             title={title}
           >
             {title}
@@ -267,22 +308,30 @@ export function OpenJobCard({
           ) : null}
           <p className="mt-1 flex min-w-0 items-center gap-1 truncate text-[12px] text-[var(--color-muted)]">
             <Icon name="user" className="h-3 w-3 shrink-0 opacity-70" />
-            <span className="truncate">
-              {booking.customerName}
-              {booking.customerPhoneMasked
-                ? ` · ${booking.customerPhone}`
-                : null}
-            </span>
+            <span className="truncate">{booking.customerName}</span>
           </p>
           <div className="mt-2">
-            <MetaPills booking={booking} compact />
+            <MetaPills booking={booking} compact hideDeposit />
           </div>
+        </div>
+
+        <div className="mt-auto flex shrink-0 flex-col gap-1.5 pt-2">
+          <BudgetChip label={budgetCompact} />
+          <p className="truncate text-center text-[10px] font-semibold text-[var(--color-muted)]">
+            {depositLabel}
+          </p>
+          {footerRight ? null : (
+            <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-4 py-2.5 text-sm font-bold text-white">
+              Xem việc
+              <Icon name="chevronRight" className="h-4 w-4" />
+            </span>
+          )}
         </div>
       </>
     );
 
     return (
-      <article className="flex h-[400px] w-full min-w-0 flex-col overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white p-3 shadow-[0_4px_14px_rgba(24,49,63,0.07)] transition hover:border-[var(--color-brand)]/35 hover:shadow-[0_6px_18px_rgba(24,49,63,0.1)]">
+      <article className="flex w-full min-w-0 flex-col overflow-hidden rounded-[16px] border border-[var(--color-line)] bg-white p-3 shadow-[0_4px_14px_rgba(24,49,63,0.07)] transition hover:border-[var(--color-brand)]/35 hover:shadow-[0_6px_18px_rgba(24,49,63,0.1)]">
         {detailTo ? (
           <Link
             to={detailTo}
@@ -294,20 +343,17 @@ export function OpenJobCard({
           <div className="flex min-h-0 flex-1 flex-col">{body}</div>
         )}
 
-        <div className="mt-auto flex shrink-0 flex-col gap-2 pt-2">
-          <BudgetChip label={budgetLabel} to={detailTo} />
+        {footerRight ? (
           <div
-            className={`flex w-full flex-wrap items-center gap-2 ${
-              footerLeft != null ? 'justify-between' : 'justify-stretch'
-            }`}
+            className="mt-2 flex w-full shrink-0 flex-col gap-2"
             onClick={(e: MouseEvent) => e.stopPropagation()}
           >
             {footerLeft}
-            <div className="min-w-0 flex-1 [&_a]:w-full [&_button]:w-full">
+            <div className="min-w-0 [&_a]:w-full [&_button]:w-full">
               {footerRight}
             </div>
           </div>
-        </div>
+        ) : null}
       </article>
     );
   }
@@ -316,10 +362,11 @@ export function OpenJobCard({
     <>
       <div className="relative h-[100px] w-[100px] shrink-0 self-start sm:h-[142px] sm:w-[142px] sm:self-center">
         <img
-          src={serviceImage(booking.service)}
+          src={serviceImage(booking.service, 'card')}
           alt={title}
           className="h-full w-full rounded-[14px] object-cover"
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : undefined}
           decoding="async"
         />
         <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
@@ -329,7 +376,7 @@ export function OpenJobCard({
 
       <div className="flex min-w-0 flex-1 flex-col justify-start">
         <h3
-          className="shrink-0 truncate text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]"
+          className="shrink-0 truncate break-all text-lg font-extrabold leading-tight tracking-tight text-[var(--color-navy)] sm:text-[20px]"
           title={title}
         >
           {title}
@@ -341,10 +388,7 @@ export function OpenJobCard({
         ) : null}
         <p className="mt-1 flex min-w-0 shrink-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
           <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
-          <span className="truncate">
-            {booking.customerName}
-            {booking.customerPhoneMasked ? ` · ${booking.customerPhone}` : null}
-          </span>
+          <span className="truncate">{booking.customerName}</span>
         </p>
 
         <div className="mt-2.5">
@@ -375,8 +419,7 @@ export function OpenJobCard({
 
         <div className="flex shrink-0 flex-col items-stretch justify-between gap-2.5 sm:w-[210px] sm:items-end sm:py-0.5">
           <BudgetChip
-            label={budgetLabel}
-            to={detailTo}
+            label={budgetFull}
             className="!px-3.5 !py-2.5 !text-[13px] sm:justify-start"
           />
 

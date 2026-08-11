@@ -1,6 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { OpenJobCard } from '../common/open-job-card';
 import { Icon } from '../ui/icon';
@@ -8,7 +7,7 @@ import { SectionHeaderBar, SectionHeaderViewAll } from './section-header-bar';
 
 export function HomeOpenJobsSection() {
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 8;
 
   const openJobsQuery = useQuery({
     queryKey: ['open-jobs-board', page, pageSize],
@@ -51,22 +50,14 @@ export function HomeOpenJobsSection() {
 
           {jobs.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-                {jobs.map((booking) => (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {jobs.map((booking, index) => (
                   <OpenJobCard
                     key={booking.id}
                     booking={booking}
                     layout="portrait"
                     detailTo={`/viec-moi/${booking.id}`}
-                    footerRight={
-                      <Link
-                        to={`/viec-moi/${booking.id}`}
-                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-4 py-2.5 text-sm font-bold !text-white transition hover:bg-[var(--color-brand-deep)]"
-                      >
-                        Xem đơn
-                        <Icon name="chevronRight" className="h-4 w-4" />
-                      </Link>
-                    }
+                    priority={index === 0}
                   />
                 ))}
               </div>

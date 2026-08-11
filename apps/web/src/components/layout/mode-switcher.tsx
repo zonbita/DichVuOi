@@ -85,6 +85,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
           userId={user.id}
           email={user.email}
           size="md"
+          loading="eager"
         />
         <span className="hidden min-w-0 flex-1 py-0.5 sm:block">
           <span

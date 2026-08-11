@@ -2,7 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateHomeReactionDto {
-  @ApiProperty({ example: '❤️', description: 'Emoji trong bộ smile cho phép' })
+  @ApiProperty({
+    example: ':))',
+    description: 'Smile Facebook dạng chữ: :)) :D :( :* <3 …',
+  })
   @IsString()
   @MinLength(1)
   emoji!: string;

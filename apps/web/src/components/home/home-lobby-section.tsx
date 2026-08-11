@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { io, type Socket } from 'socket.io-client';
 import { useAuth } from '../../features/auth/auth-context';
@@ -13,6 +13,10 @@ import type {
   HomeShoutKind,
 } from '../../types/home-lobby';
 import { DEFAULT_LOBBY_SMILES } from '../../types/home-lobby';
+import {
+  FACEBOOK_EMOTICONS,
+  FacebookEmoticonIcon,
+} from './facebook-emoticons';
 import { offeringColor } from '../../utils/catalog-colors';
 import { Icon } from '../ui/icon';
 import { UserAvatar } from '../ui/user-avatar';
@@ -28,12 +32,12 @@ const KIND_HINT: Record<HomeShoutKind, string> = {
   THANKS: 'Cảm ơn khách',
 };
 
-type FloatSmile = {
-  key: string;
-  emoji: string;
-  left: number;
-  drift: number;
-  scale: number;
+type SmileChat = {
+  id: string;
+  text: string;
+  at: string;
+  fromName: string;
+  userId: string | null;
 };
 
 function ensureGuestId() {
@@ -106,7 +110,7 @@ export function HomeLobbySection() {
   const queryClient = useQueryClient();
   const [kind, setKind] = useState<HomeShoutKind>('GREETING');
   const [servicePostId, setServicePostId] = useState('');
-  const [floats, setFloats] = useState<FloatSmile[]>([]);
+  const [smileChats, setSmileChats] = useState<SmileChat[]>([]);
   const [reactError, setReactError] = useState<string | null>(null);
   const [smileOpen, setSmileOpen] = useState(false);
   const [presence, setPresence] = useState<HomeLobbyPresence>({
@@ -147,29 +151,25 @@ export function HomeLobbySection() {
     [myPostsQuery.data],
   );
 
-  const smiles =
-    feedQuery.data?.smiles?.length ? feedQuery.data.smiles : DEFAULT_LOBBY_SMILES;
-
   useEffect(() => {
     if (!servicePostId && approvedPosts[0]) {
       setServicePostId(approvedPosts[0].id);
     }
   }, [approvedPosts, servicePostId]);
 
-  function spawnFloat(emoji: string) {
-    const key = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const item: FloatSmile = {
-      key,
-      emoji,
-      // Bay từ mép phải vùng chat (kiểu TikTok live).
-      left: 58 + Math.random() * 32,
-      drift: -28 + Math.random() * 56,
-      scale: 0.95 + Math.random() * 0.5,
+  function appendSmileChat(reaction: HomeLobbyReaction) {
+    if (!reaction?.emoji) return;
+    const line: SmileChat = {
+      id: reaction.id,
+      text: reaction.emoji,
+      at: reaction.at || new Date().toISOString(),
+      fromName: reaction.fromName?.trim() || 'Khách',
+      userId: reaction.userId ?? null,
     };
-    setFloats((prev) => [...prev.slice(-22), item]);
-    window.setTimeout(() => {
-      setFloats((prev) => prev.filter((f) => f.key !== key));
-    }, 2600);
+    setSmileChats((prev) => {
+      if (prev.some((item) => item.id === line.id)) return prev;
+      return [line, ...prev].slice(0, 40);
+    });
   }
 
   useEffect(() => {
@@ -213,7 +213,7 @@ export function HomeLobbySection() {
     });
 
     socket.on('home:reaction', (reaction: HomeLobbyReaction) => {
-      if (reaction?.emoji) spawnFloat(reaction.emoji);
+      appendSmileChat(reaction);
     });
 
     socket.on('home:presence', (snap: HomeLobbyPresence) => {
@@ -252,24 +252,40 @@ export function HomeLobbySection() {
         emoji,
         guestId: user ? undefined : ensureGuestId(),
       }),
-    onSuccess: () => {
+    onSuccess: (reaction) => {
       setReactError(null);
+      appendSmileChat(reaction);
     },
     onError: (err) => {
       setReactError((err as Error).message || 'Không gửi được smile');
     },
   });
 
-  function onTapSmile(emoji: string) {
+  function onTapSmile(code: string) {
     const now = Date.now();
     if (now - lastTapRef.current < 180) return;
     lastTapRef.current = now;
-    // Optimistic local float (TikTok feel); server/broadcast sync thêm.
-    spawnFloat(emoji);
-    reactMutation.mutate(emoji);
+    reactMutation.mutate(code);
   }
 
   const items = feedQuery.data?.items ?? [];
+  const feedRows = useMemo(() => {
+    const shouts = items.map((shout) => ({
+      type: 'shout' as const,
+      at: shout.createdAt,
+      id: shout.id,
+      shout,
+    }));
+    const smiles = smileChats.map((chat) => ({
+      type: 'smile' as const,
+      at: chat.at,
+      id: chat.id,
+      chat,
+    }));
+    return [...shouts, ...smiles].sort(
+      (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime(),
+    );
+  }, [items, smileChats]);
   const kinds =
     feedQuery.data?.kinds ??
     (Object.entries(KIND_HINT).map(([k, label]) => ({
@@ -324,66 +340,78 @@ export function HomeLobbySection() {
           </aside>
 
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-          {/* Emoji bay xuyên vùng chat — không chỉ hiệu ứng nút */}
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-16 top-0 z-20 overflow-hidden sm:bottom-20"
-            aria-hidden
-          >
-            {floats.map((f) => (
-              <span
-                key={f.key}
-                className="lobby-float-smile absolute bottom-2 text-3xl sm:bottom-3 sm:text-4xl"
-                style={
-                  {
-                    left: `${f.left}%`,
-                    '--lobby-drift': `${f.drift}px`,
-                    '--lobby-scale': String(f.scale),
-                  } as CSSProperties
-                }
-              >
-                {f.emoji}
-              </span>
-            ))}
-          </div>
-
           <div className="relative z-[1] min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-2.5 sm:px-3.5">
             {feedQuery.isLoading ? (
               <p className="py-8 text-center text-sm text-[var(--color-muted)]">
                 Đang tải sảnh…
               </p>
-            ) : items.length === 0 ? (
+            ) : feedRows.length === 0 ? (
               <p className="py-8 text-center text-sm text-[var(--color-muted)]">
-                Chưa có ai hô dịch vụ — bấm icon smile để thả reaction hoặc đăng nhập để chào sàn.
+                Chưa có ai chat — bấm smile để gửi :)) lên sảnh.
               </p>
             ) : (
-              items.map((item) => (
-                <Link
-                  key={item.id}
-                  to={item.servicePost.href}
-                  className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition hover:bg-[var(--color-canvas)]/80"
-                  title={item.message}
-                >
-                  <UserAvatar
-                    name={item.user.fullName}
-                    src={item.user.avatarUrl}
-                    userId={item.user.id}
-                    size="sm"
-                    className="!h-7 !w-7 shrink-0 !ring-1 !ring-[var(--color-line)]"
-                  />
-                  <p className="min-w-0 flex-1 truncate text-sm leading-snug text-[var(--color-ink)]">
-                    <span className="font-extrabold text-[var(--color-navy)]">
-                      {item.user.fullName}
-                    </span>
-                    <span className="mx-1 font-semibold text-[var(--color-muted)]">
-                      :
-                    </span>
-                    <ShoutMessage
-                      message={item.message}
-                      groupSlug={item.servicePost.groupSlug}
+              feedRows.map((row) =>
+                row.type === 'smile' ? (
+                  <div
+                    key={row.id}
+                    className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1"
+                  >
+                    <UserAvatar
+                      name={row.chat.fromName}
+                      userId={row.chat.userId ?? undefined}
+                      size="sm"
+                      className="!h-7 !w-7 shrink-0 !ring-1 !ring-[var(--color-line)]"
                     />
-                  </p>
-                </Link>
-              ))
+                    <p className="min-w-0 flex-1 truncate text-sm leading-snug text-[var(--color-ink)]">
+                      {row.chat.userId ? (
+                        <Link
+                          to={`/user/${row.chat.userId}`}
+                          className="font-extrabold text-[var(--color-navy)] hover:underline"
+                        >
+                          {row.chat.fromName}
+                        </Link>
+                      ) : (
+                        <span className="font-extrabold text-[var(--color-navy)]">
+                          {row.chat.fromName}
+                        </span>
+                      )}
+                      <span className="mx-1 font-semibold text-[var(--color-muted)]">
+                        :
+                      </span>
+                      <span className="font-semibold tracking-wide">
+                        {row.chat.text}
+                      </span>
+                    </p>
+                  </div>
+                ) : (
+                  <Link
+                    key={row.id}
+                    to={row.shout.servicePost.href}
+                    className="flex min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 transition hover:bg-[var(--color-canvas)]/80"
+                    title={row.shout.message}
+                  >
+                    <UserAvatar
+                      name={row.shout.user.fullName}
+                      src={row.shout.user.avatarUrl}
+                      userId={row.shout.user.id}
+                      size="sm"
+                      className="!h-7 !w-7 shrink-0 !ring-1 !ring-[var(--color-line)]"
+                    />
+                    <p className="min-w-0 flex-1 truncate text-sm leading-snug text-[var(--color-ink)]">
+                      <span className="font-extrabold text-[var(--color-navy)]">
+                        {row.shout.user.fullName}
+                      </span>
+                      <span className="mx-1 font-semibold text-[var(--color-muted)]">
+                        :
+                      </span>
+                      <ShoutMessage
+                        message={row.shout.message}
+                        groupSlug={row.shout.servicePost.groupSlug}
+                      />
+                    </p>
+                  </Link>
+                ),
+              )
             )}
           </div>
 
@@ -478,57 +506,61 @@ export function HomeLobbySection() {
             )}
               </div>
 
-              {/* 1 icon → bảng smile (TikTok); bấm emoji bay lên chat */}
+              {/* Bấm smile → chat chữ :)) lên sảnh */}
               <div ref={smilePanelRef} className="relative shrink-0 self-end">
                 {smileOpen ? (
                   <div
-                    className="absolute bottom-[calc(100%+10px)] right-0 z-30 w-[min(100vw-2rem,22rem)] rounded-2xl border border-[var(--color-line)] bg-white p-3 shadow-[0_12px_32px_rgba(15,39,71,0.14)] sm:w-[24rem]"
+                    className="absolute bottom-[calc(100%+10px)] right-0 z-30 w-[min(100vw-1.5rem,20rem)] overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-[0_12px_32px_rgba(15,39,71,0.14)] sm:w-[22rem]"
                     role="dialog"
                     aria-label="Bảng smile"
                   >
-                    <div className="flex items-center gap-2">
-                      <p className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
+                    <div className="px-3 pb-2 pt-3">
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
                         Smile
                       </p>
-                      <div className="grid min-w-0 flex-1 grid-cols-8 gap-1.5">
-                        {smiles.map((emoji) => (
+                      <div className="grid max-h-[16rem] grid-cols-5 gap-1 overflow-y-auto overscroll-contain pr-0.5">
+                        {FACEBOOK_EMOTICONS.map((item) => (
                           <button
-                            key={emoji}
+                            key={item.code}
                             type="button"
-                            onClick={() => onTapSmile(emoji)}
-                            className="lobby-smile-btn flex aspect-square items-center justify-center rounded-xl bg-[var(--color-canvas)] text-lg shadow-sm ring-1 ring-[var(--color-line)] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:scale-90 sm:text-xl"
-                            aria-label={`Gửi ${emoji}`}
+                            onClick={() => onTapSmile(item.code)}
+                            className="lobby-smile-btn flex flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition hover:bg-[var(--color-canvas)] hover:scale-105 active:scale-95"
+                            aria-label={`Chat ${item.code}`}
+                            title={item.code}
                           >
-                            {emoji}
+                            <FacebookEmoticonIcon
+                              face={item.face}
+                              className="h-7 w-7 sm:h-8 sm:w-8"
+                            />
+                            <span className="text-[10px] font-bold leading-none text-[var(--color-navy)]">
+                              {item.code}
+                            </span>
                           </button>
                         ))}
                       </div>
                     </div>
                     {reactError ? (
-                      <p className="mt-2 text-xs text-red-600">{reactError}</p>
-                    ) : (
-                      <p className="mt-2 text-[11px] text-[var(--color-muted)]">
-                        Bấm smile để thả tim kiểu livestream — không cần nhập chat.
+                      <p className="px-3 pb-2 text-xs text-red-600">
+                        {reactError}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 ) : null}
 
                 <button
                   type="button"
                   onClick={() => setSmileOpen((open) => !open)}
-                  className={`flex h-11 w-11 items-center justify-center rounded-full shadow-md ring-1 transition sm:h-12 sm:w-12 ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md ring-1 transition sm:h-12 sm:w-12 ${
                     smileOpen
-                      ? 'bg-[var(--color-navy)] text-white ring-[var(--color-navy)]'
-                      : 'bg-white text-rose-500 ring-[var(--color-line)] hover:bg-[var(--color-canvas)]'
+                      ? 'ring-[var(--color-brand)]'
+                      : 'ring-[var(--color-line)] hover:bg-[var(--color-canvas)]'
                   }`}
                   aria-label={smileOpen ? 'Đóng bảng smile' : 'Mở bảng smile'}
                   aria-expanded={smileOpen}
                 >
-                  <Icon
-                    name="heart"
-                    filled={smileOpen}
-                    className="h-5 w-5 !text-current sm:h-[22px] sm:w-[22px]"
+                  <FacebookEmoticonIcon
+                    face="haha"
+                    className="h-7 w-7 sm:h-8 sm:w-8"
                   />
                 </button>
               </div>

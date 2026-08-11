@@ -2,7 +2,7 @@ import { PrismaService } from '../../database/prisma/prisma.service';
 import { PartnerRealtimeService } from '../bookings/partner-realtime.service';
 import { CreateHomeShoutDto } from './dto/create-home-shout.dto';
 import { CreateHomeReactionDto } from './dto/create-home-reaction.dto';
-export declare const LOBBY_SMILES: readonly ["❤️", "🔥", "👏", "😂", "😍", "🎉", "💯", "🫶"];
+export declare const LOBBY_SMILES: readonly [":)", ":))", ":)))", ":D", "=))", ";)", ":P", ":*", "<3", ":(", ":((", ":'(", ":o", ":/", ":|", "B)", ":v", ":3", "3:)", "O:)", "@@", "-_-", "^_^", "T_T", ":x"];
 export declare class HomeLobbyService {
     private readonly prisma;
     private readonly realtime;
@@ -37,7 +37,7 @@ export declare class HomeLobbyService {
             kind: import("@prisma/client").$Enums.HomeShoutKind;
             label: string;
         }[];
-        smiles: ("❤️" | "🔥" | "👏" | "😂" | "😍" | "🎉" | "💯" | "🫶")[];
+        smiles: (":))" | ":)" | ":)))" | ":D" | "=))" | ";)" | ":P" | ":*" | "<3" | ":(" | ":((" | ":'(" | ":o" | ":/" | ":|" | "B)" | ":v" | ":3" | "3:)" | "O:)" | "@@" | "-_-" | "^_^" | "T_T" | ":x")[];
     }>;
     react(dto: CreateHomeReactionDto, opts?: {
         userId?: string;

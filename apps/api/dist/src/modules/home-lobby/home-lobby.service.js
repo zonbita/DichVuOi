@@ -20,7 +20,33 @@ const FEED_MAX = 40;
 const REACTION_COOLDOWN_MS = 280;
 const REACTION_BURST_WINDOW_MS = 10_000;
 const REACTION_BURST_MAX = 24;
-exports.LOBBY_SMILES = ['❤️', '🔥', '👏', '😂', '😍', '🎉', '💯', '🫶'];
+exports.LOBBY_SMILES = [
+    ':)',
+    ':))',
+    ':)))',
+    ':D',
+    '=))',
+    ';)',
+    ':P',
+    ':*',
+    '<3',
+    ':(',
+    ':((',
+    ":'(",
+    ':o',
+    ':/',
+    ':|',
+    'B)',
+    ':v',
+    ':3',
+    '3:)',
+    'O:)',
+    '@@',
+    '-_-',
+    '^_^',
+    'T_T',
+    ':x',
+];
 function normalizeSmile(raw) {
     return raw
         .trim()

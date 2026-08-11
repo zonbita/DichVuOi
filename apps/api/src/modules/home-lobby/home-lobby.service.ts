@@ -20,8 +20,34 @@ const REACTION_COOLDOWN_MS = 280;
 const REACTION_BURST_WINDOW_MS = 10_000;
 const REACTION_BURST_MAX = 24;
 
-/** Bộ smile livestream — cố định, không nhập tự do. */
-export const LOBBY_SMILES = ['❤️', '🔥', '👏', '😂', '😍', '🎉', '💯', '🫶'] as const;
+/** Smile Facebook dạng chữ — bấm chat `:))` lên sảnh. */
+export const LOBBY_SMILES = [
+  ':)',
+  ':))',
+  ':)))',
+  ':D',
+  '=))',
+  ';)',
+  ':P',
+  ':*',
+  '<3',
+  ':(',
+  ':((',
+  ":'(",
+  ':o',
+  ':/',
+  ':|',
+  'B)',
+  ':v',
+  ':3',
+  '3:)',
+  'O:)',
+  '@@',
+  '-_-',
+  '^_^',
+  'T_T',
+  ':x',
+] as const;
 
 function normalizeSmile(raw: string) {
   return raw

@@ -8,7 +8,7 @@ import { Icon, StarIcon } from '../ui/icon';
 
 export function DealCard({ service }: { service: Service }) {
   const stats = displayStats(service.id);
-  const image = serviceImage(service);
+  const image = serviceImage(service, 'card');
   const rangeLabel = formatMarketPriceRange(service, formatPrice, formatPriceNumber);
 
   return (

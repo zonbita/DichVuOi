@@ -15,10 +15,15 @@ import { mediaSrc } from '../../utils/media-src';
 type Props = {
   post: PublicServicePostListItem;
   layout?: 'rail' | 'fluid';
+  priority?: boolean;
 };
 
 /** Card bài đăng — cả card là 1 link; footer hiện giá (không còn «Báo giá»). */
-export function ServicePostCard({ post, layout = 'rail' }: Props) {
+export function ServicePostCard({
+  post,
+  layout = 'rail',
+  priority = false,
+}: Props) {
   const queryClient = useQueryClient();
   const [imgBroken, setImgBroken] = useState(false);
   const cover = post.images?.[0] ?? post.coverUrl;
@@ -68,7 +73,8 @@ export function ServicePostCard({ post, layout = 'rail' }: Props) {
             src={mediaSrc(cover!)}
             alt=""
             className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'low'}
             decoding="async"
             onError={() => setImgBroken(true)}
           />

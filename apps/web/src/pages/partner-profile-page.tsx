@@ -16,6 +16,7 @@ import { resolveOfferingPriceRange } from '../utils/market-price';
 import type { PublicPartnerProfile } from '../types/auth';
 import { offeringColor } from '../utils/catalog-colors';
 import { mediaSrc } from '../utils/media-src';
+import { resolveUserAvatarUrl } from '../utils/portrait-avatar';
 
 type PartnerOffering = PublicPartnerProfile['offerings'][number];
 type ServicePost = PublicPartnerProfile['servicePosts'][number];
@@ -79,12 +80,14 @@ function sortOfferingsByReviews(list: PartnerOffering[]) {
 
 function Avatar({ name, src }: { name: string; src?: string | null }) {
   const [broken, setBroken] = useState(false);
+  const resolved = resolveUserAvatarUrl({ avatarUrl: src });
 
   if (src && !broken) {
     return (
       <img
-        src={src}
+        src={resolved}
         alt={name}
+        decoding="async"
         onError={() => setBroken(true)}
         className="h-full w-full object-cover"
       />

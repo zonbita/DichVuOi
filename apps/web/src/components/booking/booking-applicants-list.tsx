@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../../services/api';
 import type { BookingApplication } from '../../types/catalog';
+import { resolveUserAvatarUrl } from '../../utils/portrait-avatar';
 import {
   AvatarLevelOverlay,
   PartnerVerificationBadges,
@@ -51,8 +52,9 @@ function ApplicantCard({
 
   const avatar = avatarUrl ? (
     <img
-      src={avatarUrl}
+      src={resolveUserAvatarUrl({ id: partnerId, avatarUrl })}
       alt=""
+      decoding="async"
       className="h-16 w-16 rounded-full border-2 border-amber-300 object-cover shadow"
     />
   ) : (

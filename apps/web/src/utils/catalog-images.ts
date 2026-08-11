@@ -28,17 +28,28 @@ const groupBannersByFile = toUrlMap(
     import: 'default',
   }),
 );
-const generatedServiceImages = Object.fromEntries(
-  Object.entries(
-    import.meta.glob<string>('../assets/services/by-service/*.jpg', {
-      eager: true,
-      query: '?url',
-      import: 'default',
-    }),
-  ).map(([path, url]) => [
-    path.split('/').pop()!.replace(/\.jpg$/, ''),
-    url,
-  ]),
+function toSlugUrlMap(modules: Record<string, string>) {
+  return Object.fromEntries(
+    Object.entries(modules).map(([path, url]) => [
+      path.split('/').pop()!.replace(/\.jpg$/i, ''),
+      url,
+    ]),
+  );
+}
+
+const generatedServiceImages = toSlugUrlMap(
+  import.meta.glob<string>('../assets/services/by-service/*.jpg', {
+    eager: true,
+    query: '?url',
+    import: 'default',
+  }),
+);
+const generatedServiceImagesCard = toSlugUrlMap(
+  import.meta.glob<string>('../assets/services/by-service/*.jpg', {
+    eager: true,
+    query: 'card',
+    import: 'default',
+  }),
 );
 const stockImagesByFile = toUrlMap(
   import.meta.glob<string>('../assets/services/svc-*.jpg', {
@@ -47,6 +58,15 @@ const stockImagesByFile = toUrlMap(
     import: 'default',
   }),
 );
+const stockImagesCardByFile = toUrlMap(
+  import.meta.glob<string>('../assets/services/svc-*.jpg', {
+    eager: true,
+    query: 'card',
+    import: 'default',
+  }),
+);
+
+export type CatalogImageVariant = 'full' | 'card';
 
 /** slug nhóm → tên file banner. */
 const GROUP_BANNER_FILES: Record<string, string> = {
@@ -95,13 +115,59 @@ const fallbackGroupImage =
   Object.values(stockImagesByFile)[0] ??
   '';
 
-function resolveImageFile(filename: string): string | undefined {
+function resolveImageFile(
+  filename: string,
+  variant: CatalogImageVariant = 'full',
+): string | undefined {
   const slug = filename.replace(/\.jpg$/, '');
-  if (generatedServiceImages[slug]) return generatedServiceImages[slug];
-  return stockImagesByFile[filename];
+  const generated =
+    variant === 'card' ? generatedServiceImagesCard : generatedServiceImages;
+  const stock = variant === 'card' ? stockImagesCardByFile : stockImagesByFile;
+  if (generated[slug]) return generated[slug];
+  return stock[filename] ?? stock[`${slug}.jpg`];
 }
 
-export function groupImage(slug: string | null | undefined): string {
+function groupImageMap(variant: CatalogImageVariant): Record<string, string> {
+  const stock = variant === 'card' ? stockImagesCardByFile : stockImagesByFile;
+  return {
+    'nha-cua': stock['svc-nha-cua.jpg'] ?? '',
+    'sua-chua': stock['svc-sua-chua.jpg'] ?? '',
+    'xay-dung': stock['svc-xay-dung.jpg'] ?? '',
+    'cham-soc': stock['svc-cham-soc.jpg'] ?? '',
+    'lam-dep': stock['svc-lam-dep.jpg'] ?? '',
+    'bep-doi-song': stock['svc-bep.jpg'] ?? '',
+    xe: stock['svc-xe.jpg'] ?? '',
+    'hoc-tap': stock['svc-hoc-tap.jpg'] ?? '',
+    game: stock['svc-game.jpg'] ?? '',
+    'lap-trinh': stock['svc-lap-trinh.jpg'] ?? '',
+    'thiet-ke': stock['svc-thiet-ke.jpg'] ?? '',
+    'su-kien': stock['svc-su-kien.jpg'] ?? '',
+    'thu-cung': stock['svc-thu-cung.jpg'] ?? '',
+    'the-thao': stock['svc-the-thao.jpg'] ?? '',
+    'doanh-nghiep': stock['svc-doanh-nghiep.jpg'] ?? '',
+    'tai-chinh': stock['svc-tai-chinh.jpg'] ?? '',
+    'san-vuon': stock['svc-san-vuon.jpg'] ?? '',
+    'marketing-online': stock['svc-content.jpg'] ?? '',
+    'ngon-ngu': stock['svc-hoc-tap-2.jpg'] ?? '',
+    'tro-ly-tu-xa': stock['svc-van-phong.jpg'] ?? '',
+    'tu-van-phat-trien': stock['svc-cham-soc-2.jpg'] ?? '',
+    'giai-tri': stock['svc-su-kien-2.jpg'] ?? '',
+  };
+}
+
+const groupImagesCard = groupImageMap('card');
+const fallbackGroupImageCard =
+  stockImagesCardByFile['svc-nha-cua.jpg'] ??
+  Object.values(stockImagesCardByFile)[0] ??
+  fallbackGroupImage;
+
+export function groupImage(
+  slug: string | null | undefined,
+  variant: CatalogImageVariant = 'full',
+): string {
+  if (variant === 'card') {
+    return groupImagesCard[slug ?? ''] || fallbackGroupImageCard;
+  }
   return groupImages[slug ?? ''] || fallbackGroupImage;
 }
 
@@ -131,16 +197,21 @@ type ServiceImageInput = {
   };
 };
 
-export function serviceImage(service: ServiceImageInput): string {
+export function serviceImage(
+  service: ServiceImageInput,
+  variant: CatalogImageVariant = 'full',
+): string {
   const mappedFile = serviceImageMap.assignments[service.slug];
   if (mappedFile) {
-    const resolved = resolveImageFile(mappedFile);
+    const resolved = resolveImageFile(mappedFile, variant);
     if (resolved) return resolved;
   }
 
-  if (generatedServiceImages[service.slug]) {
-    return generatedServiceImages[service.slug];
+  const generated =
+    variant === 'card' ? generatedServiceImagesCard : generatedServiceImages;
+  if (generated[service.slug]) {
+    return generated[service.slug];
   }
 
-  return groupImage(service.category.group.slug);
+  return groupImage(service.category.group.slug, variant);
 }

@@ -140,7 +140,7 @@ export function CustomerBookingCard({
     : booking.status === 'CANCELLED' && booking.paymentStatus === 'REFUNDED'
       ? 'Đơn đã hủy — cọc đã hoàn về ví.'
       : null;
-  const cover = serviceImage(booking.service);
+  const cover = serviceImage(booking.service, 'card');
 
   return (
     <article

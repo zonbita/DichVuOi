@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { resolveUserAvatarUrl } from '../../utils/portrait-avatar';
 
 function initials(name: string) {
@@ -23,25 +23,33 @@ type UserAvatarProps = {
   email?: string | null;
   size?: keyof typeof sizeClass;
   className?: string;
+  loading?: 'lazy' | 'eager';
 };
 
-export function UserAvatar({
+function UserAvatarInner({
   name,
   src,
   userId,
   email,
   size = 'md',
   className = '',
+  loading = 'lazy',
 }: UserAvatarProps) {
-  const [broken, setBroken] = useState(false);
   const resolved = resolveUserAvatarUrl({ id: userId, email, avatarUrl: src });
+  const [broken, setBroken] = useState(false);
   const box = sizeClass[size];
+
+  useEffect(() => {
+    setBroken(false);
+  }, [resolved]);
 
   if (!broken) {
     return (
       <img
         src={resolved}
         alt={name}
+        loading={loading}
+        decoding="async"
         onError={() => setBroken(true)}
         className={`${box} shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm ${className}`}
       />
@@ -57,3 +65,5 @@ export function UserAvatar({
     </div>
   );
 }
+
+export const UserAvatar = memo(UserAvatarInner);

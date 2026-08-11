@@ -18,7 +18,10 @@ class CreateHomeReactionDto {
 }
 exports.CreateHomeReactionDto = CreateHomeReactionDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: '❤️', description: 'Emoji trong bộ smile cho phép' }),
+    (0, swagger_1.ApiProperty)({
+        example: ':))',
+        description: 'Smile Facebook dạng chữ: :)) :D :( :* <3 …',
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(1),
     __metadata("design:type", String)
