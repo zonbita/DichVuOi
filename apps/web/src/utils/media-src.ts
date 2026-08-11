@@ -2,7 +2,7 @@
  * Resolve URL ảnh upload / avatar.
  * - Absolute (http/blob/data) giữ nguyên (Vercel Blob, CDN…).
  * - `/avatars/...` luôn cùng origin web (`public/avatars`) — không gắn API.
- * - `/uploads/...` dùng cùng origin: local Vite proxy → API; prod web `public/uploads`.
+ * - `/uploads/...` dùng cùng origin: local Vite proxy tới API; prod web `public/uploads`.
  * - Path tương đối khác: gắn `VITE_API_URL` nếu có.
  */
 

@@ -177,7 +177,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
             to={`${basePath}/rut-tien`}
             className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
           >
-            Rút tiền →
+            Rút tiền
           </Link>
         }
       />
@@ -200,7 +200,7 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
             <p className="mt-0.5 text-sm text-[var(--color-muted)]">
               Chọn mức hoặc nhập số tiền rồi tạo mã QR (tối thiểu 20.000 VNĐ).{' '}
               <Link to={`${basePath}/rut-tien`} className="font-semibold text-[var(--color-brand-deep)] underline">
-                Rút tiền →
+                Rút tiền
               </Link>
             </p>
             <div className="mt-2 flex flex-wrap gap-2">

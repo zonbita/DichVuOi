@@ -11,7 +11,7 @@ type Props = {
 
 /**
  * Bước 1 rút tiền (user email/MK, chưa Google):
- * ô email trống — user tự nhập → OTP Gmail → rồi mới nhập NH.
+ * ô email trống — user tự nhập, OTP Gmail, rồi mới nhập NH.
  * Chỉ hiện mã mock khi API chưa cấu hình Gmail (dev). Max 5 OTP/giờ.
  */
 export function WithdrawEmailVerifyStep({ onVerified }: Props) {

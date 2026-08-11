@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import type { Booking } from '../../types/catalog';
 import { Icon } from '../ui/icon';
 import type { IconName } from '../ui/icon';
+import { UserAvatar } from '../ui/user-avatar';
 import { formatPrice } from '../../services/api';
 
 type NavItem = {
@@ -345,9 +346,15 @@ export function UserDashboardLayout() {
       <div className="shrink-0 p-3.5 pb-2">
         <div className="flex items-start justify-between gap-2 p-4 lg:block">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="dash-profile-avatar">
-              <Icon name="user" className="h-6 w-6" />
-            </span>
+            <UserAvatar
+              name={user?.fullName ?? 'Tài khoản'}
+              src={user?.partnerProfile?.avatarUrl}
+              userId={user?.id}
+              email={user?.email}
+              size="lg"
+              loading="eager"
+              className="!h-12 !w-12 shadow-[0_6px_16px_rgba(0,156,149,0.28)]"
+            />
             <div className="min-w-0">
               <p className="truncate text-[15px] font-extrabold tracking-tight text-[var(--color-navy)]">
                 {title}
@@ -369,11 +376,13 @@ export function UserDashboardLayout() {
         <div className="px-4 pb-1">
           {user && !isBlocked ? (
             <>
-              <div className="my-3.5 h-px bg-[var(--color-line)]/80" />
-              <p className="flex items-center gap-2 text-sm font-bold text-[#F59E0B]">
+              <p className="mt-1 flex items-center gap-2 text-sm font-bold text-[#F59E0B]">
                 <Icon name="wallet" className="h-4 w-4 shrink-0" />
-                Ví: {formatPrice(user.walletBalance ?? 0)}
+                <span className="min-w-0 truncate">
+                  Ví: {formatPrice(user.walletBalance ?? 0)}
+                </span>
               </p>
+              <div className="my-3.5 h-px bg-[var(--color-line)]/80" />
             </>
           ) : null}
           {isBlocked ? (
@@ -522,8 +531,10 @@ export function UserDashboardLayout() {
         </div>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-3 sm:px-5 sm:py-4 lg:px-8 lg:py-5">
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto overscroll-contain">
-            <Outlet />
+          <div className="dashboard-main-scroll mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-1 flex-col">
+            <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>

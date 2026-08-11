@@ -61,7 +61,7 @@ export function AdminReviewsPage() {
                   </Link>
                 </p>
                 <p className="text-[var(--color-muted)]">
-                  {review.fromUser.fullName} → {review.toUser.fullName} ·{' '}
+                  {review.fromUser.fullName} · {review.toUser.fullName} ·{' '}
                   {formatDateTime(review.createdAt)}
                 </p>
                 {review.comment ? (

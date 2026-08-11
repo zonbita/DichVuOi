@@ -894,7 +894,13 @@ let BookingsService = class BookingsService {
                 select: {
                     id: true,
                     createdAt: true,
-                    service: { select: { name: true } },
+                    jobTitle: true,
+                    service: {
+                        select: {
+                            name: true,
+                            category: { select: { group: { select: { slug: true } } } },
+                        },
+                    },
                 },
             }),
             this.prisma.bookingApplication.findMany({
@@ -904,7 +910,17 @@ let BookingsService = class BookingsService {
                 select: {
                     id: true,
                     createdAt: true,
-                    booking: { select: { service: { select: { name: true } } } },
+                    booking: {
+                        select: {
+                            jobTitle: true,
+                            service: {
+                                select: {
+                                    name: true,
+                                    category: { select: { group: { select: { slug: true } } } },
+                                },
+                            },
+                        },
+                    },
                 },
             }),
             this.prisma.booking.findMany({
@@ -921,30 +937,40 @@ let BookingsService = class BookingsService {
                     id: true,
                     releasedAt: true,
                     updatedAt: true,
-                    service: { select: { name: true } },
+                    jobTitle: true,
+                    service: {
+                        select: {
+                            name: true,
+                            category: { select: { group: { select: { slug: true } } } },
+                        },
+                    },
                 },
             }),
         ]);
+        const titleOf = (jobTitle, serviceName) => jobTitle?.trim() || serviceName;
         const items = [
             ...opens.map((b) => ({
                 id: `open-${b.id}`,
                 kind: 'open',
-                label: 'Đơn mới mở',
+                title: titleOf(b.jobTitle, b.service.name),
                 serviceName: b.service.name,
+                groupSlug: b.service.category?.group?.slug ?? null,
                 at: b.createdAt.toISOString(),
             })),
             ...apps.map((a) => ({
                 id: `apply-${a.id}`,
                 kind: 'apply',
-                label: 'Có người ứng tuyển',
+                title: titleOf(a.booking.jobTitle, a.booking.service.name),
                 serviceName: a.booking.service.name,
+                groupSlug: a.booking.service.category?.group?.slug ?? null,
                 at: a.createdAt.toISOString(),
             })),
             ...dones.map((b) => ({
                 id: `done-${b.id}`,
                 kind: 'completed',
-                label: 'Vừa hoàn thành',
+                title: titleOf(b.jobTitle, b.service.name),
                 serviceName: b.service.name,
+                groupSlug: b.service.category?.group?.slug ?? null,
                 at: (b.releasedAt ?? b.updatedAt).toISOString(),
             })),
         ]

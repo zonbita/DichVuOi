@@ -118,20 +118,20 @@ export function HireBookingPreview(props: Props) {
 
   if (!booking) {
     return (
-      <aside className="flex h-full min-h-[220px] flex-col overflow-hidden rounded-xl border border-dashed border-[var(--color-line)] bg-[var(--color-canvas)]/80">
-        <div className="border-b border-[var(--color-line)] px-4 py-3">
-          <p className="text-sm font-extrabold text-[var(--color-navy)]">
+      <aside className="glass-card flex h-full min-h-0 min-w-0 flex-col overflow-hidden !rounded-xl border-dashed">
+        <div className="shrink-0 border-b border-[var(--glass-line,rgba(23,32,51,0.08))] px-4 py-3">
+          <p className="text-sm font-extrabold text-[var(--glass-ink,#172033)]">
             Demo đơn trên bảng tin
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+          <p className="mt-0.5 text-xs text-[var(--glass-muted,#7c8799)]">
             Chọn nghề bên trái để xem trước cách đơn hiện với người làm.
           </p>
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-8 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-[var(--color-brand)] shadow-sm ring-1 ring-[var(--color-line)]">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/70 text-[var(--color-brand)] shadow-sm ring-1 ring-[var(--glass-line,rgba(23,32,51,0.08))]">
             <Icon name="briefcase" className="h-5 w-5" />
           </span>
-          <p className="text-sm text-[var(--color-muted)]">
+          <p className="text-sm text-[var(--glass-muted,#7c8799)]">
             Chưa có dịch vụ — demo sẽ cập nhật theo form.
           </p>
         </div>
@@ -142,24 +142,24 @@ export function HireBookingPreview(props: Props) {
   const tone = openJobRoomTone(booking);
 
   return (
-    <aside className="flex h-full min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)] lg:sticky lg:top-4">
-      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--color-line)] bg-gradient-to-br from-white via-white to-[var(--color-brand-soft)]/50 px-4 py-3">
+    <aside className="glass-card flex h-full min-h-0 min-w-0 flex-col overflow-hidden !rounded-xl">
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-2 border-b border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/25 px-4 py-3">
         <div className="min-w-0">
-          <p className="text-sm font-extrabold text-[var(--color-navy)]">
+          <p className="text-sm font-extrabold text-[var(--glass-ink,#172033)]">
             Demo đơn trên bảng tin
           </p>
-          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+          <p className="mt-0.5 text-xs text-[var(--glass-muted,#7c8799)]">
             {props.schedulePublish
               ? 'Sau giờ đăng — người làm sẽ thấy card như bên dưới.'
               : 'Cập nhật theo thông tin bạn đang điền (chưa gửi).'}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 ring-1 ring-violet-200">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-700 ring-1 ring-violet-200/80">
           Preview
         </span>
       </div>
 
-      <div className="space-y-3 p-3 sm:p-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-3 sm:p-4">
         {props.schedulePublish && props.publishAt?.trim() ? (
           <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-800">
             Hẹn đăng{' '}
@@ -196,7 +196,7 @@ export function HireBookingPreview(props: Props) {
           />
         </div>
 
-        <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-canvas)]/60 px-3 py-2.5 text-xs text-[var(--color-muted)]">
+        <div className="rounded-lg border border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/40 px-3 py-2.5 text-xs text-[var(--glass-muted,#7c8799)]">
           <p>
             Ngân sách giữ chỗ:{' '}
             <strong className="text-[var(--color-ink)]">

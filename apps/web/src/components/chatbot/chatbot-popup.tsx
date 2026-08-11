@@ -535,7 +535,7 @@ export function ChatbotPopup({ initialOpen = false }: { initialOpen?: boolean })
                   <div className="rounded-xl border border-[var(--color-line)] bg-white p-4 text-sm">
                     <p className="font-semibold">Bạn đang đăng nhập tài khoản hỗ trợ</p>
                     <p className="mt-1 text-[var(--color-muted)]">
-                      Trả lời khách tại dashboard Admin → Chat với khách.
+                      Trả lời khách tại dashboard Admin · Chat với khách.
                     </p>
                     <Link
                       to="/admin/support"

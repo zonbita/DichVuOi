@@ -381,7 +381,7 @@ export function AdminOverviewPage() {
               className="admin-chip admin-chip-amber gap-1.5"
             >
               <UserCheck size={15} strokeWidth={2.25} absoluteStrokeWidth aria-hidden />
-              {stats.partnersPendingVerify} hồ sơ chờ duyệt →
+              {stats.partnersPendingVerify} hồ sơ chờ duyệt
             </Link>
           ) : null}
           {stats.servicePostsPending > 0 ? (
@@ -390,7 +390,7 @@ export function AdminOverviewPage() {
               className="admin-chip admin-chip-violet gap-1.5"
             >
               <Briefcase size={15} strokeWidth={2.25} absoluteStrokeWidth aria-hidden />
-              {stats.servicePostsPending} bài đăng DV chờ duyệt →
+              {stats.servicePostsPending} bài đăng DV chờ duyệt
             </Link>
           ) : null}
           {stats.escrowHeldCount > 0 ? (
@@ -399,7 +399,7 @@ export function AdminOverviewPage() {
               className="admin-chip admin-chip-sky gap-1.5"
             >
               <FileText size={15} strokeWidth={2.25} absoluteStrokeWidth aria-hidden />
-              {stats.escrowHeldCount} đơn đang giữ cọc →
+              {stats.escrowHeldCount} đơn đang giữ cọc
             </Link>
           ) : null}
           {stats.complaintsPending > 0 ? (
@@ -408,7 +408,7 @@ export function AdminOverviewPage() {
               className="admin-chip admin-chip-rose gap-1.5"
             >
               <AlertOctagon size={15} strokeWidth={2.25} absoluteStrokeWidth aria-hidden />
-              {stats.complaintsPending} khiếu nại chờ xử lý →
+              {stats.complaintsPending} khiếu nại chờ xử lý
             </Link>
           ) : null}
         </div>
@@ -488,7 +488,7 @@ export function AdminOverviewPage() {
               to="/admin/finance"
               className="mb-3 text-sm font-bold text-[var(--admin-accent)] hover:underline"
             >
-              Mở menu Tiền →
+              Mở menu Tiền
             </Link>
           </div>
           <div className="grid gap-4 xl:grid-cols-[1fr_1fr_1fr_minmax(240px,0.9fr)]">

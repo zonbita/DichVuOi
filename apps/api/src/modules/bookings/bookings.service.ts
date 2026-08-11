@@ -1161,7 +1161,13 @@ export class BookingsService {
         select: {
           id: true,
           createdAt: true,
-          service: { select: { name: true } },
+          jobTitle: true,
+          service: {
+            select: {
+              name: true,
+              category: { select: { group: { select: { slug: true } } } },
+            },
+          },
         },
       }),
       this.prisma.bookingApplication.findMany({
@@ -1171,7 +1177,17 @@ export class BookingsService {
         select: {
           id: true,
           createdAt: true,
-          booking: { select: { service: { select: { name: true } } } },
+          booking: {
+            select: {
+              jobTitle: true,
+              service: {
+                select: {
+                  name: true,
+                  category: { select: { group: { select: { slug: true } } } },
+                },
+              },
+            },
+          },
         },
       }),
       this.prisma.booking.findMany({
@@ -1188,7 +1204,13 @@ export class BookingsService {
           id: true,
           releasedAt: true,
           updatedAt: true,
-          service: { select: { name: true } },
+          jobTitle: true,
+          service: {
+            select: {
+              name: true,
+              category: { select: { group: { select: { slug: true } } } },
+            },
+          },
         },
       }),
     ]);
@@ -1196,31 +1218,39 @@ export class BookingsService {
     type Item = {
       id: string;
       kind: 'open' | 'apply' | 'completed';
-      label: string;
+      /** Tiêu đề đơn (jobTitle hoặc tên nghề). */
+      title: string;
       serviceName: string;
+      groupSlug: string | null;
       at: string;
     };
+
+    const titleOf = (jobTitle: string | null | undefined, serviceName: string) =>
+      jobTitle?.trim() || serviceName;
 
     const items: Item[] = [
       ...opens.map((b) => ({
         id: `open-${b.id}`,
         kind: 'open' as const,
-        label: 'Đơn mới mở',
+        title: titleOf(b.jobTitle, b.service.name),
         serviceName: b.service.name,
+        groupSlug: b.service.category?.group?.slug ?? null,
         at: b.createdAt.toISOString(),
       })),
       ...apps.map((a) => ({
         id: `apply-${a.id}`,
         kind: 'apply' as const,
-        label: 'Có người ứng tuyển',
+        title: titleOf(a.booking.jobTitle, a.booking.service.name),
         serviceName: a.booking.service.name,
+        groupSlug: a.booking.service.category?.group?.slug ?? null,
         at: a.createdAt.toISOString(),
       })),
       ...dones.map((b) => ({
         id: `done-${b.id}`,
         kind: 'completed' as const,
-        label: 'Vừa hoàn thành',
+        title: titleOf(b.jobTitle, b.service.name),
         serviceName: b.service.name,
+        groupSlug: b.service.category?.group?.slug ?? null,
         at: (b.releasedAt ?? b.updatedAt).toISOString(),
       })),
     ]

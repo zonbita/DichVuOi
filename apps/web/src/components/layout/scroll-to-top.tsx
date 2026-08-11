@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-/** Mỗi lần đổi route → cuộn về đầu trang (window). */
+/** Mỗi lần đổi route thì cuộn về đầu trang (window). */
 export function ScrollToTop() {
   const { pathname } = useLocation();
 

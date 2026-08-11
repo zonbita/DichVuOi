@@ -116,8 +116,8 @@ export function GroupsPage() {
                   {(
                     [
                       ['default', 'Mặc định'],
-                      ['name-asc', 'Tên A → Z'],
-                      ['name-desc', 'Tên Z → A'],
+                      ['name-asc', 'Tên A-Z'],
+                      ['name-desc', 'Tên Z-A'],
                     ] as const
                   ).map(([value, label]) => (
                     <button

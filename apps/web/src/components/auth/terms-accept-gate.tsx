@@ -74,7 +74,7 @@ export function TermsAcceptGate({ children }: { children: React.ReactNode }) {
               rel="noopener noreferrer"
               className="inline-flex text-[15px] font-semibold text-[var(--color-brand-deep)] underline underline-offset-2"
             >
-              Xem nội quy đầy đủ →
+              Xem nội quy đầy đủ
             </Link>
           </p>
 

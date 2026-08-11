@@ -520,7 +520,7 @@ export function AdminBookingDetailPage() {
                 className="rounded-xl border border-[var(--admin-border)] px-3.5 py-3 text-sm"
               >
                 <p className="font-semibold">
-                  {review.rating}★ · {review.fromUser.fullName} →{' '}
+                  {review.rating}★ · {review.fromUser.fullName} ·{' '}
                   {review.toUser.fullName}
                 </p>
                 {review.comment ? <p className="mt-1">{review.comment}</p> : null}

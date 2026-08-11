@@ -335,7 +335,7 @@ export function PartnerJobsList({
       ) : null}
 
       {!loading && filtered.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--color-line)] bg-white px-6 py-12 text-center shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:py-14">
+        <div className={`${dashboardSurfaceClass} px-6 py-12 text-center sm:py-14`}>
           <EmptyBriefcaseArt />
           <h3 className="mt-5 text-lg font-extrabold text-[var(--color-navy)]">
             {empty.title}

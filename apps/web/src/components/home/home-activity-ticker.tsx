@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
+import { offeringColor } from '../../utils/catalog-colors';
 import { Icon } from '../ui/icon';
 
 function relativeTime(iso: string) {
@@ -47,25 +48,34 @@ export function HomeActivityTicker() {
           </div>
           <div className="relative overflow-hidden py-2.5 marquee">
           <div className="marquee__track flex w-max gap-3 px-4" style={{ animationDuration: '45s' }}>
-              {loop.map((item, i) => (
+              {loop.map((item, i) => {
+                const color = offeringColor(item.groupSlug);
+                const title = item.title || item.label || item.serviceName;
+                return (
                 <span
                   key={`${item.id}-${i}`}
                   className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[var(--color-canvas)] px-3.5 py-1.5 text-sm text-[var(--color-ink)] ring-1 ring-[var(--color-line)]"
                 >
                   <Icon
                     name={kindIcon[item.kind]}
-                    className="h-3.5 w-3.5 text-[var(--color-brand)]"
+                    className="h-3.5 w-3.5"
+                    style={{ color: color.main }}
                   />
-                  <span className="font-semibold text-[var(--color-navy)]">
-                    {item.label}
+                  <span
+                    className="rounded-md px-1.5 py-0.5 text-[13px] font-semibold"
+                    style={{ backgroundColor: color.soft, color: color.ink }}
+                  >
+                    {item.serviceName}
                   </span>
-                  <span className="text-[var(--color-muted)]">·</span>
-                  <span className="font-medium">{item.serviceName}</span>
+                  <span className="max-w-[14rem] truncate font-semibold text-[var(--color-navy)]">
+                    {title}
+                  </span>
                   <span className="text-[var(--color-muted)]">
                     {relativeTime(item.at)}
                   </span>
                 </span>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

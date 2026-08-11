@@ -17,18 +17,5 @@ export function CustomerPublishSchedulePage() {
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-[var(--color-navy)]">
-          Lịch đăng đơn
-        </h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          Xem các đơn đã hẹn giờ đăng lên bảng tin — bố cục giống lịch thuê theo
-          tháng của người làm.
-        </p>
-      </div>
-      <CustomerPublishScheduleBoard enabled={Boolean(user)} />
-    </div>
-  );
+  return <CustomerPublishScheduleBoard enabled={Boolean(user)} />;
 }

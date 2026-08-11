@@ -106,12 +106,12 @@ export function PartnerBookingCard({
 
   return (
     <article
-      className={`border bg-white p-4 shadow-sm sm:p-5 ${
+      className={`glass-card !rounded-2xl p-4 sm:p-5 ${
         showChat ? 'cursor-pointer' : ''
       } ${
         unreadCount > 0
-          ? 'border-transparent ring-2 ring-[#E41E3F] ring-offset-2'
-          : 'border-[var(--color-line)]'
+          ? '!border-transparent ring-2 ring-[#E41E3F] ring-offset-2'
+          : ''
       }`}
       onClick={onCardClick}
       title={showChat ? 'Nhấp để mở chat đơn' : undefined}
@@ -165,8 +165,8 @@ export function PartnerBookingCard({
             {showChat ? (
               <p className="mt-3 text-xs font-semibold text-[var(--color-brand-deep)]">
                 {unreadCount > 0
-                  ? `${unreadCount > 9 ? '9+' : unreadCount} tin mới — nhấp để mở chat →`
-                  : 'Nhấp vào thẻ để mở chat đơn →'}
+                  ? `${unreadCount > 9 ? '9+' : unreadCount} tin mới — nhấp để mở chat`
+                  : 'Nhấp vào thẻ để mở chat đơn'}
               </p>
             ) : booking.status === 'CONFIRMED' ||
               booking.status === 'IN_PROGRESS' ||

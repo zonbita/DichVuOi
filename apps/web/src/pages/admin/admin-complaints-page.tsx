@@ -87,7 +87,7 @@ export function AdminComplaintsPage() {
           to="/admin/flagged"
           className="ml-auto text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
         >
-          Tin chat bị lọc PII →
+          Tin chat bị lọc PII
         </Link>
       </div>
 
@@ -127,8 +127,8 @@ export function AdminComplaintsPage() {
                     {reporterIsPartner ? 'Người làm' : 'Khách'}{' '}
                     {item.reporter.fullName}
                     {item.against
-                      ? ` → ${item.against.fullName}`
-                      : ` → Partner ${item.partner.fullName}`}{' '}
+                      ? ` · ${item.against.fullName}`
+                      : ` · Partner ${item.partner.fullName}`}{' '}
                     · Đơn {item.booking.status}
                     {item.booking.paymentStatus
                       ? ` · ${item.booking.paymentStatus}`

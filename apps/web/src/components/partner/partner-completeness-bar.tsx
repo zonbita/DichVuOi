@@ -55,7 +55,7 @@ export function PartnerCompletenessBar({ profile }: Props) {
 
   if (percent >= 100) {
     return (
-      <div className="border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+      <div className="glass-card !rounded-2xl border-emerald-200/60 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-900">
         <p className="font-bold">Hồ sơ hoàn thiện 100%</p>
         <p className="mt-0.5 text-emerald-800/80">
           Khách thấy đủ thông tin tin cậy — tiếp tục nhận việc trên hàng chờ.
@@ -65,7 +65,7 @@ export function PartnerCompletenessBar({ profile }: Props) {
   }
 
   return (
-    <div className="border border-[var(--color-line)] bg-white px-4 py-3 shadow-sm">
+    <div className="glass-card !rounded-2xl px-4 py-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <p className="text-sm font-extrabold">Hồ sơ hoàn thiện {percent}%</p>
@@ -77,7 +77,7 @@ export function PartnerCompletenessBar({ profile }: Props) {
           to="/doi-tac/ho-so"
           className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
         >
-          Cập nhật hồ sơ →
+          Cập nhật hồ sơ
         </Link>
       </div>
       <div className="mt-3 h-2 overflow-hidden bg-[var(--color-canvas)] ring-1 ring-[var(--color-line)]">

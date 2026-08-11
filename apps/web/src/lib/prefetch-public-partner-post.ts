@@ -170,7 +170,7 @@ export function prefetchPublicPartnerPost(
   const existing = queryClient.getQueryData<PublicServicePostDetail>(queryKey);
 
   if (!existing && opts?.seed) {
-    // updatedAt: 0 → stale ngay, prefetchQuery vẫn gọi API nền.
+    // updatedAt: 0 = stale ngay, prefetchQuery vẫn gọi API nền.
     queryClient.setQueryData(queryKey, opts.seed, { updatedAt: 0 });
   }
 

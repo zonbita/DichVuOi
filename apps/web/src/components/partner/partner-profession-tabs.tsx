@@ -75,7 +75,7 @@ export function PartnerProfessionTabs({
     return (
       <div
         ref={rootRef}
-        className="relative rounded-xl border border-[var(--color-line)] bg-white px-3 py-2.5"
+        className="relative rounded-xl border border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/70 px-3 py-2.5 backdrop-blur-sm"
       >
         <div className="flex items-center gap-2.5">
           <p className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
@@ -111,7 +111,7 @@ export function PartnerProfessionTabs({
           <div
             id={listId}
             role="listbox"
-            className="absolute left-3 right-3 top-full z-30 mt-1 max-h-[min(420px,60vh)] overflow-y-auto rounded-xl border border-[var(--color-line)] bg-white py-1 shadow-[var(--shadow-card)]"
+            className="absolute left-3 right-3 top-full z-30 mt-1 max-h-[min(420px,60vh)] overflow-y-auto rounded-xl border border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/95 py-1 shadow-[var(--shadow-card)] backdrop-blur-md"
           >
             <button
               type="button"
@@ -185,7 +185,7 @@ export function PartnerProfessionTabs({
       aria-orientation={vertical ? 'vertical' : 'horizontal'}
       className={
         vertical
-          ? 'flex flex-col gap-1 rounded-xl border border-[var(--color-line)] bg-white p-2 lg:sticky lg:top-[5.5rem]'
+          ? 'glass-card flex flex-col gap-1 !rounded-xl p-2 lg:sticky lg:top-[5.5rem]'
           : 'flex flex-wrap gap-2 border-b border-[var(--color-line)] pb-3'
       }
     >

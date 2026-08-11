@@ -1,10 +1,10 @@
 /**
  * Tiện ích tìm kiếm không dấu cho toàn FE.
- * - `phraseMatch`: đúng cụm từ (ô search header → /nhom).
+ * - `phraseMatch`: đúng cụm từ (ô search header tới /nhom).
  * - `fuzzyMatch`: gần đúng (dropdown tỉnh, gắn nghề…).
  */
 
-/** Bỏ dấu tiếng Việt, hạ chữ thường: «Sửa chữa» → «sua chua», «Đà Nẵng» → «da nang». */
+/** Bỏ dấu tiếng Việt, hạ chữ thường: «Sửa chữa» thành «sua chua», «Đà Nẵng» thành «da nang». */
 export function normalizeText(text: string): string {
   return text
     .normalize('NFD')
@@ -74,8 +74,8 @@ function isSubsequence(haystack: string, needle: string): boolean {
 
 /**
  * Khớp không dấu + gần đúng (dropdown tỉnh / gắn nghề).
- * - Rỗng → khớp mọi thứ.
- * - Trùng chuỗi con (đã bỏ dấu) → khớp.
+ * - Rỗng: khớp mọi thứ.
+ * - Trùng chuỗi con (đã bỏ dấu): khớp.
  * - Mỗi từ khoá khớp một từ trong text qua substring hoặc Levenshtein trong ngưỡng.
  * - Fallback: gõ tắt liền chuỗi (subsequence).
  */

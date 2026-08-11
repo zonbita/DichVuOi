@@ -68,7 +68,7 @@ const stockImagesCardByFile = toUrlMap(
 
 export type CatalogImageVariant = 'full' | 'card';
 
-/** slug nhóm → tên file banner. */
+/** slug nhóm sang tên file banner. */
 const GROUP_BANNER_FILES: Record<string, string> = {
   'hoc-tap': 'banner-gia-su.jpg',
   game: 'banner-game.jpg',

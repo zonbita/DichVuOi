@@ -107,7 +107,7 @@ function MobileAgendaList({
                     className={`flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
                       selectedId === slot.id
                         ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)]'
-                        : 'border-[var(--color-line)] bg-white hover:border-[var(--color-brand)]/40'
+                        : 'border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/55 hover:border-[var(--color-brand)]/40'
                     }`}
                   >
                     <span
@@ -161,7 +161,7 @@ function DesktopMonthGrid({
           gridTemplateColumns: `52px repeat(${daysInMonth}, minmax(40px, 1fr))`,
         }}
       >
-        <div className="sticky top-0 left-0 z-30 border-b border-[var(--color-line)] bg-white px-1 py-2 text-center text-[10px] font-bold text-[var(--color-muted)]">
+        <div className="sticky top-0 left-0 z-30 border-b border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/80 px-1 py-2 text-center text-[10px] font-bold text-[var(--color-muted)] backdrop-blur-sm">
           Giờ
         </div>
         {days.map((day) => {
@@ -172,10 +172,10 @@ function DesktopMonthGrid({
           return (
             <div
               key={`h-${day}`}
-              className={`sticky top-0 z-20 border-b border-l border-[var(--color-line)] py-2 text-center text-[11px] font-bold ${
+              className={`sticky top-0 z-20 border-b border-l border-[var(--glass-line,rgba(23,32,51,0.08))] py-2 text-center text-[11px] font-bold backdrop-blur-sm ${
                 isToday
                   ? 'bg-[var(--color-brand)]/10 text-[var(--color-brand-deep)]'
-                  : 'bg-[var(--color-canvas)] text-[var(--color-ink)]'
+                  : 'bg-white/70 text-[var(--color-ink)]'
               }`}
             >
               {day}
@@ -187,7 +187,7 @@ function DesktopMonthGrid({
           {HOURS.map((hour) => (
             <div
               key={`label-${hour}`}
-              className="sticky left-0 z-10 flex items-start justify-end border-b border-[var(--color-line)] bg-white pr-1.5 pt-0.5 text-[10px] font-semibold text-[var(--color-muted)]"
+              className="sticky left-0 z-10 flex items-start justify-end border-b border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/80 pr-1.5 pt-0.5 text-[10px] font-semibold text-[var(--color-muted)] backdrop-blur-sm"
               style={{ height: ROW_H }}
             >
               {formatHourLabel(hour)}
@@ -204,7 +204,7 @@ function DesktopMonthGrid({
             {HOURS.map((hour) => (
               <div
                 key={`g-${day}-${hour}`}
-                className="border-b border-[var(--color-line)] bg-white/70"
+                className="border-b border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/40"
                 style={{ height: ROW_H }}
               />
             ))}
@@ -282,8 +282,8 @@ export function PartnerScheduleBoard({ enabled }: Props) {
   });
 
   return (
-    <section className="surface-card overflow-hidden p-0">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-line)] px-4 py-3 sm:px-5">
+    <section className="glass-card overflow-hidden !rounded-2xl p-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/25 px-4 py-3 sm:px-5">
         <div>
           <h2 className="text-xl font-extrabold">Lịch thuê theo tháng</h2>
           <p className="mt-0.5 text-sm text-[var(--color-muted)]">

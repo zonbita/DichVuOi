@@ -240,7 +240,7 @@ export function WithdrawPage({ basePath }: Props) {
         <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
           <form
             onSubmit={onSubmit}
-            className="flex flex-col gap-5 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5"
+            className="glass-card flex flex-col gap-5 !rounded-2xl p-4 sm:p-5"
           >
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-sm text-emerald-800">
               Email đã xác minh ({user.email}) — nhập ngân hàng bên dưới.
@@ -424,7 +424,7 @@ export function WithdrawPage({ basePath }: Props) {
             </button>
           </form>
 
-          <aside className="flex h-fit flex-col gap-4 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.04)] sm:p-5">
+          <aside className="glass-card flex h-fit flex-col gap-4 !rounded-2xl p-4 sm:p-5">
             <h2 className="text-lg font-extrabold text-[var(--color-navy)]">Xác nhận</h2>
 
             {selectedBank ? (

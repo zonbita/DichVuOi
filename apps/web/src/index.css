@@ -807,6 +807,31 @@ select {
   animation: fade-in 0.6s ease both;
 }
 
+/**
+ * Scroll nội dung dashboard user:
+ * - Không dùng min-h-full giả (tránh tràn 1px gây nháy scrollbar).
+ * - Overlay khi hỗ trợ: thanh cuộn không chiếm width (tránh vòng hiện/ẩn trên Windows).
+ * - Trong vùng này, tắt translateY của fade-up (translate tạm làm tràn gây nháy).
+ */
+.dashboard-main-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: auto;
+}
+
+@supports (overflow: overlay) {
+  .dashboard-main-scroll {
+    overflow-y: overlay;
+  }
+}
+
+.dashboard-main-scroll .animate-fade-up {
+  animation-name: fade-in;
+  animation-duration: 0.35s;
+  animation-timing-function: ease;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);
@@ -1056,9 +1081,17 @@ select {
   flex: 1;
   flex-direction: column;
   gap: 2px;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 10px 8px;
+  scrollbar-gutter: auto;
+}
+
+@supports (overflow: overlay) {
+  .dash-nav {
+    overflow-y: overlay;
+  }
 }
 
 .dash-nav-link {

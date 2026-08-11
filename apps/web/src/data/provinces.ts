@@ -13,7 +13,7 @@ export type Province = {
   kind: 'city' | 'province';
 };
 
-/** 6 thành phố + 28 tỉnh — sắp xếp A→Z theo tên. */
+/** 6 thành phố + 28 tỉnh — sắp xếp A-Z theo tên. */
 export const PROVINCES: Province[] = [
   { slug: 'an-giang', name: 'An Giang', kind: 'province' },
   { slug: 'bac-ninh', name: 'Bắc Ninh', kind: 'province' },

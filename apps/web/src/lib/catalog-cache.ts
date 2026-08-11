@@ -87,7 +87,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 /**
  * Ưu tiên hiện cache (qua initialData ở query).
- * queryFn: gọi API lại; lỗi/timeout → trả cache nếu có.
+ * queryFn: gọi API lại; lỗi/timeout thì trả cache nếu có.
  */
 export async function fetchCatalogWithCache<T>(
   key: CatalogCacheKey,

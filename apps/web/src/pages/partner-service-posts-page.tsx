@@ -415,7 +415,7 @@ export function PartnerServicePostsPage() {
       />
 
       {offeringOptions.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--color-line)] bg-white p-5 text-sm text-[var(--color-muted)]">
+        <div className="glass-card p-5 text-sm text-[var(--glass-muted,#7c8799)] !rounded-2xl">
           Bạn chưa gắn nghề nào trên hồ sơ.{' '}
           <Link
             to="/doi-tac/ho-so"
@@ -454,7 +454,7 @@ export function PartnerServicePostsPage() {
 
       {formOpen ? (
         <form
-          className="space-y-3 rounded-2xl border border-[var(--color-line)] bg-white p-4 sm:p-5"
+          className="glass-card space-y-3 !rounded-2xl p-4 sm:p-5"
           onSubmit={(e) => {
             e.preventDefault();
             saveMutation.mutate();
@@ -617,7 +617,7 @@ export function PartnerServicePostsPage() {
       ) : null}
 
       {!postsQuery.isLoading && posts.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--color-line)] bg-white p-8 text-center text-sm text-[var(--color-muted)]">
+        <div className="glass-card border-dashed p-8 text-center text-sm text-[var(--glass-muted,#7c8799)] !rounded-2xl">
           {professionId === 'all'
             ? 'Chọn nghề ở trên để xem / viết bài.'
             : 'Chưa có bài đăng cho nghề này.'}
@@ -635,7 +635,7 @@ export function PartnerServicePostsPage() {
           return (
             <article
               key={post.id}
-              className="border border-[var(--color-line)] bg-white"
+              className="glass-card overflow-hidden !rounded-2xl"
             >
               <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-line)] px-4 py-3 sm:px-5">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">

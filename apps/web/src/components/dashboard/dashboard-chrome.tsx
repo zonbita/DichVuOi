@@ -4,7 +4,7 @@ import { Icon } from '../ui/icon';
 import type { IconName } from '../ui/icon';
 
 const surfaceClass =
-  'rounded-2xl border border-[var(--color-line)] bg-white shadow-[0_4px_16px_rgba(24,49,63,0.05)]';
+  'glass-card !rounded-2xl';
 
 /** Ô icon teal — khớp header «Việc của tôi». */
 export function DashboardIconBox({

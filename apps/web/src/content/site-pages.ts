@@ -271,7 +271,7 @@ export const helpCenterPage: DocContent = {
     {
       heading: 'Đặt dịch vụ',
       bullets: [
-        'Chọn nhóm → dịch vụ → điền lịch / địa chỉ → đặt cọc để giữ chỗ.',
+        'Chọn nhóm · dịch vụ · điền lịch / địa chỉ · đặt cọc để giữ chỗ.',
         'Sau khi cọc, đơn vào hàng chờ đối tác hoặc gắn trực tiếp nếu thuê thẳng.',
         'Theo dõi đơn tại “Đơn của tôi”.',
       ],
@@ -310,11 +310,11 @@ export const bookingGuidePage: DocContent = {
       heading: 'Quy trình đặt lịch',
       steps: [
         'Đăng nhập hoặc tạo tài khoản.',
-        'Chọn nhóm ngành nghề → danh mục → dịch vụ phù hợp (hoặc tìm theo từ khóa).',
+        'Chọn nhóm ngành nghề · danh mục · dịch vụ phù hợp (hoặc tìm theo từ khóa).',
         'Xem mô tả, giá, thời lượng; chọn người làm nếu có tùy chọn thuê thẳng.',
         'Điền thời gian, địa chỉ / ghi chú, xác nhận đơn.',
         'Đặt cọc giữ chỗ theo hướng dẫn thanh toán.',
-        'Theo dõi trạng thái: chờ nhận → xác nhận → đang làm → hoàn thành; chat với đối tác trong app.',
+        'Theo dõi trạng thái: chờ nhận · xác nhận · đang làm · hoàn thành; chat với đối tác trong app.',
         'Đánh giá sau khi hoàn tất để giúp cộng đồng chọn đúng người.',
       ],
     },
@@ -397,7 +397,7 @@ export const refundPage: DocContent = {
     {
       heading: 'Cách gửi yêu cầu',
       steps: [
-        'Vào Đơn của tôi → chọn đơn → Khiếu nại / yêu cầu hoàn.',
+        'Vào Đơn của tôi · chọn đơn · Khiếu nại / yêu cầu hoàn.',
         'Hoặc gửi form tại trang Khiếu nại — Góp ý kèm mã đơn.',
         'Chờ CSKH phản hồi trong khung giờ hỗ trợ.',
       ],
@@ -449,7 +449,7 @@ export const partnerProcessPage: DocContent = {
         'Vào mục Đối tác, hoàn thiện hồ sơ (giới thiệu, khu vực, dịch vụ nhận).',
         'Chọn dịch vụ muốn nhận việc; chờ duyệt nếu dịch vụ yêu cầu xác minh.',
         'Theo dõi đơn mở tại Đơn thuê; lịch tháng trên Tổng quan.',
-        'Nhận việc → cập nhật trạng thái → hoàn thành → nhận giải ngân (sau hoa hồng sàn).',
+        'Nhận việc · cập nhật trạng thái · hoàn thành · nhận giải ngân (sau hoa hồng sàn).',
       ],
     },
     {
@@ -500,7 +500,7 @@ export const partnerPolicyPage: DocContent = {
     {
       heading: 'Xử lý vi phạm',
       bullets: [
-        'Cảnh cáo → hạn chế nhận việc → khóa tài khoản tùy mức độ.',
+        'Cảnh cáo · hạn chế nhận việc · khóa tài khoản tùy mức độ.',
         'Gian lận thanh toán / đánh giá có thể khóa vĩnh viễn và từ chối giải ngân khoản tranh chấp.',
       ],
     },

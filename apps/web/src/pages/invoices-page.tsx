@@ -76,7 +76,7 @@ export function InvoicesPage({
           <Link
             key={invoice.id}
             to={`${basePath}/hoa-don/${invoice.id}`}
-            className="block rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_16px_rgba(24,49,63,0.05)] transition hover:border-[var(--color-brand)]"
+            className="glass-card block !rounded-2xl p-4 transition hover:border-[var(--color-brand)]"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -165,7 +165,7 @@ export function InvoiceDetailPage({
         }
       />
 
-      <article className="rounded-2xl border border-[var(--color-line)] bg-white p-5 shadow-[0_4px_16px_rgba(24,49,63,0.05)]">
+      <article className="glass-card !rounded-2xl p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-lg font-extrabold">{invoice.serviceName}</p>
@@ -242,7 +242,7 @@ export function InvoiceDetailPage({
           to={bookingHref}
           className="mt-5 inline-block text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
         >
-          Xem đơn liên quan →
+          Xem đơn liên quan
         </Link>
       </article>
     </div>

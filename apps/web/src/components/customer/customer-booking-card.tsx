@@ -459,8 +459,8 @@ export function CustomerBookingCard({
         <div className="border-t border-[#DCE4EF] px-6 py-3 sm:px-8">
           <p className="text-xs font-semibold text-[var(--color-brand-deep)]">
             {unreadCount > 0
-              ? `${unreadCount > 9 ? '9+' : unreadCount} tin mới — nhấp để mở chat →`
-              : 'Nhấp vào thẻ để mở chat đơn →'}
+              ? `${unreadCount > 9 ? '9+' : unreadCount} tin mới — nhấp để mở chat`
+              : 'Nhấp vào thẻ để mở chat đơn'}
           </p>
         </div>
       ) : null}

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
+import { SectionHeaderBar } from '../components/home/section-header-bar';
 import { FavoritePartnerButton } from '../components/partner/favorite-partner-button';
 import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
 import { SquareImageSlider } from '../components/partner/square-image-slider';
@@ -384,10 +385,10 @@ function GigsGrid({
 
   return (
     <section id="partner-gigs" className="space-y-3">
-      <h2 className="flex items-center gap-2 text-lg font-extrabold text-[var(--color-navy)]">
-        <Icon name="briefcase" className="h-5 w-5 text-[var(--color-brand)]" />
-        Dịch vụ của {partnerName}
-      </h2>
+      <SectionHeaderBar
+        icon="briefcase"
+        title={`Dịch vụ của ${partnerName}`}
+      />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {posts.map((post) => (
           <GigCard
@@ -437,47 +438,49 @@ function ReviewsSection({
     : undefined;
 
   return (
-    <section id="partner-reviews" className="glass-card p-4 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-lg font-extrabold text-[var(--color-navy)]">
-          <Icon name="chart" className="h-5 w-5 text-[var(--color-brand)]" />
-          Đánh giá
-        </h2>
-        {offerings.length > 1 ? (
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => onFilterChange(null)}
-              className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                filterServiceId === null
-                  ? 'bg-[var(--color-brand)] text-white'
-                  : 'bg-white/55 text-[var(--color-ink)] hover:bg-white/80'
-              }`}
-            >
-              Tất cả
-            </button>
-            {offerings.map((o) => (
+    <section id="partner-reviews" className="space-y-3">
+      <SectionHeaderBar
+        icon="star"
+        title="Đánh giá"
+        action={
+          offerings.length > 1 ? (
+            <div className="flex flex-wrap justify-end gap-1.5">
               <button
-                key={o.id}
                 type="button"
-                onClick={() => onFilterChange(o.service.id)}
+                onClick={() => onFilterChange(null)}
                 className={`rounded-full px-3 py-1 text-xs font-bold transition ${
-                  filterServiceId === o.service.id
-                    ? 'bg-[var(--color-brand)] text-white'
-                    : 'bg-white/55 text-[var(--color-ink)] hover:bg-white/80'
+                  filterServiceId === null
+                    ? 'bg-white/20 text-white ring-1 ring-white/35'
+                    : 'bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/15'
                 }`}
               >
-                {o.service.name}
+                Tất cả
               </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
+              {offerings.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => onFilterChange(o.service.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                    filterServiceId === o.service.id
+                      ? 'bg-white/20 text-white ring-1 ring-white/35'
+                      : 'bg-white/10 text-white/80 ring-1 ring-white/20 hover:bg-white/15'
+                  }`}
+                >
+                  {o.service.name}
+                </button>
+              ))}
+            </div>
+          ) : null
+        }
+      />
 
       {filtered.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--color-muted)]">Chưa có đánh giá công khai.</p>
+        <div className="glass-card p-4 sm:p-5">
+          <p className="text-sm text-[var(--color-muted)]">Chưa có đánh giá công khai.</p>
+        </div>
       ) : (
-        <div className="mt-4 grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="glass-card grid gap-5 p-4 sm:p-5 lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/40 p-4 lg:items-stretch">
             <div className="text-center">
               <p
@@ -577,14 +580,13 @@ export function PartnerProfilePage() {
     <div className={`space-y-5 sm:space-y-6 ${isFetching ? 'opacity-95' : ''}`}>
       <ProfileHeader data={data} />
       {(data.gallery?.length ?? 0) > 0 ? (
-        <section className="glass-card overflow-hidden p-4 sm:p-5">
-          <h2 className="text-base font-extrabold text-[var(--color-navy)]">
-            Portfolio
-          </h2>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Ảnh minh họa công việc đã làm (không phải nhật ký cá nhân).
-          </p>
-          <div className="mt-3">
+        <section className="space-y-3">
+          <SectionHeaderBar
+            icon="camera"
+            title="Portfolio"
+            subtitle="Ảnh minh họa công việc đã làm"
+          />
+          <div className="glass-card overflow-hidden p-4 sm:p-5">
             <SquareImageSlider
               images={data.gallery}
               resolveSrc={mediaSrc}

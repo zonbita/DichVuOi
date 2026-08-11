@@ -73,7 +73,7 @@ export function PartnerIncomingList({
               to="/doi-tac/ho-so"
               className="text-sm font-semibold text-[var(--color-brand)] underline-offset-2 hover:underline"
             >
-              Thêm nghề →
+              Thêm nghề
             </Link>
           }
         />

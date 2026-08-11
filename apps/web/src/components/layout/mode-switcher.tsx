@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, type AppMode } from '../../features/auth/auth-context';
 import { formatPrice } from '../../services/api';
 import { Icon } from '../ui/icon';
@@ -18,11 +18,34 @@ const modes: { id: AppMode; label: string; hint: string }[] = [
   },
 ];
 
+/** Route thuộc menu Hồ sơ (ví, rút tiền, hóa đơn…) — cùng tài khoản, không đổi vai. */
+const PROFILE_PATH_PREFIXES = [
+  '/don-cua-toi/ho-so',
+  '/don-cua-toi/vi',
+  '/don-cua-toi/rut-tien',
+  '/don-cua-toi/hoa-don',
+  '/don-cua-toi/tro-giup',
+  '/don-cua-toi/khieu-nai',
+  '/don-cua-toi/noi-quy',
+  '/doi-tac/ho-so',
+  '/doi-tac/vi',
+  '/doi-tac/rut-tien',
+  '/doi-tac/hoa-don',
+];
+
+function isAccountProfilePath(pathname: string) {
+  return PROFILE_PATH_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
 export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
   const { user, mode, setMode, logout, canOffer } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const onAccountProfile = isAccountProfilePath(pathname);
 
   useEffect(() => {
     function onDocClick(event: MouseEvent) {
@@ -44,6 +67,8 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
   const isBlocked = Boolean(user.isBlocked);
   const current = modes.find((item) => item.id === mode) ?? modes[0];
   const avatarSrc = user.partnerProfile?.avatarUrl;
+  /** Trên /vi, /ho-so… hiện «Hồ sơ» — không nhầm với chuyển vai Khách thuê / Người làm. */
+  const statusLabel = onAccountProfile ? 'Hồ sơ' : current.label;
 
   function switchMode(next: AppMode) {
     if (isBlocked) {
@@ -67,7 +92,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Tài khoản: ${user.fullName}, ${current.label}`}
+        aria-label={`Tài khoản: ${user.fullName}, ${statusLabel}`}
         onClick={() => setOpen((value) => !value)}
         className={`group flex min-w-0 items-center gap-1.5 border py-1 pl-1 pr-1.5 text-left transition sm:max-w-[16rem] sm:gap-2.5 sm:pr-3 ${
           onDark
@@ -100,7 +125,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
               onDark ? 'text-white/65' : 'text-[var(--color-muted)]'
             }`}
           >
-            {current.label}
+            {statusLabel}
           </span>
         </span>
         <span
@@ -150,11 +175,21 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                   {user.fullName}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-white/72">{user.email}</p>
-                <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-[var(--color-gold-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-gold)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
-                  <Icon name="wallet" className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">Ví · {formatPrice(user.walletBalance ?? 0)}</span>
-                </span>
               </div>
+            </div>
+            <div className="relative mt-3 flex flex-col gap-2">
+              <span className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full bg-[var(--color-gold-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-gold)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+                <Icon name="wallet" className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Ví · {formatPrice(user.walletBalance ?? 0)}</span>
+              </span>
+              <Link
+                to={`/user/${user.id}`}
+                onClick={() => setOpen(false)}
+                className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/95 transition hover:border-white/40 hover:bg-white/18"
+              >
+                <Icon name="eye" className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Xem hồ sơ công khai</span>
+              </Link>
             </div>
           </div>
 
@@ -182,7 +217,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
             ) : (
               <div className="flex flex-col gap-1.5">
                 {modes.map((item) => {
-                  const active = item.id === mode;
+                  const active = item.id === mode && !onAccountProfile;
                   const offerLocked = item.id === 'offer' && !canOffer;
                   return (
                     <button
@@ -229,12 +264,21 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                     setOpen(false);
                     navigate('/don-cua-toi/ho-so');
                   }}
-                  className="mt-0.5 flex w-full items-center gap-2.5 rounded-[14px] border border-[var(--color-line)] bg-white px-3 py-2.5 text-left transition hover:border-[var(--color-brand)]/30 hover:bg-[var(--color-canvas)]"
+                  className={`mt-0.5 flex w-full items-center gap-2.5 rounded-[14px] border px-3 py-2.5 text-left transition ${
+                    onAccountProfile
+                      ? 'border-[var(--color-brand)]/20 bg-[var(--color-brand-soft)] shadow-[inset_3px_0_0_0_var(--color-brand)]'
+                      : 'border-[var(--color-line)] bg-white hover:border-[var(--color-brand)]/30 hover:bg-[var(--color-canvas)]'
+                  }`}
                 >
                   <Icon name="user" className="h-5 w-5 shrink-0 text-[var(--color-brand)]" />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] font-bold text-[var(--color-ink)]">
+                    <span className="flex items-center justify-between gap-2 text-[15px] font-bold text-[var(--color-ink)]">
                       Hồ sơ
+                      {onAccountProfile ? (
+                        <span className="shrink-0 rounded-full bg-[var(--color-brand)] px-2 py-0.5 text-[11px] font-semibold text-white">
+                          Đang dùng
+                        </span>
+                      ) : null}
                     </span>
                     <span className="block text-sm text-[var(--color-muted)]">
                       Ví, rút tiền, hóa đơn, hỗ trợ

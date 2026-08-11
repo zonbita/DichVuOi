@@ -315,9 +315,9 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,440px)] xl:items-start xl:gap-5">
-      <section className="hire-form min-w-0 overflow-hidden rounded-xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-card)]">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-line)] bg-gradient-to-br from-white via-white to-[var(--color-brand-soft)]/60 px-4 py-2.5 sm:px-5 sm:py-3">
+    <div className="grid h-full min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,440px)] xl:items-stretch xl:gap-5">
+      <section className="hire-form glass-card flex h-full min-h-0 min-w-0 flex-col overflow-hidden !rounded-xl">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/25 px-4 py-2.5 sm:px-5 sm:py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-sm">
             <Icon name="briefcase" className="h-4 w-4" />
@@ -334,7 +334,8 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
         <HireStepper activeStep={activeStep} />
       </div>
 
-      <div className="px-4 py-3 sm:px-5 sm:py-3.5">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-3.5">
         {!user ? (
           <div className="mb-3 rounded-lg bg-[var(--color-brand-soft)] px-3 py-2 text-sm">
             <Link
@@ -348,14 +349,12 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
         ) : null}
 
         <form
-          className="grid gap-3 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-3"
+          id="hire-service-form"
+          className="grid grid-cols-1 content-start gap-3 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-3"
           onSubmit={handleSubmit(onSubmit)}
           noValidate
         >
           <div>
-            <FieldLabel htmlFor="hire-service-slug">
-              Nghề / dịch vụ cần thuê
-            </FieldLabel>
             <Controller
               name="serviceSlug"
               control={control}
@@ -366,6 +365,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
                   onChange={field.onChange}
                   groups={groups}
                   services={services}
+                  aria-label="Nghề / dịch vụ cần thuê"
                 />
               )}
             />
@@ -413,7 +413,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             </div>
           )}
 
-          <div className="sm:col-span-2 overflow-hidden rounded-xl border border-[#DCE6EC] bg-white">
+          <div className="sm:col-span-2 overflow-hidden rounded-xl border border-white/70 bg-white/50">
             <div className="grid lg:grid-cols-2">
               <div className="px-3 py-2.5 sm:px-4 sm:py-3">
                 <PriceRangeSlider
@@ -441,33 +441,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
               </div>
 
               <div className="border-t border-[#DCE6EC] px-3 py-2.5 sm:px-4 sm:py-3 lg:border-t-0 lg:border-l">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-[13px] font-bold leading-tight text-[#0F2F4A]">
-                      Mức cọc ứng tuyển người làm
-                    </h3>
-                    <p className="mt-0.5 text-[10px] leading-snug text-[#64748B] line-clamp-2">
-                      {(budgetMax || 0) > APPLY_DEPOSIT_BUDGET_THRESHOLD
-                        ? 'Ngân sách trên 5 triệu: chọn từ 50% đến 100%.'
-                        : 'Ngân sách từ 5 triệu trở xuống: chọn từ 0% đến 50%.'}{' '}
-                      Cọc giữ chỗ của bạn vẫn theo ngân sách đơn.
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <input
-                      id="hire-apply-deposit"
-                      type="number"
-                      min={depositBounds.min}
-                      max={depositBounds.max}
-                      step={1}
-                      {...register('applyDepositPercent', { valueAsNumber: true })}
-                      className="w-11 rounded-md border border-[#DCE6EC] bg-white px-1 py-1 text-center text-sm font-bold tabular-nums text-[#0F2F4A] outline-none transition focus:border-[#079A9A] focus:shadow-[0_0_0_3px_rgba(7,154,154,0.15)]"
-                    />
-                    <span className="text-sm font-bold text-[#0F2F4A]">%</span>
-                  </div>
-                </div>
-
-                <div className="mt-2 grid grid-cols-[minmax(0,1fr)_5.75rem] items-end gap-2">
+                <div className="grid grid-cols-[minmax(0,1fr)_5.75rem] items-end gap-2">
                   <div className="min-w-0">
                     <div className="price-range-wrap relative h-9 px-1 pt-5">
                       <span
@@ -515,6 +489,32 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
                   </div>
                 </div>
 
+                <div className="mt-2 flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-[13px] font-bold leading-tight text-[#0F2F4A]">
+                      Mức cọc ứng tuyển người làm
+                    </h3>
+                    <p className="mt-0.5 text-[10px] leading-snug text-[#64748B] line-clamp-2">
+                      {(budgetMax || 0) > APPLY_DEPOSIT_BUDGET_THRESHOLD
+                        ? 'Ngân sách trên 5 triệu: chọn từ 50% đến 100%.'
+                        : 'Ngân sách từ 5 triệu trở xuống: chọn từ 0% đến 50%.'}{' '}
+                      Cọc giữ chỗ của bạn vẫn theo ngân sách đơn.
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <input
+                      id="hire-apply-deposit"
+                      type="number"
+                      min={depositBounds.min}
+                      max={depositBounds.max}
+                      step={1}
+                      {...register('applyDepositPercent', { valueAsNumber: true })}
+                      className="w-11 rounded-md border border-[#DCE6EC] bg-white px-1 py-1 text-center text-sm font-bold tabular-nums text-[#0F2F4A] outline-none transition focus:border-[#079A9A] focus:shadow-[0_0_0_3px_rgba(7,154,154,0.15)]"
+                    />
+                    <span className="text-sm font-bold text-[#0F2F4A]">%</span>
+                  </div>
+                </div>
+
                 {errors.applyDepositPercent ? (
                   <p className="mt-1 text-sm text-red-600">
                     {errors.applyDepositPercent.message}
@@ -539,7 +539,7 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
             ) : null}
           </div>
           <div>
-            <FieldLabel htmlFor="hire-scheduled">Thời gian mong muốn</FieldLabel>
+            <FieldLabel htmlFor="hire-scheduled">Thời hạn hoàn thành</FieldLabel>
             <Controller
               name="scheduledAt"
               control={control}
@@ -609,13 +609,10 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
           </div>
 
           <div className="sm:col-span-2">
-            <FieldLabel htmlFor="hire-job-title">Tên công việc cần làm</FieldLabel>
-            <p className="mb-1.5 text-[11px] text-[var(--color-muted)]">
-              Tiêu đề ngắn hiện trên bảng tin — ví dụ «Sửa máy lạnh chảy nước».
-            </p>
             <input
               id="hire-job-title"
               {...register('jobTitle')}
+              aria-label="Tên công việc cần làm"
               placeholder="Mô tả ngắn tên công việc cần làm"
               maxLength={120}
               className="field-input hire-field-input"
@@ -629,10 +626,6 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
           </div>
 
           <div className="sm:col-span-2">
-            <FieldLabel htmlFor="hire-task-draft">Công việc cần làm</FieldLabel>
-            <p className="mb-1.5 text-[11px] text-[var(--color-muted)]">
-              Thêm từng mục trước khi gửi. Sau khi đăng đơn danh sách bị khóa.
-            </p>
             <HireTasksInput
               value={tasks}
               onChange={setTasks}
@@ -646,31 +639,33 @@ export function HireServiceForm({ groups, selected, onSelectedChange }: Props) {
                 'Gửi yêu cầu thất bại'}
             </p>
           ) : null}
-
-          <div className="sm:col-span-2 flex flex-col gap-2.5 border-t border-[var(--color-line)] pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-2 text-xs text-[var(--color-muted)]">
-              <Icon
-                name="shield"
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600"
-              />
-              <p>
-                Sau khi gửi, bạn cần{' '}
-                <strong className="text-[var(--color-ink)]">đặt cọc giữ chỗ</strong>{' '}
-                trên sàn để đơn vào hàng chờ người làm.
-              </p>
-            </div>
-            <button
-              type="submit"
-              disabled={bookingMutation.isPending || !user}
-              className="btn-primary inline-flex shrink-0 items-center justify-center gap-2 px-4 py-2.5 text-sm disabled:opacity-60"
-            >
-              <Icon name="send" className="h-4 w-4" />
-              {bookingMutation.isPending
-                ? 'Đang gửi…'
-                : 'Gửi yêu cầu thuê dịch vụ'}
-            </button>
-          </div>
         </form>
+        </div>
+
+        <div className="flex shrink-0 flex-col gap-2.5 border-t border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div className="flex items-start gap-2 text-xs text-[var(--color-muted)]">
+            <Icon
+              name="shield"
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600"
+            />
+            <p>
+              Sau khi gửi, bạn cần{' '}
+              <strong className="text-[var(--color-ink)]">đặt cọc giữ chỗ</strong>{' '}
+              trên sàn để đơn vào hàng chờ người làm.
+            </p>
+          </div>
+          <button
+            type="submit"
+            form="hire-service-form"
+            disabled={bookingMutation.isPending || !user}
+            className="btn-primary inline-flex shrink-0 items-center justify-center gap-2 px-4 py-2.5 text-sm disabled:opacity-60"
+          >
+            <Icon name="send" className="h-4 w-4" />
+            {bookingMutation.isPending
+              ? 'Đang gửi…'
+              : 'Gửi yêu cầu thuê dịch vụ'}
+          </button>
+        </div>
       </div>
     </section>
 

@@ -301,7 +301,7 @@ export function PartnerDashboardPage() {
   if (loading) return <p>Đang tải...</p>;
   if (!user) return <Navigate to="/dang-nhap?redirect=/doi-tac" replace />;
 
-  // Redirect URL cũ ?tab= → nested path
+  // Redirect URL cũ ?tab= sang nested path
   if (pathname === '/doi-tac' && legacyTab === 'jobs') {
     return <Navigate to="/doi-tac/viec" replace />;
   }
@@ -397,7 +397,7 @@ export function PartnerDashboardPage() {
                   to="/doi-tac/viec"
                   className="rounded-full bg-sky-100 px-3.5 py-1.5 text-sm font-semibold text-sky-900 hover:bg-sky-200"
                 >
-                  {needStartCount} việc chờ bắt đầu →
+                  {needStartCount} việc chờ bắt đầu
                 </Link>
               ) : null}
               {inProgressCount > 0 ? (
@@ -405,7 +405,7 @@ export function PartnerDashboardPage() {
                   to="/doi-tac/viec"
                   className="rounded-full bg-violet-100 px-3.5 py-1.5 text-sm font-semibold text-violet-900 hover:bg-violet-200"
                 >
-                  {inProgressCount} đang làm →
+                  {inProgressCount} đang làm
                 </Link>
               ) : null}
             </div>

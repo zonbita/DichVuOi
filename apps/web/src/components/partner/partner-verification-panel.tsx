@@ -80,7 +80,7 @@ export function PartnerVerificationPanel({ profile, defaultPhone = '' }: Props) 
   }
 
   return (
-    <section className="surface-card space-y-5 p-4 sm:p-5">
+    <section className="glass-card space-y-5 !rounded-2xl p-4 sm:p-5">
       <div>
         <h3 className="text-lg font-extrabold text-[var(--color-navy)]">Xác minh danh tính</h3>
         <p className="mt-1 text-sm text-[var(--color-muted)]">

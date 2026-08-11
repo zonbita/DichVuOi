@@ -200,7 +200,7 @@ export type PartnerRank = {
   maxRank: number;
 };
 
-/** Map rank 1–1000 (đơn hoàn thành + thuê thành công) → tier màu. */
+/** Map rank 1–1000 (đơn hoàn thành + thuê thành công) sang tier màu. */
 export const PARTNER_RANKS: PartnerRank[] = [
   {
     id: 'member',

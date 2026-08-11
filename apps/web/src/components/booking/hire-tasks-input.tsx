@@ -51,12 +51,7 @@ export function HireTasksInput({ value, onChange, disabled }: Props) {
             </li>
           ))}
         </ul>
-      ) : (
-        <p className="text-sm text-[var(--color-muted)]">
-          Chưa có mục — thêm trước khi gửi. Sau khi đăng đơn sẽ khóa, không thêm
-          được nữa.
-        </p>
-      )}
+      ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
@@ -64,6 +59,7 @@ export function HireTasksInput({ value, onChange, disabled }: Props) {
           value={draft}
           disabled={disabled}
           maxLength={500}
+          aria-label="Công việc cần làm"
           placeholder="Vd. Lau kính cửa sổ…"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {

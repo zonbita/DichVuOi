@@ -202,8 +202,12 @@ export const api = {
       items: Array<{
         id: string;
         kind: 'open' | 'apply' | 'completed';
-        label: string;
+        /** Tiêu đề đơn (jobTitle); fallback tên nghề. */
+        title: string;
+        /** @deprecated dùng title — giữ tạm nếu client cũ. */
+        label?: string;
         serviceName: string;
+        groupSlug?: string | null;
         at: string;
       }>;
     }>(`/api/bookings/public/activity${queryString({ limit })}`),

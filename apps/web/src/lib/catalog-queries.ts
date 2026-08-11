@@ -9,7 +9,7 @@ import { catalogQueryOptions } from './query-client';
 
 /**
  * Catalog: hiện localStorage trước (initialData), rồi mới check API (refetch).
- * API lỗi → giữ bản đã lưu.
+ * API lỗi thì giữ bản đã lưu.
  */
 export const catalogQueries = {
   groupsAll: {

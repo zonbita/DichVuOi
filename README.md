@@ -412,7 +412,7 @@ Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): 
 - **`/nhom/:slug`**: mỗi category tối đa **5 nghề**, lưới `lg:grid-cols-5` (1 hàng desktop).
 - **Card việc mới** (`OpenJobCard`): hàng đầu **Hạn ứng tuyển** (trái) + giá ví (phải) → hàng nội dung ảnh trái | tiêu đề + khách + pill meta **ngang** (lịch · thời lượng · ứng viên, cách bằng dấu ·) → footer trạng thái + CTA `rounded-full`. 8 việc / trang.
 - **Pill meta** (`JobMetaPill` / `ScheduleTimePill`): nền slate nhạt + chữ navy/muted; **chỉ hạn ứng tuyển** giữ pastel đỏ (cảnh báo). Giá ví dùng `--color-sale` / brand-soft. Dùng chung home + danh sách đơn realtime người làm.
-- **Giảm nhiễu màu trang chủ:** tab nổi bật inactive = icon muted; tag nghề trên `ServiceCard` = `soft`+`ink` (không solid `main`); sảnh lobby = chữ navy + gạch màu nghề mỏng.
+- **Giảm nhiễu màu trang chủ:** tab nổi bật inactive = icon muted; tag nghề trên `ServiceCard` / sảnh lobby / ticker «Đang diễn ra» = `soft`+`ink` (không solid `main` làm chữ trên nền sáng).
 
 ### Cấp vs Rank (partner)
 
@@ -817,6 +817,7 @@ Escrow / đặt cọc (`PaymentStatus`):
 
 **Bắt buộc đặt cọc khi thuê (as-is hiện tại)**
 
+0. **Mở trang thuê** `/don-cua-toi/thue`: khách đã đăng nhập và **số dư ví ≥ 100.000₫**. Ví thấp hơn → **không hiện form**; hiện màn hướng sang **Nạp ví** (`/don-cua-toi/vi`). Hằng số FE: `HIRE_PAGE_MIN_WALLET_VND` (`features/booking/hire-wallet-gate.ts`).
 1. Customer đăng nhập → tạo đơn (`PENDING` chờ nhận, hoặc thuê thẳng → `CONFIRMED`).
 2. Backend **giam cọc ngay trong cùng bước tạo đơn** theo `totalPrice` (đơn mở lấy theo `budgetMax` nếu có):
    - ví đủ tiền: đơn lưu với `HELD`;
@@ -831,7 +832,7 @@ Escrow / đặt cọc (`PaymentStatus`):
 6. Review hai chiều sau `COMPLETED`: `POST /api/bookings/:id/reviews` (mỗi bên 1 lần).
 7. Checklist `BookingRequirement`: seed khi có partner; khách xác nhận bàn giao; gate hoàn thành nếu còn mục chưa tích (trừ `acceptIncomplete`).
 
-Xem hồ sơ / lưới người làm trên trang dịch vụ vẫn **miễn phí** — cọc chỉ khi tạo đơn thuê thành công (đã giam ví).
+Xem hồ sơ / lưới người làm trên trang dịch vụ vẫn **miễn phí** — vào form thuê cần ví ≥ 100.000₫; tạo đơn thành công mới giam cọc theo `budgetMax`/`totalPrice`.
 
 ### Behavior tree — mục tiêu (to-be, product note)
 
@@ -1047,7 +1048,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - **Xác minh SĐT** (khách + partner): OTP key một lần; production eSMS Brandname
 - **Xác minh NH người làm** (payout): liên kết STK trên `PartnerProfile` + VietQR mock
 - Thuê dịch vụ → tạo đơn = tự giam cọc (`PENDING`/`CONFIRMED` + `HELD`; ví thiếu → không tạo); matching mở: ứng tuyển cọc 10% + chủ chọn; `/don-cua-toi`
-- Form đăng ký thuê: UI stepper 3 bước (Chọn dịch vụ → Thông tin → Xác nhận), slider khoảng giá, React Hook Form + Zod (`features/booking/`, `hire-service-form.tsx`)
+- Form đăng ký thuê `/don-cua-toi/thue`: **ví ≥ 100.000₫** mới hiện form (thiếu → màn hướng nạp `/vi`); UI stepper 3 bước, slider khoảng giá, RHF + Zod (`hire-service-form.tsx`, `HIRE_PAGE_MIN_WALLET_VND`)
 - Danh sách Người làm theo dịch vụ (`GET /api/services/:slug/partners`) — **không trả SĐT/email**
 - **Chống bỏ sàn P0:** che liên hệ theo vai trò/trạng thái (`contact-privacy.ts`); chat đơn `BookingMessage` + lọc PII; UI chat trên đơn thuê / việc của partner
 - **Escrow** (`PaymentStatus`): **tạo đơn = tự giam cọc** từ ví → `HELD`; `RELEASED` + hoa hồng 15% khi hoàn thành; chặn hàng chờ / nhận việc / chat / `IN_PROGRESS` khi chưa `HELD`

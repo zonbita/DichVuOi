@@ -41,44 +41,44 @@ export function PartnerStatsBar({ mine, openCount }: Props) {
     <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Link
         to="/doi-tac/don-thue"
-        className="border border-[var(--color-line)] bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50/40"
+        className="glass-card !rounded-2xl p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40"
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--glass-muted,#7c8799)]">
           Đơn mở (hàng chờ)
         </p>
         <p className="mt-1 text-2xl font-extrabold text-emerald-700">{stats.openCount}</p>
-        <p className="mt-1 text-xs text-[var(--color-muted)]">Xem Đơn thuê →</p>
+        <p className="mt-1 text-xs text-[var(--glass-muted,#7c8799)]">Xem Đơn thuê</p>
       </Link>
-      <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+      <div className="glass-card !rounded-2xl p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--glass-muted,#7c8799)]">
           Việc đang làm
         </p>
         <p className="mt-1 text-2xl font-extrabold text-sky-700">{stats.active}</p>
         {(stats.needStart > 0 || stats.inProgress > 0) && (
-          <p className="mt-1 text-xs text-[var(--color-muted)]">
+          <p className="mt-1 text-xs text-[var(--glass-muted,#7c8799)]">
             {stats.needStart > 0 ? `${stats.needStart} chờ bắt đầu` : null}
             {stats.needStart > 0 && stats.inProgress > 0 ? ' · ' : null}
             {stats.inProgress > 0 ? `${stats.inProgress} đang làm` : null}
           </p>
         )}
       </div>
-      <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+      <div className="glass-card !rounded-2xl p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--glass-muted,#7c8799)]">
           Hệ thống đang giữ cọc
         </p>
         <p className="mt-1 text-2xl font-extrabold text-amber-700">
           {formatPrice(stats.held)}
         </p>
-        <p className="mt-1 text-xs text-[var(--color-muted)]">Ước nhận sau hoa hồng 15%</p>
+        <p className="mt-1 text-xs text-[var(--glass-muted,#7c8799)]">Ước nhận sau hoa hồng 15%</p>
       </div>
-      <div className="border border-[var(--color-line)] bg-white p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+      <div className="glass-card !rounded-2xl p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--glass-muted,#7c8799)]">
           Đã nhận (giải ngân)
         </p>
         <p className="mt-1 text-2xl font-extrabold text-[var(--color-sale)]">
           {formatPrice(stats.earned)}
         </p>
-        <p className="mt-1 text-xs text-[var(--color-muted)]">{stats.completed} đơn xong</p>
+        <p className="mt-1 text-xs text-[var(--glass-muted,#7c8799)]">{stats.completed} đơn xong</p>
       </div>
     </section>
   );

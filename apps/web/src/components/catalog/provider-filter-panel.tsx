@@ -107,8 +107,8 @@ export function ProviderFilterPanel({
             className="field-input filter-field-input filter-field-select appearance-none"
           >
             <option value="rating">Rating cao</option>
-            <option value="price-asc">Giá tham khảo thấp → cao</option>
-            <option value="price-desc">Giá tham khảo cao → thấp</option>
+            <option value="price-asc">Giá tham khảo thấp đến cao</option>
+            <option value="price-desc">Giá tham khảo cao đến thấp</option>
             <option value="name">Tên A–Z</option>
             <option value="experience">Kinh nghiệm nhiều</option>
           </select>

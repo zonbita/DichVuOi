@@ -71,9 +71,9 @@ export const COMPLAINT_DEDUCTION_OPTIONS = [
 ] as const;
 
 export const RESOLUTION_ACTION_LABELS: Record<ComplaintResolutionAction, string> = {
-  REFUND: 'Chấp nhận khách → hoàn cọc',
+  REFUND: 'Chấp nhận khách, hoàn cọc',
   RELEASE: 'Giải ngân + hoàn thành',
-  RETRY_IN_PROGRESS: 'Làm lại → đang làm',
+  RETRY_IN_PROGRESS: 'Làm lại, đang làm',
   RETRY_AWAITING: 'Quay lại chờ xác nhận',
   NONE: 'Chỉ ghi nhận',
 };

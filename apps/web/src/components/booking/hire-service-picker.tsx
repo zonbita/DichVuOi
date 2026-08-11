@@ -19,6 +19,7 @@ type Props = {
   groups: ServiceGroupTree[];
   services: ServiceRow[];
   placeholder?: string;
+  'aria-label'?: string;
 };
 
 export function HireServicePicker({
@@ -28,6 +29,7 @@ export function HireServicePicker({
   groups,
   services,
   placeholder = '— Chọn nghề —',
+  'aria-label': ariaLabel,
 }: Props) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -55,6 +57,7 @@ export function HireServicePicker({
       <button
         id={id}
         type="button"
+        aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
