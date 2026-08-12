@@ -187,7 +187,7 @@ export const api = {
   getMyBookings: () => request<Booking[]>('/api/bookings/mine'),
   getRebookHints: () => request<RebookHint[]>('/api/bookings/rebook-hints'),
   getOpenBookings: () => request<Booking[]>('/api/bookings/open'),
-  getOpenJobsBoard: (page = 1, pageSize = 8) =>
+  getOpenJobsBoard: (page = 1, pageSize = 10) =>
     request<{
       items: Booking[];
       total: number;

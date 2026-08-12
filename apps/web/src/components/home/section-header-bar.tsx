@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Icon } from '../ui/icon';
 import type { IconName } from '../ui/icon';
 
+export type SectionHeaderTone = 'navy' | 'green' | 'gold' | 'red' | 'orange';
+
 type Props = {
   title: string;
   /** Squircle icon bên trái tiêu đề. */
@@ -10,7 +12,17 @@ type Props = {
   subtitle?: ReactNode;
   badge?: ReactNode;
   action?: ReactNode;
+  /** Soft-3D chrome: navy mặc định · green · gold · red · orange. */
+  tone?: SectionHeaderTone;
   className?: string;
+};
+
+const toneClass: Record<SectionHeaderTone, string> = {
+  navy: '',
+  green: 'section-header-bar--green',
+  gold: 'section-header-bar--gold',
+  red: 'section-header-bar--red',
+  orange: 'section-header-bar--orange',
 };
 
 /** Thanh tiêu đề section trang chủ — soft-3D navy (navbar language). */
@@ -20,11 +32,12 @@ export function SectionHeaderBar({
   subtitle,
   badge,
   action,
+  tone = 'navy',
   className = '',
 }: Props) {
   return (
     <div
-      className={`section-header-bar mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:gap-x-3.5 sm:px-3.5 sm:py-2.5 ${className}`}
+      className={`section-header-bar ${toneClass[tone]} mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:gap-x-3.5 sm:px-3.5 sm:py-2.5 ${className}`}
     >
       <div aria-hidden className="section-header-bar__highlight" />
       <div className="relative flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-2.5">

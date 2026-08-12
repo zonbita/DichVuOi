@@ -823,12 +823,12 @@ let BookingsService = class BookingsService {
         const viewer = viewerId ? { id: viewerId, role: client_1.Role.PARTNER } : undefined;
         return rows.map((b) => this.shape(b, viewer, 'open_queue'));
     }
-    async listOpenBoard(page = 1, pageSize = 8) {
+    async listOpenBoard(page = 1, pageSize = 10) {
         await this.publishDueScheduledBookings();
         await this.settleExpiredMatching();
         await this.settleExpiredResponseSla();
         const safePage = Math.max(1, Math.floor(page) || 1);
-        const safeSize = Math.min(Math.max(Math.floor(pageSize) || 8, 1), 48);
+        const safeSize = Math.min(Math.max(Math.floor(pageSize) || 10, 1), 48);
         const where = {
             status: client_1.BookingStatus.PENDING,
             partnerId: null,

@@ -37,7 +37,7 @@ export declare class HomeLobbyService {
             kind: import("@prisma/client").$Enums.HomeShoutKind;
             label: string;
         }[];
-        smiles: (":))" | ":)" | ":)))" | ":D" | "=))" | ";)" | ":P" | ":*" | "<3" | ":(" | ":((" | ":'(" | ":o" | ":/" | ":|" | "B)" | ":v" | ":3" | "3:)" | "O:)" | "@@" | "-_-" | "^_^" | "T_T" | ":x")[];
+        smiles: (":)" | ":))" | ":)))" | ":D" | "=))" | ";)" | ":P" | ":*" | "<3" | ":(" | ":((" | ":'(" | ":o" | ":/" | ":|" | "B)" | ":v" | ":3" | "3:)" | "O:)" | "@@" | "-_-" | "^_^" | "T_T" | ":x")[];
     }>;
     react(dto: CreateHomeReactionDto, opts?: {
         userId?: string;

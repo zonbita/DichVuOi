@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Booking } from '../../types/catalog';
-import { OpenJobCard, openJobRoomTone } from '../common/open-job-card';
+import {
+  OPEN_JOB_PORTRAIT_GRID,
+  OpenJobCard,
+  openJobRoomTone,
+} from '../common/open-job-card';
 import {
   DashboardPageHeader,
   dashboardSurfaceClass,
@@ -92,7 +96,7 @@ export function PartnerIncomingList({
 
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5">
         {paged.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className={OPEN_JOB_PORTRAIT_GRID}>
             {paged.map((booking) => {
               const isApplying = applyingId === booking.id;
               const isApplied =

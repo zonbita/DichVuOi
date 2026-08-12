@@ -30,7 +30,7 @@ export function HomeRecentCompletedSection() {
     <section className="page-shell mt-10">
       <div className="section-container min-w-0">
         <div className="min-w-0 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-line)] p-4 shadow-[var(--shadow-card)] sm:p-5">
-          <SectionHeaderBar icon="check" title="Vừa hoàn thành" />
+          <SectionHeaderBar icon="check" title="Vừa hoàn thành" tone="orange" />
           {doneQuery.isLoading ? (
             <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (

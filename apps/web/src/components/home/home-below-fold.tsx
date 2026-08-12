@@ -112,6 +112,7 @@ export function HomeBelowFold() {
             <SectionHeaderBar
               icon="star"
               title="Dịch vụ nổi bật"
+              tone="green"
               action={<SectionHeaderViewAll to="/nhom" />}
             />
 

@@ -67,38 +67,12 @@ type OpenJobCardProps = {
   priority?: boolean;
 };
 
-function compactAmount(value: number): { n: string; unit: 'tr' | 'vnd' } {
-  if (value >= 1_000_000) {
-    return {
-      n: new Intl.NumberFormat('vi-VN', {
-        maximumFractionDigits: 2,
-      }).format(value / 1_000_000),
-      unit: 'tr',
-    };
-  }
-  return { n: formatPriceNumber(value), unit: 'vnd' };
-}
-
-/** Ngân sách ngắn, luôn 1 hàng — vd. `1,08–1,38 tr`. */
-function formatCompactBudget(min: number, max: number) {
-  const a = compactAmount(min);
-  const b = compactAmount(max);
-  if (min === max) {
-    return b.unit === 'tr' ? `${b.n} tr` : `${b.n} VNĐ`;
-  }
-  if (a.unit === 'tr' && b.unit === 'tr') {
-    return `${a.n}–${b.n} tr`;
-  }
-  const left = a.unit === 'tr' ? `${a.n} tr` : a.n;
-  const right = b.unit === 'tr' ? `${b.n} tr` : `${b.n} VNĐ`;
-  return `${left}–${right}`;
-}
+/** Lưới portrait — home + Đơn thuê: mobile 2 / tablet 3 / desktop 5. */
+export const OPEN_JOB_PORTRAIT_GRID =
+  'grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5';
 
 const metaPill =
   '!gap-1.5 !rounded-xl !border-transparent !px-3 !py-1.5 text-[13px] leading-none';
-
-const metaPillPortrait =
-  '!gap-1 !rounded-lg !border-transparent !px-2 !py-1 text-[11px] leading-none';
 
 function getOpenJobLabels(booking: Booking) {
   const durationLabel = booking.service.durationMin
@@ -112,12 +86,6 @@ function getOpenJobLabels(booking: Booking) {
     booking.budgetMin != null && booking.budgetMax != null
       ? `${formatPriceNumber(booking.budgetMin)} - ${formatPriceNumber(booking.budgetMax)} VNĐ`
       : formatPrice(booking.totalPrice);
-  const budgetCompact =
-    booking.budgetMin != null && booking.budgetMax != null
-      ? formatCompactBudget(booking.budgetMin, booking.budgetMax)
-      : compactAmount(booking.totalPrice).unit === 'tr'
-        ? `${compactAmount(booking.totalPrice).n} tr`
-        : formatPrice(booking.totalPrice);
   const matchingDeadlineLabel = booking.matchingDeadlineAt
     ? formatRemainingTime(booking.matchingDeadlineAt)
     : null;
@@ -143,22 +111,48 @@ function getOpenJobLabels(booking: Booking) {
     durationLabel,
     applicationsLabel,
     budgetFull,
-    budgetCompact,
     matchingDeadlineLabel,
     depositAmount,
     depositPercent,
   };
 }
 
-function MetaPills({
-  booking,
-  compact,
-  hideDeposit,
-}: {
-  booking: Booking;
-  compact?: boolean;
-  hideDeposit?: boolean;
-}) {
+function pad2(n: number) {
+  return String(n).padStart(2, '0');
+}
+
+function PortraitMetaGrid({ booking }: { booking: Booking }) {
+  const { durationLabel, applicationsLabel } = getOpenJobLabels(booking);
+  const scheduled = new Date(booking.scheduledAt);
+  const time = `${pad2(scheduled.getHours())}:${pad2(scheduled.getMinutes())}:${pad2(scheduled.getSeconds())}`;
+  const day = `${scheduled.getDate()}/${scheduled.getMonth() + 1}/${scheduled.getFullYear()}`;
+
+  const cells: Array<{ icon: 'clock' | 'calendar' | 'timer' | 'users'; label: string }> = [
+    { icon: 'clock', label: time },
+    { icon: 'calendar', label: day },
+    { icon: 'timer', label: durationLabel ?? '—' },
+    { icon: 'users', label: applicationsLabel },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-x-1.5 gap-y-1">
+      {cells.map((cell) => (
+        <p
+          key={cell.icon}
+          className="flex min-w-0 items-center gap-1 text-[11px] font-semibold tabular-nums text-[var(--color-navy)]"
+        >
+          <Icon
+            name={cell.icon}
+            className="h-3 w-3 shrink-0 text-[var(--color-muted)]"
+          />
+          <span className="min-w-0 truncate">{cell.label}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function MetaPills({ booking }: { booking: Booking }) {
   const {
     durationLabel,
     applicationsLabel,
@@ -166,17 +160,14 @@ function MetaPills({
     depositAmount,
     depositPercent,
   } = getOpenJobLabels(booking);
-  const pill = compact ? metaPillPortrait : metaPill;
 
   return (
     <div className="flex w-full flex-wrap items-center gap-1.5">
       {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
         <JobMetaPill
           icon="clock"
-          iconClassName={
-            compact ? '!h-3 !w-3 text-[#E11D48]' : '!h-3.5 !w-3.5 text-[#E11D48]'
-          }
-          className={`${pill} !bg-[#FFF1F2]`}
+          iconClassName="!h-3.5 !w-3.5 text-[#E11D48]"
+          className={`${metaPill} !bg-[#FFF1F2]`}
           title={new Date(booking.matchingDeadlineAt).toLocaleString('vi-VN')}
         >
           <span className="font-semibold text-[#BE123C]">
@@ -187,19 +178,14 @@ function MetaPills({
 
       <ScheduleTimePill
         date={booking.scheduledAt}
-        compact={compact}
-        className={`${pill} [&_svg]:!h-3 [&_svg]:!w-3`}
+        className={`${metaPill} [&_svg]:!h-3 [&_svg]:!w-3`}
       />
 
       {durationLabel ? (
         <JobMetaPill
-          icon="clock"
-          iconClassName={
-            compact
-              ? '!h-3 !w-3 text-[var(--color-muted)]'
-              : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
-          }
-          className={pill}
+          icon="timer"
+          iconClassName="!h-3.5 !w-3.5 text-[var(--color-muted)]"
+          className={metaPill}
         >
           <span className="font-semibold text-[var(--color-navy)]">{durationLabel}</span>
         </JobMetaPill>
@@ -207,33 +193,23 @@ function MetaPills({
 
       <JobMetaPill
         icon="users"
-        iconClassName={
-          compact
-            ? '!h-3 !w-3 text-[var(--color-muted)]'
-            : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
-        }
-        className={pill}
+        iconClassName="!h-3.5 !w-3.5 text-[var(--color-muted)]"
+        className={metaPill}
       >
         <span className="font-semibold text-[var(--color-navy)]">{applicationsLabel}</span>
       </JobMetaPill>
 
-      {hideDeposit ? null : (
-        <JobMetaPill
-          icon="shield"
-          iconClassName={
-            compact
-              ? '!h-3 !w-3 text-[var(--color-muted)]'
-              : '!h-3.5 !w-3.5 text-[var(--color-muted)]'
-          }
-          className={pill}
-        >
-          <span className="whitespace-nowrap font-semibold text-[var(--color-navy)]">
-            {depositAmount <= 0
-              ? `Cọc 0% · miễn`
-              : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
-          </span>
-        </JobMetaPill>
-      )}
+      <JobMetaPill
+        icon="shield"
+        iconClassName="!h-3.5 !w-3.5 text-[var(--color-muted)]"
+        className={metaPill}
+      >
+        <span className="whitespace-nowrap font-semibold text-[var(--color-navy)]">
+          {depositAmount <= 0
+            ? `Cọc 0% · miễn`
+            : `Cọc ${depositPercent}% · ${formatPrice(depositAmount)}`}
+        </span>
+      </JobMetaPill>
     </div>
   );
 }
@@ -265,14 +241,9 @@ export function OpenJobCard({
   layout = 'horizontal',
   priority = false,
 }: OpenJobCardProps) {
-  const { budgetFull, budgetCompact, depositAmount, depositPercent } =
-    getOpenJobLabels(booking);
+  const { budgetFull, matchingDeadlineLabel } = getOpenJobLabels(booking);
   const title = openJobTitle(booking);
   const room = openJobRoomTone(booking);
-  const depositLabel =
-    depositAmount <= 0
-      ? 'Cọc miễn'
-      : `Cọc ${depositPercent}%`;
 
   if (layout === 'portrait') {
     const body = (
@@ -287,16 +258,19 @@ export function OpenJobCard({
             decoding="async"
           />
           <span
-            className={`absolute top-2 left-2 inline-flex max-w-[calc(100%-1rem)] items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wide uppercase ${room.badge}`}
+            className={`absolute top-2 left-2 inline-flex max-w-[calc(100%-2.75rem)] items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold tracking-wide uppercase ${room.badge}`}
           >
             <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${room.dot}`} />
             <span className="truncate">{room.label}</span>
+          </span>
+          <span className="absolute right-2 bottom-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
+            <Icon name="briefcase" className="h-3.5 w-3.5" />
           </span>
         </div>
 
         <div className="mt-2.5 min-w-0">
           <h3
-            className="line-clamp-2 break-all text-[16px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)]"
+            className="line-clamp-2 wrap-anywhere text-[15px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)]"
             title={title}
           >
             {title}
@@ -310,19 +284,28 @@ export function OpenJobCard({
             <Icon name="user" className="h-3 w-3 shrink-0 opacity-70" />
             <span className="truncate">{booking.customerName}</span>
           </p>
+          {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
+            <p
+              className="mt-2 inline-flex max-w-full items-center gap-1 rounded-lg bg-[#FFF1F2] px-2 py-1 text-[11px] font-semibold text-[#BE123C]"
+              title={new Date(booking.matchingDeadlineAt).toLocaleString('vi-VN')}
+            >
+              <Icon name="clock" className="h-3 w-3 shrink-0 text-[#E11D48]" />
+              <span className="truncate">{matchingDeadlineLabel}</span>
+            </p>
+          ) : null}
           <div className="mt-2">
-            <MetaPills booking={booking} compact hideDeposit />
+            <PortraitMetaGrid booking={booking} />
           </div>
         </div>
 
         <div className="mt-auto flex shrink-0 flex-col gap-1.5 pt-2">
-          <BudgetChip label={budgetCompact} />
-          <p className="truncate text-center text-[10px] font-semibold text-[var(--color-muted)]">
-            {depositLabel}
-          </p>
+          <BudgetChip
+            label={budgetFull}
+            className="!justify-start !px-2 !py-1.5 !text-[11px]"
+          />
           {footerRight ? null : (
-            <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-4 py-2.5 text-sm font-bold text-white">
-              Xem việc
+            <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--color-brand)] px-3 py-2.5 text-sm font-bold text-white">
+              Xem đơn
               <Icon name="chevronRight" className="h-4 w-4" />
             </span>
           )}

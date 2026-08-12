@@ -10,16 +10,16 @@ export class BookingsPublicController {
 
   @Get('open/board')
   @ApiQuery({ name: 'page', required: false, example: 1 })
-  @ApiQuery({ name: 'pageSize', required: false, example: 8 })
+  @ApiQuery({ name: 'pageSize', required: false, example: 10 })
   listOpenBoard(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
     const parsedPage = page ? Number(page) : 1;
-    const parsedSize = pageSize ? Number(pageSize) : 8;
+    const parsedSize = pageSize ? Number(pageSize) : 10;
     return this.bookingsService.listOpenBoard(
       Number.isFinite(parsedPage) ? parsedPage : 1,
-      Number.isFinite(parsedSize) ? parsedSize : 8,
+      Number.isFinite(parsedSize) ? parsedSize : 10,
     );
   }
 

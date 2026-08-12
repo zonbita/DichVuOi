@@ -405,12 +405,12 @@ Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): 
 
 - Header navy (`site-header.tsx`): logo trái · search giữa · tài khoản phải; dropdown khu vực / nhóm dịch vụ dùng prop `onDark`.
 - Hero banner + benefit cards + chip marquee dịch vụ (`service-tag-nav`) — nền/viền theo token hệ thống.
-- **`SectionHeaderBar`** (`.section-header-bar`): thanh tiêu đề section giống home — icon squircle + title + subtitle tùy chọn + `action` phải.
+- **`SectionHeaderBar`** (`.section-header-bar`): thanh tiêu đề soft-3D — icon squircle + title + subtitle tùy chọn + `action` phải. Tone: `navy` (mặc định) · `green` (Dịch vụ nổi bật) · `gold` (Nghề hot) · `red` (Việc mới Live) · `orange` (Vừa hoàn thành).
   - Dùng trên: trang chủ (các section), `/nhom` (title + search + bộ lọc **trong** bar), `/nhom/:slug` (tiêu đề từng category nghề).
   - Dropdown trong `action` cần `z-index` cao; bar **không** `overflow: hidden`.
 - Tab «Dịch vụ nổi bật» trên home: active mint/teal (UI chung), **không** recolor theo ngành; lưới **1 hàng · 4 card** (`limit = 4`).
 - **`/nhom/:slug`**: mỗi category tối đa **5 nghề**, lưới `lg:grid-cols-5` (1 hàng desktop).
-- **Card việc mới** (`OpenJobCard`): hàng đầu **Hạn ứng tuyển** (trái) + giá ví (phải) → hàng nội dung ảnh trái | tiêu đề + khách + pill meta **ngang** (lịch · thời lượng · ứng viên, cách bằng dấu ·) → footer trạng thái + CTA `rounded-full`. 8 việc / trang.
+- **Card việc mới** (`OpenJobCard` portrait): ảnh cover (badge phòng + briefcase) → tiêu đề 2 dòng → khách → hạn đỏ → meta **2×2** (giờ · ngày · thời lượng · ứng viên) → giá full **1 hàng** → CTA «Xem đơn». Lưới desktop **5 cột · 10 việc / trang** (`OPEN_JOB_PORTRAIT_GRID`). Horizontal (preview thuê) giữ pill meta ngang + cọc.
 - **Pill meta** (`JobMetaPill` / `ScheduleTimePill`): nền slate nhạt + chữ navy/muted; **chỉ hạn ứng tuyển** giữ pastel đỏ (cảnh báo). Giá ví dùng `--color-sale` / brand-soft. Dùng chung home + danh sách đơn realtime người làm.
 - **Giảm nhiễu màu trang chủ:** tab nổi bật inactive = icon muted; tag nghề trên `ServiceCard` / sảnh lobby / ticker «Đang diễn ra» = `soft`+`ink` (không solid `main` làm chữ trên nền sáng).
 

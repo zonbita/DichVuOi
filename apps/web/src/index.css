@@ -923,6 +923,50 @@ select {
     inset 0 -1px 0 rgba(2, 20, 32, 0.4);
 }
 
+/* Dịch vụ nổi bật — xanh lá / brand teal */
+.section-header-bar--green {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #1ab89a 0%, #009c95 42%, #007a74 78%, #045a56 100%);
+  box-shadow:
+    0 8px 20px rgba(0, 100, 90, 0.3),
+    0 2px 8px rgba(0, 80, 72, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(2, 40, 36, 0.35);
+}
+
+/* Nghề nhiều người tham gia nhất — vàng / gold */
+.section-header-bar--gold {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #e8c06a 0%, #d9a441 42%, #b8842a 78%, #8a6220 100%);
+  box-shadow:
+    0 8px 20px rgba(140, 90, 20, 0.32),
+    0 2px 8px rgba(110, 70, 15, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(60, 40, 8, 0.35);
+}
+
+/* Việc mới đăng tuyển (Live) — đỏ */
+.section-header-bar--red {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #ef6b6b 0%, #dc2626 42%, #b91c1c 78%, #7f1d1d 100%);
+  box-shadow:
+    0 8px 20px rgba(140, 30, 30, 0.34),
+    0 2px 8px rgba(100, 20, 20, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(50, 10, 10, 0.4);
+}
+
+/* Vừa hoàn thành — cam */
+.section-header-bar--orange {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #fb923c 0%, #f97316 42%, #ea580c 78%, #9a3412 100%);
+  box-shadow:
+    0 8px 20px rgba(180, 70, 20, 0.32),
+    0 2px 8px rgba(140, 50, 10, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(70, 30, 5, 0.35);
+}
+
 .soft-3d-navy__highlight,
 .section-header-bar__highlight {
   pointer-events: none;

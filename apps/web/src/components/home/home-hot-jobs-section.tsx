@@ -35,6 +35,7 @@ export function HomeHotJobsSection() {
             icon="chart"
             title="Nghề nhiều người tham gia nhất"
             subtitle="Kéo ngang để xem thêm"
+            tone="gold"
             action={<SectionHeaderViewAll to="/nhom" />}
           />
 
