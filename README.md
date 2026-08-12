@@ -405,9 +405,19 @@ Tham chiếu style **ô item tối + icon màu** (grid inventory game / FiveM): 
 
 - Header navy (`site-header.tsx`): logo trái · search giữa · tài khoản phải; dropdown khu vực / nhóm dịch vụ dùng prop `onDark`.
 - Hero banner + benefit cards + chip marquee dịch vụ (`service-tag-nav`) — nền/viền theo token hệ thống.
-- **`SectionHeaderBar`** (`.section-header-bar`): thanh tiêu đề soft-3D — icon squircle + title + subtitle tùy chọn + `action` phải. Tone: `navy` (mặc định) · `green` (Dịch vụ nổi bật) · `gold` (Nghề hot) · `red` (Việc mới Live) · `orange` (Vừa hoàn thành).
+- **`SectionHeaderBar`** (`.section-header-bar`): thanh tiêu đề soft-3D — icon squircle + title + subtitle tùy chọn + `action` phải. Prop `tone` trên `apps/web/src/components/home/section-header-bar.tsx`; CSS tone trong `apps/web/src/index.css`.
   - Dùng trên: trang chủ (các section), `/nhom` (title + search + bộ lọc **trong** bar), `/nhom/:slug` (tiêu đề từng category nghề).
   - Dropdown trong `action` cần `z-index` cao; bar **không** `overflow: hidden`.
+
+| Section trang chủ | Prop `tone` | Màu chrome |
+|-------------------|-------------|------------|
+| Dịch vụ nổi bật | `green` | Xanh lá / teal brand |
+| Nghề nhiều người tham gia nhất | `gold` | Vàng (`--color-gold`) |
+| Việc mới đăng tuyển (+ badge **Live**) | `red` | Đỏ |
+| Vừa hoàn thành | `orange` | Cam |
+| Các section khác (`/nhom`, admin shell…) | `navy` (mặc định) | Navy soft-3D |
+
+- Class CSS: `.section-header-bar--green` · `--gold` · `--red` · `--orange` (mặc định không class = navy).
 - Tab «Dịch vụ nổi bật» trên home: active mint/teal (UI chung), **không** recolor theo ngành; lưới **1 hàng · 4 card** (`limit = 4`).
 - **`/nhom/:slug`**: mỗi category tối đa **5 nghề**, lưới `lg:grid-cols-5` (1 hàng desktop).
 - **Card việc mới** (`OpenJobCard` portrait): ảnh cover (badge phòng + briefcase) → tiêu đề 2 dòng → khách → hạn đỏ → meta **2×2** (giờ · ngày · thời lượng · ứng viên) → giá full **1 hàng** → CTA «Xem đơn». Lưới desktop **5 cột · 10 việc / trang** (`OPEN_JOB_PORTRAIT_GRID`). Horizontal (preview thuê) giữ pill meta ngang + cọc.
@@ -1190,6 +1200,44 @@ npm run dev:web    # http://localhost:5173
 ```
 
 Production: cấu hình env trên Vercel (web `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, API `DATABASE_URL`, `CORS_ORIGIN`, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `EMAIL_FROM`, `VIETQR_*`, tùy chọn `SMS_PROVIDER=esms` + `ESMS_*`). Chi tiết mẫu: `apps/api/.env.example`, `apps/web/.env.example`.
+
+### Dev local — API / proxy
+
+| Thành phần | Mặc định |
+|------------|----------|
+| Nest API (`@dichvuoi/api`) | `http://localhost:3001` |
+| Vite web (`@dichvuoi/web`) | `http://localhost:5173` |
+| Proxy web → API | `/api`, `/uploads`, Socket.IO → `localhost:3001` (`apps/web/vite.config.ts`) |
+| Health check | `GET http://localhost:3001/api/health` — phải trả JSON Nest DichVuOi, **không** phải body `api-chantier` |
+
+`npm run dev` chạy API + web song song (`concurrently`). Nếu API crash `EADDRINUSE :::3001` mà web vẫn lên → UI gọi nhầm service khác trên cùng port (trống dữ liệu / 404).
+
+### Xung đột port 3001 (Docker / project khác)
+
+Trên máy dev, container Docker **`chantier-api`** (`api-chantier`) thường map `0.0.0.0:3001→3000` và chiếm port trước Nest DichVuOi.
+
+**Cách xử lý (chọn một):**
+
+1. **Tắt container chantier** (giữ DichVuOi ở 3001):
+   ```powershell
+   docker stop chantier-api
+   npm run dev
+   ```
+2. **Chạy song song:** đổi `PORT` trong `apps/api/.env` (vd. `3002`) + cập nhật `target` proxy trong `apps/web/vite.config.ts` cho khớp.
+
+Kiểm tra process đang giữ 3001: `docker ps` (cột PORTS) hoặc `Get-NetTCPConnection -LocalPort 3001`.
+
+### Git identity — chỉ repo DichVuOi
+
+Repo có file **`.gitconfig`** (root) — email commit **chỉ trong project này**: `zonbita96@gmail.com` / name `zonbita96`. Không đổi `git config --global`.
+
+Sau **clone lại**, chạy một lần trong thư mục repo:
+
+```powershell
+git config --local include.path ../.gitconfig
+```
+
+**Vercel + GitHub:** mail «Failed deployment from …» ghi **author commit Git**, không phải email login dashboard. Hobby private repo: commit author phải khớp owner team. Nếu global Git vẫn email công ty → thêm secondary email trên Vercel hoặc commit bằng Gmail như trên.
 
 ### Xác minh trước khi rút ví
 

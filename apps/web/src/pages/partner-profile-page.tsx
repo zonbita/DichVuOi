@@ -2,11 +2,9 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { SectionHeaderBar } from '../components/home/section-header-bar';
-import { FavoritePartnerButton } from '../components/partner/favorite-partner-button';
-import { ReputationProgressBar } from '../components/partner/reputation-progress-bar';
+import { PartnerProfileHeroCard } from '../components/partner/partner-profile-hero-card';
 import { SquareImageSlider } from '../components/partner/square-image-slider';
-import { AvatarLevelOverlay, PartnerVerificationBadges } from '../components/ui/partner-badges';
-import { StarIcon, Icon } from '../components/ui/icon';
+import { StarIcon } from '../components/ui/icon';
 import {
   prefetchPublicPartnerPost,
   seedDetailFromPublicProfile,
@@ -17,7 +15,6 @@ import { resolveOfferingPriceRange } from '../utils/market-price';
 import type { PublicPartnerProfile } from '../types/auth';
 import { offeringColor } from '../utils/catalog-colors';
 import { mediaSrc } from '../utils/media-src';
-import { resolveUserAvatarUrl } from '../utils/portrait-avatar';
 
 type PartnerOffering = PublicPartnerProfile['offerings'][number];
 type ServicePost = PublicPartnerProfile['servicePosts'][number];
@@ -76,153 +73,6 @@ function sortOfferingsByReviews(list: PartnerOffering[]) {
       b.ratingCount - a.ratingCount ||
       b.ratingAvg - a.ratingAvg ||
       a.service.name.localeCompare(b.service.name, 'vi'),
-  );
-}
-
-function Avatar({ name, src }: { name: string; src?: string | null }) {
-  const [broken, setBroken] = useState(false);
-  const resolved = resolveUserAvatarUrl({ avatarUrl: src });
-
-  if (src && !broken) {
-    return (
-      <img
-        src={resolved}
-        alt={name}
-        decoding="async"
-        onError={() => setBroken(true)}
-        className="h-full w-full object-cover"
-      />
-    );
-  }
-
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
-
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-[var(--color-brand-soft)] text-3xl font-extrabold text-[var(--color-brand-deep)]">
-      {initials || '?'}
-    </div>
-  );
-}
-
-/** Header ngang gọn — avatar | meta */
-function ProfileHeader({ data }: { data: PublicPartnerProfile }) {
-  const locationLabel = [
-    data.city,
-    ...data.districts.filter(
-      (d) =>
-        d.trim().toLocaleLowerCase('vi') !==
-        (data.city ?? '').trim().toLocaleLowerCase('vi'),
-    ),
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
-  return (
-    <section className="glass-card overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-stretch">
-        <div className="flex shrink-0 items-center justify-center border-b border-white/50 p-3 sm:border-b-0 sm:border-r sm:p-3">
-          <AvatarLevelOverlay
-            level={data.level}
-            rank={data.rank ?? 1}
-            completedJobs={data.completedJobs}
-            hireSuccessCount={data.hireSuccessCount}
-            className="block w-[96px] shrink-0 sm:w-[112px]"
-          >
-            <div className="aspect-square w-full overflow-hidden rounded-2xl">
-              <Avatar name={data.fullName} src={data.avatarUrl} />
-            </div>
-          </AvatarLevelOverlay>
-        </div>
-
-        <div className="min-w-0 flex-1 space-y-1.5 px-4 py-3 sm:py-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-extrabold leading-tight">{data.fullName}</h1>
-                <PartnerVerificationBadges
-                  isVerified={data.isVerified}
-                  phoneVerified={data.phoneVerified}
-                  bankVerified={data.bankVerified}
-                  className="!justify-start"
-                />
-              </div>
-              {data.headline ? (
-                <p className="text-sm font-semibold text-[var(--color-brand-deep)]">
-                  {data.headline}
-                </p>
-              ) : null}
-            </div>
-            <FavoritePartnerButton partnerUserId={data.userId} showLabel={false} />
-          </div>
-
-          <p className="flex flex-wrap items-center gap-1.5 text-sm text-[var(--color-muted)]">
-            <StarRow rating={Math.round(data.ratingAvg)} />
-            <span>
-              {data.ratingAvg.toFixed(1)} ({data.ratingCount}) · {data.completedJobs} việc
-            </span>
-            {data.onTimeRate != null ? (
-              <>
-                <span className="text-[var(--color-line)]">·</span>
-                <span className="font-semibold text-[var(--color-navy)]">
-                  Đúng hạn {data.onTimeRate}%
-                </span>
-              </>
-            ) : null}
-            <span className="text-[var(--color-line)]">·</span>
-            {data.isOnline ? (
-              <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Online
-              </span>
-            ) : data.acceptingJobs ? (
-              <span className="font-semibold text-[var(--color-brand-deep)]">Đang nhận việc</span>
-            ) : (
-              <span className="font-semibold text-amber-700">Tạm nghỉ</span>
-            )}
-            <span>· Phản hồi ~{data.responseMinutes} phút</span>
-          </p>
-
-          <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-[var(--color-muted)]">
-            {locationLabel ? (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon name="pin" className="h-3.5 w-3.5 shrink-0" />
-                {locationLabel}
-              </span>
-            ) : null}
-            <span className="inline-flex items-center gap-1.5">
-              <Icon name="laptop" className="h-3.5 w-3.5 shrink-0" />
-              {data.workModes.map((m) => (m === 'onsite' ? 'Tại chỗ' : 'Online')).join(' · ')}
-            </span>
-          </p>
-
-          {data.skills.length ? (
-            <div className="flex flex-wrap gap-1">
-              {data.skills.slice(0, 8).map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-full bg-[var(--color-brand-soft)] px-2 py-0.5 text-[11px] font-bold text-[var(--color-brand-deep)]"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          {data.reputation ? (
-            <div className="max-w-lg pt-1">
-              <ReputationProgressBar reputation={data.reputation} />
-            </div>
-          ) : null}
-        </div>
-
-      </div>
-    </section>
   );
 }
 
@@ -526,17 +376,20 @@ function ReviewsSection({
 function PartnerProfileSkeleton() {
   return (
     <div className="space-y-4 sm:space-y-5" aria-busy="true" aria-label="Đang tải hồ sơ">
-      <section className="glass-card overflow-hidden">
-        <div className="flex flex-col sm:flex-row">
-          <div className="p-3 sm:w-[136px]">
-            <div className="aspect-square w-full animate-pulse rounded-2xl bg-white/50" />
-          </div>
-          <div className="min-w-0 flex-1 space-y-2 p-4">
-            <div className="h-6 w-1/3 animate-pulse rounded bg-white/60" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-white/60" />
-            <div className="h-4 w-2/3 animate-pulse rounded bg-white/60" />
+      <section className="overflow-hidden rounded-[22px] border border-[rgba(150,180,210,0.25)] bg-white p-5 shadow-[0_8px_24px_rgba(23,35,58,0.06)]">
+        <div className="flex flex-col gap-5 lg:flex-row">
+          <div className="mx-auto h-[7.5rem] w-[7.5rem] animate-pulse rounded-[17px] bg-[#E5EAF2] sm:mx-0" />
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="h-7 w-2/5 animate-pulse rounded bg-[#E5EAF2]" />
+            <div className="h-4 w-3/5 animate-pulse rounded bg-[#E5EAF2]" />
+            <div className="flex gap-2">
+              <div className="h-8 w-16 animate-pulse rounded-lg bg-[#E5EAF2]" />
+              <div className="h-8 w-20 animate-pulse rounded-lg bg-[#E5EAF2]" />
+            </div>
+            <div className="h-4 w-4/5 animate-pulse rounded bg-[#E5EAF2]" />
           </div>
         </div>
+        <div className="mt-5 h-2.5 animate-pulse rounded-full bg-[#E5EAF2]" />
       </section>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {[1, 2, 3].map((n) => (
@@ -578,7 +431,7 @@ export function PartnerProfilePage() {
 
   return (
     <div className={`space-y-5 sm:space-y-6 ${isFetching ? 'opacity-95' : ''}`}>
-      <ProfileHeader data={data} />
+      <PartnerProfileHeroCard data={data} />
       {(data.gallery?.length ?? 0) > 0 ? (
         <section className="space-y-3">
           <SectionHeaderBar
