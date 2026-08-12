@@ -419,6 +419,7 @@ export function PartnerDashboardPage() {
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           <PartnerIncomingList
             bookings={filteredOpenBookings}
+            sourceTotal={openBookings.length}
             loading={openQuery.isLoading}
             applyingId={acceptMutation.isPending ? (acceptMutation.variables ?? null) : null}
             appliedIds={appliedBookingIds}
@@ -475,21 +476,13 @@ export function PartnerDashboardPage() {
 
       {tab === 'profile' && (
         <section className="space-y-4">
-          <DashboardPageHeader
-            icon="user"
-            title="Hồ sơ cá nhân"
-            description="Cập nhật thông tin để hồ sơ của bạn đầy đủ và chuyên nghiệp hơn."
-            actions={
-              <Link
-                to={`/user/${user.id}`}
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-navy)] shadow-[0_4px_16px_rgba(24,49,63,0.05)] transition hover:border-[var(--color-brand)]"
-              >
-                <Icon name="eye" className="h-4 w-4 text-[var(--color-brand)]" />
-                Xem hồ sơ công khai
-                <Icon name="chevronRight" className="h-4 w-4 text-[var(--color-muted)]" />
-              </Link>
-            }
-          />
+          {!pathname.startsWith('/don-cua-toi') ? (
+            <DashboardPageHeader
+              icon="user"
+              title="Hồ sơ cá nhân"
+              description="Cập nhật thông tin để hồ sơ của bạn đầy đủ và chuyên nghiệp hơn."
+            />
+          ) : null}
 
           <DashboardSurface className="overflow-hidden">
             <form
@@ -499,12 +492,20 @@ export function PartnerDashboardPage() {
                 reset(values);
               })}
             >
-              <div className="border-b border-[var(--color-line)] p-4 sm:p-5 lg:border-r lg:border-b-0">
+              <div className="space-y-3 border-b border-[var(--color-line)] p-4 sm:p-5 lg:border-r lg:border-b-0">
                 <PartnerAvatarUpload
                   name={user?.fullName ?? 'Người làm'}
                   avatarUrl={profileQuery.data?.avatarUrl}
                   ensureProfile={() => ensurePartnerProfile()}
                 />
+                <Link
+                  to={`/user/${user.id}`}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[var(--color-line)] bg-white px-4 text-sm font-semibold text-[var(--color-navy)] shadow-[0_4px_16px_rgba(24,49,63,0.05)] transition hover:border-[var(--color-brand)]"
+                >
+                  <Icon name="eye" className="h-4 w-4 shrink-0 text-[var(--color-brand)]" />
+                  <span className="truncate">Xem hồ sơ công khai</span>
+                  <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-[var(--color-muted)]" />
+                </Link>
               </div>
 
               <div className="flex min-w-0 flex-col p-4 sm:p-5 lg:p-6">

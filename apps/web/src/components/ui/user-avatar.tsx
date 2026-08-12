@@ -1,5 +1,6 @@
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useState, type CSSProperties } from 'react';
 import { resolveUserAvatarUrl } from '../../utils/portrait-avatar';
+import { rankAvatarRingStyle } from './partner-badges';
 
 function initials(name: string) {
   return name
@@ -21,6 +22,8 @@ type UserAvatarProps = {
   src?: string | null;
   userId?: string | null;
   email?: string | null;
+  /** Rank 1–1000 — viền avatar theo tier MEMBER…LEGEND. */
+  rank?: number | null;
   size?: keyof typeof sizeClass;
   className?: string;
   loading?: 'lazy' | 'eager';
@@ -31,6 +34,7 @@ function UserAvatarInner({
   src,
   userId,
   email,
+  rank,
   size = 'md',
   className = '',
   loading = 'lazy',
@@ -38,6 +42,9 @@ function UserAvatarInner({
   const resolved = resolveUserAvatarUrl({ id: userId, email, avatarUrl: src });
   const [broken, setBroken] = useState(false);
   const box = sizeClass[size];
+  const rankStyle: CSSProperties | undefined =
+    rank != null ? rankAvatarRingStyle(rank) : undefined;
+  const ringClass = rankStyle ? '' : 'ring-2 ring-white shadow-sm';
 
   useEffect(() => {
     setBroken(false);
@@ -51,14 +58,16 @@ function UserAvatarInner({
         loading={loading}
         decoding="async"
         onError={() => setBroken(true)}
-        className={`${box} shrink-0 rounded-full object-cover ring-2 ring-white shadow-sm ${className}`}
+        className={`${box} shrink-0 rounded-full object-cover ${ringClass} ${className}`}
+        style={rankStyle}
       />
     );
   }
 
   return (
     <div
-      className={`flex ${box} shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-deep)] font-extrabold text-white shadow-sm ring-2 ring-white ${className}`}
+      className={`flex ${box} shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-brand)] to-[var(--color-brand-deep)] font-extrabold text-white ${ringClass} ${className}`}
+      style={rankStyle}
       aria-hidden
     >
       {initials(name) || '?'}

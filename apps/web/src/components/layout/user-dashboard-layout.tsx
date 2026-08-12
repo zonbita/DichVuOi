@@ -291,6 +291,13 @@ export function UserDashboardLayout() {
     enabled: Boolean(user) && isOfferPath && canOffer && !isBlocked,
   });
 
+  const levelQuery = useQuery({
+    queryKey: ['partner', 'me', 'level'],
+    queryFn: api.getPartnerLevel,
+    enabled: Boolean(user) && canOffer && !isBlocked,
+    staleTime: 60_000,
+  });
+
   const badges = useMemo(() => {
     const hireAction =
       user && hireQuery.data
@@ -351,6 +358,7 @@ export function UserDashboardLayout() {
               src={user?.partnerProfile?.avatarUrl}
               userId={user?.id}
               email={user?.email}
+              rank={levelQuery.data?.rank}
               size="lg"
               loading="eager"
               className="!h-12 !w-12 shadow-[0_6px_16px_rgba(0,156,149,0.28)]"

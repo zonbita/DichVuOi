@@ -122,7 +122,7 @@ export function PartnerProfileHeroCard({ data }: { data: PublicPartnerProfile })
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
         <div className="flex shrink-0 flex-col items-center gap-2 sm:w-[140px]">
           <div className="relative shrink-0">
-            <PartnerAvatar name={data.fullName} src={data.avatarUrl} size="profile" />
+            <PartnerAvatar name={data.fullName} src={data.avatarUrl} size="profile" rank={data.rank} />
             <span className="absolute -bottom-2 left-1/2 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#17233A] px-2.5 py-1 text-xs font-bold text-white shadow-md">
               <span className="text-amber-400">★</span>
               {data.ratingAvg.toFixed(1)}

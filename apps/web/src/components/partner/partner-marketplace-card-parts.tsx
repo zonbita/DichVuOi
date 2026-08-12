@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useState } from 'react';
 import { Icon } from '../ui/icon';
+import { rankAvatarBorderStyle } from '../ui/partner-badges';
 import { resolveUserAvatarUrl } from '../../utils/portrait-avatar';
 
 function initials(name: string) {
@@ -16,10 +17,12 @@ export function PartnerAvatar({
   name,
   src,
   size = 'md',
+  rank,
 }: {
   name: string;
   src?: string | null;
   size?: 'sm' | 'md' | 'profile';
+  rank?: number | null;
 }) {
   const [broken, setBroken] = useState(false);
   const box =
@@ -31,6 +34,11 @@ export function PartnerAvatar({
   const text =
     size === 'profile' ? 'text-2xl' : size === 'sm' ? 'text-sm' : 'text-lg';
   const resolved = resolveUserAvatarUrl({ avatarUrl: src });
+  const rankStyle: CSSProperties | undefined =
+    rank != null ? rankAvatarBorderStyle(rank) : undefined;
+  const borderClass = rankStyle
+    ? 'border-2'
+    : 'border border-[rgba(150,180,210,0.35)]';
 
   if (src && !broken) {
     return (
@@ -39,14 +47,16 @@ export function PartnerAvatar({
         alt={name}
         decoding="async"
         onError={() => setBroken(true)}
-        className={`${box} rounded-[17px] border border-[rgba(150,180,210,0.35)] object-cover shadow-[0_4px_14px_rgba(23,35,58,0.08)]`}
+        className={`${box} rounded-[17px] ${borderClass} object-cover shadow-[0_4px_14px_rgba(23,35,58,0.08)]`}
+        style={rankStyle}
       />
     );
   }
 
   return (
     <div
-      className={`flex ${box} items-center justify-center rounded-[17px] border border-[rgba(150,180,210,0.35)] bg-gradient-to-br from-[#EFF6FF] to-white ${text} font-bold text-[#2563EB] shadow-[0_4px_14px_rgba(23,35,58,0.08)]`}
+      className={`flex ${box} items-center justify-center rounded-[17px] ${borderClass} bg-gradient-to-br from-[#EFF6FF] to-white ${text} font-bold text-[#2563EB] shadow-[0_4px_14px_rgba(23,35,58,0.08)]`}
+      style={rankStyle}
     >
       {initials(name)}
     </div>

@@ -14,8 +14,8 @@ import { api } from '../../services/api';
 import { publicPartnerQueryOptions } from '../../lib/query-client';
 import type { PublicPartnerProfile } from '../../types/auth';
 import {
-  AvatarLevelOverlay,
   PartnerVerificationBadges,
+  computePartnerRankScore,
 } from '../ui/partner-badges';
 import { UserAvatar } from '../ui/user-avatar';
 
@@ -118,7 +118,6 @@ export function PartnerHoverPreview({ seed, children, className = '' }: Props) {
   const data = profileQuery.data;
   const fullName = data?.fullName ?? seed.fullName;
   const avatarUrl = data?.avatarUrl ?? seed.avatarUrl;
-  const level = data?.level ?? seed.level ?? 1;
   const accepting = data?.acceptingJobs ?? seed.acceptingJobs ?? false;
   const profileTo = `/user/${seed.userId}`;
 
@@ -143,7 +142,6 @@ export function PartnerHoverPreview({ seed, children, className = '' }: Props) {
               profileTo={profileTo}
               fullName={fullName}
               avatarUrl={avatarUrl}
-              level={level}
               accepting={accepting}
               data={data}
               loading={profileQuery.isLoading && !data}
@@ -172,7 +170,6 @@ function HoverCardBody({
   profileTo,
   fullName,
   avatarUrl,
-  level,
   accepting,
   data,
   loading,
@@ -180,7 +177,6 @@ function HoverCardBody({
   profileTo: string;
   fullName: string;
   avatarUrl?: string | null;
-  level: number;
   accepting: boolean;
   data?: PublicPartnerProfile;
   loading: boolean;
@@ -189,16 +185,23 @@ function HoverCardBody({
     <div className="space-y-2.5">
       <div className="flex items-start gap-2.5">
         <Link to={profileTo} className="shrink-0" tabIndex={-1}>
-          <AvatarLevelOverlay level={level}>
-            <UserAvatar
-              name={fullName}
-              src={avatarUrl}
-              userId={data?.userId}
-              size="lg"
-              className="!h-12 !w-12"
-              loading="eager"
-            />
-          </AvatarLevelOverlay>
+          <UserAvatar
+            name={fullName}
+            src={avatarUrl}
+            userId={data?.userId}
+            rank={
+              data?.rank ??
+              (data
+                ? computePartnerRankScore(
+                    data.completedJobs,
+                    data.hireSuccessCount ?? 0,
+                  )
+                : undefined)
+            }
+            size="lg"
+            className="!h-12 !w-12"
+            loading="eager"
+          />
         </Link>
         <div className="min-w-0 flex-1 pt-0.5">
           <Link

@@ -45,19 +45,21 @@ export function InvoicesPage({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-      <DashboardPageHeader
-        icon="receipt"
-        title="Hóa đơn VNĐ"
-        description="Mỗi lần đặt cọc tạo một hóa đơn. Giải ngân / hoàn cập nhật trạng thái."
-        actions={
-          <Link
-            to={`${basePath}/vi`}
-            className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
-          >
-            ← Ví VNĐ
-          </Link>
-        }
-      />
+      {basePath !== '/don-cua-toi' ? (
+        <DashboardPageHeader
+          icon="receipt"
+          title="Hóa đơn VNĐ"
+          description="Mỗi lần đặt cọc tạo một hóa đơn. Giải ngân / hoàn cập nhật trạng thái."
+          actions={
+            <Link
+              to={`${basePath}/vi`}
+              className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
+            >
+              ← Ví VNĐ
+            </Link>
+          }
+        />
+      ) : null}
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
         {invoicesQuery.isLoading ? (

@@ -17,6 +17,8 @@ type Props = {
   onChange: (id: string) => void;
   /** `vertical` = dropdown góc phải bảng Đơn thuê. */
   orientation?: 'horizontal' | 'vertical';
+  /** `inline` = label + dropdown cùng hàng với ô tìm kiếm (Đơn thuê). */
+  layout?: 'default' | 'inline';
 };
 
 function groupProfessionTabs(tabs: ProfessionTab[]) {
@@ -43,10 +45,12 @@ export function PartnerProfessionTabs({
   value,
   onChange,
   orientation = 'horizontal',
+  layout = 'default',
 }: Props) {
-  if (tabs.length <= 1) return null;
+  if (tabs.length === 0) return null;
 
   const vertical = orientation === 'vertical';
+  const inline = vertical && layout === 'inline';
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -75,9 +79,13 @@ export function PartnerProfessionTabs({
     return (
       <div
         ref={rootRef}
-        className="relative rounded-xl border border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/70 px-3 py-2.5 backdrop-blur-sm"
+        className={
+          inline
+            ? 'relative flex min-w-0 shrink-0 items-center gap-2'
+            : 'relative rounded-xl border border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/70 px-3 py-2.5 backdrop-blur-sm'
+        }
       >
-        <div className="flex items-center gap-2.5">
+        <div className={`flex items-center gap-2.5 ${inline ? 'min-w-0' : ''}`}>
           <p className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-[var(--color-muted)]">
             Nghề của bạn
           </p>
@@ -87,17 +95,21 @@ export function PartnerProfessionTabs({
             aria-expanded={open}
             aria-controls={listId}
             onClick={() => setOpen((prev) => !prev)}
-            className="field-input flex min-w-0 flex-1 items-center justify-between gap-2 py-2 text-left"
+            className={`flex h-11 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-line)] bg-white px-3 text-left transition hover:border-[var(--color-brand)]/35 ${
+              inline
+                ? 'w-[min(100%,240px)] min-w-[10.5rem] shrink-0'
+                : 'min-w-0 flex-1'
+            }`}
             style={
               triggerColor
                 ? { borderLeftWidth: '4px', borderLeftColor: triggerColor.main }
                 : undefined
             }
           >
-            <span className="min-w-0 truncate font-semibold">
+            <span className="min-w-0 flex-1 truncate font-semibold">
               {selected.label}
             </span>
-            <span className="ml-auto shrink-0 text-sm font-semibold text-[var(--color-muted)]">
+            <span className="shrink-0 text-sm font-semibold tabular-nums text-[var(--color-muted)]">
               {selected.count}
             </span>
             <Icon
@@ -111,7 +123,9 @@ export function PartnerProfessionTabs({
           <div
             id={listId}
             role="listbox"
-            className="absolute left-3 right-3 top-full z-30 mt-1 max-h-[min(420px,60vh)] overflow-y-auto rounded-xl border border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/95 py-1 shadow-[var(--shadow-card)] backdrop-blur-md"
+            className={`absolute top-full z-30 mt-1 max-h-[min(420px,60vh)] overflow-y-auto rounded-xl border border-[var(--glass-line,rgba(23,32,51,0.08))] bg-white/95 py-1 shadow-[var(--shadow-card)] backdrop-blur-md ${
+              inline ? 'left-0 min-w-[min(100vw-2rem,320px)]' : 'left-3 right-3'
+            }`}
           >
             <button
               type="button"

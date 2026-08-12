@@ -5,6 +5,7 @@ import type { Booking } from '../../types/catalog';
 import { serviceImage } from '../../utils/catalog-images';
 import { JobMetaPill, ScheduleTimePill } from './schedule-time-pill';
 import { Icon } from '../ui/icon';
+import { UserAvatar } from '../ui/user-avatar';
 
 function formatRemainingTime(deadlineIso: string) {
   const diffMs = new Date(deadlineIso).getTime() - Date.now();
@@ -119,6 +120,31 @@ function getOpenJobLabels(booking: Booking) {
 
 function pad2(n: number) {
   return String(n).padStart(2, '0');
+}
+
+function CustomerIdentity({
+  booking,
+  className = 'mt-1',
+}: {
+  booking: Booking;
+  className?: string;
+}) {
+  const name = booking.customerName;
+
+  return (
+    <p className={`flex min-w-0 items-center gap-1.5 ${className}`}>
+      <UserAvatar
+        name={name}
+        userId={booking.user?.id ?? booking.userId}
+        email={booking.user?.email}
+        size="sm"
+        className="!h-6 !w-6 !text-[9px] ring-1 ring-[var(--color-line)]"
+      />
+      <span className="min-w-0 truncate text-[12px] font-semibold text-[var(--color-navy)]">
+        {name}
+      </span>
+    </p>
+  );
 }
 
 function PortraitMetaGrid({ booking }: { booking: Booking }) {
@@ -263,12 +289,10 @@ export function OpenJobCard({
             <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${room.dot}`} />
             <span className="truncate">{room.label}</span>
           </span>
-          <span className="absolute right-2 bottom-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
-            <Icon name="briefcase" className="h-3.5 w-3.5" />
-          </span>
         </div>
 
         <div className="mt-2.5 min-w-0">
+          <CustomerIdentity booking={booking} className="mb-1.5" />
           <h3
             className="line-clamp-2 wrap-anywhere text-[15px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)]"
             title={title}
@@ -280,10 +304,6 @@ export function OpenJobCard({
               {booking.service.name}
             </p>
           ) : null}
-          <p className="mt-1 flex min-w-0 items-center gap-1 truncate text-[12px] text-[var(--color-muted)]">
-            <Icon name="user" className="h-3 w-3 shrink-0 opacity-70" />
-            <span className="truncate">{booking.customerName}</span>
-          </p>
           {booking.matchingDeadlineAt && matchingDeadlineLabel ? (
             <p
               className="mt-2 inline-flex max-w-full items-center gap-1 rounded-lg bg-[#FFF1F2] px-2 py-1 text-[11px] font-semibold text-[#BE123C]"
@@ -352,9 +372,6 @@ export function OpenJobCard({
           fetchPriority={priority ? 'high' : undefined}
           decoding="async"
         />
-        <span className="absolute -bottom-1.5 -right-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-md ring-2 ring-white">
-          <Icon name="briefcase" className="h-3.5 w-3.5" />
-        </span>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-start">
@@ -369,10 +386,7 @@ export function OpenJobCard({
             {booking.service.name}
           </p>
         ) : null}
-        <p className="mt-1 flex min-w-0 shrink-0 items-center gap-1.5 truncate text-sm text-[var(--color-muted)]">
-          <Icon name="user" className="h-3.5 w-3.5 shrink-0 opacity-70" />
-          <span className="truncate">{booking.customerName}</span>
-        </p>
+        <CustomerIdentity booking={booking} />
 
         <div className="mt-2.5">
           <MetaPills booking={booking} />

@@ -1,51 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import {
-  DashboardPageHeader,
-  DashboardSurface,
-} from '../components/dashboard/dashboard-chrome';
+import { DashboardSurface } from '../components/dashboard/dashboard-chrome';
+import { WalletHistoryPanel } from '../components/wallet/wallet-history-panel';
+import { Icon } from '../components/ui/icon';
 import { useAuth } from '../features/auth/auth-context';
 import { toast } from '../lib/notify';
 import { api, formatPrice, formatPriceNumber } from '../services/api';
 import {
   TOP_UP_PRESETS,
-  WALLET_TX_LABELS,
   type VietQrTopUpIntent,
-  type WalletTransaction,
-  type WalletTransactionType,
 } from '../types/finance';
-
-type HistoryFilter = 'day' | 'week' | 'month' | 'all';
+import type { HistoryFilter } from '../components/wallet/wallet-history-panel';
 
 const HISTORY_PAGE_SIZE = 5;
-
-function historyPageNumbers(current: number, pageCount: number): Array<number | '…'> {
-  if (pageCount <= 7) {
-    return Array.from({ length: pageCount }, (_, i) => i + 1);
-  }
-  const pages = new Set<number>([1, pageCount, current, current - 1, current + 1]);
-  if (current <= 3) {
-    pages.add(2);
-    pages.add(3);
-    pages.add(4);
-  }
-  if (current >= pageCount - 2) {
-    pages.add(pageCount - 1);
-    pages.add(pageCount - 2);
-    pages.add(pageCount - 3);
-  }
-  const sorted = [...pages].filter((p) => p >= 1 && p <= pageCount).sort((a, b) => a - b);
-  const out: Array<number | '…'> = [];
-  for (const p of sorted) {
-    if (out.length > 0) {
-      const prev = out[out.length - 1];
-      if (typeof prev === 'number' && p - prev > 1) out.push('…');
-    }
-    out.push(p);
-  }
-  return out;
-}
 
 export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac' }) {
   const { user, loading, refreshMe } = useAuth();
@@ -168,67 +136,89 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 pb-2 lg:h-full">
-      <DashboardPageHeader
-        icon="wallet"
-        title="Ví VNĐ"
-        description="Nạp tiền qua mã QR (mô phỏng) và theo dõi biến động số dư."
-        actions={
-          <Link
-            to={`${basePath}/rut-tien`}
-            className="text-sm font-semibold text-[var(--color-brand-deep)] hover:underline"
-          >
-            Rút tiền
-          </Link>
-        }
-      />
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:overflow-hidden">
-      <DashboardSurface className="no-scrollbar p-4 lg:min-h-0 lg:overflow-y-auto">
+      <DashboardSurface className="no-scrollbar p-4 sm:p-5 lg:min-h-0 lg:overflow-y-auto">
         <div className="grid gap-4 lg:grid-cols-2">
-          <div>
-            <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-canvas)] p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted)]">
-                Số dư khả dụng
-              </p>
-              <p className="mt-1.5 text-2xl font-extrabold text-[var(--color-gold)]">
-                {formatPrice(balance)}
-              </p>
-              <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-                Đơn vị VNĐ · thanh toán nội bộ trên sàn (mô phỏng)
-              </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[0_4px_14px_rgba(24,49,63,0.06)]">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-gold-soft)] text-[var(--color-gold)]">
+                <Icon name="wallet" className="h-6 w-6" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                  Số dư khả dụng
+                </p>
+                <p className="mt-0.5 text-[1.65rem] font-extrabold leading-tight text-[var(--color-gold)]">
+                  {formatPrice(balance)}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+                  Đơn vị VNĐ · thanh toán nội bộ trên sàn (mô phỏng)
+                </p>
+              </div>
             </div>
-            <h2 className="mt-3 font-extrabold">Nạp VNĐ</h2>
-            <p className="mt-0.5 text-sm text-[var(--color-muted)]">
-              Chọn mức hoặc nhập số tiền rồi tạo mã QR (tối thiểu 20.000 VNĐ).{' '}
-              <Link to={`${basePath}/rut-tien`} className="font-semibold text-[var(--color-brand-deep)] underline">
-                Rút tiền
-              </Link>
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {TOP_UP_PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setAmount(preset)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${
-                    amount === preset
-                      ? 'border-transparent bg-gradient-to-r from-fuchsia-600 via-sky-500 to-emerald-500 text-white shadow-[0_6px_16px_rgba(168,85,247,0.35)]'
-                      : 'border-[var(--color-line)] text-[var(--color-ink)]'
-                  }`}
-                >
-                  {formatPrice(preset)}
-                </button>
-              ))}
+
+            <div className="mt-4 flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]">
+                <Icon name="wallet" className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-extrabold uppercase tracking-wide text-[var(--color-navy)]">
+                  Nạp VNĐ
+                </h2>
+                <p className="mt-0.5 text-sm text-[var(--color-muted)]">
+                  Chọn mức hoặc nhập số tiền rồi tạo mã QR (tối thiểu 20.000 VNĐ).{' '}
+                  <Link
+                    to={`${basePath}/rut-tien`}
+                    className="font-semibold text-[var(--color-brand-deep)] underline-offset-2 hover:underline"
+                  >
+                    Rút tiền
+                  </Link>
+                </p>
+              </div>
             </div>
-            <label className="mt-3 flex items-center gap-3 text-sm">
-              <span className="shrink-0 font-semibold text-[var(--color-muted)]">Số tiền (VNĐ)</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={amount > 0 ? formatPriceNumber(amount) : ''}
-                onChange={(e) => handleAmountChange(e.target.value)}
-                className="w-full max-w-xs rounded-lg border border-[var(--color-line)] px-3 py-2"
-              />
-            </label>
+
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {TOP_UP_PRESETS.map((preset) => {
+                const active = amount === preset;
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(preset)}
+                    className={`inline-flex items-center justify-center gap-1 rounded-xl border px-2 py-2.5 text-sm font-semibold transition ${
+                      active
+                        ? 'border-transparent bg-gradient-to-r from-fuchsia-600 via-sky-500 to-emerald-500 text-white shadow-[0_6px_16px_rgba(168,85,247,0.35)]'
+                        : 'border-[var(--color-line)] bg-white text-[var(--color-navy)] hover:border-[var(--color-brand)]/30'
+                    }`}
+                  >
+                    {active ? (
+                      <Icon name="check" className="h-3.5 w-3.5 shrink-0" />
+                    ) : null}
+                    <span className="truncate">{formatPrice(preset)}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+                Số tiền (VNĐ)
+              </span>
+              <label className="field-input flex h-11 min-w-0 flex-1 items-center gap-2.5 px-3 focus-within:border-[var(--color-brand)] focus-within:shadow-[0_0_0_3px_rgba(0,156,149,0.15)]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]">
+                  <Icon name="card" className="h-4 w-4" />
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={amount > 0 ? formatPriceNumber(amount) : ''}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  className="min-w-0 flex-1 border-0 bg-transparent p-0 font-semibold text-[var(--color-navy)] outline-none"
+                  placeholder="0"
+                />
+              </label>
+            </div>
+
             {createIntentMutation.isError ? (
               <p className="mt-2 text-sm text-red-600">
                 {(createIntentMutation.error as Error).message}
@@ -238,11 +228,10 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
               type="button"
               disabled={createIntentMutation.isPending || amount < 20000}
               onClick={() => createIntentMutation.mutate(amount)}
-              className="btn-primary mt-3 px-4 py-2 text-sm disabled:opacity-50"
+              className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-brand)] text-sm font-bold uppercase tracking-wide text-white shadow-[0_4px_12px_rgba(0,156,149,0.28)] transition hover:bg-[var(--color-brand-deep)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {createIntentMutation.isPending
-                ? 'Đang tạo mã…'
-                : `Tạo QR ${formatPrice(amount)}`}
+              <Icon name="qrCode" className="h-4 w-4" />
+              {createIntentMutation.isPending ? 'Đang tạo mã…' : 'Tạo mã QR'}
             </button>
           </div>
 
@@ -331,145 +320,19 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
         </div>
       </DashboardSurface>
 
-      <DashboardSurface className="flex min-h-0 flex-col p-4 lg:h-full lg:max-h-full">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2">
-          <h2 className="font-extrabold">Lịch sử ví</h2>
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              ['day', 'Ngày'],
-              ['week', 'Tuần'],
-              ['month', 'Tháng'],
-              ['all', 'Tất cả'],
-            ].map(([key, label]) => {
-              const active = historyFilter === (key as HistoryFilter);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setHistoryFilter(key as HistoryFilter)}
-                  className={`rounded-md border px-2.5 py-1 text-xs font-semibold ${
-                    active
-                      ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
-                      : 'border-[var(--color-line)] text-[var(--color-muted)] hover:bg-[var(--color-canvas)]'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        {walletQuery.isLoading ? (
-          <p className="mt-2 text-sm text-[var(--color-muted)]">Đang tải…</p>
-        ) : null}
-        {filteredTransactions.length === 0 && !walletQuery.isLoading ? (
-          <p className="mt-2 text-sm text-[var(--color-muted)]">
-            Chưa có giao dịch.
-          </p>
-        ) : null}
-        <ul className="mt-2 min-h-0 flex-1 divide-y divide-[var(--color-line)] overflow-hidden">
-          {pagedTransactions.map((tx: WalletTransaction) => {
-            const positive = tx.amount > 0;
-            return (
-              <li
-                key={tx.id}
-                className="flex items-start justify-between gap-2 py-2 text-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-semibold leading-snug">
-                    {WALLET_TX_LABELS[tx.type as WalletTransactionType] ?? tx.type}
-                  </p>
-                  <p className="truncate text-xs text-[var(--color-muted)]">
-                    {tx.description}
-                  </p>
-                  <p className="mt-0.5 truncate text-[11px] text-[var(--color-muted)]">
-                    {new Date(tx.createdAt).toLocaleString('vi-VN')}
-                    {tx.bookingId ? (
-                      <>
-                        {' · '}
-                        <Link
-                          to={
-                            basePath === '/doi-tac'
-                              ? `/doi-tac/viec/${tx.bookingId}`
-                              : `/don-cua-toi/don/${tx.bookingId}`
-                          }
-                          className="font-semibold text-[var(--color-brand-deep)] hover:underline"
-                        >
-                          Đơn
-                        </Link>
-                      </>
-                    ) : null}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p
-                    className={`text-sm font-extrabold leading-snug ${
-                      positive ? 'text-[var(--color-gold)]' : 'text-[var(--color-invoice)]'
-                    }`}
-                  >
-                    {positive ? '+' : ''}
-                    {formatPrice(tx.amount)}
-                  </p>
-                  <p className="text-[11px] text-[var(--color-muted)]">
-                    Sau: {formatPrice(tx.balanceAfter)}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        {historyPageCount > 1 ? (
-          <div className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-[var(--color-line)] pt-2 text-sm">
-            <p className="text-xs text-[var(--color-muted)]">
-              {filteredTransactions.length} GD · trang {safeHistoryPage}/{historyPageCount}
-            </p>
-            <nav className="flex flex-wrap items-center gap-1" aria-label="Phân trang lịch sử ví">
-              <button
-                type="button"
-                disabled={safeHistoryPage <= 1}
-                onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-                className="border border-[var(--color-line)] bg-white px-2 py-0.5 text-xs font-semibold disabled:opacity-40"
-              >
-                Trước
-              </button>
-              {historyPageNumbers(safeHistoryPage, historyPageCount).map((item, idx) =>
-                item === '…' ? (
-                  <span
-                    key={`ellipsis-${idx}`}
-                    className="px-1 text-[var(--color-muted)]"
-                  >
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setHistoryPage(item)}
-                    aria-current={item === safeHistoryPage ? 'page' : undefined}
-                    className={`min-w-7 border px-2 py-0.5 text-xs font-bold ${
-                      item === safeHistoryPage
-                        ? 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]'
-                        : 'border-[var(--color-line)] bg-white text-[var(--color-ink)] hover:bg-[var(--color-canvas)]'
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ),
-              )}
-              <button
-                type="button"
-                disabled={safeHistoryPage >= historyPageCount}
-                onClick={() =>
-                  setHistoryPage((p) => Math.min(historyPageCount, p + 1))
-                }
-                className="border border-[var(--color-line)] bg-white px-2 py-0.5 text-xs font-semibold disabled:opacity-40"
-              >
-                Sau
-              </button>
-            </nav>
-          </div>
-        ) : null}
-      </DashboardSurface>
+      <div className="rounded-[22px] bg-[#F4F8FB] p-1 sm:p-1.5">
+        <WalletHistoryPanel
+          basePath={basePath}
+          historyFilter={historyFilter}
+          onHistoryFilterChange={setHistoryFilter}
+          isLoading={walletQuery.isLoading}
+          transactions={pagedTransactions}
+          totalCount={filteredTransactions.length}
+          historyPage={historyPage}
+          historyPageCount={historyPageCount}
+          onHistoryPageChange={setHistoryPage}
+        />
+      </div>
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ import type { PublicServicePostListItem } from '../../types/public-service-post'
 import { offeringColor } from '../../utils/catalog-colors';
 import { resolveOfferingPriceRange } from '../../utils/market-price';
 import { ReputationProgressBar } from '../partner/reputation-progress-bar';
-import { AvatarLevelOverlay } from '../ui/partner-badges';
 import { StarIcon } from '../ui/icon';
 import { UserAvatar } from '../ui/user-avatar';
 import { mediaSrc } from '../../utils/media-src';
@@ -101,61 +100,52 @@ export function ServicePostCard({
       </div>
 
       <div className="flex flex-1 flex-col px-3.5 pb-3.5 pt-3.5">
-        <div className="flex items-start gap-3">
-          <div className="relative shrink-0">
-            <AvatarLevelOverlay
-              level={post.seller.level}
-              rank={post.seller.rank ?? 1}
-              completedJobs={post.seller.completedJobs}
-              hireSuccessCount={post.seller.hireSuccessCount}
-            >
-              <span className="relative inline-block">
-                <UserAvatar
-                  name={post.seller.fullName}
-                  src={post.seller.avatarUrl}
-                  userId={post.seller.userId}
-                  size="sm"
-                  className="!h-10 !w-10 !ring-2 !ring-[var(--color-line)] shadow-[0_3px_10px_rgba(5,45,71,0.12)]"
-                />
-                {post.seller.isOnline ? (
-                  <span
-                    className="absolute right-0 top-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"
-                    title="Đang online"
-                  />
-                ) : null}
-              </span>
-            </AvatarLevelOverlay>
-          </div>
-
-          <div className="min-w-0 flex-1 pt-0.5">
-            <p className="truncate text-[13px] font-bold tracking-tight text-[var(--color-navy)] group-hover:text-[var(--color-brand-deep)]">
-              {post.seller.fullName}
-            </p>
-            <p className="mt-1 line-clamp-2 text-[15px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)] transition group-hover:text-[var(--color-brand-deep)]">
-              {title}
-            </p>
-            <p className="mt-1.5 flex items-center gap-1.5 text-[12px]">
-              <StarIcon
-                className="h-3.5 w-3.5"
-                tone={ratingCount > 0 ? 'gold' : 'muted'}
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="relative inline-block shrink-0">
+            <UserAvatar
+              name={post.seller.fullName}
+              src={post.seller.avatarUrl}
+              userId={post.seller.userId}
+              rank={post.seller.rank}
+              size="sm"
+              className="!h-10 !w-10 shadow-[0_3px_10px_rgba(5,45,71,0.12)]"
+            />
+            {post.seller.isOnline ? (
+              <span
+                className="absolute right-0 top-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"
+                title="Đang online"
               />
-              {ratingCount > 0 ? (
-                <>
-                  <span className="font-bold text-[var(--color-navy)]">
-                    {ratingAvg.toFixed(1)}
-                  </span>
-                  <span className="font-medium text-[var(--color-muted)]">
-                    ({ratingCount.toLocaleString('vi-VN')})
-                  </span>
-                </>
-              ) : (
-                <span className="font-medium text-[var(--color-muted)]">
-                  Chưa có đánh giá
-                </span>
-              )}
-            </p>
-          </div>
+            ) : null}
+          </span>
+          <p className="min-w-0 flex-1 truncate text-[13px] font-bold tracking-tight text-[var(--color-navy)] group-hover:text-[var(--color-brand-deep)]">
+            {post.seller.fullName}
+          </p>
         </div>
+
+        <p className="mt-2 line-clamp-2 text-[15px] font-extrabold leading-snug tracking-tight text-[var(--color-navy)] transition group-hover:text-[var(--color-brand-deep)]">
+          {title}
+        </p>
+
+        <p className="mt-1.5 flex items-center gap-1.5 text-[12px]">
+          <StarIcon
+            className="h-3.5 w-3.5"
+            tone={ratingCount > 0 ? 'gold' : 'muted'}
+          />
+          {ratingCount > 0 ? (
+            <>
+              <span className="font-bold text-[var(--color-navy)]">
+                {ratingAvg.toFixed(1)}
+              </span>
+              <span className="font-medium text-[var(--color-muted)]">
+                ({ratingCount.toLocaleString('vi-VN')})
+              </span>
+            </>
+          ) : (
+            <span className="font-medium text-[var(--color-muted)]">
+              Chưa có đánh giá
+            </span>
+          )}
+        </p>
 
         {post.seller.reputation ? (
           <ReputationProgressBar

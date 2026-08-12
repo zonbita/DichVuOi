@@ -9,7 +9,7 @@ import {
   StatItem,
   StatusBadge,
 } from '../partner/partner-marketplace-card-parts';
-import { LevelBadge, PartnerVerificationBadges } from '../ui/partner-badges';
+import { LevelBadge, PartnerVerificationBadges, computePartnerRankScore } from '../ui/partner-badges';
 import { Icon } from '../ui/icon';
 import { formatPrice, formatWorkHours } from '../../services/api';
 import type { ServiceProvider } from '../../types/catalog';
@@ -167,6 +167,7 @@ export function ProviderTile({
               name={partner.fullName}
               src={partner.avatarUrl}
               size="profile"
+              rank={computePartnerRankScore(partner.completedJobs, 0)}
             />
             <span className="absolute -bottom-2 left-1/2 inline-flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#17233A] px-2.5 py-1 text-xs font-bold text-white shadow-md">
               <span className="text-amber-400">★</span>
@@ -346,7 +347,12 @@ export function ProviderTile({
             >
               <div className="rounded-2xl border border-[rgba(150,180,210,0.25)] bg-white p-4 text-left shadow-xl">
                 <div className="flex items-start gap-3">
-                  <PartnerAvatar name={partner.fullName} src={partner.avatarUrl} size="sm" />
+                  <PartnerAvatar
+                    name={partner.fullName}
+                    src={partner.avatarUrl}
+                    size="sm"
+                    rank={computePartnerRankScore(partner.completedJobs, 0)}
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-start gap-2">
                       <p className="text-base font-bold text-[#17233A]">

@@ -1,6 +1,6 @@
 /** Badge chỉ dùng cho người làm (PartnerProfile). */
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 export type BadgeDisplayVariant = 'default' | 'icon';
 
@@ -321,6 +321,23 @@ export function resolvePartnerRank(rank: number): PartnerRank {
     PARTNER_RANKS.find((r) => safe >= r.minRank && safe <= r.maxRank) ??
     PARTNER_RANKS[0]
   );
+}
+
+/** Viền tròn avatar theo tier rank (UserAvatar). */
+export function rankAvatarRingStyle(rank: number): CSSProperties {
+  const tier = resolvePartnerRank(rank);
+  return {
+    boxShadow: `0 0 0 2px ${tier.colorLight}, 0 0 0 3.5px ${tier.color}, 0 2px 8px rgba(5,45,71,0.1)`,
+  };
+}
+
+/** Viền avatar bo góc (PartnerAvatar). */
+export function rankAvatarBorderStyle(rank: number): CSSProperties {
+  const tier = resolvePartnerRank(rank);
+  return {
+    borderColor: tier.color,
+    boxShadow: `0 0 0 1px ${tier.colorLight}, 0 4px 14px rgba(23,35,58,0.08)`,
+  };
 }
 
 export function clampPartnerLevel(level: number) {

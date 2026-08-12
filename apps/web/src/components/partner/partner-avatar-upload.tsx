@@ -61,7 +61,7 @@ export function PartnerAvatarUpload({
   }
 
   return (
-    <div className="flex h-full flex-col rounded-[18px] border border-[#DCE6EC] bg-[#F4F8FA] p-4 sm:p-5">
+    <div className="flex flex-col rounded-[18px] border border-[#DCE6EC] bg-[#F4F8FA] p-4 sm:p-5">
       <div className="mb-2 flex items-center gap-2">
         <Icon name="user" className="h-4 w-4 text-[#079A9A]" />
         <h3 className="text-sm font-semibold text-[#0F2F4A]">Ảnh đại diện</h3>

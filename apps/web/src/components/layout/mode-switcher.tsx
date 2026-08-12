@@ -1,22 +1,79 @@
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, type AppMode } from '../../features/auth/auth-context';
-import { formatPrice } from '../../services/api';
+import { api, formatPrice } from '../../services/api';
 import { Icon } from '../ui/icon';
 import { UserAvatar } from '../ui/user-avatar';
 
-const modes: { id: AppMode; label: string; hint: string }[] = [
+const modes: {
+  id: AppMode;
+  label: string;
+  hint: string;
+  icon: 'search' | 'briefcase';
+  iconBox: string;
+  activeRow: string;
+  inactiveRow: string;
+  activeBadge: string;
+}[] = [
   {
     id: 'hire',
     label: 'Khách thuê',
     hint: 'Tìm & thuê dịch vụ',
+    icon: 'search',
+    iconBox:
+      'border border-[var(--color-brand)]/30 bg-[var(--color-brand-soft)] text-[var(--color-brand-deep)]',
+    activeRow:
+      'border border-[var(--color-brand)]/25 bg-[var(--color-brand-soft)] shadow-[inset_3px_0_0_0_var(--color-brand)]',
+    inactiveRow:
+      'border border-[var(--color-line)] bg-white hover:border-[var(--color-brand)]/30 hover:bg-[var(--color-brand-soft)]/55',
+    activeBadge: 'bg-[var(--color-brand)]',
   },
   {
     id: 'offer',
     label: 'Người làm',
     hint: 'Nhận việc / hồ sơ',
+    icon: 'briefcase',
+    iconBox:
+      'border border-[var(--color-navy)]/25 bg-[#e8eef5] text-[var(--color-navy)]',
+    activeRow:
+      'border border-[var(--color-navy)]/20 bg-[#eef3f8] shadow-[inset_3px_0_0_0_var(--color-navy)]',
+    inactiveRow:
+      'border border-[var(--color-line)] bg-white hover:border-[var(--color-navy)]/25 hover:bg-[#eef3f8]',
+    activeBadge: 'bg-[var(--color-navy)]',
   },
 ];
+
+const profileMenuStyles = {
+  iconBox:
+    'border border-[var(--color-gold)]/40 bg-[var(--color-gold-soft)] text-[#9a6b12]',
+  activeRow:
+    'border border-[var(--color-gold)]/30 bg-[var(--color-gold-soft)] shadow-[inset_3px_0_0_0_var(--color-gold)]',
+  inactiveRow:
+    'border border-[var(--color-line)] bg-white hover:border-[var(--color-gold)]/35 hover:bg-[var(--color-gold-soft)]/55',
+  activeBadge: 'bg-[var(--color-gold)]',
+};
+
+const logoutMenuStyles = {
+  iconBox: 'border border-red-200 bg-red-100 text-red-600',
+  row: 'border border-red-100 bg-red-50/90 hover:bg-red-50',
+};
+
+function MenuIconBox({
+  name,
+  className,
+}: {
+  name: 'search' | 'briefcase' | 'user' | 'logOut';
+  className: string;
+}) {
+  return (
+    <span
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${className}`}
+    >
+      <Icon name={name} className="h-4 w-4" />
+    </span>
+  );
+}
 
 /** Route thuộc menu Hồ sơ (ví, rút tiền, hóa đơn…) — cùng tài khoản, không đổi vai. */
 const PROFILE_PATH_PREFIXES = [
@@ -46,6 +103,14 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const onAccountProfile = isAccountProfilePath(pathname);
+
+  const levelQuery = useQuery({
+    queryKey: ['partner', 'me', 'level'],
+    queryFn: api.getPartnerLevel,
+    enabled: Boolean(user) && canOffer,
+    staleTime: 60_000,
+  });
+  const avatarRank = levelQuery.data?.rank;
 
   useEffect(() => {
     function onDocClick(event: MouseEvent) {
@@ -109,6 +174,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
           src={avatarSrc}
           userId={user.id}
           email={user.email}
+          rank={avatarRank}
           size="md"
           loading="eager"
         />
@@ -161,12 +227,22 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.14),transparent_70%)]"
             />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-2/5 opacity-[0.22]"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle, rgba(255,255,255,0.55) 1px, transparent 1.2px)',
+                backgroundSize: '10px 10px',
+              }}
+            />
             <div className="relative flex items-center gap-3">
               <UserAvatar
                 name={user.fullName}
                 src={avatarSrc}
                 userId={user.id}
                 email={user.email}
+                rank={avatarRank}
                 size="lg"
                 className="!h-12 !w-12 !text-base ring-[2.5px] ring-white/90"
               />
@@ -180,7 +256,9 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
             <div className="relative mt-3 flex flex-col gap-2">
               <span className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full bg-[var(--color-gold-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-gold)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
                 <Icon name="wallet" className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Ví · {formatPrice(user.walletBalance ?? 0)}</span>
+                <span className="truncate">
+                  Ví · {formatPrice(user.walletBalance ?? 0)}
+                </span>
               </span>
               <Link
                 to={`/user/${user.id}`}
@@ -194,7 +272,11 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
           </div>
 
           <div className="px-3 pb-3 pt-3">
-            <p className="px-1 pb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">
+            <p className="flex items-center gap-1.5 px-1 pb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-navy)]">
+              <Icon
+                name="users"
+                className="h-3.5 w-3.5 shrink-0 text-[var(--color-brand)]"
+              />
               {isBlocked
                 ? 'Tài khoản bị chặn'
                 : 'Chuyển vai trên cùng tài khoản'}
@@ -226,17 +308,18 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                       role="option"
                       aria-selected={active}
                       onClick={() => switchMode(item.id)}
-                      className={`flex w-full items-center gap-2 rounded-[14px] px-3 py-2.5 text-left transition ${
-                        active
-                          ? 'border border-[var(--color-brand)]/20 bg-[var(--color-brand-soft)] shadow-[inset_3px_0_0_0_var(--color-brand)]'
-                          : 'border border-[var(--color-line)] bg-white hover:border-[var(--color-brand)]/30 hover:bg-[var(--color-canvas)]'
+                      className={`flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-left transition ${
+                        active ? item.activeRow : item.inactiveRow
                       }`}
                     >
+                      <MenuIconBox name={item.icon} className={item.iconBox} />
                       <span className="min-w-0 flex-1">
-                        <span className="flex items-center justify-between gap-2 text-[15px] font-bold text-[var(--color-ink)]">
-                          {item.label}
+                        <span className="flex items-center gap-2 text-[15px] font-bold text-[var(--color-ink)]">
+                          <span className="truncate">{item.label}</span>
                           {active ? (
-                            <span className="shrink-0 rounded-full bg-[var(--color-brand)] px-2 py-0.5 text-[11px] font-semibold text-white">
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${item.activeBadge}`}
+                            >
                               Đang dùng
                             </span>
                           ) : null}
@@ -247,12 +330,10 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                             : item.hint}
                         </span>
                       </span>
-                      {!active ? (
-                        <Icon
-                          name="chevronRight"
-                          className="h-4 w-4 shrink-0 text-[var(--color-muted)]/70"
-                        />
-                      ) : null}
+                      <Icon
+                        name="chevronRight"
+                        className="h-4 w-4 shrink-0 text-[var(--color-muted)]/70"
+                      />
                     </button>
                   );
                 })}
@@ -264,23 +345,25 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                     setOpen(false);
                     navigate('/don-cua-toi/ho-so');
                   }}
-                  className={`mt-0.5 flex w-full items-center gap-2.5 rounded-[14px] border px-3 py-2.5 text-left transition ${
+                  className={`mt-0.5 flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-left transition ${
                     onAccountProfile
-                      ? 'border-[var(--color-brand)]/20 bg-[var(--color-brand-soft)] shadow-[inset_3px_0_0_0_var(--color-brand)]'
-                      : 'border-[var(--color-line)] bg-white hover:border-[var(--color-brand)]/30 hover:bg-[var(--color-canvas)]'
+                      ? profileMenuStyles.activeRow
+                      : profileMenuStyles.inactiveRow
                   }`}
                 >
-                  <Icon name="user" className="h-5 w-5 shrink-0 text-[var(--color-brand)]" />
+                  <MenuIconBox name="user" className={profileMenuStyles.iconBox} />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center justify-between gap-2 text-[15px] font-bold text-[var(--color-ink)]">
-                      Hồ sơ
+                    <span className="flex items-center gap-2 text-[15px] font-bold text-[var(--color-ink)]">
+                      <span className="truncate">Hồ sơ</span>
                       {onAccountProfile ? (
-                        <span className="shrink-0 rounded-full bg-[var(--color-brand)] px-2 py-0.5 text-[11px] font-semibold text-white">
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white ${profileMenuStyles.activeBadge}`}
+                        >
                           Đang dùng
                         </span>
                       ) : null}
                     </span>
-                    <span className="block text-sm text-[var(--color-muted)]">
+                    <span className="mt-0.5 block text-sm text-[var(--color-muted)]">
                       Ví, rút tiền, hóa đơn, hỗ trợ
                     </span>
                   </span>
@@ -299,10 +382,17 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                 logout();
                 navigate('/');
               }}
-              className="mt-2 flex w-full items-center gap-2.5 rounded-[14px] border border-red-100 bg-gradient-to-r from-red-50 to-rose-50/80 px-3 py-2.5 text-left text-[15px] font-semibold text-red-600 transition hover:from-red-50 hover:to-red-50"
+              className={`mt-2 flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-left transition ${logoutMenuStyles.row}`}
             >
-              <Icon name="logOut" className="h-5 w-5 shrink-0" />
-              Đăng xuất
+              <MenuIconBox name="logOut" className={logoutMenuStyles.iconBox} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-bold text-red-600">
+                  Đăng xuất
+                </span>
+                <span className="mt-0.5 block text-sm text-[var(--color-muted)]">
+                  Thoát khỏi tài khoản hiện tại
+                </span>
+              </span>
             </button>
           </div>
         </div>

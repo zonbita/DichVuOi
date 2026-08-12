@@ -257,6 +257,18 @@ const shapes = {
       <path d="m5.5 9 6.5 6.5L18.5 9" />
     </>
   ),
+  arrowUpCircle: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v8M8.5 11.5 12 8l3.5 3.5" />
+    </>
+  ),
+  arrowDownCircle: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 16V8M8.5 12.5 12 16l3.5-3.5" />
+    </>
+  ),
   swap: (
     <>
       <path d="M7 8h12M16 5l3 3-3 3" />
@@ -354,6 +366,14 @@ const shapes = {
       <rect x="13.5" y="3.5" width="7" height="7" rx="1.2" />
       <rect x="3.5" y="13.5" width="7" height="7" rx="1.2" />
       <rect x="13.5" y="13.5" width="7" height="7" rx="1.2" />
+    </>
+  ),
+  qrCode: (
+    <>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.2" />
+      <path d="M13.5 13.5h2.2v2.2h-2.2zM17.8 13.5h2.2v2.2h-2.2zM13.5 17.8h2.2v2.2h-2.2zM17.8 17.8h2.2v2.2h-2.2z" />
     </>
   ),
   laptop: (

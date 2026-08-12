@@ -93,11 +93,14 @@
   --shadow-hover: 0 10px 32px rgba(7, 59, 92, 0.12);
   --transition-ui: 180ms ease;
 
-  /* Scrollbar glass-page (toàn site) */
+  /* Scrollbar — gradient navy navbar (#0c4366 → #042a42) */
   --scrollbar-size: 10px;
-  --scrollbar-track: rgba(230, 235, 243, 0.72);
-  --scrollbar-thumb: rgba(73, 119, 232, 0.38);
-  --scrollbar-thumb-hover: rgba(0, 156, 149, 0.55);
+  --scrollbar-navy-light: #0c4366;
+  --scrollbar-navy-mid: #084869;
+  --scrollbar-navy-deep: #042a42;
+  --scrollbar-track: rgba(4, 42, 66, 0.1);
+  --scrollbar-thumb: #084869;
+  --scrollbar-thumb-hover: #0c4366;
 
   --container-page: 1396px;
   --container-chrome: 1396px;
@@ -286,8 +289,8 @@ select {
 }
 
 /**
- * Scrollbar glass-page — toàn site (html + mọi vùng overflow).
- * Track mist / thumb xanh kính; `.no-scrollbar` vẫn ẩn.
+ * Scrollbar — toàn site (html + mọi vùng overflow).
+ * Thumb gradient navy (#0c4366 → #042a42) giống navbar; `.no-scrollbar` vẫn ẩn.
  */
 * {
   scrollbar-width: thin;
@@ -300,29 +303,37 @@ select {
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
+  background: linear-gradient(
+    180deg,
+    rgba(12, 67, 102, 0.12),
+    rgba(4, 42, 66, 0.06)
+  );
   border-radius: 999px;
 }
 
 *::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
-    rgba(125, 211, 252, 0.55),
-    var(--scrollbar-thumb)
+    var(--scrollbar-navy-light) 0%,
+    var(--scrollbar-navy-mid) 52%,
+    var(--scrollbar-navy-deep) 100%
   );
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    rgba(125, 211, 252, 0.7),
-    var(--scrollbar-thumb-hover)
+    #105580 0%,
+    #0a5477 52%,
+    #05344d 100%
   );
   background-clip: padding-box;
   border: 2px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 *::-webkit-scrollbar-corner {

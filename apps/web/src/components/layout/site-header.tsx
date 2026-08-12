@@ -46,7 +46,7 @@ function SearchBox({ className = '', onDark = false }: { className?: string; onD
         onChange={(event) => setKeyword(event.target.value)}
         placeholder="Tìm dịch vụ, thợ, gia sư..."
         aria-label="Tìm dịch vụ"
-        className={`min-w-0 flex-1 bg-transparent text-[15px] outline-none ${
+        className={`min-w-0 flex-1 rounded-none bg-transparent text-[15px] outline-none ${
           onDark ? 'text-white placeholder:text-white/55' : 'placeholder:text-[var(--color-muted)]'
         }`}
       />
@@ -66,8 +66,8 @@ export function SiteHeader() {
       <div className="relative z-20">
         <div className="page-shell w-full max-w-none overflow-x-clip">
           <div className="flex w-full min-w-0 flex-col">
-            <div className="flex w-full min-w-0 items-center gap-2 py-3 sm:gap-4 sm:py-3.5 lg:gap-5">
-              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-visible sm:gap-2">
+            <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 py-3 sm:gap-4 sm:py-3.5 lg:gap-5">
+              <div className="flex min-w-0 items-center gap-1 overflow-visible sm:gap-2">
                 <Link to="/" className="flex min-w-0 shrink items-center gap-2 sm:gap-2.5">
                   <span className="relative shrink-0 rounded-[13px] shadow-[0_4px_12px_rgba(5,45,71,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-white/15">
                     <img
@@ -89,16 +89,16 @@ export function SiteHeader() {
                 <HeaderGroupsMenu onDark />
               </div>
 
-              <div className="hidden min-w-0 flex-1 items-center gap-3 px-2 md:flex lg:gap-4 lg:px-4">
-                <SearchBox onDark className="min-w-0 flex-1" />
+              <div className="hidden items-center justify-center gap-3 md:flex lg:gap-4">
+                <SearchBox onDark className="w-[min(100%,500px)] shrink-0" />
                 <LocationPicker
                   onDark
                   className={`shrink-0 px-3.5 py-2.5 ${NAV_SOFT_CONTROL}`}
                 />
-                <HeaderQuickNav />
               </div>
 
-              <div className="ml-auto flex min-w-0 shrink items-center gap-1.5 sm:gap-2.5">
+              <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2.5">
+                <HeaderQuickNav className="hidden md:flex" />
                 <HeaderQuickNav className="md:hidden" />
                 {user ? (
                   <>

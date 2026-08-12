@@ -45,7 +45,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/|uploads/|avatars/|fonts/|favicon\\.png|icons\\.svg).*)",
+      "source": "/((?!assets/|uploads/|avatars/|fonts/|favicon\\.png).*)",
       "destination": "/index.html"
     }
   ]
