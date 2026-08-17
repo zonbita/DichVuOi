@@ -25,20 +25,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div
-      className={
-        isUserDash
-          ? 'flex h-dvh max-h-dvh flex-col overflow-hidden'
-          : 'flex min-h-screen flex-col'
-      }
-    >
+    <div className="flex min-h-dvh flex-col">
       <SiteHeader />
       <main
         className={
           isHome
             ? 'flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip'
             : isUserDash
-              ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+              ? 'flex min-w-0 flex-1 flex-col'
               : isPartnerPublicProfile
                 ? 'page-shell glass-page min-w-0 flex-1 py-6'
                 : 'page-shell flex-1 py-6'

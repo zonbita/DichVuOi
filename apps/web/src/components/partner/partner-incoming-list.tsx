@@ -206,7 +206,7 @@ export function PartnerIncomingList({
 
   return (
     <section
-      className={`${dashboardSurfaceClass} flex h-full min-h-0 flex-col overflow-hidden p-4 sm:p-5`}
+      className={`${dashboardSurfaceClass} flex flex-col p-4 sm:p-5`}
     >
       <div className="shrink-0 space-y-3">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-[auto_16rem_10.5rem_auto] xl:items-center">
@@ -302,7 +302,7 @@ export function PartnerIncomingList({
         </div>
       </div>
 
-      <div className="mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5">
+      <div className="mt-3">
         {paged.length > 0 ? (
           <div className={OPEN_JOB_PORTRAIT_GRID}>
             {paged.map((booking) => {

@@ -192,7 +192,7 @@ export function WithdrawPage({ basePath }: Props) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain pb-4">
+    <div className="flex flex-col gap-4 pb-4">
       <DashboardPageHeader
         icon="bank"
         title="Rút tiền"

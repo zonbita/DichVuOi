@@ -54,16 +54,11 @@ const profileMenuStyles = {
   activeBadge: 'bg-[var(--color-gold)]',
 };
 
-const logoutMenuStyles = {
-  iconBox: 'border border-red-200 bg-red-100 text-red-600',
-  row: 'border border-red-100 bg-red-50/90 hover:bg-red-50',
-};
-
 function MenuIconBox({
   name,
   className,
 }: {
-  name: 'search' | 'briefcase' | 'user' | 'logOut';
+  name: 'search' | 'briefcase' | 'user';
   className: string;
 }) {
   return (
@@ -212,7 +207,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
       {open ? (
         <div
           role="listbox"
-          className="absolute right-0 z-[9990] mt-2 w-[min(320px,calc(100dvw-2rem))] overflow-hidden rounded-[22px] border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-[0_18px_44px_rgba(5,45,71,0.18),0_4px_14px_rgba(5,45,71,0.1)]"
+          className="absolute right-2 z-[9990] mt-2 w-[min(320px,calc(100dvw-2.5rem))] overflow-hidden rounded-[22px] border border-[var(--color-line)] bg-white text-[var(--color-ink)] shadow-[0_18px_44px_rgba(5,45,71,0.18),0_4px_14px_rgba(5,45,71,0.1)]"
         >
           <div
             className="relative overflow-hidden px-4 py-4 text-white"
@@ -236,7 +231,7 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                 backgroundSize: '10px 10px',
               }}
             />
-            <div className="relative flex items-center gap-3">
+            <div className="relative flex items-start gap-3">
               <UserAvatar
                 name={user.fullName}
                 src={avatarSrc}
@@ -246,12 +241,24 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                 size="lg"
                 className="!h-12 !w-12 !text-base ring-[2.5px] ring-white/90"
               />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-extrabold uppercase leading-tight tracking-wide">
                   {user.fullName}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-white/72">{user.email}</p>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  logout();
+                  navigate('/');
+                }}
+                className="-mr-1 -mt-0.5 inline-flex shrink-0 items-center gap-1 px-0.5 py-0.5 text-[12px] font-semibold text-red-200/90 transition hover:text-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-200/70"
+              >
+                <Icon name="logOut" className="h-3.5 w-3.5" />
+                Đăng xuất
+              </button>
             </div>
             <div className="relative mt-3 flex flex-col gap-2">
               <span className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full bg-[var(--color-gold-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-gold)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
@@ -374,26 +381,6 @@ export function ModeSwitcher({ onDark = false }: { onDark?: boolean }) {
                 </button>
               </div>
             )}
-
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                logout();
-                navigate('/');
-              }}
-              className={`mt-2 flex w-full items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-left transition ${logoutMenuStyles.row}`}
-            >
-              <MenuIconBox name="logOut" className={logoutMenuStyles.iconBox} />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-bold text-red-600">
-                  Đăng xuất
-                </span>
-                <span className="mt-0.5 block text-sm text-[var(--color-muted)]">
-                  Thoát khỏi tài khoản hiện tại
-                </span>
-              </span>
-            </button>
           </div>
         </div>
       ) : null}

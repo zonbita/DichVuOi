@@ -368,13 +368,7 @@ export function PartnerDashboardPage() {
       return tb - ta;
     });
   return (
-    <div
-      className={
-        tab === 'incoming'
-          ? 'flex h-full min-h-0 flex-col overflow-hidden'
-          : 'space-y-1 pb-6'
-      }
-    >
+    <div className={tab === 'incoming' ? 'min-w-0' : 'space-y-1 pb-6'}>
       {tab === 'level' ? (
         <DashboardPageHeader
           icon="chart"
@@ -416,7 +410,7 @@ export function PartnerDashboardPage() {
       )}
 
       {tab === 'incoming' && (
-        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div className="min-w-0">
           <PartnerIncomingList
             bookings={filteredOpenBookings}
             sourceTotal={openBookings.length}

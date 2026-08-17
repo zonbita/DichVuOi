@@ -44,7 +44,7 @@ export function InvoicesPage({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+    <div className="flex flex-col gap-4">
       {basePath !== '/don-cua-toi' ? (
         <DashboardPageHeader
           icon="receipt"
@@ -61,7 +61,7 @@ export function InvoicesPage({
         />
       ) : null}
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
+      <div className="space-y-3">
         {invoicesQuery.isLoading ? (
           <p className="text-sm text-[var(--color-muted)]">Đang tải…</p>
         ) : null}

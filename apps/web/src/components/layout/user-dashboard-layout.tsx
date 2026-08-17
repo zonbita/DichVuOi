@@ -442,8 +442,8 @@ export function UserDashboardLayout() {
   );
 
   return (
-    <div className="admin-shell glass-page flex h-full min-h-0 w-full flex-1 overflow-hidden !min-h-0">
-      <aside className="hidden h-full w-[272px] shrink-0 p-3 pr-1 lg:block">
+    <div className="admin-shell glass-page flex w-full flex-1">
+      <aside className="sticky top-[var(--site-header-h)] hidden h-[calc(100dvh-var(--site-header-h))] w-[272px] shrink-0 self-start p-3 pr-1 lg:block">
         {sidebar}
       </aside>
 
@@ -461,8 +461,8 @@ export function UserDashboardLayout() {
         </div>
       ) : null}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="shrink-0 border-b border-white/50 bg-white/80 backdrop-blur-md lg:hidden">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="sticky top-[var(--site-header-h)] z-20 shrink-0 border-b border-white/50 bg-white/80 backdrop-blur-md lg:hidden">
           <header className="flex items-center gap-2.5 px-3 py-2.5 sm:px-4">
             <button
               type="button"
@@ -538,9 +538,9 @@ export function UserDashboardLayout() {
           </nav>
         </div>
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-3 py-3 sm:px-5 sm:py-4 lg:px-8 lg:py-5">
-          <div className="dashboard-main-scroll mx-auto flex h-full min-h-0 w-full max-w-[1600px] flex-1 flex-col">
-            <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col">
+        <main className="flex flex-1 flex-col px-3 py-3 sm:px-5 sm:py-4 lg:px-8 lg:py-5">
+          <div className="dashboard-main-scroll mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
+            <div className="w-full min-w-0 flex-1">
               <Outlet />
             </div>
           </div>
