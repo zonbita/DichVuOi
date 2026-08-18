@@ -11,6 +11,7 @@ export declare class FinanceController {
         currency: string;
         balance: number;
         mockPaymentsEnabled: boolean;
+        payosEnabled: boolean;
         emailVerified: boolean;
         bankVerified: boolean;
         canWithdraw: boolean;
@@ -33,8 +34,8 @@ export declare class FinanceController {
             createdAt: Date;
             userId: string;
             description: string;
-            type: import("@prisma/client").$Enums.WalletTransactionType;
             bookingId: string | null;
+            type: import("@prisma/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -94,6 +95,7 @@ export declare class FinanceController {
         currency: string;
         balance: number;
         mockPaymentsEnabled: boolean;
+        payosEnabled: boolean;
         emailVerified: boolean;
         bankVerified: boolean;
         canWithdraw: boolean;
@@ -116,8 +118,8 @@ export declare class FinanceController {
             createdAt: Date;
             userId: string;
             description: string;
-            type: import("@prisma/client").$Enums.WalletTransactionType;
             bookingId: string | null;
+            type: import("@prisma/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -127,7 +129,7 @@ export declare class FinanceController {
         currency: string;
         balance: number;
     }>;
-    createVietQrIntent(user: AuthUser, dto: CreateVietQrIntentDto): {
+    createVietQrIntent(user: AuthUser, dto: CreateVietQrIntentDto): Promise<{
         intentId: string;
         amount: number;
         currency: string;
@@ -136,14 +138,29 @@ export declare class FinanceController {
         accountName: string;
         transferNote: string;
         qrImageUrl: string;
+        checkoutUrl: string | null;
+        provider: "payos";
         expiresAt: string;
-    };
+    } | {
+        intentId: string;
+        amount: number;
+        currency: string;
+        bankId: string;
+        accountNo: string;
+        accountName: string;
+        transferNote: string;
+        qrImageUrl: string;
+        checkoutUrl: null;
+        provider: "vietqr";
+        expiresAt: string;
+    }>;
     getVietQrIntentStatus(user: AuthUser, intentId: string): Promise<{
         intentId: string;
         amount: number;
         status: string;
         paidAt: string | null;
         expiresAt: string;
+        provider: string;
     }>;
     confirmVietQrIntentMock(user: AuthUser, intentId: string): Promise<{
         currency: string;

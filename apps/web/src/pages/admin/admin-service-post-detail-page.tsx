@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { SquareImageSlider } from '../../components/partner/square-image-slider';
 import {
   AvatarLevelOverlay,
@@ -52,9 +52,13 @@ function SellerAvatar({ name, src }: { name: string; src?: string | null }) {
 export function AdminServicePostDetailPage() {
   const { postId = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const listSearch =
+    (location.state as { listSearch?: string } | null)?.listSearch ?? '';
+  const listHref = `/admin/service-posts${listSearch}`;
 
   const detailQuery = useQuery({
     queryKey: ['admin', 'service-post', postId],
@@ -71,15 +75,20 @@ export function AdminServicePostDetailPage() {
       setRejectOpen(false);
       setRejectReason('');
       await queryClient.invalidateQueries({ queryKey: ['admin', 'service-posts-queue'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'service-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
       await queryClient.invalidateQueries({ queryKey: ['admin', 'service-post'] });
 
       const siblings = detailQuery.data?.siblingPending.filter((p) => p.id !== postId) ?? [];
+      const fromQueue = !listSearch || !listSearch.includes('status=');
       if (result.status === 'APPROVED' || result.status === 'REJECTED') {
-        if (siblings[0]) {
-          navigate(`/admin/service-posts/${siblings[0].id}`, { replace: true });
+        if (fromQueue && siblings[0]) {
+          navigate(`/admin/service-posts/${siblings[0].id}`, {
+            replace: true,
+            state: { listSearch },
+          });
         } else {
-          navigate('/admin/service-posts', { replace: true });
+          navigate(listHref, { replace: true });
         }
       }
     },
@@ -93,8 +102,8 @@ export function AdminServicePostDetailPage() {
     return (
       <div className="p-4">
         <p className="text-red-600">Không tìm thấy bài đăng.</p>
-        <Link to="/admin/service-posts" className="mt-2 inline-block font-semibold text-[var(--color-brand-deep)]">
-          Về hàng chờ
+        <Link to={listHref} className="mt-2 inline-block font-semibold text-[var(--color-brand-deep)]">
+          Về danh sách
         </Link>
       </div>
     );
@@ -106,6 +115,8 @@ export function AdminServicePostDetailPage() {
   const unit = offering?.unit ?? post.service.unit;
   const price = offering?.price;
   const isPending = post.status === 'PENDING';
+  const isApproved = post.status === 'APPROVED';
+  const isRejected = post.status === 'REJECTED';
 
   return (
     <div>
@@ -116,10 +127,10 @@ export function AdminServicePostDetailPage() {
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <Link
-          to="/admin/service-posts"
+          to={listHref}
           className="font-semibold text-[var(--color-brand-deep)] hover:underline"
         >
-          ← Hàng chờ
+          ← {isPending && !listSearch.includes('status=') ? 'Hàng chờ' : 'Danh sách'}
         </Link>
         <span className="text-[var(--color-muted)]">·</span>
         <Link
@@ -128,6 +139,17 @@ export function AdminServicePostDetailPage() {
         >
           Hồ sơ công khai
         </Link>
+        {isApproved ? (
+          <>
+            <span className="text-[var(--color-muted)]">·</span>
+            <Link
+              to={`/user/${seller.userId}/dich-vu/${post.id}`}
+              className="text-[var(--color-muted)] hover:text-[var(--color-brand-deep)]"
+            >
+              Xem trên sàn
+            </Link>
+          </>
+        ) : null}
         <span
           className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${
             post.status === 'PENDING'
@@ -151,6 +173,7 @@ export function AdminServicePostDetailPage() {
             <Link
               key={p.id}
               to={`/admin/service-posts/${p.id}`}
+              state={{ listSearch }}
               className={`rounded-full px-3 py-1 text-xs font-bold ${
                 p.id === post.id
                   ? 'bg-[var(--color-brand)] text-white'
@@ -171,6 +194,7 @@ export function AdminServicePostDetailPage() {
                 images={imgs}
                 resolveSrc={mediaSrc}
                 variant="gallery"
+                objectFit="contain"
                 className=""
               />
             ) : (
@@ -231,34 +255,40 @@ export function AdminServicePostDetailPage() {
               <p className="mt-1 text-sm font-semibold text-[var(--color-muted)]">Chưa có giá</p>
             )}
 
-            {isPending ? (
+            {isPending || isApproved || isRejected ? (
               <div className="mt-4 space-y-2">
-                <button
-                  type="button"
-                  className="btn-primary w-full py-2.5 text-sm"
-                  disabled={reviewMutation.isPending}
-                  onClick={() => reviewMutation.mutate({ status: 'APPROVED' })}
-                >
-                  Duyệt bài
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary w-full py-2.5 text-sm"
-                  disabled={reviewMutation.isPending}
-                  onClick={() => {
-                    setRejectOpen(true);
-                    setRejectReason('');
-                  }}
-                >
-                  Từ chối
-                </button>
+                {isPending || isRejected ? (
+                  <button
+                    type="button"
+                    className="btn-primary w-full py-2.5 text-sm"
+                    disabled={reviewMutation.isPending}
+                    onClick={() => reviewMutation.mutate({ status: 'APPROVED' })}
+                  >
+                    {isRejected ? 'Duyệt lại' : 'Duyệt bài'}
+                  </button>
+                ) : null}
+                {isPending || isApproved ? (
+                  <button
+                    type="button"
+                    className="btn-secondary w-full py-2.5 text-sm"
+                    disabled={reviewMutation.isPending}
+                    onClick={() => {
+                      setRejectOpen(true);
+                      setRejectReason('');
+                    }}
+                  >
+                    {isApproved ? 'Ẩn khỏi sàn' : 'Từ chối'}
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
             {rejectOpen ? (
               <div className="mt-3 space-y-2 rounded-xl border border-red-200 bg-red-50 p-3">
                 <label className="block text-sm">
-                  <span className="font-semibold">Lý do từ chối</span>
+                  <span className="font-semibold">
+                    {isApproved ? 'Lý do ẩn khỏi sàn' : 'Lý do từ chối'}
+                  </span>
                   <textarea
                     className="mt-1 w-full rounded-lg border border-red-200 px-3 py-2"
                     value={rejectReason}
@@ -278,7 +308,7 @@ export function AdminServicePostDetailPage() {
                       })
                     }
                   >
-                    Xác nhận từ chối
+                    {isApproved ? 'Xác nhận ẩn' : 'Xác nhận từ chối'}
                   </button>
                   <button
                     type="button"
@@ -289,6 +319,12 @@ export function AdminServicePostDetailPage() {
                   </button>
                 </div>
               </div>
+            ) : null}
+
+            {reviewMutation.isError ? (
+              <p className="mt-3 text-sm text-red-600">
+                {(reviewMutation.error as Error).message}
+              </p>
             ) : null}
 
             {post.rejectReason ? (

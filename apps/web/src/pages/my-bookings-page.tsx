@@ -109,6 +109,49 @@ export function MyBookingsPage() {
     return { total, waitingPay, active, spent, awaitingPartner, completed: completed.length };
   }, [bookings]);
 
+  const statCards = [
+    {
+      key: 'total',
+      label: 'Tổng đơn',
+      value: String(stats.total),
+      icon: 'receipt' as IconName,
+      iconClass: 'bg-sky-100 text-sky-600',
+      valueClass: 'text-[var(--color-ink)]',
+      labelClass: 'text-[var(--color-muted)]',
+      hint: null as string | null,
+    },
+    {
+      key: 'pay',
+      label: 'Cần đặt cọc',
+      value: String(stats.waitingPay),
+      icon: 'card' as IconName,
+      iconClass: 'bg-amber-100 text-amber-600',
+      valueClass: 'text-amber-700',
+      labelClass: 'text-amber-700/80',
+      hint: null,
+    },
+    {
+      key: 'active',
+      label: 'Đang thực hiện',
+      value: String(stats.active),
+      icon: 'clock' as IconName,
+      iconClass: 'bg-sky-100 text-sky-600',
+      valueClass: 'text-sky-700',
+      labelClass: 'text-sky-700/80',
+      hint: stats.awaitingPartner > 0 ? `${stats.awaitingPartner} đơn chờ người làm` : null,
+    },
+    {
+      key: 'spent',
+      label: 'Đã chi (hoàn thành)',
+      value: formatPrice(stats.spent),
+      icon: 'bank' as IconName,
+      iconClass: 'bg-[var(--color-brand-soft)] text-[var(--color-brand)]',
+      valueClass: 'text-[var(--color-brand-deep)]',
+      labelClass: 'text-[var(--color-brand-deep)]/80',
+      hint: `${stats.completed} đơn xong`,
+    },
+  ] as const;
+
   const filtered = useMemo(
     () => bookings.filter((b) => matchesTab(b, tab)),
     [bookings, tab],
@@ -173,99 +216,85 @@ export function MyBookingsPage() {
   return (
     <div className="space-y-5 pb-6">
       {notifState === 'default' ? (
-        <div
-          className={`${dashboardSurfaceClass} flex flex-wrap items-center justify-between gap-3 px-4 py-3`}
+        <section
+          className={`${dashboardSurfaceClass} flex flex-nowrap items-stretch gap-3 overflow-x-auto p-3 sm:p-4`}
         >
-          <p className="text-sm text-[var(--color-ink)]">
-            Bật nhắc lịch để nhận thông báo đơn sắp diễn ra (trong 24 giờ).
-          </p>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--color-brand-deep)]"
-            onClick={() => {
-              void requestScheduleNotificationPermission().then(setNotifState);
-            }}
-          >
-            <Icon name="clock" className="h-4 w-4" />
-            Bật nhắc lịch
-          </button>
-        </div>
-      ) : null}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {(
-          [
-            {
-              key: 'total',
-              label: 'Tổng đơn',
-              value: String(stats.total),
-              icon: 'receipt' as IconName,
-              iconClass: 'bg-sky-100 text-sky-600',
-              valueClass: 'text-[var(--color-ink)]',
-              labelClass: 'text-[var(--color-muted)]',
-              hint: null as string | null,
-            },
-            {
-              key: 'pay',
-              label: 'Cần đặt cọc',
-              value: String(stats.waitingPay),
-              icon: 'card' as IconName,
-              iconClass: 'bg-amber-100 text-amber-600',
-              valueClass: 'text-amber-700',
-              labelClass: 'text-amber-700/80',
-              hint: null,
-            },
-            {
-              key: 'active',
-              label: 'Đang thực hiện',
-              value: String(stats.active),
-              icon: 'clock' as IconName,
-              iconClass: 'bg-sky-100 text-sky-600',
-              valueClass: 'text-sky-700',
-              labelClass: 'text-sky-700/80',
-              hint:
-                stats.awaitingPartner > 0
-                  ? `${stats.awaitingPartner} đơn chờ người làm`
-                  : null,
-            },
-            {
-              key: 'spent',
-              label: 'Đã chi (hoàn thành)',
-              value: formatPrice(stats.spent),
-              icon: 'bank' as IconName,
-              iconClass: 'bg-[var(--color-brand-soft)] text-[var(--color-brand)]',
-              valueClass: 'text-[var(--color-brand-deep)]',
-              labelClass: 'text-[var(--color-brand-deep)]/80',
-              hint: `${stats.completed} đơn xong`,
-            },
-          ] as const
-        ).map((stat) => (
-          <div
-            key={stat.key}
-            className={`${dashboardSurfaceClass} flex min-w-0 items-start gap-3 p-4`}
-          >
-            <span
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.iconClass}`}
+          <div className="flex min-w-[240px] shrink-0 flex-col justify-center gap-2.5 rounded-[20px] bg-white/55 px-4 py-3 lg:min-w-[260px]">
+            <p className="text-sm leading-snug text-[var(--color-ink)]">
+              Bật nhắc lịch để nhận thông báo đơn sắp diễn ra (trong 24 giờ).
+            </p>
+            <button
+              type="button"
+              className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--color-brand)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--color-brand-deep)]"
+              onClick={() => {
+                void requestScheduleNotificationPermission().then(setNotifState);
+              }}
             >
-              <Icon name={stat.icon} className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p
-                className={`text-[11px] font-semibold uppercase tracking-wide ${stat.labelClass}`}
-              >
-                {stat.label}
-              </p>
-              <p
-                className={`mt-0.5 truncate text-2xl font-extrabold leading-tight ${stat.valueClass}`}
-              >
-                {stat.value}
-              </p>
-              {stat.hint ? (
-                <p className="mt-0.5 text-xs text-[var(--color-muted)]">{stat.hint}</p>
-              ) : null}
-            </div>
+              <Icon name="clock" className="h-4 w-4" />
+              Bật nhắc lịch
+            </button>
           </div>
-        ))}
-      </section>
+
+          {statCards.map((stat) => (
+            <div
+              key={stat.key}
+              className="flex min-w-[168px] flex-1 items-start gap-3 rounded-[22px] bg-white/70 p-4 backdrop-blur-sm"
+            >
+              <span
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.iconClass}`}
+              >
+                <Icon name={stat.icon} className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p
+                  className={`text-[11px] font-semibold uppercase tracking-wide ${stat.labelClass}`}
+                >
+                  {stat.label}
+                </p>
+                <p
+                  className={`mt-0.5 truncate text-xl font-extrabold leading-tight sm:text-2xl ${stat.valueClass}`}
+                >
+                  {stat.value}
+                </p>
+                {stat.hint ? (
+                  <p className="mt-0.5 text-xs text-[var(--color-muted)]">{stat.hint}</p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : null}
+      {notifState !== 'default' ? (
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {statCards.map((stat) => (
+            <div
+              key={stat.key}
+              className={`${dashboardSurfaceClass} flex min-w-0 items-start gap-3 p-4`}
+            >
+              <span
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${stat.iconClass}`}
+              >
+                <Icon name={stat.icon} className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p
+                  className={`text-[11px] font-semibold uppercase tracking-wide ${stat.labelClass}`}
+                >
+                  {stat.label}
+                </p>
+                <p
+                  className={`mt-0.5 truncate text-2xl font-extrabold leading-tight ${stat.valueClass}`}
+                >
+                  {stat.value}
+                </p>
+                {stat.hint ? (
+                  <p className="mt-0.5 text-xs text-[var(--color-muted)]">{stat.hint}</p>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       <div
         className={`${dashboardSurfaceClass} flex flex-col gap-2 p-1.5 sm:flex-row sm:items-center sm:justify-between`}

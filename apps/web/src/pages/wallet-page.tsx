@@ -168,7 +168,9 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                   <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-0.5">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[11px] font-extrabold uppercase tracking-wide text-[var(--color-navy)]">
-                        Thanh toán VietQR
+                        {intent.provider === 'payos'
+                          ? 'Thanh toán VietQR · payOS'
+                          : 'Thanh toán VietQR'}
                       </p>
                       {activeStatus?.status === 'PAID' ? (
                         <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
@@ -237,7 +239,9 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                   ) : (
                     <div className="mt-auto flex shrink-0 items-center gap-2 pt-2">
                       <p className="min-w-0 flex-1 truncate text-[11px] text-[var(--color-muted)]">
-                        Đang chờ webhook xác nhận.
+                        {walletQuery.data?.payosEnabled
+                          ? 'Đang chờ payOS xác minh giao dịch.'
+                          : 'Đang chờ webhook xác nhận.'}
                       </p>
                       <button
                         type="button"
@@ -272,7 +276,17 @@ export function WalletPage({ basePath }: { basePath: '/don-cua-toi' | '/doi-tac'
                     Nạp VNĐ
                   </h2>
                   <p className="mt-0.5 text-sm text-[var(--color-muted)]">
-                    Chọn mức hoặc nhập số tiền rồi tạo mã QR (tối thiểu 20.000 VNĐ).{' '}
+                    Chọn mức hoặc nhập số tiền rồi tạo mã QR (tối thiểu 20.000 VNĐ).
+                    Giao dịch được{' '}
+                    <a
+                      href="https://payos.vn/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-[var(--color-brand-deep)] underline-offset-2 hover:underline"
+                    >
+                      payOS
+                    </a>{' '}
+                    xác minh sau khi chuyển khoản.{' '}
                     <Link
                       to={`${basePath}/rut-tien`}
                       className="font-semibold text-[var(--color-brand-deep)] underline-offset-2 hover:underline"

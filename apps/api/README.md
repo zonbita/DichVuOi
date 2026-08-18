@@ -27,6 +27,7 @@ DB local / production: **PostgreSQL** (`DATABASE_URL` trong `.env`). Local có t
    - `CORS_ORIGIN` = `https://dich-vu-oi.vercel.app` (hoặc để trống)
    - `JWT_SECRET` = chuỗi mạnh **≥16 ký tự** (bắt buộc — thiếu thì API crash 500)
    - `VIETQR_INTENT_SECRET` = chuỗi mạnh **≥16 ký tự** (bắt buộc production)
+   - `PAYOS_CLIENT_ID` / `PAYOS_API_KEY` / `PAYOS_CHECKSUM_KEY` — xác minh nạp ví (webhook `POST /api/webhooks/payos`)
    - `GMAIL_USER` / `GMAIL_APP_PASSWORD` / `EMAIL_FROM` — OTP xác minh email trước khi rút (Gmail; xem mục *Rút tiền*)
    - `GOOGLE_CLIENT_ID` — Google login (set `emailVerified`)
 4. Sau deploy: chạy `prisma db push` / seed từ máy local trỏ cùng `DATABASE_URL`.

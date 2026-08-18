@@ -73,7 +73,7 @@ Cùng 1 User
 
 - Không bán SĐT / “phí xem thông tin” tách rời — lộ liên hệ gắn **đơn đã cọc**.
 - **Giống sàn freelancer lớn (Upwork/Fiverr/vLance):** lúc **nạp / trả** không lấy STK ngân hàng cá nhân của khách; lúc **rút / payout người làm** mới cần NH đã liên kết.
-- Cổng ví/thẻ (MoMo/VNPay…) và **webhook tự cộng ví** (SePay/Casso/VA) là bước cứng hóa production tiếp — xem [Ví, VietQR & định danh](#ví-vietqr--định-danh-production).
+- Cổng ví/thẻ (MoMo/VNPay…) là kênh nạp bổ sung — nạp VietQR đã **xác minh qua payOS webhook** — xem [Ví, VietQR & định danh](#ví-vietqr--định-danh-production).
 - Hủy khi đang `HELD` → `REFUNDED` (chính sách phí hủy chi tiết có thể siết sau).
 
 ## Mô hình pháp lý & trách nhiệm (marketplace)
@@ -118,7 +118,7 @@ Không miễn mọi trách nhiệm; giúp chứng minh sàn đã **quản lý r�
 | Admin khóa / xử lý đơn, flagged PII, hàng đợi duyệt partner | **Có một phần** |
 | Chat hỗ trợ kỹ thuật (MODERATOR) | **Có** — `/admin/support` |
 | Xác minh CCCD / giấy tờ đối tác | **Không làm** — đủ SĐT + NH payout + admin `isVerified`; không bắt CCCD |
-| Webhook ngân hàng tự cộng ví / Virtual Account | **Roadmap** (SePay/Casso…) |
+| Webhook ngân hàng tự cộng ví / Virtual Account | **payOS webhook** (`/api/webhooks/payos`); VA vẫn roadmap |
 | Khóa / tạm ngưng nhận việc khi khiếu nại nghiêm trọng (workflow) | **Có một phần** — tự `acceptingJobs=false` khi uy tín &lt; 500 |
 | Module khiếu nại formal + trừ điểm uy tín năm | **Có** — `Complaint`, `PartnerReputationPeriod`, Admin `/admin/complaints` |
 | Module dispute formal + quỹ bồi thường / bảo hiểm trách nhiệm | **Roadmap** — tăng niềm tin, không bắt buộc lúc MVP |
@@ -177,7 +177,7 @@ User đăng nhập → chọn/nhập số tiền (≥ 20.000)
 
 - **Có:** biết **user sàn nào** đang nạp (session + `intentId` chứa `userId`).
 - **Không có từ QR:** STK / tên NH **cá nhân của khách** — cổng/NH không cung cấp mặc định (privacy + chuẩn VietQR mô tả người nhận).
-- Sau khi tạo QR, `GET …/vietqr/:id` và `POST …/mock-confirm` **không** trả lại thông tin NH (chỉ status / số dư). Dev: nút **«Tôi đã chuyển khoản (mock)»** cộng ví; production nên thay bằng **webhook** (SePay/Casso…) hoặc VA.
+- Sau khi tạo QR, `GET …/vietqr/:id` và `POST …/mock-confirm` **không** trả lại thông tin NH (chỉ status / số dư). Dev: nút **«Tôi đã chuyển khoản (mock)»** cộng ví; production dùng **webhook payOS** (`POST /api/webhooks/payos`) hoặc fallback VietQR.
 
 ### Vì sao không có STK khách lúc nạp?
 
@@ -198,12 +198,12 @@ User đăng nhập → chọn/nhập số tiền (≥ 20.000)
 
 | Hạng mục | Mục tiêu |
 |----------|----------|
-| Webhook SePay/Casso | Tự `PAID` + cộng ví theo nội dung CK / mã đơn |
+| Webhook [payOS](https://payos.vn/) | Tự `PAID` + cộng ví khi CK khớp `orderCode` (đã có) |
 | Virtual Account (VA) | Mỗi user một số TK ảo → biết **ai nạp** chắc hơn (vẫn không phải STK cá nhân họ) |
 | Form / KYC NH khách | Chỉ nếu sản phẩm cần hoàn về đúng TK khách (khác mục “biết ai nạp”) |
 | MoMo / VNPay | Kênh nạp bổ sung |
 
-Env liên quan: `VIETQR_*`, `VIETQR_INTENT_SECRET`, `SMS_PROVIDER` / `ESMS_*` — xem `apps/api/.env.example`.
+Env liên quan: `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY`, `VIETQR_*`, `VIETQR_INTENT_SECRET`, `SMS_PROVIDER` / `ESMS_*`. Webhook: `POST /api/webhooks/payos` (đăng ký trên [my.payos.vn](https://my.payos.vn)).
 
 ## Personas
 
@@ -735,7 +735,7 @@ Mỗi ngành cần có: quy trình đặt lịch, cách tính giá, tiêu chuẩ
 ### Non-goals (chưa làm ở giai đoạn này)
 
 - Matching tự động thông minh  
-- Webhook bank / MoMo / VNPay tự cộng ví — hiện VietQR + **mock-confirm**; escrow ví nội bộ đã dùng production-path  
+- Webhook [payOS](https://payos.vn/) tự cộng ví khi CK thành công; mock-confirm vẫn dùng local khi chưa có `PAYOS_*` 
 - Thu STK ngân hàng **cá nhân khách** chỉ vì nạp VietQR (không chuẩn ngành / không khả thi từ QR)  
 - Geo quận-huyện sâu; gói combo (Package)  
 - Partner tự tạo **Service (SKU catalog)** mới — đang dùng catalog chung; **được** đăng bài gig (`PartnerServicePost`) gắn nghề có sẵn, admin duyệt  
@@ -1054,7 +1054,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - Catalog 3 tầng + seed ~22 nhóm / nhiều nghề cụ thể (`prisma/catalog-data.ts`), mega menu (desktop hover / mobile drawer)
 - **Cache catalog:** FE localStorage + TanStack Query; BE in-memory TTL 60s + `Cache-Control`/`ETag`/`304` — xem [Cache catalog](#cache-catalog-giảm-tải--offline-nhẹ)
 - Auth JWT + dual-role: dropdown header chuyển **Khách thuê** / **Người làm** (cùng account)
-- **Ví + VietQR nạp** (`/vi`): tạo QR TK sàn, đối chiếu nội dung CK; mock-confirm cộng ví — xem [Ví, VietQR & định danh](#ví-vietqr--định-danh-production)
+- **Ví + VietQR nạp** (`/vi`): tạo QR TK sàn (payOS nếu có `PAYOS_*`), webhook xác minh rồi cộng ví — xem [Ví, VietQR & định danh](#ví-vietqr--định-danh-production)
 - **Xác minh SĐT** (khách + partner): OTP key một lần; production eSMS Brandname
 - **Xác minh NH người làm** (payout): liên kết STK trên `PartnerProfile` + VietQR mock
 - Thuê dịch vụ → tạo đơn = tự giam cọc (`PENDING`/`CONFIRMED` + `HELD`; ví thiếu → không tạo); matching mở: ứng tuyển cọc 10% + chủ chọn; `/don-cua-toi`
@@ -1077,7 +1077,7 @@ Response thêm: `contactPolicy` (`channel: in_app`, `phoneRevealed`, `addressRev
 - `packages/` shared types/validation FE–BE
 - Redis (rate limit, session, **cache phân tán** catalog đa instance)
 - BullMQ workers (thông báo, matching, tác vụ nền)
-- Webhook SePay/Casso hoặc **Virtual Account** — bỏ mock-confirm nạp ví
+- Virtual Account — bổ sung payOS khi cần biết **ai nạp** chắc hơn
 - Lịch trống / availability filter trên trang dịch vụ (khách chọn ngày còn trống)
 - Ảnh dịch vụ trên R2/S3; Partner tự đăng gói dịch vụ  
 - MoMo/VNPay bổ sung kênh nạp  

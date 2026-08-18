@@ -1,6 +1,8 @@
 import { BookingStatus, Prisma } from '../../database/prisma/client';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { PayosService } from './payos.service';
+import type { PayosWebhookPayload } from './payos.service';
 type SettlementOptions = {
     status?: BookingStatus;
     expectedStatus?: BookingStatus;
@@ -16,7 +18,8 @@ type ApplyDepositOptions = {
 export declare class FinanceService {
     private readonly prisma;
     private readonly mail;
-    constructor(prisma: PrismaService, mail: MailService);
+    private readonly payos;
+    constructor(prisma: PrismaService, mail: MailService, payos: PayosService);
     private readonly vietQrBankId;
     private readonly vietQrAccountNo;
     private readonly vietQrAccountName;
@@ -27,6 +30,7 @@ export declare class FinanceService {
         currency: string;
         balance: number;
         mockPaymentsEnabled: boolean;
+        payosEnabled: boolean;
         emailVerified: boolean;
         bankVerified: boolean;
         canWithdraw: boolean;
@@ -49,8 +53,8 @@ export declare class FinanceService {
             createdAt: Date;
             userId: string;
             description: string;
-            type: import(".prisma/client/client").$Enums.WalletTransactionType;
             bookingId: string | null;
+            type: import(".prisma/client/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -126,6 +130,7 @@ export declare class FinanceService {
         currency: string;
         balance: number;
         mockPaymentsEnabled: boolean;
+        payosEnabled: boolean;
         emailVerified: boolean;
         bankVerified: boolean;
         canWithdraw: boolean;
@@ -148,8 +153,8 @@ export declare class FinanceService {
             createdAt: Date;
             userId: string;
             description: string;
-            type: import(".prisma/client/client").$Enums.WalletTransactionType;
             bookingId: string | null;
+            type: import(".prisma/client/client").$Enums.WalletTransactionType;
             amount: number;
             balanceAfter: number;
             reference: string;
@@ -169,7 +174,7 @@ export declare class FinanceService {
             email: string;
         };
     }>;
-    createVietQrIntent(userId: string, amount: number): {
+    createVietQrIntent(userId: string, amount: number): Promise<{
         intentId: string;
         amount: number;
         currency: string;
@@ -178,14 +183,45 @@ export declare class FinanceService {
         accountName: string;
         transferNote: string;
         qrImageUrl: string;
+        checkoutUrl: string | null;
+        provider: "payos";
         expiresAt: string;
-    };
+    } | {
+        intentId: string;
+        amount: number;
+        currency: string;
+        bankId: string;
+        accountNo: string;
+        accountName: string;
+        transferNote: string;
+        qrImageUrl: string;
+        checkoutUrl: null;
+        provider: "vietqr";
+        expiresAt: string;
+    }>;
     getVietQrIntentStatus(userId: string, intentId: string): Promise<{
         intentId: string;
         amount: number;
         status: string;
         paidAt: string | null;
         expiresAt: string;
+        provider: string;
+    }>;
+    handlePayosWebhook(payload: PayosWebhookPayload): Promise<{
+        ok: boolean;
+        reason: string;
+        ignored?: undefined;
+        credited?: undefined;
+    } | {
+        ok: boolean;
+        ignored: boolean;
+        reason?: undefined;
+        credited?: undefined;
+    } | {
+        ok: boolean;
+        credited: boolean;
+        reason?: undefined;
+        ignored?: undefined;
     }>;
     confirmVietQrIntentMock(userId: string, intentId: string): Promise<{
         currency: string;
@@ -275,6 +311,9 @@ export declare class FinanceService {
     forfeitApplyDeposit(bookingId: string, partnerId: string, applicationId: string, amount: number, reason: string): Promise<boolean>;
     private invoiceNumber;
     private vietQrImageUrl;
+    private paidReferences;
+    private findPaidTopUp;
+    private syncPayosPayment;
     private signVietQrIntent;
     private verifyVietQrIntent;
 }

@@ -166,6 +166,7 @@ model User {
   complaintsResolved Complaint[]     @relation("ComplaintsResolved")
   reputationPeriods PartnerReputationPeriod[]
   walletTransactions WalletTransaction[]
+  walletTopUpIntents WalletTopUpIntent[]
   customerInvoices Invoice[]         @relation("CustomerInvoices")
   partnerInvoices Invoice[]          @relation("PartnerInvoices")
   bookingApplications BookingApplication[]
@@ -503,6 +504,25 @@ model WalletTransaction {
 
   @@index([userId, createdAt])
   @@index([bookingId])
+}
+
+/** Lệnh nạp VietQR/payOS — map orderCode webhook → user. */
+model WalletTopUpIntent {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Int
+  /** payOS orderCode (Int32). */
+  orderCode     Int       @unique
+  intentToken   String    @unique
+  paymentLinkId String?
+  provider      String
+  transferNote  String
+  expiresAt     DateTime
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([userId, createdAt])
 }
 
 /** Hóa đơn VNĐ chụp lại thông tin tại thời điểm đặt cọc. */

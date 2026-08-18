@@ -1321,7 +1321,12 @@ export class AdminService {
               { body: { contains: q } },
               {
                 partnerProfile: {
-                  user: { fullName: { contains: q } },
+                  user: {
+                    OR: [
+                      { fullName: { contains: q } },
+                      { email: { contains: q } },
+                    ],
+                  },
                 },
               },
               { service: { name: { contains: q } } },

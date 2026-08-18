@@ -19,13 +19,16 @@ const email_otp_rate_1 = require("../../common/email-otp-rate");
 const assert_not_blocked_1 = require("../../common/assert-not-blocked");
 const prisma_service_1 = require("../../database/prisma/prisma.service");
 const mail_service_1 = require("../mail/mail.service");
+const payos_service_1 = require("./payos.service");
 const BANK_VERIFY_OTP_TTL_MS = 10 * 60 * 1000;
 let FinanceService = class FinanceService {
     prisma;
     mail;
-    constructor(prisma, mail) {
+    payos;
+    constructor(prisma, mail, payos) {
         this.prisma = prisma;
         this.mail = mail;
+        this.payos = payos;
     }
     vietQrBankId = process.env.VIETQR_BANK_ID ?? '970422';
     vietQrAccountNo = process.env.VIETQR_ACCOUNT_NO ?? '19002888';
@@ -66,6 +69,7 @@ let FinanceService = class FinanceService {
             currency: 'VND',
             balance: user.walletBalance,
             mockPaymentsEnabled: (0, security_env_1.allowMockPayments)(),
+            payosEnabled: this.payos.isConfigured(),
             emailVerified: user.emailVerified,
             bankVerified: user.bankVerified,
             canWithdraw: user.emailVerified,
@@ -391,15 +395,58 @@ let FinanceService = class FinanceService {
             };
         });
     }
-    createVietQrIntent(userId, amount) {
+    async createVietQrIntent(userId, amount) {
         const expiresAt = new Date(Date.now() + this.vietQrIntentTtlMs);
+        const nonce = (0, crypto_1.randomUUID)().slice(0, 8);
+        const payosReady = this.payos.isConfigured();
+        const orderCode = payosReady ? (0, crypto_1.randomInt)(1_000_000, 2_000_000_000) : undefined;
         const intentId = this.signVietQrIntent({
             u: userId,
             a: amount,
             e: expiresAt.getTime(),
-            n: (0, crypto_1.randomUUID)().slice(0, 8),
+            n: nonce,
+            ...(orderCode ? { o: orderCode } : {}),
         });
-        const transferNote = `DVO ${intentId.slice(0, 18)}`;
+        const fallbackNote = `DVO ${intentId.slice(0, 18)}`;
+        if (payosReady && orderCode) {
+            try {
+                const description = 'NAPVI';
+                const link = await this.payos.createPaymentLink({
+                    orderCode,
+                    amount,
+                    description,
+                    expiredAt: expiresAt,
+                });
+                await this.prisma.walletTopUpIntent.create({
+                    data: {
+                        userId,
+                        amount,
+                        orderCode,
+                        intentToken: intentId,
+                        paymentLinkId: link.paymentLinkId,
+                        provider: 'payos',
+                        transferNote: link.description || description,
+                        expiresAt,
+                    },
+                });
+                return {
+                    intentId,
+                    amount,
+                    currency: 'VND',
+                    bankId: link.bin || this.vietQrBankId,
+                    accountNo: link.accountNumber || this.vietQrAccountNo,
+                    accountName: link.accountName || this.vietQrAccountName,
+                    transferNote: link.description || description,
+                    qrImageUrl: this.vietQrImageUrl(amount, link.description || description, link.bin || this.vietQrBankId, link.accountNumber || this.vietQrAccountNo, link.accountName || this.vietQrAccountName),
+                    checkoutUrl: link.checkoutUrl || null,
+                    provider: 'payos',
+                    expiresAt: expiresAt.toISOString(),
+                };
+            }
+            catch (err) {
+                console.warn(`[payos] create payment failed, fallback VietQR: ${err.message}`);
+            }
+        }
         return {
             intentId,
             amount,
@@ -407,8 +454,10 @@ let FinanceService = class FinanceService {
             bankId: this.vietQrBankId,
             accountNo: this.vietQrAccountNo,
             accountName: this.vietQrAccountName,
-            transferNote,
-            qrImageUrl: this.vietQrImageUrl(amount, transferNote),
+            transferNote: fallbackNote,
+            qrImageUrl: this.vietQrImageUrl(amount, fallbackNote),
+            checkoutUrl: null,
+            provider: 'vietqr',
             expiresAt: expiresAt.toISOString(),
         };
     }
@@ -417,18 +466,31 @@ let FinanceService = class FinanceService {
         if (payload.u !== userId) {
             throw new common_1.ForbiddenException('Lệnh nạp không thuộc tài khoản hiện tại');
         }
-        const reference = `vietqr:paid:${intentId}`;
-        const paidTx = await this.prisma.walletTransaction.findUnique({
-            where: { reference },
-            select: { id: true, createdAt: true, amount: true },
-        });
+        const paidTx = await this.findPaidTopUp(intentId, payload.o);
+        if (!paidTx && payload.o && this.payos.isConfigured()) {
+            await this.syncPayosPayment(payload.o);
+        }
+        const latest = paidTx ?? (await this.findPaidTopUp(intentId, payload.o));
         return {
             intentId,
             amount: payload.a,
-            status: paidTx ? 'PAID' : 'PENDING',
-            paidAt: paidTx?.createdAt.toISOString() ?? null,
+            status: latest ? 'PAID' : 'PENDING',
+            paidAt: latest?.createdAt.toISOString() ?? null,
             expiresAt: new Date(payload.e).toISOString(),
+            provider: payload.o ? 'payos' : 'vietqr',
         };
+    }
+    async handlePayosWebhook(payload) {
+        const verified = this.payos.verifyWebhook(payload);
+        if (!verified) {
+            return { ok: false, reason: 'invalid_signature' };
+        }
+        const paidCode = verified.code ?? payload.code;
+        if (paidCode && paidCode !== '00') {
+            return { ok: true, ignored: true };
+        }
+        const credited = await this.syncPayosPayment(verified.orderCode, verified.amount);
+        return { ok: true, credited };
     }
     async confirmVietQrIntentMock(userId, intentId) {
         this.assertMockPaymentsAllowed();
@@ -465,6 +527,10 @@ let FinanceService = class FinanceService {
                     description: 'Nạp VNĐ qua VietQR (mock xác nhận)',
                     reference,
                 },
+            });
+            await tx.walletTopUpIntent.updateMany({
+                where: { intentToken: intentId, paidAt: null },
+                data: { paidAt: new Date() },
             });
             return { currency: 'VND', balance: user.walletBalance, amount: payload.a };
         });
@@ -919,13 +985,84 @@ let FinanceService = class FinanceService {
         const d = String(date.getDate()).padStart(2, '0');
         return `DVO-${y}${m}${d}-${bookingId.slice(-8).toUpperCase()}`;
     }
-    vietQrImageUrl(amount, transferNote) {
+    vietQrImageUrl(amount, transferNote, bankId = this.vietQrBankId, accountNo = this.vietQrAccountNo, accountName = this.vietQrAccountName) {
         const params = new URLSearchParams({
             amount: String(amount),
             addInfo: transferNote,
-            accountName: this.vietQrAccountName,
+            accountName,
         });
-        return `https://img.vietqr.io/image/${this.vietQrBankId}-${this.vietQrAccountNo}-compact2.png?${params.toString()}`;
+        return `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?${params.toString()}`;
+    }
+    paidReferences(intentId, orderCode) {
+        const refs = [`vietqr:paid:${intentId}`];
+        if (orderCode)
+            refs.push(`payos:paid:${orderCode}`);
+        return refs;
+    }
+    async findPaidTopUp(intentId, orderCode) {
+        return this.prisma.walletTransaction.findFirst({
+            where: { reference: { in: this.paidReferences(intentId, orderCode) } },
+            select: { id: true, createdAt: true, amount: true },
+        });
+    }
+    async syncPayosPayment(orderCode, webhookAmount) {
+        const intent = await this.prisma.walletTopUpIntent.findUnique({
+            where: { orderCode },
+        });
+        if (!intent)
+            return false;
+        if (intent.expiresAt.getTime() < Date.now() && !intent.paidAt) {
+            return false;
+        }
+        let amount = webhookAmount ?? intent.amount;
+        if (webhookAmount == null && this.payos.isConfigured()) {
+            const remote = await this.payos.getPaymentLink(intent.paymentLinkId || orderCode);
+            if (!remote || remote.status !== 'PAID')
+                return false;
+            amount = remote.amount || intent.amount;
+        }
+        if (amount !== intent.amount) {
+            return false;
+        }
+        const reference = `payos:paid:${orderCode}`;
+        await this.prisma.$transaction(async (tx) => {
+            const existing = await tx.walletTransaction.findFirst({
+                where: {
+                    reference: {
+                        in: this.paidReferences(intent.intentToken, orderCode),
+                    },
+                },
+            });
+            if (existing) {
+                if (!intent.paidAt) {
+                    await tx.walletTopUpIntent.update({
+                        where: { id: intent.id },
+                        data: { paidAt: existing.createdAt },
+                    });
+                }
+                return;
+            }
+            const user = await tx.user.update({
+                where: { id: intent.userId },
+                data: { walletBalance: { increment: amount } },
+                select: { walletBalance: true },
+            });
+            await tx.walletTransaction.create({
+                data: {
+                    userId: intent.userId,
+                    type: client_1.WalletTransactionType.TOP_UP,
+                    amount,
+                    balanceAfter: user.walletBalance,
+                    description: 'Nạp VNĐ qua VietQR (payOS xác minh)',
+                    reference,
+                },
+            });
+            await tx.walletTopUpIntent.update({
+                where: { id: intent.id },
+                data: { paidAt: new Date() },
+            });
+        });
+        return true;
     }
     signVietQrIntent(payload) {
         const json = JSON.stringify(payload);
@@ -960,6 +1097,7 @@ exports.FinanceService = FinanceService;
 exports.FinanceService = FinanceService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        mail_service_1.MailService])
+        mail_service_1.MailService,
+        payos_service_1.PayosService])
 ], FinanceService);
 //# sourceMappingURL=finance.service.js.map

@@ -192,7 +192,7 @@ export function WithdrawPage({ basePath }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-4">
+    <div className="flex min-h-0 flex-col gap-4 lg:h-[calc(100dvh-var(--site-header-h)-2.75rem)]">
       <DashboardPageHeader
         icon="bank"
         title="Rút tiền"
@@ -237,10 +237,10 @@ export function WithdrawPage({ basePath }: Props) {
           <WithdrawEmailVerifyStep onVerified={onEmailVerified} />
         </div>
       ) : (
-        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+        <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:overflow-hidden">
           <form
             onSubmit={onSubmit}
-            className="glass-card flex flex-col gap-5 !rounded-2xl p-4 sm:p-5"
+            className="glass-card flex min-h-0 flex-col gap-5 !rounded-2xl p-4 sm:p-5 lg:h-full"
           >
             <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-sm text-emerald-800">
               Email đã xác minh ({user.email}) — nhập ngân hàng bên dưới.
@@ -416,7 +416,7 @@ export function WithdrawPage({ basePath }: Props) {
             <button
               type="submit"
               disabled={!canSubmit || withdrawMutation.isPending}
-              className="btn-primary w-full py-3 text-[15px] font-bold uppercase tracking-wide !text-white disabled:opacity-50"
+              className="btn-primary mt-auto w-full py-3 text-[15px] font-bold uppercase tracking-wide !text-white disabled:opacity-50"
             >
               {withdrawMutation.isPending
                 ? 'Đang xử lý…'
@@ -424,7 +424,7 @@ export function WithdrawPage({ basePath }: Props) {
             </button>
           </form>
 
-          <aside className="glass-card flex h-fit flex-col gap-4 !rounded-2xl p-4 sm:p-5">
+          <aside className="glass-card flex min-h-0 flex-col gap-4 !rounded-2xl p-4 sm:p-5 lg:h-full">
             <h2 className="text-lg font-extrabold text-[var(--color-navy)]">Xác nhận</h2>
 
             {selectedBank ? (
@@ -471,7 +471,7 @@ export function WithdrawPage({ basePath }: Props) {
               </div>
             </dl>
 
-            <div className="border-t border-dashed border-[var(--color-line)] pt-4">
+            <div className="mt-auto border-t border-dashed border-[var(--color-line)] pt-4">
               <div className="flex gap-2.5">
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
                   <Icon name="shield" className="h-4 w-4" />

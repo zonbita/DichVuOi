@@ -32,6 +32,8 @@ export type WalletSummary = {
   balance: number;
   /** Dev/demo: mock top-up / VietQR confirm. Off in production unless ALLOW_MOCK_PAYMENTS. */
   mockPaymentsEnabled?: boolean;
+  /** Có cấu hình PAYOS_* — nạp ví chờ webhook payOS xác minh. */
+  payosEnabled?: boolean;
   emailVerified?: boolean;
   bankVerified?: boolean;
   /** emailVerified — điều kiện rút tiền (bắt buộc). */
@@ -65,6 +67,8 @@ export type VietQrTopUpIntent = {
   accountName: string;
   transferNote: string;
   qrImageUrl: string;
+  checkoutUrl?: string | null;
+  provider?: 'payos' | 'vietqr';
   expiresAt: string;
 };
 
@@ -74,6 +78,7 @@ export type VietQrTopUpStatus = {
   status: 'PENDING' | 'PAID';
   paidAt: string | null;
   expiresAt: string;
+  provider?: 'payos' | 'vietqr';
 };
 
 export type Invoice = {
