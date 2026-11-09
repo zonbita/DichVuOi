@@ -33,7 +33,9 @@ export class CreateComplaintDto {
   @IsString({ each: true })
   requirementIds?: string[];
 
-  @ApiProperty({ description: 'Bằng chứng: link ảnh/video/chat hoặc mô tả tham chiếu' })
+  @ApiProperty({
+    description: 'Bằng chứng: link ảnh/video/chat hoặc mô tả tham chiếu',
+  })
   @IsString()
   @MinLength(3)
   @MaxLength(2000)
@@ -59,7 +61,9 @@ export class AdminResolveComplaintDto {
   @IsEnum(ComplaintResolutionAction)
   resolutionAction?: ComplaintResolutionAction;
 
-  @ApiPropertyOptional({ description: 'Bắt buộc khi VERIFIED trừ điểm partner' })
+  @ApiPropertyOptional({
+    description: 'Bắt buộc khi VERIFIED trừ điểm partner',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

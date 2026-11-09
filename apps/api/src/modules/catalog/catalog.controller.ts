@@ -12,10 +12,7 @@ export class CatalogController {
     @Query('featured') featured?: string,
     @Query('tree') tree?: string,
   ) {
-    return this.catalogService.findGroups(
-      featured === 'true',
-      tree === 'true',
-    );
+    return this.catalogService.findGroups(featured === 'true', tree === 'true');
   }
 
   @Get('groups/:slug')

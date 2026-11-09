@@ -188,12 +188,7 @@ export class BookingsController {
     @Param('requirementId') requirementId: string,
     @Body() dto: UpdateRequirementDto,
   ) {
-    return this.bookingsService.updateRequirement(
-      id,
-      requirementId,
-      user,
-      dto,
-    );
+    return this.bookingsService.updateRequirement(id, requirementId, user, dto);
   }
 
   @Get(':id')

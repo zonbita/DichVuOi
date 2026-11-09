@@ -15,10 +15,10 @@ export type ContactPolicy = {
 };
 
 const PHONE_RE =
-  /(?:\+?84|0)[\s.\-_]*(?:\d[\s.\-_]*){8,10}|\b\d{3}[\s.\-]?\d{3}[\s.\-]?\d{3,4}\b/gi;
+  /(?:\+?84|0)[\s._-]*(?:\d[\s._-]*){8,10}|\b\d{3}[\s.-]?\d{3}[\s.-]?\d{3,4}\b/gi;
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
 const HANDLE_RE =
-  /(?:zalo|facebook|fb|telegram|tele|viber|whatsapp|discord|skype)\s*[:./\-]?\s*[\w.@/+\-]{3,}/gi;
+  /(?:zalo|facebook|fb|telegram|tele|viber|whatsapp|discord|skype)\s*[:./-]?\s*[\w.@/+-]{3,}/gi;
 const URL_CONTACT_RE =
   /(?:https?:\/\/)?(?:zalo\.me|fb\.com|facebook\.com|t\.me|wa\.me|discord\.gg)\/[\w/?=&%-]+/gi;
 
@@ -96,7 +96,9 @@ export function redactContactLeak(text: string): {
 }
 
 /** Đã đặt cọc / đã giải ngân — đủ điều kiện lộ liên hệ theo trạng thái đơn. */
-export function isDepositHeld(paymentStatus: string | null | undefined): boolean {
+export function isDepositHeld(
+  paymentStatus: string | null | undefined,
+): boolean {
   return paymentStatus === 'HELD' || paymentStatus === 'RELEASED';
 }
 
@@ -241,7 +243,10 @@ export function shapeBookingForViewer<T extends RawBookingForPrivacy>(
   let customerPhoneMasked = false;
   let addressMasked = false;
 
-  if (viewer === 'open_queue' || (viewer === 'partner' && !policy.phoneRevealed)) {
+  if (
+    viewer === 'open_queue' ||
+    (viewer === 'partner' && !policy.phoneRevealed)
+  ) {
     customerPhone = maskPhone(booking.customerPhone);
     customerPhoneMasked = true;
   } else if (viewer === 'customer') {

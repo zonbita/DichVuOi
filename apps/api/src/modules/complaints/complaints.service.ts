@@ -12,15 +12,16 @@ import {
   PaymentStatus,
   Prisma,
 } from '../../database/prisma/client';
-import {
-  REPUTATION_DEDUCTION_PRESETS,
-} from '../../common/partner-reputation';
+import { REPUTATION_DEDUCTION_PRESETS } from '../../common/partner-reputation';
 import { recalculatePartnerLevel } from '../../common/recalculate-partner-level';
 import { ReputationService } from '../../common/reputation.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import type { AuthUser } from '../../common/guards/jwt-auth.guard';
 import { FinanceService } from '../finance/finance.service';
-import { AdminResolveComplaintDto, CreateComplaintDto } from './dto/complaint.dto';
+import {
+  AdminResolveComplaintDto,
+  CreateComplaintDto,
+} from './dto/complaint.dto';
 
 const complaintInclude = {
   booking: {
@@ -122,7 +123,11 @@ export class ComplaintsService {
     };
   }
 
-  async createForBooking(bookingId: string, userId: string, dto: CreateComplaintDto) {
+  async createForBooking(
+    bookingId: string,
+    userId: string,
+    dto: CreateComplaintDto,
+  ) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
       select: {
@@ -135,13 +140,17 @@ export class ComplaintsService {
     });
     if (!booking) throw new NotFoundException('Không tìm thấy đơn');
     if (!booking.partnerId) {
-      throw new BadRequestException('Đơn chưa có người làm — không thể khiếu nại');
+      throw new BadRequestException(
+        'Đơn chưa có người làm — không thể khiếu nại',
+      );
     }
 
     const isCustomer = booking.userId === userId;
     const isPartner = booking.partnerId === userId;
     if (!isCustomer && !isPartner) {
-      throw new ForbiddenException('Chỉ khách thuê hoặc người làm của đơn mới gửi khiếu nại');
+      throw new ForbiddenException(
+        'Chỉ khách thuê hoặc người làm của đơn mới gửi khiếu nại',
+      );
     }
 
     const openWindow =
@@ -154,22 +163,30 @@ export class ComplaintsService {
     }
 
     if (booking.paymentStatus !== PaymentStatus.HELD) {
-      throw new BadRequestException('Cọc không còn đang giữ — không mở khiếu nại');
+      throw new BadRequestException(
+        'Cọc không còn đang giữ — không mở khiếu nại',
+      );
     }
 
     const existing = await this.prisma.complaint.findFirst({
       where: {
         bookingId,
         reporterUserId: userId,
-        status: { in: [ComplaintStatus.SUBMITTED, ComplaintStatus.UNDER_REVIEW] },
+        status: {
+          in: [ComplaintStatus.SUBMITTED, ComplaintStatus.UNDER_REVIEW],
+        },
       },
     });
     if (existing) {
-      throw new BadRequestException('Đã có khiếu nại đang xử lý của bạn cho đơn này');
+      throw new BadRequestException(
+        'Đã có khiếu nại đang xử lý của bạn cho đơn này',
+      );
     }
 
     const againstUserId = isCustomer ? booking.partnerId : booking.userId;
-    const requirementIds = [...new Set((dto.requirementIds ?? []).filter(Boolean))];
+    const requirementIds = [
+      ...new Set((dto.requirementIds ?? []).filter(Boolean)),
+    ];
     if (requirementIds.length > 0) {
       const validCount = await this.prisma.bookingRequirement.count({
         where: {
@@ -178,9 +195,7 @@ export class ComplaintsService {
         },
       });
       if (validCount !== requirementIds.length) {
-        throw new BadRequestException(
-          'Có mục checklist không thuộc đơn này',
-        );
+        throw new BadRequestException('Có mục checklist không thuộc đơn này');
       }
     }
 
@@ -238,7 +253,11 @@ export class ComplaintsService {
     return rows.map((row) => this.shapeComplaint(row));
   }
 
-  async resolveAsAdmin(complaintId: string, admin: AuthUser, dto: AdminResolveComplaintDto) {
+  async resolveAsAdmin(
+    complaintId: string,
+    admin: AuthUser,
+    dto: AdminResolveComplaintDto,
+  ) {
     const complaint = await this.prisma.complaint.findUnique({
       where: { id: complaintId },
       include: {
@@ -383,7 +402,10 @@ export class ComplaintsService {
       );
     }
 
-    if (action === ComplaintResolutionAction.RELEASE && complaint.booking.partnerId) {
+    if (
+      action === ComplaintResolutionAction.RELEASE &&
+      complaint.booking.partnerId
+    ) {
       await recalculatePartnerLevel(this.prisma, complaint.booking.partnerId);
     }
 
@@ -397,7 +419,9 @@ export class ComplaintsService {
   async countPendingForAdmin() {
     return this.prisma.complaint.count({
       where: {
-        status: { in: [ComplaintStatus.SUBMITTED, ComplaintStatus.UNDER_REVIEW] },
+        status: {
+          in: [ComplaintStatus.SUBMITTED, ComplaintStatus.UNDER_REVIEW],
+        },
       },
     });
   }

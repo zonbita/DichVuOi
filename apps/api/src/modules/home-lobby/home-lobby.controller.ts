@@ -64,7 +64,9 @@ export class HomeLobbyController {
 
     if (authorization?.startsWith('Bearer ')) {
       try {
-        const payload = this.jwt.verify<{ sub: string }>(authorization.slice(7));
+        const payload = this.jwt.verify<{ sub: string }>(
+          authorization.slice(7),
+        );
         userId = payload.sub;
         const user = await this.prisma.user.findUnique({
           where: { id: userId },

@@ -47,18 +47,11 @@ export function PartnerProfessionTabs({
   orientation = 'horizontal',
   layout = 'default',
 }: Props) {
-  if (tabs.length === 0) return null;
-
   const vertical = orientation === 'vertical';
   const inline = vertical && layout === 'inline';
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const selected = tabs.find((item) => item.id === value) ?? tabs[0];
-  const triggerColor =
-    selected.groupSlug && selected.id !== 'all'
-      ? groupColor(selected.groupSlug)
-      : null;
   const groupedTabs = useMemo(() => groupProfessionTabs(tabs), [tabs]);
 
   useEffect(() => {
@@ -69,6 +62,16 @@ export function PartnerProfessionTabs({
     document.addEventListener('mousedown', onPointerDown);
     return () => document.removeEventListener('mousedown', onPointerDown);
   }, [open, vertical]);
+
+  // Early return phải đứng sau mọi hook: nếu tabs đổi từ rỗng → có dữ liệu,
+  // số hook giữa hai lần render phải giống nhau (rules of hooks).
+  if (tabs.length === 0) return null;
+
+  const selected = tabs.find((item) => item.id === value) ?? tabs[0];
+  const triggerColor =
+    selected.groupSlug && selected.id !== 'all'
+      ? groupColor(selected.groupSlug)
+      : null;
 
   function pick(id: string) {
     onChange(id);

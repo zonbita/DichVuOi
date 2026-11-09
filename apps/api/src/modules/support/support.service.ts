@@ -56,21 +56,28 @@ export class SupportService {
     };
   }
 
-  private shapeThread(
-    row: {
+  private shapeThread(row: {
+    id: string;
+    customerId: string;
+    assigneeId: string | null;
+    status: SupportThreadStatus;
+    lastMessageAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    customer: {
       id: string;
-      customerId: string;
-      assigneeId: string | null;
-      status: SupportThreadStatus;
-      lastMessageAt: Date;
+      fullName: string;
+      email: string;
+      phone: string | null;
+    };
+    assignee: { id: string; fullName: string; role: Role } | null;
+    messages?: Array<{
+      body: string;
       createdAt: Date;
-      updatedAt: Date;
-      customer: { id: string; fullName: string; email: string; phone: string | null };
-      assignee: { id: string; fullName: string; role: Role } | null;
-      messages?: Array<{ body: string; createdAt: Date; sender: { fullName: string; role: Role } }>;
-      _count?: { messages: number };
-    },
-  ) {
+      sender: { fullName: string; role: Role };
+    }>;
+    _count?: { messages: number };
+  }) {
     const preview = row.messages?.[0];
     return {
       id: row.id,
@@ -215,7 +222,10 @@ export class SupportService {
       orderBy: { createdAt: 'asc' },
       include: { sender: { select: senderSelect } },
     });
-    return { thread: this.shapeThread(thread), messages: rows.map((r) => this.shapeMessage(r)) };
+    return {
+      thread: this.shapeThread(thread),
+      messages: rows.map((r) => this.shapeMessage(r)),
+    };
   }
 
   async postStaffMessage(
@@ -260,11 +270,9 @@ export class SupportService {
     const updated = await this.prisma.supportThread.update({
       where: { id: threadId },
       data: {
-        status: dto.status as SupportThreadStatus | undefined,
+        status: dto.status,
         assigneeId:
-          dto.assigneeId === undefined
-            ? undefined
-            : dto.assigneeId || null,
+          dto.assigneeId === undefined ? undefined : dto.assigneeId || null,
       },
       include: {
         customer: {

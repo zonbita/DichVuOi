@@ -5,7 +5,11 @@ export function parseSkills(skillsJson: string | null | undefined): string[] {
   try {
     const parsed = JSON.parse(skillsJson) as unknown;
     if (Array.isArray(parsed)) {
-      return parsed.map(String).map((s) => s.trim()).filter(Boolean).slice(0, 12);
+      return parsed
+        .map(String)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 12);
     }
   } catch {
     /* comma fallback */
@@ -17,16 +21,26 @@ export function parseSkills(skillsJson: string | null | undefined): string[] {
     .slice(0, 12);
 }
 
-export function serializeSkills(skills: string[] | string | null | undefined): string | null {
+export function serializeSkills(
+  skills: string[] | string | null | undefined,
+): string | null {
   if (skills == null) return null;
   const list = Array.isArray(skills)
     ? skills
-    : skills.split(',').map((s) => s.trim()).filter(Boolean);
-  const clean = list.map((s) => s.trim()).filter(Boolean).slice(0, 12);
+    : skills
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+  const clean = list
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 12);
   return clean.length ? JSON.stringify(clean) : null;
 }
 
-export function parseWorkModes(raw: string | null | undefined): Array<'onsite' | 'online'> {
+export function parseWorkModes(
+  raw: string | null | undefined,
+): Array<'onsite' | 'online'> {
   const parts = (raw ?? 'onsite')
     .split(',')
     .map((s) => s.trim().toLowerCase())
@@ -41,9 +55,9 @@ export function serializeWorkModes(
   const list = Array.isArray(modes)
     ? modes
     : modes.split(',').map((s) => s.trim().toLowerCase());
-  const clean = [...new Set(list.filter((s) => s === 'onsite' || s === 'online'))] as Array<
-    'onsite' | 'online'
-  >;
+  const clean = [
+    ...new Set(list.filter((s) => s === 'onsite' || s === 'online')),
+  ] as Array<'onsite' | 'online'>;
   return (clean.length ? clean : ['onsite']).join(',');
 }
 
@@ -56,12 +70,20 @@ export function parseDistricts(raw: string | null | undefined): string[] {
     .slice(0, 20);
 }
 
-export function serializeDistricts(districts: string[] | string | null | undefined): string | null {
+export function serializeDistricts(
+  districts: string[] | string | null | undefined,
+): string | null {
   if (districts == null) return null;
   const list = Array.isArray(districts)
     ? districts
-    : districts.split(',').map((s) => s.trim()).filter(Boolean);
-  const clean = list.map((s) => s.trim()).filter(Boolean).slice(0, 20);
+    : districts
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+  const clean = list
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 20);
   return clean.length ? clean.join(', ') : null;
 }
 
@@ -102,9 +124,8 @@ export function serializeGallery(
         .split(/\n|,/)
         .map((s) => s.trim())
         .filter(Boolean);
-  const clean = [...new Set(list.map((s) => s.trim()).filter((s) => s && isHttpUrl(s)))].slice(
-    0,
-    MAX_GALLERY,
-  );
+  const clean = [
+    ...new Set(list.map((s) => s.trim()).filter((s) => s && isHttpUrl(s))),
+  ].slice(0, MAX_GALLERY);
   return clean.length ? JSON.stringify(clean) : null;
 }

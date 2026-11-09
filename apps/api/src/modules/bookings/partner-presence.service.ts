@@ -104,7 +104,10 @@ export class PartnerPresenceService {
     endSession: boolean,
   ) {
     const now = Date.now();
-    const addSeconds = Math.max(0, Math.floor((now - session.creditedFromMs) / 1000));
+    const addSeconds = Math.max(
+      0,
+      Math.floor((now - session.creditedFromMs) / 1000),
+    );
     session.creditedFromMs = now;
 
     if (addSeconds <= 0 && !endSession) {

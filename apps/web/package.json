@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "images:map": "node scripts/generate-service-image-map.mjs",
     "images:audit": "node scripts/audit-service-images.mjs",
-    "images:optimize": "node scripts/optimize-images.mjs"
+    "images:optimize": "node scripts/optimize-images.mjs",
+    "lint:fix": "oxlint --fix",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.3",

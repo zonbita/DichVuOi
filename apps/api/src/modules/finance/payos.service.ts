@@ -186,12 +186,12 @@ export class PayosService {
     const query = Object.keys(sorted)
       .filter((key) => sorted[key] !== undefined)
       .map((key) => {
-        let value = sorted[key] as unknown;
+        let value = sorted[key];
         if (Array.isArray(value)) {
           value = JSON.stringify(
-            value.map((item) =>
+            (value as unknown[]).map((item) =>
               item && typeof item === 'object'
-                ? Object.keys(item as object)
+                ? Object.keys(item)
                     .sort()
                     .reduce<Record<string, unknown>>((acc, k) => {
                       acc[k] = (item as Record<string, unknown>)[k];

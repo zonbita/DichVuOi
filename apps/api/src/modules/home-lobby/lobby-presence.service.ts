@@ -59,8 +59,7 @@ export class LobbyPresenceService {
 
   joinGuest(guestId: string | undefined, socketId: string) {
     const safe =
-      (guestId ?? '').trim().slice(0, 64) ||
-      `anon-${socketId.slice(-8)}`;
+      (guestId ?? '').trim().slice(0, 64) || `anon-${socketId.slice(-8)}`;
     const key = `guest:${safe}`;
     const existing = this.seats.get(key);
     if (existing) {
@@ -109,13 +108,15 @@ export class LobbyPresenceService {
       if (a.isGuest !== b.isGuest) return a.isGuest ? 1 : -1;
       return a.fullName.localeCompare(b.fullName, 'vi');
     });
-    const viewers: LobbyViewerPublic[] = sorted.slice(0, VIEWERS_CAP).map((s) => ({
-      key: s.key,
-      fullName: s.fullName,
-      avatarUrl: s.avatarUrl,
-      userId: s.userId,
-      isGuest: s.isGuest,
-    }));
+    const viewers: LobbyViewerPublic[] = sorted
+      .slice(0, VIEWERS_CAP)
+      .map((s) => ({
+        key: s.key,
+        fullName: s.fullName,
+        avatarUrl: s.avatarUrl,
+        userId: s.userId,
+        isGuest: s.isGuest,
+      }));
     return { onlineCount, viewers };
   }
 }

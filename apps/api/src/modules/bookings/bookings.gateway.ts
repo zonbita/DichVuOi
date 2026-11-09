@@ -17,6 +17,22 @@ import { LobbyPresenceService } from '../home-lobby/lobby-presence.service';
 import { PartnerPresenceService } from './partner-presence.service';
 import { PartnerRealtimeService } from './partner-realtime.service';
 
+/** Dữ liệu gắn vào từng socket (Socket.IO `client.data`). */
+type GatewaySocketData = {
+  userId?: string;
+  role?: string;
+  guest?: boolean;
+  guestId?: string;
+  inLobby?: boolean;
+  lobbyKey?: string;
+};
+
+function socketData(client: Socket): GatewaySocketData {
+  // Socket.IO khai báo `data` là any; ép về kiểu cụ thể tại một chỗ.
+  client.data ??= {};
+  return client.data as GatewaySocketData;
+}
+
 @WebSocketGateway({
   namespace: '/partner-realtime',
   cors: {
@@ -48,15 +64,16 @@ export class BookingsGateway
     this.realtime.emitHomePresence(this.lobbyPresence.snapshot());
   }
 
-  private async enterLobbyAsGuest(client: Socket) {
-    client.join('home:lobby');
-    client.data.guest = true;
-    client.data.inLobby = true;
+  private enterLobbyAsGuest(client: Socket) {
+    const data = socketData(client);
+    void client.join('home:lobby');
+    data.guest = true;
+    data.inLobby = true;
     const rawGuest = client.handshake.auth?.guestId as string | undefined;
     const guestId =
       (rawGuest ?? '').trim().slice(0, 64) || `anon-${client.id.slice(-8)}`;
-    client.data.guestId = guestId;
-    client.data.lobbyKey = `guest:${guestId}`;
+    data.guestId = guestId;
+    data.lobbyKey = `guest:${guestId}`;
     this.lobbyPresence.joinGuest(guestId, client.id);
     client.emit('realtime:ready', { guest: true });
     this.broadcastLobbyPresence();
@@ -69,7 +86,7 @@ export class BookingsGateway
 
       // Guest chỉ dùng cho sảnh trang chủ.
       if (!token) {
-        void this.enterLobbyAsGuest(client);
+        this.enterLobbyAsGuest(client);
         return;
       }
 
@@ -79,28 +96,31 @@ export class BookingsGateway
         role: string;
       }>(token);
 
-      client.data.userId = payload.sub;
-      client.data.role = payload.role;
-      client.join(`partner:${payload.sub}`);
-      client.join(`customer:${payload.sub}`);
+      const data = socketData(client);
+      data.userId = payload.sub;
+      data.role = payload.role;
+      void client.join(`partner:${payload.sub}`);
+      void client.join(`customer:${payload.sub}`);
 
       if (payload.role === Role.PARTNER || payload.role === Role.ADMIN) {
-        client.join('partners:open');
+        void client.join('partners:open');
       }
 
       if (payload.role === Role.ADMIN || payload.role === Role.MODERATOR) {
-        client.join('staff:support');
+        void client.join('staff:support');
       }
 
-      void this.presence.onConnect(payload.sub, client.id).catch((err) =>
-        this.logger.warn(`Presence connect: ${(err as Error).message}`),
-      );
+      void this.presence
+        .onConnect(payload.sub, client.id)
+        .catch((err) =>
+          this.logger.warn(`Presence connect: ${(err as Error).message}`),
+        );
 
       // Chỉ đếm online sảnh khi client trang chủ (auth.lobby=true).
       if (wantLobby) {
-        client.data.inLobby = true;
-        client.data.lobbyKey = `user:${payload.sub}`;
-        client.join('home:lobby');
+        data.inLobby = true;
+        data.lobbyKey = `user:${payload.sub}`;
+        void client.join('home:lobby');
         void this.lobbyPresence
           .joinUser(payload.sub, client.id)
           .then(() => this.broadcastLobbyPresence())
@@ -111,25 +131,28 @@ export class BookingsGateway
 
       client.emit('realtime:ready', { userId: payload.sub });
     } catch (err) {
-      this.logger.warn(`WS auth failed (lobby guest): ${(err as Error).message}`);
-      void this.enterLobbyAsGuest(client);
+      this.logger.warn(
+        `WS auth failed (lobby guest): ${(err as Error).message}`,
+      );
+      this.enterLobbyAsGuest(client);
     }
   }
 
   handleDisconnect(client: Socket) {
-    const userId = client.data?.userId as string | undefined;
+    const data = socketData(client);
+    const userId = data.userId;
     if (userId) {
       this.presence.onDisconnect(userId, client.id);
       this.logger.debug(`Partner WS disconnect ${userId}`);
     }
 
-    if (client.data?.inLobby) {
+    if (data.inLobby) {
       const lobbyKey =
-        (client.data?.lobbyKey as string | undefined) ||
+        data.lobbyKey ||
         this.lobbyPresence.seatKeyForClient({
           userId,
-          guest: Boolean(client.data?.guest),
-          guestId: client.data?.guestId as string | undefined,
+          guest: Boolean(data.guest),
+          guestId: data.guestId,
         });
       this.lobbyPresence.leave(lobbyKey, client.id);
       this.broadcastLobbyPresence();
@@ -141,7 +164,7 @@ export class BookingsGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() _body?: unknown,
   ) {
-    const userId = client.data?.userId as string | undefined;
+    const userId = socketData(client).userId;
     if (!userId) return { ok: false };
     await this.presence.onHeartbeat(userId);
     return { ok: true, at: Date.now() };
@@ -150,7 +173,7 @@ export class BookingsGateway
   @SubscribeMessage('lobby:sync')
   handleLobbySync(@ConnectedSocket() client: Socket) {
     if (!client.rooms.has('home:lobby')) {
-      client.join('home:lobby');
+      void client.join('home:lobby');
     }
     return this.lobbyPresence.snapshot();
   }

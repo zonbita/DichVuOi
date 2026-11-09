@@ -11,4 +11,3 @@ export class CreateVietQrIntentDto {
   @Max(100000000)
   amount!: number;
 }
-

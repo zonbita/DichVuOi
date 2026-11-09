@@ -27,7 +27,11 @@ export class CatalogHttpCacheInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       mergeMap((data) => {
-        if (data === undefined || data === null || data instanceof StreamableFile) {
+        if (
+          data === undefined ||
+          data === null ||
+          data instanceof StreamableFile
+        ) {
           return of(data);
         }
 

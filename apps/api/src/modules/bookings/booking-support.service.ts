@@ -25,7 +25,7 @@ export class BookingSupportService {
     private readonly realtime: PartnerRealtimeService,
   ) {}
 
-  async emitBookingUpdate(
+  emitBookingUpdate(
     booking: Parameters<typeof shapeBookingForViewer>[0] & {
       userId: string;
       partnerId: string | null;

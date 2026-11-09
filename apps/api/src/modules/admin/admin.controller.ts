@@ -195,10 +195,7 @@ export class AdminController {
   }
 
   @Patch('services/:id')
-  updateService(
-    @Param('id') id: string,
-    @Body() dto: AdminUpdateServiceDto,
-  ) {
+  updateService(@Param('id') id: string, @Body() dto: AdminUpdateServiceDto) {
     return this.adminService.updateService(id, dto);
   }
 

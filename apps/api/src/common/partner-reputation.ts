@@ -11,9 +11,13 @@ export const REPUTATION_DEDUCTION_PRESETS = {
   SERIOUS: 200,
 } as const;
 
-export type ReputationDeductionPreset = keyof typeof REPUTATION_DEDUCTION_PRESETS;
+export type ReputationDeductionPreset =
+  keyof typeof REPUTATION_DEDUCTION_PRESETS;
 
-export function getReputationPeriodIndex(anchorDate: Date, now = new Date()): number {
+export function getReputationPeriodIndex(
+  anchorDate: Date,
+  now = new Date(),
+): number {
   const anchor = new Date(anchorDate);
   if (now < anchor) return 0;
 
@@ -29,7 +33,10 @@ export function getReputationPeriodIndex(anchorDate: Date, now = new Date()): nu
   }
 }
 
-export function getReputationPeriodBounds(anchorDate: Date, periodIndex: number) {
+export function getReputationPeriodBounds(
+  anchorDate: Date,
+  periodIndex: number,
+) {
   const start = new Date(anchorDate);
   start.setFullYear(start.getFullYear() + periodIndex);
   const end = new Date(start);
@@ -37,7 +44,13 @@ export function getReputationPeriodBounds(anchorDate: Date, periodIndex: number)
   return { start, end };
 }
 
-export function reputationPercent(currentPoints: number, startingPoints = REPUTATION_STARTING_POINTS) {
+export function reputationPercent(
+  currentPoints: number,
+  startingPoints = REPUTATION_STARTING_POINTS,
+) {
   if (startingPoints <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((currentPoints / startingPoints) * 100)));
+  return Math.max(
+    0,
+    Math.min(100, Math.round((currentPoints / startingPoints) * 100)),
+  );
 }

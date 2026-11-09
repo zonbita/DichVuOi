@@ -71,17 +71,22 @@ function round1(n: number) {
   return Math.round(n * 10) / 10;
 }
 
-export function computePartnerLevel(input: PartnerLevelInput): PartnerLevelBreakdown {
+export function computePartnerLevel(
+  input: PartnerLevelInput,
+): PartnerLevelBreakdown {
   const onlineHours = Math.max(0, input.onlineHours);
   const hoursPoints = round1(
-    Math.min(Math.min(onlineHours, ONLINE_HOURS_CAP) * ONLINE_POINT_PER_HOUR, ONLINE_POINTS_TOTAL_CAP),
+    Math.min(
+      Math.min(onlineHours, ONLINE_HOURS_CAP) * ONLINE_POINT_PER_HOUR,
+      ONLINE_POINTS_TOTAL_CAP,
+    ),
   );
   const jobsPoints = round1(
     Math.min(Math.max(0, input.completedJobs), JOBS_CAP) * JOBS_POINT_EACH,
   );
   const ratingPoints =
     input.ratingCount >= RATING_MIN_REVIEWS
-      ? round1(clamp(input.ratingAvg, 0, 5) / 5 * RATING_POINTS_MAX)
+      ? round1((clamp(input.ratingAvg, 0, 5) / 5) * RATING_POINTS_MAX)
       : 0;
   const reviewCountPoints = round1(
     Math.min(Math.max(0, input.ratingCount), REVIEW_COUNT_CAP) *

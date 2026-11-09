@@ -25,7 +25,10 @@ export class ReputationService {
   private async getPartnerAnchorDate(partnerUserId: string): Promise<Date> {
     const user = await this.prisma.user.findUnique({
       where: { id: partnerUserId },
-      select: { createdAt: true, partnerProfile: { select: { createdAt: true } } },
+      select: {
+        createdAt: true,
+        partnerProfile: { select: { createdAt: true } },
+      },
     });
     if (!user?.partnerProfile) {
       throw new NotFoundException('Không tìm thấy hồ sơ người làm');
@@ -56,7 +59,10 @@ export class ReputationService {
 
   async getSnapshot(partnerUserId: string): Promise<PartnerReputationSnapshot> {
     const { period, bounds } = await this.ensureCurrentPeriod(partnerUserId);
-    const deductedThisPeriod = Math.max(0, period.startingPoints - period.currentPoints);
+    const deductedThisPeriod = Math.max(
+      0,
+      period.startingPoints - period.currentPoints,
+    );
 
     return {
       currentPoints: period.currentPoints,
@@ -167,7 +173,10 @@ export class ReputationService {
     for (const k of keyed) {
       const period = periodByKey.get(`${k.partnerUserId}:${k.periodIndex}`);
       if (!period) continue;
-      const deductedThisPeriod = Math.max(0, period.startingPoints - period.currentPoints);
+      const deductedThisPeriod = Math.max(
+        0,
+        period.startingPoints - period.currentPoints,
+      );
       result.set(k.partnerUserId, {
         currentPoints: period.currentPoints,
         startingPoints: period.startingPoints,

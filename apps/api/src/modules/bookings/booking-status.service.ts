@@ -420,13 +420,15 @@ export class BookingStatusService {
     return this.support.emitBookingUpdate(settled, viewer);
   }
 
-  async addRequirement(
+  addRequirement(
     _bookingId: string,
     _viewer: Viewer,
     _dto: CreateRequirementDto,
-  ) {
-    throw new BadRequestException(
-      'Chỉ thêm công việc khi tạo đơn thuê. Sau khi đăng, checklist đã khóa.',
+  ): Promise<never> {
+    return Promise.reject(
+      new BadRequestException(
+        'Chỉ thêm công việc khi tạo đơn thuê. Sau khi đăng, checklist đã khóa.',
+      ),
     );
   }
 

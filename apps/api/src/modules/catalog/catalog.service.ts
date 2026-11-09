@@ -220,7 +220,12 @@ export class CatalogService {
   async findServiceProviders(slug: string) {
     const service = await this.prisma.service.findUnique({
       where: { slug },
-      select: { id: true, basePrice: true, isActive: true, supportsOnline: true },
+      select: {
+        id: true,
+        basePrice: true,
+        isActive: true,
+        supportsOnline: true,
+      },
     });
 
     if (!service || !service.isActive || !service.supportsOnline) {
@@ -246,27 +251,28 @@ export class CatalogService {
     });
 
     const partnerUserIds = offerings.map((o) => o.partnerProfile.user.id);
-    const [completedCounts, completedForService, reputationByPartner] = await Promise.all([
-      Promise.all(
-        partnerUserIds.map((partnerId) =>
-          this.prisma.booking.count({
-            where: { partnerId, status: 'COMPLETED' },
-          }),
+    const [completedCounts, completedForService, reputationByPartner] =
+      await Promise.all([
+        Promise.all(
+          partnerUserIds.map((partnerId) =>
+            this.prisma.booking.count({
+              where: { partnerId, status: 'COMPLETED' },
+            }),
+          ),
         ),
-      ),
-      this.prisma.booking.findMany({
-        where: {
-          partnerId: { in: partnerUserIds },
-          serviceId: service.id,
-          status: 'COMPLETED',
-        },
-        select: {
-          partnerId: true,
-          service: { select: { durationMin: true } },
-        },
-      }),
-      this.reputation.getSnapshotsBatch(partnerUserIds),
-    ]);
+        this.prisma.booking.findMany({
+          where: {
+            partnerId: { in: partnerUserIds },
+            serviceId: service.id,
+            status: 'COMPLETED',
+          },
+          select: {
+            partnerId: true,
+            service: { select: { durationMin: true } },
+          },
+        }),
+        this.reputation.getSnapshotsBatch(partnerUserIds),
+      ]);
 
     const minutesByPartner = new Map<string, number>();
     for (const row of completedForService) {
@@ -287,16 +293,16 @@ export class CatalogService {
         priceMin:
           offering.priceMin && offering.priceMin > 0
             ? offering.priceMin
-            : offering.price ?? service.basePrice,
+            : (offering.price ?? service.basePrice),
         priceMax:
           offering.priceMax && offering.priceMax > 0
             ? Math.max(
                 offering.priceMax,
                 offering.priceMin && offering.priceMin > 0
                   ? offering.priceMin
-                  : offering.price ?? service.basePrice,
+                  : (offering.price ?? service.basePrice),
               )
-            : offering.price ?? service.basePrice,
+            : (offering.price ?? service.basePrice),
         headline: offering.headline,
         experienceYears: offering.experienceYears,
         hoursWorked: minutesToWorkHours(mins),

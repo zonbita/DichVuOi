@@ -46,7 +46,10 @@ export const env = {
     return str('VERCEL_ENV');
   },
   get isProductionLike() {
-    return this.nodeEnv === 'production' || this.vercelEnv === 'production';
+    return (
+      strOr('NODE_ENV', 'development') === 'production' ||
+      str('VERCEL_ENV') === 'production'
+    );
   },
   get port() {
     return int('PORT', 3001);

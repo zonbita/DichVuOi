@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class RequestPhoneOtpDto {
   @ApiProperty({ example: '0901234567' })
@@ -41,7 +47,9 @@ export class LinkBankAccountDto {
   @MaxLength(120)
   accountName!: string;
 
-  @ApiPropertyOptional({ description: 'Mã ngân hàng img.vietqr.io (VD: 970436)' })
+  @ApiPropertyOptional({
+    description: 'Mã ngân hàng img.vietqr.io (VD: 970436)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(20)

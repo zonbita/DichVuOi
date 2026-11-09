@@ -39,7 +39,8 @@ export class RegisterDto {
 
   @ApiProperty({
     example: true,
-    description: 'Bắt buộc đồng ý Nội quy và các quy tắc trước khi tạo tài khoản',
+    description:
+      'Bắt buộc đồng ý Nội quy và các quy tắc trước khi tạo tài khoản',
   })
   @IsBoolean()
   acceptedTerms!: boolean;
@@ -97,14 +98,18 @@ export class ConfirmPhoneOtpDto {
 export class RequestEmailOtpDto {
   @ApiProperty({
     example: 'user@email.com',
-    description: 'Email user tự nhập — phải khớp email tài khoản đang đăng nhập',
+    description:
+      'Email user tự nhập — phải khớp email tài khoản đang đăng nhập',
   })
   @IsEmail()
   email!: string;
 }
 
 export class ConfirmEmailOtpDto {
-  @ApiProperty({ example: '482910', description: 'Mã 6 số gửi qua email (Gmail)' })
+  @ApiProperty({
+    example: '482910',
+    description: 'Mã 6 số gửi qua email (Gmail)',
+  })
   @IsString()
   @MinLength(4)
   @MaxLength(12)

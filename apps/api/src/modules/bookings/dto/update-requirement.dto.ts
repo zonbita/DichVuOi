@@ -8,7 +8,10 @@ import {
 } from 'class-validator';
 
 export class CreateRequirementDto {
-  @ApiProperty({ description: 'Nội dung công việc cần làm', example: 'Lau kính cửa sổ' })
+  @ApiProperty({
+    description: 'Nội dung công việc cần làm',
+    example: 'Lau kính cửa sổ',
+  })
   @IsString()
   @MinLength(2)
   @MaxLength(500)

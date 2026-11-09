@@ -17,17 +17,25 @@ export class PartnerRealtimeService {
 
   /** Đơn mở bị nhận / hủy — gỡ khỏi hàng chờ. */
   emitOpenRemoved(bookingId: string) {
-    this.server?.to('partners:open').emit('booking:open_removed', { id: bookingId });
+    this.server
+      ?.to('partners:open')
+      .emit('booking:open_removed', { id: bookingId });
   }
 
   /** Đơn gắn / cập nhật lịch của một partner. */
-  emitPartnerBooking(partnerId: string, event: 'booking:assigned' | 'booking:updated', payload: unknown) {
+  emitPartnerBooking(
+    partnerId: string,
+    event: 'booking:assigned' | 'booking:updated',
+    payload: unknown,
+  ) {
     this.server?.to(`partner:${partnerId}`).emit(event, payload);
   }
 
   /** Cập nhật đơn cho khách thuê (dashboard Đơn thuê). */
   emitCustomerBooking(customerId: string, payload: unknown) {
-    this.server?.to(`customer:${customerId}`).emit('booking:customer_updated', payload);
+    this.server
+      ?.to(`customer:${customerId}`)
+      .emit('booking:customer_updated', payload);
   }
 
   /** Tin nhắn chat đơn — gửi tới cả khách và partner của đơn. */
@@ -35,9 +43,13 @@ export class PartnerRealtimeService {
     parties: { customerId: string; partnerId?: string | null },
     payload: unknown,
   ) {
-    this.server?.to(`customer:${parties.customerId}`).emit('booking:message', payload);
+    this.server
+      ?.to(`customer:${parties.customerId}`)
+      .emit('booking:message', payload);
     if (parties.partnerId) {
-      this.server?.to(`partner:${parties.partnerId}`).emit('booking:message', payload);
+      this.server
+        ?.to(`partner:${parties.partnerId}`)
+        .emit('booking:message', payload);
     }
   }
 

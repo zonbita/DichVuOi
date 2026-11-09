@@ -68,7 +68,7 @@ export class ChatbotService implements OnModuleInit {
       if (picks.length >= limit) break;
     }
     while (picks.length < limit && this.faqs.length > 0) {
-      const item = this.faqs[picks.length * 37 % this.faqs.length];
+      const item = this.faqs[(picks.length * 37) % this.faqs.length];
       if (!picks.includes(item.question)) picks.push(item.question);
       else break;
     }
@@ -130,9 +130,31 @@ export class ChatbotService implements OnModuleInit {
   private loadFaqs() {
     const candidates = [
       join(__dirname, 'data', 'faq-knowledge.json'),
-      join(process.cwd(), 'src', 'modules', 'chatbot', 'data', 'faq-knowledge.json'),
-      join(process.cwd(), 'dist', 'src', 'modules', 'chatbot', 'data', 'faq-knowledge.json'),
-      join(process.cwd(), 'dist', 'modules', 'chatbot', 'data', 'faq-knowledge.json'),
+      join(
+        process.cwd(),
+        'src',
+        'modules',
+        'chatbot',
+        'data',
+        'faq-knowledge.json',
+      ),
+      join(
+        process.cwd(),
+        'dist',
+        'src',
+        'modules',
+        'chatbot',
+        'data',
+        'faq-knowledge.json',
+      ),
+      join(
+        process.cwd(),
+        'dist',
+        'modules',
+        'chatbot',
+        'data',
+        'faq-knowledge.json',
+      ),
     ];
 
     for (const path of candidates) {
@@ -150,7 +172,9 @@ export class ChatbotService implements OnModuleInit {
     this.faqs = [];
   }
 
-  private findBestFaq(message: string): { item: FaqItem; score: number } | null {
+  private findBestFaq(
+    message: string,
+  ): { item: FaqItem; score: number } | null {
     const qNorm = this.normalize(message);
     const qTokens = this.tokenize(qNorm);
     if (!qTokens.length) return null;
@@ -172,7 +196,9 @@ export class ChatbotService implements OnModuleInit {
       const overlap = qTokens.filter((t) => qItemTokens.includes(t)).length;
       score += (overlap / Math.max(qTokens.length, 1)) * 0.35;
 
-      const kwHit = kw.filter((k) => qNorm.includes(k) || qTokens.some((t) => k.includes(t))).length;
+      const kwHit = kw.filter(
+        (k) => qNorm.includes(k) || qTokens.some((t) => k.includes(t)),
+      ).length;
       score += Math.min(kwHit * 0.08, 0.32);
 
       if (qTokens.some((t) => answerNorm.includes(t))) {
@@ -264,8 +290,6 @@ export class ChatbotService implements OnModuleInit {
       'sao',
       'gi',
     ]);
-    return normalized
-      .split(' ')
-      .filter((t) => t.length > 1 && !stop.has(t));
+    return normalized.split(' ').filter((t) => t.length > 1 && !stop.has(t));
   }
 }

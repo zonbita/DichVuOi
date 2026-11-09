@@ -4,10 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  HomeShoutKind,
-  PartnerServicePostStatus,
-} from '@prisma/client';
+import { HomeShoutKind, PartnerServicePostStatus } from '@prisma/client';
 import { assertUserNotBlocked } from '../../common/assert-not-blocked';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { PartnerRealtimeService } from '../bookings/partner-realtime.service';
@@ -211,7 +208,8 @@ export class HomeLobbyService {
       throw new BadRequestException('Emoji không thuộc bộ smile cho phép');
     }
     const emoji =
-      LOBBY_SMILES.find((item) => normalizeSmile(item) === emojiKey) ?? emojiRaw;
+      LOBBY_SMILES.find((item) => normalizeSmile(item) === emojiKey) ??
+      emojiRaw;
 
     const actorKey =
       opts?.userId ||
