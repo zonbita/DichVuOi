@@ -8,6 +8,7 @@ import {
   ApplicationStatus,
   BookingStatus,
   PaymentStatus,
+  Prisma,
   RequirementSource,
   Role,
 } from '../../database/prisma/client';
@@ -304,12 +305,27 @@ export class BookingsService {
     });
 
     for (const booking of expired) {
-      const released = await this.finance.releaseBooking(booking.id, {
-        expectedStatus: BookingStatus.AWAITING_CONFIRM,
-        status: BookingStatus.COMPLETED,
+      // Giải ngân + hoàn cọc ứng tuyển trong cùng một transaction:
+      // lỗi giữa chừng sẽ rollback cả hai, không để lệch sổ.
+      const released = await this.prisma.$transaction(async (tx) => {
+        const ok = await this.finance.releaseBookingInTransaction(
+          tx,
+          booking.id,
+          {
+            expectedStatus: BookingStatus.AWAITING_CONFIRM,
+            status: BookingStatus.COMPLETED,
+          },
+        );
+        if (ok && booking.partnerId) {
+          await this.refundSelectedApplyDeposit(
+            tx,
+            booking.id,
+            booking.partnerId,
+          );
+        }
+        return ok;
       });
       if (released && booking.partnerId) {
-        await this.refundSelectedApplyDeposit(booking.id, booking.partnerId);
         await recalculatePartnerLevel(this.prisma, booking.partnerId);
       }
     }
@@ -328,21 +344,23 @@ export class BookingsService {
     });
 
     for (const booking of expired) {
-      await this.refundOpenApplications(booking.id);
-      if (booking.paymentStatus === PaymentStatus.HELD) {
-        await this.finance.refundBooking(booking.id, {
-          status: BookingStatus.CANCELLED,
-          disputeResultNote: `Hết hạn ghép người làm (${MATCHING_WINDOW_DAYS} ngày) — hoàn cọc.`,
-        });
-      } else {
-        await this.prisma.booking.update({
-          where: { id: booking.id },
-          data: {
+      await this.prisma.$transaction(async (tx) => {
+        await this.refundOpenApplications(tx, booking.id);
+        if (booking.paymentStatus === PaymentStatus.HELD) {
+          await this.finance.refundBookingInTransaction(tx, booking.id, {
             status: BookingStatus.CANCELLED,
-            disputeResultNote: `Hết hạn ghép người làm (${MATCHING_WINDOW_DAYS} ngày).`,
-          },
-        });
-      }
+            disputeResultNote: `Hết hạn ghép người làm (${MATCHING_WINDOW_DAYS} ngày) — hoàn cọc.`,
+          });
+        } else {
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: {
+              status: BookingStatus.CANCELLED,
+              disputeResultNote: `Hết hạn ghép người làm (${MATCHING_WINDOW_DAYS} ngày).`,
+            },
+          });
+        }
+      });
       this.realtime.emitOpenRemoved(booking.id);
       const fresh = await this.prisma.booking.findUnique({
         where: { id: booking.id },
@@ -357,22 +375,25 @@ export class BookingsService {
     }
   }
 
-  private async refundOpenApplications(bookingId: string) {
-    const apps = await this.prisma.bookingApplication.findMany({
+  /**
+   * Các helper cọc ứng tuyển bắt buộc chạy trong transaction của caller,
+   * để ví + sổ cái + trạng thái hồ sơ cùng commit hoặc cùng rollback.
+   * Hồ sơ được "claim" bằng updateMany có điều kiện depositStatus=HELD
+   * để hai request song song không xử lý cùng một khoản cọc hai lần.
+   */
+  private async refundOpenApplications(
+    tx: Prisma.TransactionClient,
+    bookingId: string,
+  ) {
+    const apps = await tx.bookingApplication.findMany({
       where: {
         bookingId,
         depositStatus: PaymentStatus.HELD,
       },
     });
     for (const app of apps) {
-      await this.finance.refundApplyDeposit(
-        bookingId,
-        app.partnerId,
-        app.id,
-        app.depositAmount,
-      );
-      await this.prisma.bookingApplication.update({
-        where: { id: app.id },
+      const claimed = await tx.bookingApplication.updateMany({
+        where: { id: app.id, depositStatus: PaymentStatus.HELD },
         data: {
           depositStatus: PaymentStatus.REFUNDED,
           status:
@@ -382,59 +403,73 @@ export class BookingsService {
               : ApplicationStatus.REJECTED,
         },
       });
+      if (claimed.count !== 1) continue;
+      await this.finance.refundApplyDepositInTransaction(
+        tx,
+        bookingId,
+        app.partnerId,
+        app.id,
+        app.depositAmount,
+      );
     }
   }
 
   private async refundSelectedApplyDeposit(
+    tx: Prisma.TransactionClient,
     bookingId: string,
     partnerId: string,
   ) {
-    const app = await this.prisma.bookingApplication.findUnique({
+    const app = await tx.bookingApplication.findUnique({
       where: {
         bookingId_partnerId: { bookingId, partnerId },
       },
     });
     if (!app || app.depositStatus !== PaymentStatus.HELD) return;
-    await this.finance.refundApplyDeposit(
-      bookingId,
-      partnerId,
-      app.id,
-      app.depositAmount,
-    );
-    await this.prisma.bookingApplication.update({
-      where: { id: app.id },
+    const claimed = await tx.bookingApplication.updateMany({
+      where: { id: app.id, depositStatus: PaymentStatus.HELD },
       data: {
         depositStatus: PaymentStatus.REFUNDED,
         status: ApplicationStatus.REFUNDED,
       },
     });
+    if (claimed.count !== 1) return;
+    await this.finance.refundApplyDepositInTransaction(
+      tx,
+      bookingId,
+      partnerId,
+      app.id,
+      app.depositAmount,
+    );
   }
 
   private async forfeitSelectedApplyDeposit(
+    tx: Prisma.TransactionClient,
     bookingId: string,
     partnerId: string,
     reason: string,
   ) {
-    const app = await this.prisma.bookingApplication.findUnique({
+    const app = await tx.bookingApplication.findUnique({
       where: {
         bookingId_partnerId: { bookingId, partnerId },
       },
     });
     if (!app || app.depositStatus !== PaymentStatus.HELD) return;
-    await this.finance.forfeitApplyDeposit(
+    const claimed = await tx.bookingApplication.updateMany({
+      where: { id: app.id, depositStatus: PaymentStatus.HELD },
+      data: {
+        depositStatus: PaymentStatus.RELEASED,
+        status: ApplicationStatus.REJECTED,
+      },
+    });
+    if (claimed.count !== 1) return;
+    await this.finance.forfeitApplyDepositInTransaction(
+      tx,
       bookingId,
       partnerId,
       app.id,
       app.depositAmount,
       reason,
     );
-    await this.prisma.bookingApplication.update({
-      where: { id: app.id },
-      data: {
-        depositStatus: PaymentStatus.RELEASED,
-        status: ApplicationStatus.REJECTED,
-      },
-    });
   }
 
   /**
@@ -463,22 +498,48 @@ export class BookingsService {
       const partnerId = booking.partnerId;
       const reason = `Không vào làm trong ${RESPONSE_SLA_HOURS} giờ sau khi được chọn`;
 
-      await this.forfeitSelectedApplyDeposit(booking.id, partnerId, reason);
-
       const matchingStillOpen =
         !booking.matchingDeadlineAt ||
         booking.matchingDeadlineAt.getTime() > Date.now();
+      const reopen =
+        matchingStillOpen && booking.paymentStatus === PaymentStatus.HELD;
 
-      if (matchingStillOpen && booking.paymentStatus === PaymentStatus.HELD) {
-        await this.prisma.booking.update({
-          where: { id: booking.id },
-          data: {
-            partnerId: null,
-            status: BookingStatus.PENDING,
-            responseDeadlineAt: null,
-            disputeResultNote: `${reason} — đã tịch thu cọc ứng tuyển, đơn mở lại hàng chờ.`,
-          },
-        });
+      await this.prisma.$transaction(async (tx) => {
+        await this.forfeitSelectedApplyDeposit(
+          tx,
+          booking.id,
+          partnerId,
+          reason,
+        );
+        if (reopen) {
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: {
+              partnerId: null,
+              status: BookingStatus.PENDING,
+              responseDeadlineAt: null,
+              disputeResultNote: `${reason} — đã tịch thu cọc ứng tuyển, đơn mở lại hàng chờ.`,
+            },
+          });
+        } else if (booking.paymentStatus === PaymentStatus.HELD) {
+          await this.finance.refundBookingInTransaction(tx, booking.id, {
+            status: BookingStatus.CANCELLED,
+            disputeResultNote: `${reason} — hết hạn ghép, hoàn cọc khách.`,
+          });
+        } else {
+          await tx.booking.update({
+            where: { id: booking.id },
+            data: {
+              status: BookingStatus.CANCELLED,
+              partnerId: null,
+              responseDeadlineAt: null,
+              disputeResultNote: reason,
+            },
+          });
+        }
+      });
+
+      if (reopen) {
         const fresh = await this.prisma.booking.findUniqueOrThrow({
           where: { id: booking.id },
           include: bookingInclude,
@@ -496,22 +557,6 @@ export class BookingsService {
           this.shape(fresh, { id: fresh.userId, role: Role.CUSTOMER }),
         );
       } else {
-        if (booking.paymentStatus === PaymentStatus.HELD) {
-          await this.finance.refundBooking(booking.id, {
-            status: BookingStatus.CANCELLED,
-            disputeResultNote: `${reason} — hết hạn ghép, hoàn cọc khách.`,
-          });
-        } else {
-          await this.prisma.booking.update({
-            where: { id: booking.id },
-            data: {
-              status: BookingStatus.CANCELLED,
-              partnerId: null,
-              responseDeadlineAt: null,
-              disputeResultNote: reason,
-            },
-          });
-        }
         this.realtime.emitOpenRemoved(booking.id);
         const fresh = await this.prisma.booking.findUnique({
           where: { id: booking.id },
@@ -1727,9 +1772,6 @@ export class BookingsService {
 
     if (status === BookingStatus.COMPLETED) {
       if (raw.paymentStatus === PaymentStatus.HELD) {
-        await this.finance.releaseBooking(id, {
-          status: BookingStatus.COMPLETED,
-        });
         settledByFinance = true;
       } else if (raw.paymentStatus === PaymentStatus.UNPAID) {
         throw new BadRequestException(
@@ -1746,44 +1788,62 @@ export class BookingsService {
       status === BookingStatus.CANCELLED &&
       raw.paymentStatus === PaymentStatus.HELD
     ) {
-      await this.finance.refundBooking(id, {
-        status: BookingStatus.CANCELLED,
-      });
       settledByFinance = true;
     }
 
     if (status === BookingStatus.CANCELLED) {
       data.responseDeadlineAt = null;
-      // Partner hủy khi CONFIRMED (chưa vào làm) → tịch thu cọc ứng tuyển.
-      if (
-        raw.status === BookingStatus.CONFIRMED &&
-        raw.partnerId &&
-        viewer.role !== Role.ADMIN &&
-        viewer.id === raw.partnerId
-      ) {
-        await this.forfeitSelectedApplyDeposit(
-          id,
-          raw.partnerId,
-          'Người làm hủy sau khi được chọn (chưa vào làm)',
-        );
-      } else {
-        await this.refundOpenApplications(id);
-      }
     }
 
-    const updated = settledByFinance
-      ? await this.prisma.booking.findUniqueOrThrow({
-          where: { id },
-          include: bookingInclude,
-        })
-      : await this.prisma.booking.update({
-          where: { id },
-          data,
-          include: bookingInclude,
+    // Toàn bộ thay đổi tiền + trạng thái đơn + cọc ứng tuyển trong một transaction.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      if (settledByFinance && status === BookingStatus.COMPLETED) {
+        await this.finance.releaseBookingInTransaction(tx, id, {
+          status: BookingStatus.COMPLETED,
         });
+      } else if (settledByFinance && status === BookingStatus.CANCELLED) {
+        await this.finance.refundBookingInTransaction(tx, id, {
+          status: BookingStatus.CANCELLED,
+        });
+      }
+
+      if (status === BookingStatus.CANCELLED) {
+        // Partner hủy khi CONFIRMED (chưa vào làm) → tịch thu cọc ứng tuyển.
+        if (
+          raw.status === BookingStatus.CONFIRMED &&
+          raw.partnerId &&
+          viewer.role !== Role.ADMIN &&
+          viewer.id === raw.partnerId
+        ) {
+          await this.forfeitSelectedApplyDeposit(
+            tx,
+            id,
+            raw.partnerId,
+            'Người làm hủy sau khi được chọn (chưa vào làm)',
+          );
+        } else {
+          await this.refundOpenApplications(tx, id);
+        }
+      }
+
+      const row = settledByFinance
+        ? await tx.booking.findUniqueOrThrow({
+            where: { id },
+            include: bookingInclude,
+          })
+        : await tx.booking.update({
+            where: { id },
+            data,
+            include: bookingInclude,
+          });
+
+      if (status === BookingStatus.COMPLETED && row.partnerId) {
+        await this.refundSelectedApplyDeposit(tx, id, row.partnerId);
+      }
+      return row;
+    });
 
     if (status === BookingStatus.COMPLETED && updated.partnerId) {
-      await this.refundSelectedApplyDeposit(id, updated.partnerId);
       await recalculatePartnerLevel(this.prisma, updated.partnerId);
     }
 
@@ -1928,17 +1988,24 @@ export class BookingsService {
     if (!settledPercent) {
       throw new BadRequestException('Đề xuất % nghiệm thu không hợp lệ');
     }
-    await this.finance.releaseBookingByPercent(id, settledPercent, {
-      expectedStatus: BookingStatus.AWAITING_CONFIRM,
-    });
-
-    const settled = await this.prisma.booking.update({
-      where: { id },
-      data: { settlementResolvedAt: new Date() },
-      include: bookingInclude,
+    const settled = await this.prisma.$transaction(async (tx) => {
+      await this.finance.releaseBookingByPercentInTransaction(
+        tx,
+        id,
+        settledPercent,
+        { expectedStatus: BookingStatus.AWAITING_CONFIRM },
+      );
+      const row = await tx.booking.update({
+        where: { id },
+        data: { settlementResolvedAt: new Date() },
+        include: bookingInclude,
+      });
+      if (row.partnerId) {
+        await this.refundSelectedApplyDeposit(tx, id, row.partnerId);
+      }
+      return row;
     });
     if (settled.partnerId) {
-      await this.refundSelectedApplyDeposit(id, settled.partnerId);
       await recalculatePartnerLevel(this.prisma, settled.partnerId);
     }
     return this.emitBookingUpdate(settled, viewer);

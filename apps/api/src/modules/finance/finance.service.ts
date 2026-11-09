@@ -969,7 +969,18 @@ export class FinanceService {
     percent: number,
     options: PercentSettlementOptions = {},
   ): Promise<boolean> {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction((tx) =>
+      this.releaseBookingByPercentInTransaction(tx, bookingId, percent, options),
+    );
+  }
+
+  async releaseBookingByPercentInTransaction(
+    tx: Prisma.TransactionClient,
+    bookingId: string,
+    percent: number,
+    options: PercentSettlementOptions = {},
+  ): Promise<boolean> {
+    {
       const booking = await tx.booking.findUnique({
         where: { id: bookingId },
       });
@@ -1067,7 +1078,7 @@ export class FinanceService {
       });
 
       return true;
-    });
+    }
   }
 
   /** Người làm đặt cọc ứng tuyển (theo applyDepositBps của đơn) — debit ví. */
@@ -1195,19 +1206,39 @@ export class FinanceService {
     amount: number,
     reason: string,
   ): Promise<boolean> {
+    return this.prisma.$transaction((tx) =>
+      this.forfeitApplyDepositInTransaction(
+        tx,
+        bookingId,
+        partnerId,
+        applicationId,
+        amount,
+        reason,
+      ),
+    );
+  }
+
+  async forfeitApplyDepositInTransaction(
+    tx: Prisma.TransactionClient,
+    bookingId: string,
+    partnerId: string,
+    applicationId: string,
+    amount: number,
+    reason: string,
+  ): Promise<boolean> {
     const reference = `apply-forfeit:${applicationId}`;
-    const existing = await this.prisma.walletTransaction.findUnique({
+    const existing = await tx.walletTransaction.findUnique({
       where: { reference },
     });
     if (existing) return false;
 
-    const partner = await this.prisma.user.findUnique({
+    const partner = await tx.user.findUnique({
       where: { id: partnerId },
       select: { walletBalance: true },
     });
     if (!partner) throw new NotFoundException('Không tìm thấy người làm');
 
-    await this.prisma.walletTransaction.create({
+    await tx.walletTransaction.create({
       data: {
         userId: partnerId,
         bookingId,
