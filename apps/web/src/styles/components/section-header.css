@@ -1,0 +1,157 @@
+/**
+ * Soft-3D navy chrome — section header trang chủ + thanh «Bạn cần hỗ trợ?»
+ * Radial navy (màu cũ) + bóng mềm + highlight + squircle icon. Xem DESIGN.md.
+ */
+.soft-3d-navy,
+.section-header-bar {
+  position: relative;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #0a5678 0%, #073b5c 42%, #052d47 78%, #041f32 100%);
+  box-shadow:
+    0 14px 36px rgba(5, 45, 71, 0.34),
+    0 4px 12px rgba(5, 45, 71, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(2, 20, 32, 0.4);
+}
+
+.soft-3d-navy {
+  overflow: hidden;
+}
+
+.section-header-bar {
+  overflow: visible;
+  isolation: isolate;
+  z-index: 30;
+  border-radius: 14px;
+  box-shadow:
+    0 8px 20px rgba(5, 45, 71, 0.28),
+    0 2px 8px rgba(5, 45, 71, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(2, 20, 32, 0.4);
+}
+
+/* Dịch vụ nổi bật — xanh lá / brand teal */
+.section-header-bar--green {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #1ab89a 0%, #009c95 42%, #007a74 78%, #045a56 100%);
+  box-shadow:
+    0 8px 20px rgba(0, 100, 90, 0.3),
+    0 2px 8px rgba(0, 80, 72, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(2, 40, 36, 0.35);
+}
+
+/* Nghề nhiều người tham gia nhất — vàng / gold */
+.section-header-bar--gold {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #e8c06a 0%, #d9a441 42%, #b8842a 78%, #8a6220 100%);
+  box-shadow:
+    0 8px 20px rgba(140, 90, 20, 0.32),
+    0 2px 8px rgba(110, 70, 15, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(60, 40, 8, 0.35);
+}
+
+/* Việc mới đăng tuyển (Live) — đỏ */
+.section-header-bar--red {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #ef6b6b 0%, #dc2626 42%, #b91c1c 78%, #7f1d1d 100%);
+  box-shadow:
+    0 8px 20px rgba(140, 30, 30, 0.34),
+    0 2px 8px rgba(100, 20, 20, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(50, 10, 10, 0.4);
+}
+
+/* Vừa hoàn thành — cam */
+.section-header-bar--orange {
+  background:
+    radial-gradient(ellipse 130% 180% at 18% -40%, #fb923c 0%, #f97316 42%, #ea580c 78%, #9a3412 100%);
+  box-shadow:
+    0 8px 20px rgba(180, 70, 20, 0.32),
+    0 2px 8px rgba(140, 50, 10, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(70, 30, 5, 0.35);
+}
+
+.soft-3d-navy__highlight,
+.section-header-bar__highlight {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 4rem;
+  background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
+}
+
+.section-header-bar__highlight {
+  height: 2.5rem;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.section-header-bar > h2,
+.section-header-bar .section-header-bar__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.section-header-bar__sub {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.section-header-bar__action {
+  color: #fff;
+}
+
+.section-header-bar__action:hover {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.soft-3d-squircle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 12px rgba(5, 45, 71, 0.28);
+  color: #fff;
+}
+
+.soft-3d-squircle--lg {
+  height: 3rem;
+  width: 3rem;
+  border-radius: 14px;
+}
+
+.soft-3d-squircle--md {
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.soft-3d-squircle--sm {
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in {
+    animation: none;
+  }
+
+  .marquee__track {
+    animation: none;
+  }
+}
+

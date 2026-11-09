@@ -1,0 +1,46 @@
+.btn-primary {
+  border-radius: var(--radius-md);
+  background: var(--color-brand);
+  color: #fff;
+  font-weight: 600;
+  transition:
+    transform var(--transition-ui),
+    background var(--transition-ui),
+    box-shadow var(--transition-ui);
+}
+
+.btn-primary:hover {
+  background: var(--color-navy-deep);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-navy {
+  border-radius: var(--radius-md);
+  background: var(--color-navy);
+  color: #fff;
+  font-weight: 600;
+  transition: background var(--transition-ui), box-shadow var(--transition-ui);
+}
+
+.btn-navy:hover {
+  background: var(--color-navy-deep);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-outline-gold {
+  border: 1.5px solid var(--color-gold);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-weight: 600;
+  transition: background var(--transition-ui), border-color var(--transition-ui);
+}
+
+.btn-outline-gold:hover {
+  background: rgba(217, 164, 65, 0.12);
+}
+

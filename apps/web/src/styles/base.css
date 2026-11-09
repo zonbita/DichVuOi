@@ -1,0 +1,73 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--color-canvas);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --site-header-h: 8.25rem;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  border-radius: var(--radius-md);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.star-icon-gold {
+  color: var(--color-gold);
+  filter: drop-shadow(0 0.5px 0.5px rgba(217, 164, 65, 0.35));
+}
+
+/** Soft-3D catalog group icons — depth only; colors come from currentColor/tint. */
+.catalog-icon-soft3d {
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-icon-soft3d {
+    filter: none;
+  }
+}
+
+/* Ảnh stock/catalog — giảm độ rực cho tự nhiên hơn */
+.catalog-photo {
+  filter: saturate(0.82) contrast(0.93) brightness(1.03);
+  transition:
+    filter var(--transition-ui),
+    transform 500ms ease;
+}
+
+.group:hover .catalog-photo {
+  filter: saturate(0.86) contrast(0.95) brightness(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-photo {
+    transition: filter var(--transition-ui);
+  }
+}
+

@@ -1,0 +1,123 @@
+.surface-card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+
+/**
+ * Menu «nhóm dịch vụ» — dark navy gradient glass kiểu bubble, viền xanh.
+ * Dùng trên sidebar catalog, cột trái mega-menu header, drawer mobile.
+ */
+.catalog-menu-glass {
+  border: 1px solid color-mix(in srgb, #7eb6d9 42%, transparent);
+  border-radius: 16px;
+  background: linear-gradient(168deg, #061a30 0%, #072238 48%, #082b4c 100%);
+  box-shadow:
+    0 14px 36px rgba(2, 18, 32, 0.38),
+    inset 0 1px 0 color-mix(in srgb, #9fd0ee 32%, transparent),
+    inset 0 -12px 28px rgba(2, 18, 32, 0.22);
+  color: #fff;
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.catalog-menu-glass a,
+.catalog-menu-glass button {
+  color: #fff;
+}
+
+/** Active row — soft cyan glass, no strong glow. */
+.catalog-menu-item-active {
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, #38bdf8 22%, transparent) 0%,
+    color-mix(in srgb, #0ea5e9 10%, transparent) 55%,
+    color-mix(in srgb, #082b4c 40%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, #22d3ee 55%, transparent);
+  box-shadow:
+    0 6px 18px rgba(14, 165, 233, 0.12),
+    inset 0 1px 0 color-mix(in srgb, #7dd3fc 28%, transparent);
+}
+
+/** Glass panel — chi tiết đơn / thẻ booking (minimal). */
+.glass-card {
+  --glass-ink: #172033;
+  --glass-muted: #7c8799;
+  --glass-accent: #4977e8;
+  --glass-track: #e6ebf3;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 8px 28px rgba(15, 39, 71, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  color: var(--glass-ink);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+}
+
+.glass-page {
+  background:
+    radial-gradient(ellipse 90% 55% at 88% -8%, rgba(125, 211, 252, 0.28), transparent 58%),
+    radial-gradient(ellipse 75% 50% at 8% 0%, rgba(73, 119, 232, 0.14), transparent 52%),
+    radial-gradient(ellipse 55% 40% at 55% 105%, rgba(0, 156, 149, 0.08), transparent 55%),
+    #e8f0f8;
+}
+
+/**
+ * Mega-menu — soft-3D glass (radial glow + squircle + bóng mềm).
+ */
+.mega-menu-shell {
+  --glass-ink: #172033;
+  --glass-muted: #7c8799;
+  --glass-accent: #4977e8;
+  --glass-line: rgba(23, 32, 51, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse 120% 90% at 18% -20%, rgba(125, 211, 252, 0.42) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 92% 110%, rgba(0, 156, 149, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 55% at 50% 40%, rgba(255, 255, 255, 0.72) 0%, rgba(232, 240, 248, 0.94) 100%);
+  box-shadow:
+    0 14px 36px rgba(5, 45, 71, 0.14),
+    0 4px 12px rgba(5, 45, 71, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -10px 22px rgba(15, 39, 71, 0.04);
+  color: var(--glass-ink);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+
+.mega-menu-aside {
+  border-right: 1px solid var(--glass-line, rgba(23, 32, 51, 0.08));
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.mega-menu-panel {
+  border-radius: 0 22px 22px 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.9) 100%);
+  box-shadow:
+    inset 1px 0 0 rgba(255, 255, 255, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 14px 36px rgba(5, 45, 71, 0.1);
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  color: var(--glass-ink, #172033);
+}
+
+.mega-menu-item-active {
+  background:
+    radial-gradient(ellipse 120% 140% at 20% 0%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.88) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.98);
+  border-radius: 14px;
+  box-shadow:
+    0 6px 18px rgba(5, 45, 71, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+

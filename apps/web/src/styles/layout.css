@@ -1,0 +1,38 @@
+.page-shell {
+  padding-inline: 16px;
+}
+
+@media (min-width: 640px) {
+  .page-shell {
+    padding-inline: 24px;
+  }
+}
+
+.page-container {
+  width: 100%;
+  max-width: var(--container-page);
+  margin-inline: auto;
+}
+
+.chrome-container {
+  width: 100%;
+  max-width: var(--container-chrome);
+  margin-inline: auto;
+}
+
+.section-container {
+  width: 100%;
+  max-width: var(--container-section);
+  margin-inline: auto;
+}
+
+/** Break out of `.section-container` / page padding to viewport edges. */
+.full-bleed {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+

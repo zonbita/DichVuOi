@@ -1,0 +1,46 @@
+@theme {
+  --container-page: 1396px;
+  --container-chrome: 1396px;
+  --container-section: 1396px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+}
+
+:root {
+  /* Premium service-platform palette */
+  --color-navy: #073b5c;
+  --color-navy-deep: #052d47;
+  --color-brand: #009c95;
+  --color-brand-deep: #007a74;
+  --color-brand-soft: #e8f7f5;
+  --color-gold: #d9a441;
+  --color-gold-soft: #fbf4e6;
+  --color-ink: #18313f;
+  --color-muted: #6b7d87;
+  --color-line: #e2e9ec;
+  --color-canvas: #f7f9fa;
+  --color-card: #ffffff;
+  --color-sale: #b77700;
+  --color-invoice: #b42318;
+  --color-sea: #009c95;
+  --color-sidebar-border: #e2e9ec;
+  --shadow-card: 0 6px 24px rgba(7, 59, 92, 0.08);
+  --shadow-hover: 0 10px 32px rgba(7, 59, 92, 0.12);
+  --transition-ui: 180ms ease;
+  --site-header-h: 4.5rem;
+
+  --container-page: 1396px;
+  --container-chrome: 1396px;
+  --container-section: 1396px;
+
+  font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
