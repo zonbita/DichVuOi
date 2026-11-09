@@ -1191,7 +1191,7 @@ Quy tắc đặt tên:
 ```bash
 npm install
 # Postgres: điền DATABASE_URL trong apps/api/.env (Neon prod hoặc Postgres local)
-npm run prisma:push -w @dichvuoi/api
+npm run db:migrate   # CHỈ với DB local/dev. DB production: npm run db:deploy — xem apps/api/prisma/migrations/README.md
 npm run prisma:seed -w @dichvuoi/api
 npm run dev        # FE + BE cùng lúc (Windows OK)
 # hoặc tách terminal:

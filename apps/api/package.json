@@ -14,7 +14,6 @@
     "start:prod": "node dist/src/main",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts",
     "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings=50",
     "test": "jest",
@@ -25,7 +24,10 @@
     "prebuild": "npm run build -w @dichvuoi/shared",
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:status": "prisma migrate status"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

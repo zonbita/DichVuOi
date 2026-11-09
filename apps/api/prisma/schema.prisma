@@ -464,6 +464,10 @@ model Booking {
   @@index([publishAt])
   @@index([matchingDeadlineAt])
   @@index([responseDeadlineAt])
+  /// Quét đơn hết hạn: settleExpiredConfirmations / Matching / ResponseSla.
+  @@index([status, confirmDeadlineAt])
+  @@index([status, matchingDeadlineAt])
+  @@index([status, responseDeadlineAt])
 }
 
 /** Người làm ứng tuyển đơn mở — cọc theo applyDepositBps của đơn. */
@@ -485,6 +489,8 @@ model BookingApplication {
   @@unique([bookingId, partnerId])
   @@index([bookingId, status])
   @@index([partnerId, createdAt])
+  /// Tìm cọc ứng tuyển đang giữ của một đơn (refundOpenApplications).
+  @@index([bookingId, depositStatus])
 }
 
 /** Sổ cái ví VNĐ — amount dương là tiền vào, âm là tiền ra. */

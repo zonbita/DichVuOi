@@ -11,13 +11,15 @@
     "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
     "build": "npm run build -w @dichvuoi/api && npm run build -w @dichvuoi/web",
     "db:generate": "npm run prisma:generate -w @dichvuoi/api",
-    "db:push": "npm run prisma:push -w @dichvuoi/api",
     "db:seed": "npm run prisma:seed -w @dichvuoi/api",
     "build:shared": "npm run build -w @dichvuoi/shared",
     "lint": "npm run lint -w @dichvuoi/api && npm run lint -w @dichvuoi/web",
     "typecheck": "npm run build:shared && npm run typecheck -w @dichvuoi/api && npm run typecheck -w @dichvuoi/web",
     "test": "npm run test -w @dichvuoi/api",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "db:migrate": "npm run prisma:migrate -w @dichvuoi/api --",
+    "db:deploy": "npm run prisma:deploy -w @dichvuoi/api",
+    "db:status": "npm run prisma:status -w @dichvuoi/api"
   },
   "devDependencies": {
     "concurrently": "^10.0.4"
