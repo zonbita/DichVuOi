@@ -47,10 +47,7 @@ export class PartnersController {
   @Get('search')
   @ApiQuery({ name: 'q', required: true, example: 'gia su toan' })
   @ApiQuery({ name: 'limit', required: false, example: 24 })
-  searchPublic(
-    @Query('q') q = '',
-    @Query('limit') limit?: string,
-  ) {
+  searchPublic(@Query('q') q = '', @Query('limit') limit?: string) {
     const parsed = limit ? Number(limit) : 24;
     return this.partnersService.searchPublic(
       q,
@@ -163,7 +160,10 @@ export class PartnersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PARTNER, Role.ADMIN, Role.CUSTOMER)
   @Patch('me')
-  updateMine(@CurrentUser() user: AuthUser, @Body() dto: UpdatePartnerProfileDto) {
+  updateMine(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdatePartnerProfileDto,
+  ) {
     return this.partnersService.updateMine(user.id, dto);
   }
 
