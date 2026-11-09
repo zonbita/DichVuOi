@@ -1,3 +1,4 @@
+import { env } from './config/env';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -5,10 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { buildCorsOrigin } from './common/cors-origin';
-import {
-  assertBootSecrets,
-  isProductionLike,
-} from './common/security-env';
+import { assertBootSecrets, isProductionLike } from './common/security-env';
 import {
   ensureUploadsRoot,
   resolveBundledUploadsRoot,
@@ -60,7 +58,7 @@ async function bootstrap() {
     }),
   );
 
-  if (!isProductionLike() || process.env.ENABLE_SWAGGER === '1') {
+  if (!isProductionLike() || env.enableSwagger) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Dịch Vụ Ơi API')
       .setDescription('API đặt lịch dịch vụ đa ngành nghề')
@@ -70,10 +68,10 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
-  const port = Number(process.env.PORT ?? 3001);
+  const port = env.port;
   await app.listen(port);
   console.log(`API running on http://localhost:${port}`);
-  if (!isProductionLike() || process.env.ENABLE_SWAGGER === '1') {
+  if (!isProductionLike() || env.enableSwagger) {
     console.log(`Swagger on http://localhost:${port}/docs`);
   }
 }

@@ -1,3 +1,4 @@
+import { env } from '../../config/env';
 import {
   BadRequestException,
   Controller,
@@ -18,12 +19,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { resolveUploadsRoot } from '../../common/uploads-root';
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const ALLOWED = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-]);
+const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 function ensureDir(dir: string) {
   if (!existsSync(dir)) {
@@ -40,12 +36,12 @@ function safeExt(_originalName: string, mime: string) {
 }
 
 function useBlobStorage() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+  return Boolean(env.blobReadWriteToken);
 }
 
 function imageInterceptor(subdir: string) {
   /** Vercel: memory (Blob hoặc báo lỗi) — không ghi disk ephemeral. */
-  const memory = useBlobStorage() || Boolean(process.env.VERCEL);
+  const memory = useBlobStorage() || env.vercel;
   const dest = join(resolveUploadsRoot(), subdir);
 
   return FileInterceptor('file', {
@@ -95,7 +91,7 @@ async function uploadedPayload(subdir: string, file?: Express.Multer.File) {
       const blob = await put(pathname, file.buffer, {
         access: 'public',
         contentType: file.mimetype,
-        token: process.env.BLOB_READ_WRITE_TOKEN,
+        token: env.blobReadWriteToken,
       });
       return {
         url: blob.url,
@@ -109,7 +105,7 @@ async function uploadedPayload(subdir: string, file?: Express.Multer.File) {
     }
   }
 
-  if (process.env.VERCEL) {
+  if (env.vercel) {
     throw new ServiceUnavailableException(
       'Vercel không lưu ảnh bền trên /tmp. Thêm BLOB_READ_WRITE_TOKEN (Vercel Blob) rồi deploy lại API.',
     );

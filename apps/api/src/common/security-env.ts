@@ -1,3 +1,4 @@
+import { env } from '../config/env';
 /**
  * Env helpers for production hardening (mock payments, secrets).
  */
@@ -11,30 +12,21 @@ const WEAK_JWT = new Set([
 const WEAK_VIETQR = new Set(['', 'dichvuoi-dev-vietqr-secret']);
 
 export function isProductionLike(): boolean {
-  return (
-    process.env.NODE_ENV === 'production' ||
-    process.env.VERCEL_ENV === 'production'
-  );
+  return env.isProductionLike;
 }
 
 /** Email/mật khẩu: bật ở local; product chỉ Google. Override: ALLOW_PASSWORD_AUTH=1|0. */
 export function allowPasswordAuth(): boolean {
-  const flag = process.env.ALLOW_PASSWORD_AUTH?.trim().toLowerCase();
-  if (flag === '1' || flag === 'true') return true;
-  if (flag === '0' || flag === 'false') return false;
-  return !isProductionLike();
+  return env.allowPasswordAuth ?? !isProductionLike();
 }
 
 /** Parse ALLOW_MOCK_PAYMENTS; default = on outside production-like envs. */
 export function allowMockPayments(): boolean {
-  const flag = process.env.ALLOW_MOCK_PAYMENTS?.trim().toLowerCase();
-  if (flag === '1' || flag === 'true' || flag === 'yes') return true;
-  if (flag === '0' || flag === 'false' || flag === 'no') return false;
-  return !isProductionLike();
+  return env.allowMockPayments ?? !isProductionLike();
 }
 
 export function resolveJwtSecret(): string {
-  const raw = process.env.JWT_SECRET?.trim() ?? '';
+  const raw = env.jwtSecret;
   const weak = WEAK_JWT.has(raw) || raw.length < 16;
   if (isProductionLike()) {
     if (weak) {
@@ -54,7 +46,7 @@ export function resolveJwtSecret(): string {
 }
 
 export function resolveVietQrIntentSecret(): string {
-  const raw = process.env.VIETQR_INTENT_SECRET?.trim() ?? '';
+  const raw = env.vietQrIntentSecret;
   const weak = WEAK_VIETQR.has(raw) || raw.length < 16;
   if (isProductionLike()) {
     if (weak) {

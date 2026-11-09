@@ -1,3 +1,4 @@
+import { env } from '../../config/env';
 import {
   BadRequestException,
   ConflictException,
@@ -61,7 +62,7 @@ const servicePostServiceSelect = {
 } as const;
 
 const BANK_VERIFY_TTL_MS = 15 * 60 * 1000;
-const DEFAULT_VIETQR_BIN = process.env.VIETQR_BANK_ID ?? '970436';
+const DEFAULT_VIETQR_BIN = env.vietQrBankId ?? '970436';
 
 const userPublicSelect = {
   id: true,
@@ -255,7 +256,9 @@ export class PartnersService {
           },
         };
       })
-      .sort((a, b) => b.ratingCount - a.ratingCount || b.ratingAvg - a.ratingAvg);
+      .sort(
+        (a, b) => b.ratingCount - a.ratingCount || b.ratingAvg - a.ratingAvg,
+      );
 
     return {
       id: profile.id,
@@ -377,7 +380,9 @@ export class PartnersService {
       const matchedOffering =
         profile.offerings.find((o) =>
           phraseMatch(`${o.service.name} ${o.headline ?? ''}`, keyword),
-        ) ?? profile.offerings[0] ?? null;
+        ) ??
+        profile.offerings[0] ??
+        null;
 
       hits.push({
         userId: profile.userId,
@@ -392,7 +397,7 @@ export class PartnersService {
         serviceSlug: matchedOffering?.service.slug ?? null,
         serviceName: matchedOffering?.service.name ?? null,
         price: matchedOffering
-          ? matchedOffering.price ?? matchedOffering.service.basePrice
+          ? (matchedOffering.price ?? matchedOffering.service.basePrice)
           : null,
         unit: matchedOffering?.service.unit ?? null,
         matchReason: nameHit ? 'name' : 'profession',
@@ -465,65 +470,72 @@ export class PartnersService {
 
     const offeringServiceIds = profile.offerings.map((o) => o.serviceId);
 
-    const [completedJobs, hireSuccessCount, reviews, hoursByServiceId, reputation, servicePosts, onTimeStats] =
-      await Promise.all([
-        this.prisma.booking.count({
-          where: { partnerId: userId, status: 'COMPLETED' },
-        }),
-        this.prisma.booking.count({
-          where: { userId, status: 'COMPLETED' },
-        }),
-        this.prisma.review.findMany({
-          where: { toUserId: userId },
-          orderBy: { createdAt: 'desc' },
-          take: 24,
-          select: {
-            id: true,
-            rating: true,
-            comment: true,
-            createdAt: true,
-            fromUser: { select: { id: true, fullName: true } },
-            booking: {
-              select: {
-                service: {
-                  select: {
-                    id: true,
-                    name: true,
-                    slug: true,
-                    category: {
-                      select: {
-                        group: { select: { slug: true, name: true } },
-                      },
+    const [
+      completedJobs,
+      hireSuccessCount,
+      reviews,
+      hoursByServiceId,
+      reputation,
+      servicePosts,
+      onTimeStats,
+    ] = await Promise.all([
+      this.prisma.booking.count({
+        where: { partnerId: userId, status: 'COMPLETED' },
+      }),
+      this.prisma.booking.count({
+        where: { userId, status: 'COMPLETED' },
+      }),
+      this.prisma.review.findMany({
+        where: { toUserId: userId },
+        orderBy: { createdAt: 'desc' },
+        take: 24,
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          createdAt: true,
+          fromUser: { select: { id: true, fullName: true } },
+          booking: {
+            select: {
+              service: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  category: {
+                    select: {
+                      group: { select: { slug: true, name: true } },
                     },
                   },
                 },
               },
             },
           },
-        }),
-        hoursWorkedByServiceIds(this.prisma, userId, offeringServiceIds),
-        this.reputation.getSnapshot(userId),
-        this.prisma.partnerServicePost.findMany({
-          where: {
-            partnerProfileId: profile.id,
-            status: PartnerServicePostStatus.APPROVED,
-          },
-          orderBy: { updatedAt: 'desc' },
-          take: 40,
-          select: {
-            id: true,
-            title: true,
-            body: true,
-            coverUrl: true,
-            imagesJson: true,
-            serviceId: true,
-            createdAt: true,
-            updatedAt: true,
-            service: { select: servicePostServiceSelect },
-          },
-        }),
-        this.computeOnTimeStats(userId),
-      ]);
+        },
+      }),
+      hoursWorkedByServiceIds(this.prisma, userId, offeringServiceIds),
+      this.reputation.getSnapshot(userId),
+      this.prisma.partnerServicePost.findMany({
+        where: {
+          partnerProfileId: profile.id,
+          status: PartnerServicePostStatus.APPROVED,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 40,
+        select: {
+          id: true,
+          title: true,
+          body: true,
+          coverUrl: true,
+          imagesJson: true,
+          serviceId: true,
+          createdAt: true,
+          updatedAt: true,
+          service: { select: servicePostServiceSelect },
+        },
+      }),
+      this.computeOnTimeStats(userId),
+    ]);
 
     const shaped = this.shapePublic(
       profile,
@@ -533,7 +545,9 @@ export class PartnersService {
       hireSuccessCount,
     );
     const priceByService = new Map(
-      profile.offerings.map((o) => [o.serviceId, this.offeringPriceRange(o)] as const),
+      profile.offerings.map(
+        (o) => [o.serviceId, this.offeringPriceRange(o)] as const,
+      ),
     );
 
     return {
@@ -586,7 +600,12 @@ export class PartnersService {
               user: { select: { fullName: true } },
               offerings: {
                 where: { isActive: true },
-                select: { serviceId: true, price: true, priceMin: true, priceMax: true },
+                select: {
+                  serviceId: true,
+                  price: true,
+                  priceMin: true,
+                  priceMax: true,
+                },
               },
             },
           },
@@ -606,7 +625,10 @@ export class PartnersService {
         const offering = post.partnerProfile.offerings.find(
           (o) => o.serviceId === post.serviceId,
         );
-        const shaped = this.shapeServicePost(post, this.offeringPriceRange(offering));
+        const shaped = this.shapeServicePost(
+          post,
+          this.offeringPriceRange(offering),
+        );
         const rankInfo = rankByUserId.get(post.partnerProfile.userId);
         return {
           ...shaped,
@@ -840,7 +862,11 @@ export class PartnersService {
       priceMin?: number | null;
       priceMax?: number | null;
     } | null,
-  ): { price: number | null; priceMin: number | null; priceMax: number | null } {
+  ): {
+    price: number | null;
+    priceMin: number | null;
+    priceMax: number | null;
+  } {
     if (!offering) {
       return { price: null, priceMin: null, priceMax: null };
     }
@@ -866,32 +892,39 @@ export class PartnersService {
     }
   }
 
-  private shapeServicePost<T extends {
-    id: string;
-    title: string;
-    body: string;
-    coverUrl: string | null;
-    imagesJson?: string | null;
-    serviceId: string;
-    status?: PartnerServicePostStatus;
-    rejectReason?: string | null;
-    reviewedAt?: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-    service: unknown;
-  }>(
+  private shapeServicePost<
+    T extends {
+      id: string;
+      title: string;
+      body: string;
+      coverUrl: string | null;
+      imagesJson?: string | null;
+      serviceId: string;
+      status?: PartnerServicePostStatus;
+      rejectReason?: string | null;
+      reviewedAt?: Date | null;
+      createdAt: Date;
+      updatedAt: Date;
+      service: unknown;
+    },
+  >(
     post: T,
-    range?: {
-      price?: number | null;
-      priceMin?: number | null;
-      priceMax?: number | null;
-    } | number | null,
+    range?:
+      | {
+          price?: number | null;
+          priceMin?: number | null;
+          priceMax?: number | null;
+        }
+      | number
+      | null,
   ) {
     const images = this.parsePostImages(post.imagesJson, post.coverUrl);
     const normalized =
       typeof range === 'number' || range == null
         ? this.offeringPriceRange(
-            range == null ? null : { price: range, priceMin: range, priceMax: range },
+            range == null
+              ? null
+              : { price: range, priceMin: range, priceMax: range },
           )
         : this.offeringPriceRange(range);
     return {
@@ -908,9 +941,7 @@ export class PartnersService {
       ...(post.rejectReason !== undefined
         ? { rejectReason: post.rejectReason }
         : {}),
-      ...(post.reviewedAt !== undefined
-        ? { reviewedAt: post.reviewedAt }
-        : {}),
+      ...(post.reviewedAt !== undefined ? { reviewedAt: post.reviewedAt } : {}),
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       service: post.service,
@@ -1030,15 +1061,12 @@ export class PartnersService {
 
     // Nghề gắn cố định với bài — không đổi serviceId khi sửa.
     const imageFields =
-      dto.images !== undefined
-        ? this.serializePostImages(dto.images)
-        : null;
+      dto.images !== undefined ? this.serializePostImages(dto.images) : null;
 
     const hasPriceUpdate =
       dto.priceMin !== undefined || dto.priceMax !== undefined;
     let nextRange:
-      | { price: number; priceMin: number; priceMax: number }
-      | undefined;
+      { price: number; priceMin: number; priceMax: number } | undefined;
 
     if (hasPriceUpdate) {
       const current = await this.prisma.partnerService.findFirst({
@@ -1160,7 +1188,7 @@ export class PartnersService {
       ...safeProfile,
       phoneVerified: Boolean(
         (profile.user as { phoneVerified?: boolean }).phoneVerified ??
-          profile.phoneVerified,
+        profile.phoneVerified,
       ),
       skills: parseSkills(profile.skillsJson),
       gallery: parseGallery(profile.galleryJson),
@@ -1173,9 +1201,9 @@ export class PartnersService {
       })),
       bankVerifyPending: Boolean(
         profile.bankVerifyIntentId &&
-          profile.bankVerifyExpiresAt &&
-          profile.bankVerifyExpiresAt.getTime() > Date.now() &&
-          !profile.bankVerified,
+        profile.bankVerifyExpiresAt &&
+        profile.bankVerifyExpiresAt.getTime() > Date.now() &&
+        !profile.bankVerified,
       ),
     };
   }
@@ -1194,7 +1222,9 @@ export class PartnersService {
     const role = user.role === Role.ADMIN ? Role.ADMIN : Role.PARTNER;
 
     const phone =
-      dto.phone !== undefined ? dto.phone.trim().slice(0, 20) || null : undefined;
+      dto.phone !== undefined
+        ? dto.phone.trim().slice(0, 20) || null
+        : undefined;
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -1473,9 +1503,9 @@ export class PartnersService {
     const graceMs = 60 * 60 * 1000;
     let onTime = 0;
     for (const b of rows) {
-      const durationMin = b.service.durationMin > 0 ? b.service.durationMin : 60;
-      const deadline =
-        b.scheduledAt.getTime() + durationMin * 60_000 + graceMs;
+      const durationMin =
+        b.service.durationMin > 0 ? b.service.durationMin : 60;
+      const deadline = b.scheduledAt.getTime() + durationMin * 60_000 + graceMs;
       const done = (b.releasedAt ?? b.updatedAt).getTime();
       if (done <= deadline) onTime += 1;
     }
@@ -1545,7 +1575,9 @@ export class PartnersService {
     partnerProfileId: string,
     serviceIds: string[],
   ) {
-    const uniqueIds = [...new Set(serviceIds.map((id) => id.trim()).filter(Boolean))];
+    const uniqueIds = [
+      ...new Set(serviceIds.map((id) => id.trim()).filter(Boolean)),
+    ];
 
     if (uniqueIds.length > 40) {
       throw new BadRequestException('Tối đa 40 nghề trên một hồ sơ');

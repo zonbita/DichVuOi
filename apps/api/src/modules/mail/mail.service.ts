@@ -1,3 +1,4 @@
+import { env } from '../../config/env';
 import { Injectable, Logger } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 
@@ -18,9 +19,7 @@ export class MailService {
   }
 
   private gmailConfigured() {
-    return Boolean(
-      process.env.GMAIL_USER?.trim() && process.env.GMAIL_APP_PASSWORD?.trim(),
-    );
+    return Boolean(env.gmailUser && env.gmailAppPassword);
   }
 
   /**
@@ -33,8 +32,7 @@ export class MailService {
     html?: string;
   }): Promise<MailSendResult> {
     const to = opts.to.trim().toLowerCase();
-    const html =
-      opts.html ?? `<p>${opts.text.replace(/\n/g, '<br/>')}</p>`;
+    const html = opts.html ?? `<p>${opts.text.replace(/\n/g, '<br/>')}</p>`;
 
     if (!this.gmailConfigured()) {
       return this.mock(
@@ -66,10 +64,10 @@ export class MailService {
     text: string,
     html: string,
   ): Promise<MailSendResult> {
-    const user = process.env.GMAIL_USER!.trim();
-    const pass = process.env.GMAIL_APP_PASSWORD!.trim().replace(/\s+/g, '');
+    const user = env.gmailUser!;
+    const pass = env.gmailAppPassword!;
     const fromName =
-      process.env.EMAIL_FROM?.match(/^(.+?)\s*</)?.[1]?.trim() || 'DichVuOi';
+      env.emailFrom?.match(/^(.+?)\s*</)?.[1]?.trim() || 'DichVuOi';
 
     try {
       const transporter = nodemailer.createTransport({
@@ -92,11 +90,10 @@ export class MailService {
       return {
         ok: true,
         provider: 'mock',
-        mockReason: /Invalid login|Username and Password not accepted|EAUTH/i.test(
-          detail,
-        )
-          ? 'Gmail App Password sai / chưa bật 2FA. Tạo lại tại https://myaccount.google.com/apppasswords'
-          : `Gmail từ chối: ${detail}`,
+        mockReason:
+          /Invalid login|Username and Password not accepted|EAUTH/i.test(detail)
+            ? 'Gmail App Password sai / chưa bật 2FA. Tạo lại tại https://myaccount.google.com/apppasswords'
+            : `Gmail từ chối: ${detail}`,
       };
     }
   }

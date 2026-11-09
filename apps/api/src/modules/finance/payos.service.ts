@@ -1,3 +1,4 @@
+import { env } from '../../config/env';
 import { Injectable, Logger } from '@nestjs/common';
 import { createHmac, timingSafeEqual } from 'crypto';
 
@@ -39,27 +40,25 @@ export class PayosService {
   private readonly logger = new Logger(PayosService.name);
 
   isConfigured(): boolean {
-    return Boolean(
-      this.clientId && this.apiKey && this.checksumKey,
-    );
+    return Boolean(this.clientId && this.apiKey && this.checksumKey);
   }
 
   private get clientId() {
-    return process.env.PAYOS_CLIENT_ID?.trim() ?? '';
+    return env.payosClientId;
   }
 
   private get apiKey() {
-    return process.env.PAYOS_API_KEY?.trim() ?? '';
+    return env.payosApiKey;
   }
 
   private get checksumKey() {
-    return process.env.PAYOS_CHECKSUM_KEY?.trim() ?? '';
+    return env.payosChecksumKey;
   }
 
   private webOrigin(): string {
-    const explicit = process.env.WEB_ORIGIN?.trim();
+    const explicit = env.webOrigin;
     if (explicit) return explicit.replace(/\/$/, '');
-    const cors = process.env.CORS_ORIGIN?.split(',')[0]?.trim();
+    const cors = env.corsOrigin?.split(',')[0]?.trim();
     if (cors && cors !== '*') return cors.replace(/\/$/, '');
     return 'http://localhost:5173';
   }
@@ -156,8 +155,10 @@ export class PayosService {
     return {
       orderCode,
       amount,
-      description: typeof data.description === 'string' ? data.description : undefined,
-      reference: typeof data.reference === 'string' ? data.reference : undefined,
+      description:
+        typeof data.description === 'string' ? data.description : undefined,
+      reference:
+        typeof data.reference === 'string' ? data.reference : undefined,
       paymentLinkId:
         typeof data.paymentLinkId === 'string' ? data.paymentLinkId : undefined,
       code: typeof data.code === 'string' ? data.code : payload.code,

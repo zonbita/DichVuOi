@@ -1,3 +1,4 @@
+import { env } from '../../config/env';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import type { SmsSendResult } from './sms.types';
 
@@ -26,13 +27,9 @@ export class SmsService {
 
   /** Đủ ApiKey + Secret + Brandname → gửi qua eSMS; không thì mock. */
   isLive(): boolean {
-    const provider = (process.env.SMS_PROVIDER ?? 'mock').toLowerCase();
+    const provider = env.smsProvider;
     if (provider !== 'esms') return false;
-    return Boolean(
-      process.env.ESMS_API_KEY?.trim() &&
-        process.env.ESMS_SECRET_KEY?.trim() &&
-        process.env.ESMS_BRANDNAME?.trim(),
-    );
+    return Boolean(env.esmsApiKey && env.esmsSecretKey && env.esmsBrandname);
   }
 
   providerName(): 'esms' | 'mock' {
@@ -50,15 +47,15 @@ export class SmsService {
       return { ok: true, provider: 'mock' };
     }
 
-    const sandbox = process.env.ESMS_SANDBOX === '1' || process.env.ESMS_SANDBOX === 'true';
+    const sandbox = env.esmsSandbox;
     const body = {
-      ApiKey: process.env.ESMS_API_KEY!.trim(),
-      SecretKey: process.env.ESMS_SECRET_KEY!.trim(),
-      Brandname: process.env.ESMS_BRANDNAME!.trim(),
+      ApiKey: env.esmsApiKey!,
+      SecretKey: env.esmsSecretKey!,
+      Brandname: env.esmsBrandname!,
       Phone: to,
       Content: content,
       SmsType: '2',
-      IsUnicode: process.env.ESMS_UNICODE === '1' ? '1' : '0',
+      IsUnicode: env.esmsUnicode ? '1' : '0',
       Sandbox: sandbox ? '1' : '0',
       RequestId: `dvo_${Date.now().toString(36)}_${to.slice(-4)}`,
     };

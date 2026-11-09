@@ -1,3 +1,4 @@
+import { env } from '../../config/env';
 import {
   BadRequestException,
   ForbiddenException,
@@ -62,11 +63,9 @@ export class FinanceService {
     private readonly payos: PayosService,
   ) {}
 
-  private readonly vietQrBankId = process.env.VIETQR_BANK_ID ?? '970422';
-  private readonly vietQrAccountNo =
-    process.env.VIETQR_ACCOUNT_NO ?? '19002888';
-  private readonly vietQrAccountName =
-    process.env.VIETQR_ACCOUNT_NAME ?? 'DICH VU OI';
+  private readonly vietQrBankId = env.vietQrBankId ?? '970422';
+  private readonly vietQrAccountNo = env.vietQrAccountNo;
+  private readonly vietQrAccountName = env.vietQrAccountName;
   private readonly vietQrIntentSecret = resolveVietQrIntentSecret();
   private readonly vietQrIntentTtlMs = 15 * 60_000;
   private vietQrBanksCache: {
@@ -389,8 +388,7 @@ export class FinanceService {
       code,
       payout,
       message:
-        sent.mockReason ||
-        'Chưa cấu hình Gmail — dùng mã hiện trên web (dev).',
+        sent.mockReason || 'Chưa cấu hình Gmail — dùng mã hiện trên web (dev).',
     };
   }
 
@@ -461,13 +459,11 @@ export class FinanceService {
   }
 
   /** Admin cộng/trừ ví (ADMIN_ADJUSTMENT). amount âm = trừ. */
-  async adminAdjustBalance(
-    userId: string,
-    amount: number,
-    reason: string,
-  ) {
+  async adminAdjustBalance(userId: string, amount: number, reason: string) {
     if (!Number.isInteger(amount) || amount === 0) {
-      throw new BadRequestException('Số tiền điều chỉnh phải là số nguyên khác 0');
+      throw new BadRequestException(
+        'Số tiền điều chỉnh phải là số nguyên khác 0',
+      );
     }
     const note = reason.trim();
     if (note.length < 3) {
@@ -527,7 +523,9 @@ export class FinanceService {
     const expiresAt = new Date(Date.now() + this.vietQrIntentTtlMs);
     const nonce = randomUUID().slice(0, 8);
     const payosReady = this.payos.isConfigured();
-    const orderCode = payosReady ? randomInt(1_000_000, 2_000_000_000) : undefined;
+    const orderCode = payosReady
+      ? randomInt(1_000_000, 2_000_000_000)
+      : undefined;
     const intentId = this.signVietQrIntent({
       u: userId,
       a: amount,
@@ -629,7 +627,10 @@ export class FinanceService {
     if (paidCode && paidCode !== '00') {
       return { ok: true, ignored: true };
     }
-    const credited = await this.syncPayosPayment(verified.orderCode, verified.amount);
+    const credited = await this.syncPayosPayment(
+      verified.orderCode,
+      verified.amount,
+    );
     return { ok: true, credited };
   }
 
@@ -676,7 +677,11 @@ export class FinanceService {
         where: { intentToken: intentId, paidAt: null },
         data: { paidAt: new Date() },
       });
-      return { currency: 'VND', balance: user.walletBalance, amount: payload.a };
+      return {
+        currency: 'VND',
+        balance: user.walletBalance,
+        amount: payload.a,
+      };
     });
   }
 
@@ -782,7 +787,9 @@ export class FinanceService {
         },
       });
       if (held.count !== 1) {
-        throw new BadRequestException('Đơn vừa được thanh toán bởi yêu cầu khác');
+        throw new BadRequestException(
+          'Đơn vừa được thanh toán bởi yêu cầu khác',
+        );
       }
 
       await tx.walletTransaction.create({
@@ -827,70 +834,68 @@ export class FinanceService {
     bookingId: string,
     options: SettlementOptions = {},
   ): Promise<boolean> {
-      const booking = await tx.booking.findUnique({
-        where: { id: bookingId },
-      });
-      if (!booking) throw new NotFoundException('Không tìm thấy đơn');
-      if (booking.paymentStatus === PaymentStatus.RELEASED) return false;
-      if (booking.paymentStatus !== PaymentStatus.HELD) {
-        throw new BadRequestException('Cọc không ở trạng thái đang giữ');
-      }
-      if (!booking.partnerId) {
-        throw new BadRequestException('Đơn chưa có người làm để giải ngân');
-      }
+    const booking = await tx.booking.findUnique({
+      where: { id: bookingId },
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+    if (booking.paymentStatus === PaymentStatus.RELEASED) return false;
+    if (booking.paymentStatus !== PaymentStatus.HELD) {
+      throw new BadRequestException('Cọc không ở trạng thái đang giữ');
+    }
+    if (!booking.partnerId) {
+      throw new BadRequestException('Đơn chưa có người làm để giải ngân');
+    }
 
-      const split = computeEscrowSplit(
-        booking.totalPrice,
-        booking.commissionBps || DEFAULT_COMMISSION_BPS,
-      );
-      const settledAt = new Date();
-      const updated = await tx.booking.updateMany({
-        where: {
-          id: bookingId,
-          paymentStatus: PaymentStatus.HELD,
-          ...(options.expectedStatus
-            ? { status: options.expectedStatus }
-            : {}),
-        },
-        data: {
-          paymentStatus: PaymentStatus.RELEASED,
-          status: options.status,
-          commissionAmount: split.commissionAmount,
-          partnerPayout: split.partnerPayout,
-          releasedAt: settledAt,
-          confirmDeadlineAt: null,
-          disputeResultNote: options.disputeResultNote,
-        },
-      });
-      if (updated.count !== 1) return false;
+    const split = computeEscrowSplit(
+      booking.totalPrice,
+      booking.commissionBps || DEFAULT_COMMISSION_BPS,
+    );
+    const settledAt = new Date();
+    const updated = await tx.booking.updateMany({
+      where: {
+        id: bookingId,
+        paymentStatus: PaymentStatus.HELD,
+        ...(options.expectedStatus ? { status: options.expectedStatus } : {}),
+      },
+      data: {
+        paymentStatus: PaymentStatus.RELEASED,
+        status: options.status,
+        commissionAmount: split.commissionAmount,
+        partnerPayout: split.partnerPayout,
+        releasedAt: settledAt,
+        confirmDeadlineAt: null,
+        disputeResultNote: options.disputeResultNote,
+      },
+    });
+    if (updated.count !== 1) return false;
 
-      const partner = await tx.user.update({
-        where: { id: booking.partnerId },
-        data: { walletBalance: { increment: split.partnerPayout } },
-        select: { walletBalance: true },
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId: booking.partnerId,
-          bookingId,
-          type: WalletTransactionType.PARTNER_PAYOUT,
-          amount: split.partnerPayout,
-          balanceAfter: partner.walletBalance,
-          description: `Giải ngân đơn ${bookingId}`,
-          reference: `payout:${bookingId}`,
-        },
-      });
-      await tx.invoice.update({
-        where: { bookingId },
-        data: {
-          partnerId: booking.partnerId,
-          commissionAmount: split.commissionAmount,
-          partnerPayout: split.partnerPayout,
-          status: InvoiceStatus.SETTLED,
-          settledAt,
-        },
-      });
-      return true;
+    const partner = await tx.user.update({
+      where: { id: booking.partnerId },
+      data: { walletBalance: { increment: split.partnerPayout } },
+      select: { walletBalance: true },
+    });
+    await tx.walletTransaction.create({
+      data: {
+        userId: booking.partnerId,
+        bookingId,
+        type: WalletTransactionType.PARTNER_PAYOUT,
+        amount: split.partnerPayout,
+        balanceAfter: partner.walletBalance,
+        description: `Giải ngân đơn ${bookingId}`,
+        reference: `payout:${bookingId}`,
+      },
+    });
+    await tx.invoice.update({
+      where: { bookingId },
+      data: {
+        partnerId: booking.partnerId,
+        commissionAmount: split.commissionAmount,
+        partnerPayout: split.partnerPayout,
+        status: InvoiceStatus.SETTLED,
+        settledAt,
+      },
+    });
+    return true;
   }
 
   async refundBooking(
@@ -907,55 +912,55 @@ export class FinanceService {
     bookingId: string,
     options: SettlementOptions = {},
   ): Promise<boolean> {
-      const booking = await tx.booking.findUnique({
-        where: { id: bookingId },
-      });
-      if (!booking) throw new NotFoundException('Không tìm thấy đơn');
-      if (booking.paymentStatus === PaymentStatus.REFUNDED) return false;
-      if (booking.paymentStatus !== PaymentStatus.HELD) {
-        throw new BadRequestException('Cọc không ở trạng thái đang giữ');
-      }
+    const booking = await tx.booking.findUnique({
+      where: { id: bookingId },
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
+    if (booking.paymentStatus === PaymentStatus.REFUNDED) return false;
+    if (booking.paymentStatus !== PaymentStatus.HELD) {
+      throw new BadRequestException('Cọc không ở trạng thái đang giữ');
+    }
 
-      const refundedAt = new Date();
-      const updated = await tx.booking.updateMany({
-        where: {
-          id: bookingId,
-          paymentStatus: PaymentStatus.HELD,
-        },
-        data: {
-          paymentStatus: PaymentStatus.REFUNDED,
-          status: options.status,
-          refundedAt,
-          confirmDeadlineAt: null,
-          disputeResultNote: options.disputeResultNote,
-        },
-      });
-      if (updated.count !== 1) return false;
+    const refundedAt = new Date();
+    const updated = await tx.booking.updateMany({
+      where: {
+        id: bookingId,
+        paymentStatus: PaymentStatus.HELD,
+      },
+      data: {
+        paymentStatus: PaymentStatus.REFUNDED,
+        status: options.status,
+        refundedAt,
+        confirmDeadlineAt: null,
+        disputeResultNote: options.disputeResultNote,
+      },
+    });
+    if (updated.count !== 1) return false;
 
-      const customer = await tx.user.update({
-        where: { id: booking.userId },
-        data: { walletBalance: { increment: booking.totalPrice } },
-        select: { walletBalance: true },
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId: booking.userId,
-          bookingId,
-          type: WalletTransactionType.ESCROW_REFUND,
-          amount: booking.totalPrice,
-          balanceAfter: customer.walletBalance,
-          description: `Hoàn cọc đơn ${bookingId}`,
-          reference: `refund:${bookingId}`,
-        },
-      });
-      await tx.invoice.update({
-        where: { bookingId },
-        data: {
-          status: InvoiceStatus.REFUNDED,
-          refundedAt,
-        },
-      });
-      return true;
+    const customer = await tx.user.update({
+      where: { id: booking.userId },
+      data: { walletBalance: { increment: booking.totalPrice } },
+      select: { walletBalance: true },
+    });
+    await tx.walletTransaction.create({
+      data: {
+        userId: booking.userId,
+        bookingId,
+        type: WalletTransactionType.ESCROW_REFUND,
+        amount: booking.totalPrice,
+        balanceAfter: customer.walletBalance,
+        description: `Hoàn cọc đơn ${bookingId}`,
+        reference: `refund:${bookingId}`,
+      },
+    });
+    await tx.invoice.update({
+      where: { bookingId },
+      data: {
+        status: InvoiceStatus.REFUNDED,
+        refundedAt,
+      },
+    });
+    return true;
   }
 
   /**
@@ -970,7 +975,12 @@ export class FinanceService {
     options: PercentSettlementOptions = {},
   ): Promise<boolean> {
     return this.prisma.$transaction((tx) =>
-      this.releaseBookingByPercentInTransaction(tx, bookingId, percent, options),
+      this.releaseBookingByPercentInTransaction(
+        tx,
+        bookingId,
+        percent,
+        options,
+      ),
     );
   }
 
@@ -992,14 +1002,15 @@ export class FinanceService {
       if (!booking.partnerId) {
         throw new BadRequestException('Đơn chưa có người làm để giải ngân');
       }
-      if (
-        options.expectedStatus &&
-        booking.status !== options.expectedStatus
-      ) {
-        throw new BadRequestException('Đơn không ở trạng thái hợp lệ để quyết toán');
+      if (options.expectedStatus && booking.status !== options.expectedStatus) {
+        throw new BadRequestException(
+          'Đơn không ở trạng thái hợp lệ để quyết toán',
+        );
       }
       if (!Number.isFinite(percent) || percent < 1 || percent > 100) {
-        throw new BadRequestException('Phần trăm nghiệm thu phải trong khoảng 1..100');
+        throw new BadRequestException(
+          'Phần trăm nghiệm thu phải trong khoảng 1..100',
+        );
       }
 
       const grossRelease = Math.round((booking.totalPrice * percent) / 100);

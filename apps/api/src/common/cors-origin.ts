@@ -1,3 +1,4 @@
+import { env } from '../config/env';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 /**
@@ -6,7 +7,7 @@ import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-option
  * - On Vercel, also allow `*.vercel.app` so preview FE can call API
  */
 export function buildCorsOrigin(): CorsOptions['origin'] {
-  const raw = process.env.CORS_ORIGIN?.trim();
+  const raw = env.corsOrigin;
   if (!raw || raw === '*') {
     return true;
   }
@@ -25,7 +26,7 @@ export function buildCorsOrigin(): CorsOptions['origin'] {
       callback(null, true);
       return;
     }
-    if (process.env.VERCEL && /\.vercel\.app$/i.test(origin)) {
+    if (env.vercel && /\.vercel\.app$/i.test(origin)) {
       callback(null, true);
       return;
     }

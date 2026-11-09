@@ -1,3 +1,4 @@
+import { env } from '../config/env';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
@@ -6,9 +7,9 @@ import { join } from 'path';
  * Vercel FS is read-only except `/tmp` — production uploads must use Vercel Blob.
  */
 export function resolveUploadsRoot(): string {
-  const fromEnv = process.env.UPLOADS_DIR?.trim();
+  const fromEnv = env.uploadsDir;
   if (fromEnv) return fromEnv;
-  if (process.env.VERCEL) return join('/tmp', 'dichvuoi-uploads');
+  if (env.vercel) return join('/tmp', 'dichvuoi-uploads');
   return join(process.cwd(), 'uploads');
 }
 

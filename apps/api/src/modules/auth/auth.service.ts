@@ -1,3 +1,4 @@
+import { env } from '../../config/env';
 import {
   BadRequestException,
   ConflictException,
@@ -48,8 +49,7 @@ export function buildOneTimePhoneKey(fullName: string, code: string) {
 
 function buildOtpSmsContent(key: string) {
   const template =
-    process.env.ESMS_OTP_TEMPLATE?.trim() ||
-    'DichVuOi: Ma xac minh {key}. Het han 5 phut.';
+    env.esmsOtpTemplate || 'DichVuOi: Ma xac minh {key}. Het han 5 phut.';
   return template.replace(/\{key\}/gi, key).replace(/\{code\}/gi, key);
 }
 
@@ -180,7 +180,7 @@ export class AuthService {
    * - Chưa có user → tạo CUSTOMER (passwordHash null)
    */
   async loginWithGoogle(dto: GoogleLoginDto) {
-    const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+    const clientId = env.googleClientId;
     if (!clientId) {
       throw new BadRequestException(
         'Chưa cấu hình Google OAuth (GOOGLE_CLIENT_ID).',
@@ -201,7 +201,9 @@ export class AuthService {
       });
       payload = ticket.getPayload() ?? {};
     } catch {
-      throw new UnauthorizedException('Token Google không hợp lệ hoặc đã hết hạn');
+      throw new UnauthorizedException(
+        'Token Google không hợp lệ hoặc đã hết hạn',
+      );
     }
 
     const googleId = payload.sub?.trim();
@@ -209,7 +211,10 @@ export class AuthService {
     if (!googleId || !email) {
       throw new UnauthorizedException('Tài khoản Google thiếu email');
     }
-    if (payload.email_verified === false || payload.email_verified === 'false') {
+    if (
+      payload.email_verified === false ||
+      payload.email_verified === 'false'
+    ) {
       throw new UnauthorizedException('Email Google chưa được xác minh');
     }
 
@@ -224,14 +229,13 @@ export class AuthService {
       include: { partnerProfile: true },
     });
     if (byGoogle) {
-      const refreshed =
-        byGoogle.emailVerified
-          ? byGoogle
-          : await this.prisma.user.update({
-              where: { id: byGoogle.id },
-              data: { emailVerified: true },
-              include: { partnerProfile: true },
-            });
+      const refreshed = byGoogle.emailVerified
+        ? byGoogle
+        : await this.prisma.user.update({
+            where: { id: byGoogle.id },
+            data: { emailVerified: true },
+            include: { partnerProfile: true },
+          });
       return {
         accessToken: this.sign(refreshed),
         user: this.sanitize(refreshed),
@@ -401,9 +405,7 @@ export class AuthService {
         data: { phoneOtpKey: null, phoneOtpExpiresAt: null },
       });
       otpFailCounts.delete(userId);
-      throw new BadRequestException(
-        'Quá nhiều lần nhập sai. Tạo key OTP mới.',
-      );
+      throw new BadRequestException('Quá nhiều lần nhập sai. Tạo key OTP mới.');
     }
 
     const input = dto.key.trim().replace(/\s+/g, '');
