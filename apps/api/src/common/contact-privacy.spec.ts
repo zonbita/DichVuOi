@@ -14,7 +14,9 @@ describe('contact-privacy', () => {
 
   it('masks address to area hint', () => {
     expect(maskAddress('12 Nguyễn Huệ, Quận 1, TP.HCM')).toContain('TP.HCM');
-    expect(maskAddress('12 Nguyễn Huệ, Quận 1, TP.HCM')).toContain('sau khi nhận');
+    expect(maskAddress('12 Nguyễn Huệ, Quận 1, TP.HCM')).toContain(
+      'sau khi nhận',
+    );
   });
 
   it('detects and redacts leaks', () => {
