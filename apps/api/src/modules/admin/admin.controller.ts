@@ -74,6 +74,12 @@ export class AdminController {
     return this.adminService.listFinanceTransactions(query);
   }
 
+  /** Đối soát ví với sổ cái + escrow đang giữ (chỉ đọc). */
+  @Get('finance/reconciliation')
+  reconcileFinance() {
+    return this.adminService.reconcileFinance();
+  }
+
   @Post('finance/wallets/:userId/adjust')
   adjustWallet(
     @Param('userId') userId: string,

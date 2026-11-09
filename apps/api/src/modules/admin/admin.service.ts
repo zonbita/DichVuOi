@@ -64,6 +64,10 @@ export class AdminService {
     return this.financeSvc.listFinanceTransactions(query);
   }
 
+  reconcileFinance() {
+    return this.financeSvc.reconcile();
+  }
+
   adjustWallet(userId: string, dto: AdminAdjustWalletDto) {
     return this.financeSvc.adjustWallet(userId, dto);
   }

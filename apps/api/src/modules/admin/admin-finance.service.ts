@@ -154,6 +154,10 @@ export class AdminFinanceService {
     return paginated(items, total, page);
   }
 
+  reconcile() {
+    return this.finance.reconcile();
+  }
+
   async adjustWallet(userId: string, dto: AdminAdjustWalletDto) {
     return this.finance.adminAdjustBalance(userId, dto.amount, dto.reason);
   }

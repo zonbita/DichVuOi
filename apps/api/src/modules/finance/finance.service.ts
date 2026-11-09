@@ -5,6 +5,7 @@ import { FinanceWalletService } from './finance-wallet.service';
 import { FinanceTopUpService } from './finance-topup.service';
 import { FinanceInvoiceService } from './finance-invoice.service';
 import { FinanceEscrowService } from './finance-escrow.service';
+import { FinanceReconciliationService } from './finance-reconciliation.service';
 import { FinanceApplyDepositService } from './finance-apply-deposit.service';
 import type {
   ApplyDepositOptions,
@@ -24,6 +25,7 @@ export class FinanceService {
     private readonly invoices: FinanceInvoiceService,
     private readonly escrow: FinanceEscrowService,
     private readonly applyDeposits: FinanceApplyDepositService,
+    private readonly reconciliation: FinanceReconciliationService,
   ) {}
 
   // ---- Wallet ----
@@ -74,6 +76,11 @@ export class FinanceService {
 
   adminAdjustBalance(userId: string, amount: number, reason: string) {
     return this.wallet.adminAdjustBalance(userId, amount, reason);
+  }
+
+  /** Đối soát chỉ đọc: số dư ví vs sổ cái, và escrow đang giữ. */
+  reconcile() {
+    return this.reconciliation.reconcile();
   }
 
   // ---- VietQR / payOS top-up ----

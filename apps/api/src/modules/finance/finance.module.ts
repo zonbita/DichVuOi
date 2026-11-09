@@ -7,6 +7,7 @@ import { FinanceTopUpService } from './finance-topup.service';
 import { FinanceInvoiceService } from './finance-invoice.service';
 import { FinanceEscrowService } from './finance-escrow.service';
 import { FinanceApplyDepositService } from './finance-apply-deposit.service';
+import { FinanceReconciliationService } from './finance-reconciliation.service';
 import { PayosService } from './payos.service';
 import { MailModule } from '../mail/mail.module';
 
@@ -20,6 +21,7 @@ import { MailModule } from '../mail/mail.module';
     FinanceInvoiceService,
     FinanceEscrowService,
     FinanceApplyDepositService,
+    FinanceReconciliationService,
     PayosService,
   ],
   exports: [FinanceService],
