@@ -1,9 +1,6 @@
-export type HomeShoutKind =
-  | 'GREETING'
-  | 'AVAILABLE'
-  | 'PROMO'
-  | 'LOOKING'
-  | 'THANKS';
+import type { HomeShoutKind } from '@dichvuoi/shared';
+
+export type { HomeShoutKind };
 
 export type HomeShout = {
   id: string;

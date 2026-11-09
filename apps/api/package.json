@@ -21,7 +21,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prebuild": "npm run build -w @dichvuoi/shared"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -47,7 +48,8 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "@dichvuoi/shared": "*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -95,7 +97,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@dichvuoi/shared$": "<rootDir>/../../../packages/shared/src"
+    }
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

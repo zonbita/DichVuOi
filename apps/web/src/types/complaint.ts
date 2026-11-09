@@ -1,11 +1,9 @@
-export type ComplaintStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED';
+import type {
+  ComplaintResolutionAction,
+  ComplaintStatus,
+} from '@dichvuoi/shared';
 
-export type ComplaintResolutionAction =
-  | 'REFUND'
-  | 'RELEASE'
-  | 'RETRY_IN_PROGRESS'
-  | 'RETRY_AWAITING'
-  | 'NONE';
+export type { ComplaintResolutionAction, ComplaintStatus };
 
 export type Complaint = {
   id: string;

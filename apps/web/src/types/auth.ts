@@ -1,4 +1,6 @@
-export type UserRole = 'CUSTOMER' | 'PARTNER' | 'ADMIN' | 'MODERATOR';
+import type { Role } from '@dichvuoi/shared';
+
+export type UserRole = Role;
 
 export type WorkMode = 'onsite' | 'online';
 

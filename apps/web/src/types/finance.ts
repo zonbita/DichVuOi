@@ -1,15 +1,6 @@
-export type WalletTransactionType =
-  | 'TOP_UP'
-  | 'WITHDRAW'
-  | 'ESCROW_HOLD'
-  | 'ESCROW_REFUND'
-  | 'PARTNER_PAYOUT'
-  | 'ADMIN_ADJUSTMENT'
-  | 'APPLY_DEPOSIT'
-  | 'APPLY_REFUND'
-  | 'APPLY_FORFEIT';
+import type { InvoiceStatus, WalletTransactionType } from '@dichvuoi/shared';
 
-export type InvoiceStatus = 'PAID' | 'SETTLED' | 'REFUNDED';
+export type { InvoiceStatus, WalletTransactionType };
 
 export type WalletTransaction = {
   id: string;

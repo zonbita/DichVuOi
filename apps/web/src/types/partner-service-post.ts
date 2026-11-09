@@ -1,4 +1,5 @@
-export type PartnerServicePostStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type { PartnerServicePostStatus } from '@dichvuoi/shared';
+import type { PartnerServicePostStatus } from '@dichvuoi/shared';
 
 export type PartnerServicePost = {
   id: string;

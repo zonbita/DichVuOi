@@ -1,3 +1,4 @@
+import { APPLY_DEPOSIT_BPS, computeApplyDeposit } from '@dichvuoi/shared';
 import type { ReactNode, MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { formatPrice, formatPriceNumber } from '../../services/api';
@@ -93,20 +94,16 @@ function getOpenJobLabels(booking: Booking) {
   const depositAmount =
     booking.applyDepositAmount != null
       ? booking.applyDepositAmount
-      : Math.max(
-          booking.applyDepositBps === 0 ? 0 : 1,
-          Math.round(
-            (booking.totalPrice *
-              (booking.applyDepositBps ??
-                (booking.applyDepositPercent != null
-                  ? booking.applyDepositPercent * 100
-                  : 1000))) /
-              10000,
-          ),
+      : computeApplyDeposit(
+          booking.totalPrice,
+          booking.applyDepositBps ??
+            (booking.applyDepositPercent != null
+              ? booking.applyDepositPercent * 100
+              : APPLY_DEPOSIT_BPS),
         );
   const depositPercent =
     booking.applyDepositPercent ??
-    Math.round((booking.applyDepositBps ?? 1000) / 100);
+    Math.round((booking.applyDepositBps ?? APPLY_DEPOSIT_BPS) / 100);
 
   return {
     durationLabel,

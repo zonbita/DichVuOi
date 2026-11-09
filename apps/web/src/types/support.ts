@@ -1,4 +1,5 @@
-export type SupportThreadStatus = 'OPEN' | 'CLOSED';
+export type { SupportThreadStatus } from '@dichvuoi/shared';
+import type { SupportThreadStatus } from '@dichvuoi/shared';
 
 export type SupportSender = {
   id: string;

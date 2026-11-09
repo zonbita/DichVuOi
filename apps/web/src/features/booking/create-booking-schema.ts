@@ -2,21 +2,17 @@ import { z } from 'zod';
 
 const phoneRegex = /^(0|\+84)\d{8,10}$/;
 
-/** Ngưỡng ngân sách: trên mức này cọc ứng tuyển tối thiểu 50%. */
-export const APPLY_DEPOSIT_BUDGET_THRESHOLD = 5_000_000;
+// Quy tắc cọc ứng tuyển dùng chung với API — không khai báo lại ở web.
+import {
+  APPLY_DEPOSIT_BUDGET_THRESHOLD,
+  applyDepositPercentBounds,
+} from '@dichvuoi/shared';
 
-/** Khoảng % cọc ứng tuyển theo ngân sách tối đa. */
-export function applyDepositPercentBounds(budgetMax: number) {
-  if (budgetMax > APPLY_DEPOSIT_BUDGET_THRESHOLD) {
-    return { min: 50, max: 100, defaultPercent: 50 };
-  }
-  return { min: 0, max: 50, defaultPercent: 10 };
-}
-
-export function clampApplyDepositPercent(percent: number, budgetMax: number) {
-  const { min, max } = applyDepositPercentBounds(budgetMax);
-  return Math.min(max, Math.max(min, Math.round(percent)));
-}
+export {
+  APPLY_DEPOSIT_BUDGET_THRESHOLD,
+  applyDepositPercentBounds,
+  clampApplyDepositPercent,
+} from '@dichvuoi/shared';
 
 /** Giá trị cho `<input type="datetime-local">` theo giờ máy local. */
 export function toDatetimeLocalValue(date: Date) {

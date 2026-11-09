@@ -75,7 +75,9 @@ export type ContactPolicy = {
   hint: string;
 };
 
-export type PaymentStatus = 'UNPAID' | 'HELD' | 'RELEASED' | 'REFUNDED';
+import type { ApplicationStatus, PaymentStatus } from '@dichvuoi/shared';
+
+export type { ApplicationStatus, BookingStatus, PaymentStatus } from '@dichvuoi/shared';
 
 export type BookingRequirement = {
   id: string;
@@ -104,7 +106,7 @@ export type BookingApplication = {
   partnerId: string;
   depositAmount: number;
   depositStatus: PaymentStatus | string;
-  status: 'APPLIED' | 'SELECTED' | 'REJECTED' | 'WITHDRAWN' | 'REFUNDED' | string;
+  status: ApplicationStatus | string;
   note?: string | null;
   createdAt: string;
   partner?: {
