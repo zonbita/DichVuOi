@@ -1,196 +1,43 @@
-import { env } from '../../config/env';
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  BookingStatus,
-  InvoiceStatus,
-  PaymentStatus,
-  Prisma,
-  WalletTransactionType,
-} from '../../database/prisma/client';
-import { createHmac, randomInt, randomUUID, timingSafeEqual } from 'crypto';
-import {
-  computeEscrowSplit,
-  DEFAULT_COMMISSION_BPS,
-  computeApplyDeposit,
-} from '../../common/escrow';
-import {
-  allowMockPayments,
-  resolveVietQrIntentSecret,
-} from '../../common/security-env';
-import { takeEmailOtpSlot } from '../../common/email-otp-rate';
-import { assertUserNotBlocked } from '../../common/assert-not-blocked';
-import { PrismaService } from '../../database/prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
-import { PayosService } from './payos.service';
+import { Injectable } from '@nestjs/common';
+import { Prisma } from '../../database/prisma/client';
 import type { PayosWebhookPayload } from './payos.service';
+import { FinanceWalletService } from './finance-wallet.service';
+import { FinanceTopUpService } from './finance-topup.service';
+import { FinanceInvoiceService } from './finance-invoice.service';
+import { FinanceEscrowService } from './finance-escrow.service';
+import { FinanceApplyDepositService } from './finance-apply-deposit.service';
+import type {
+  ApplyDepositOptions,
+  PercentSettlementOptions,
+  SettlementOptions,
+} from './finance.shared';
 
-const BANK_VERIFY_OTP_TTL_MS = 10 * 60 * 1000;
-
-type SettlementOptions = {
-  status?: BookingStatus;
-  expectedStatus?: BookingStatus;
-  disputeResultNote?: string | null;
-};
-
-type PercentSettlementOptions = {
-  expectedStatus?: BookingStatus;
-  disputeResultNote?: string | null;
-};
-
-type ApplyDepositOptions = {
-  /** Override amount; default 10% of booking.totalPrice. */
-  amount?: number;
-};
-
-type VietQrIntentPayload = {
-  u: string;
-  a: number;
-  e: number;
-  n: string;
-  o?: number;
-};
-
+/**
+ * Facade giữ nguyên API công khai cho các module khác (bookings, admin,
+ * complaints, partners). Logic nằm ở các service con cùng thư mục.
+ */
 @Injectable()
 export class FinanceService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly mail: MailService,
-    private readonly payos: PayosService,
+    private readonly wallet: FinanceWalletService,
+    private readonly topUps: FinanceTopUpService,
+    private readonly invoices: FinanceInvoiceService,
+    private readonly escrow: FinanceEscrowService,
+    private readonly applyDeposits: FinanceApplyDepositService,
   ) {}
 
-  private readonly vietQrBankId = env.vietQrBankId ?? '970422';
-  private readonly vietQrAccountNo = env.vietQrAccountNo;
-  private readonly vietQrAccountName = env.vietQrAccountName;
-  private readonly vietQrIntentSecret = resolveVietQrIntentSecret();
-  private readonly vietQrIntentTtlMs = 15 * 60_000;
-  private vietQrBanksCache: {
-    at: number;
-    banks: Array<{
-      id: number;
-      name: string;
-      code: string;
-      bin: string;
-      shortName: string;
-      logo: string;
-      transferSupported: number;
-    }>;
-  } | null = null;
+  // ---- Wallet ----
 
-  async getWallet(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        walletBalance: true,
-        emailVerified: true,
-        bankVerified: true,
-        bankBin: true,
-        bankCode: true,
-        bankName: true,
-        bankAccountNo: true,
-        bankAccountName: true,
-        walletTransactions: {
-          orderBy: { createdAt: 'desc' },
-          take: 100,
-          include: {
-            booking: {
-              select: {
-                id: true,
-                service: { select: { name: true } },
-              },
-            },
-          },
-        },
-      },
-    });
-    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
-    return {
-      currency: 'VND',
-      balance: user.walletBalance,
-      mockPaymentsEnabled: allowMockPayments(),
-      payosEnabled: this.payos.isConfigured(),
-      emailVerified: user.emailVerified,
-      bankVerified: user.bankVerified,
-      /** Rút tiền bắt buộc emailVerified (phòng rút sai NH). */
-      canWithdraw: user.emailVerified,
-      payout: {
-        bankBin: user.bankBin,
-        bankCode: user.bankCode,
-        bankName: user.bankName,
-        accountNo: user.bankAccountNo,
-        accountName: user.bankAccountName,
-      },
-      transactions: user.walletTransactions,
-    };
-  }
-
-  private assertMockPaymentsAllowed() {
-    if (!allowMockPayments()) {
-      throw new ForbiddenException(
-        'Thanh toán mô phỏng đã tắt. Bật ALLOW_MOCK_PAYMENTS=1 chỉ khi cần demo.',
-      );
-    }
+  getWallet(userId: string) {
+    return this.wallet.getWallet(userId);
   }
 
   /** Danh sách ngân hàng VietQR (cache 24h). */
-  async listVietQrBanks() {
-    const ttlMs = 24 * 60 * 60_000;
-    if (
-      this.vietQrBanksCache &&
-      Date.now() - this.vietQrBanksCache.at < ttlMs
-    ) {
-      return this.vietQrBanksCache.banks;
-    }
-
-    try {
-      const res = await fetch('https://api.vietqr.io/v2/banks');
-      const json = (await res.json()) as {
-        code?: string;
-        data?: Array<{
-          id: number;
-          name: string;
-          code: string;
-          bin: string;
-          shortName: string;
-          logo: string;
-          transferSupported?: number;
-        }>;
-      };
-      if (json.code !== '00' || !Array.isArray(json.data)) {
-        throw new Error(json.code ?? 'vietqr_banks_failed');
-      }
-      const banks = json.data.map((b) => ({
-        id: b.id,
-        name: b.name,
-        code: b.code,
-        bin: b.bin,
-        shortName: b.shortName,
-        logo: b.logo,
-        transferSupported: b.transferSupported ?? 0,
-      }));
-      this.vietQrBanksCache = { at: Date.now(), banks };
-      return banks;
-    } catch (err) {
-      if (this.vietQrBanksCache?.banks.length) {
-        return this.vietQrBanksCache.banks;
-      }
-      throw new BadRequestException(
-        `Không tải được danh sách ngân hàng VietQR: ${(err as Error).message}`,
-      );
-    }
+  listVietQrBanks() {
+    return this.wallet.listVietQrBanks();
   }
 
-  /**
-   * Rút ví về STK user (mock trừ ví ngay — production nối payout gateway sau).
-   * Bắt buộc emailVerified (OTP Gmail / Google) — phòng rút nhầm tài khoản.
-   * Nếu đã bankVerified: STK phải khớp tài khoản đã liên kết.
-   */
-  async withdraw(
+  withdraw(
     userId: string,
     dto: {
       amount: number;
@@ -201,109 +48,10 @@ export class FinanceService {
       accountName: string;
     },
   ) {
-    await assertUserNotBlocked(this.prisma, userId);
-    const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
-    const accountName = dto.accountName.trim().toUpperCase();
-    const bankBin = dto.bankBin.trim();
-    const bankName = dto.bankName.trim();
-    const bankCode = (dto.bankCode ?? '').trim() || null;
-
-    const identity = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        emailVerified: true,
-        bankVerified: true,
-        bankBin: true,
-        bankAccountNo: true,
-      },
-    });
-    if (!identity) throw new NotFoundException('Không tìm thấy tài khoản');
-    if (!identity.emailVerified) {
-      throw new ForbiddenException(
-        'Cần xác minh email trước khi rút tiền (phòng rút sai ngân hàng).',
-      );
-    }
-    if (identity.bankVerified) {
-      const savedNo = (identity.bankAccountNo ?? '').replace(/\s|-/g, '');
-      if (savedNo && savedNo !== accountNo) {
-        throw new BadRequestException(
-          'STK khác tài khoản đã xác minh — xác minh lại NH hoặc dùng đúng STK đã liên kết.',
-        );
-      }
-      if (identity.bankBin && identity.bankBin !== bankBin) {
-        throw new BadRequestException(
-          'Ngân hàng khác tài khoản đã xác minh — xác minh lại NH hoặc dùng đúng NH đã liên kết.',
-        );
-      }
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      const updated = await tx.user.updateMany({
-        where: { id: userId, walletBalance: { gte: dto.amount } },
-        data: {
-          walletBalance: { decrement: dto.amount },
-          bankBin,
-          bankCode,
-          bankName,
-          bankAccountNo: accountNo,
-          bankAccountName: accountName,
-        },
-      });
-      if (updated.count === 0) {
-        const current = await tx.user.findUnique({
-          where: { id: userId },
-          select: { walletBalance: true },
-        });
-        if (!current) throw new NotFoundException('Không tìm thấy tài khoản');
-        throw new BadRequestException(
-          `Số dư không đủ. Khả dụng ${current.walletBalance.toLocaleString('vi-VN')} VNĐ`,
-        );
-      }
-
-      const user = await tx.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: {
-          walletBalance: true,
-          bankBin: true,
-          bankCode: true,
-          bankName: true,
-          bankAccountNo: true,
-          bankAccountName: true,
-        },
-      });
-
-      const reference = `withdraw:${userId}:${randomUUID()}`;
-      await tx.walletTransaction.create({
-        data: {
-          userId,
-          type: WalletTransactionType.WITHDRAW,
-          amount: -dto.amount,
-          balanceAfter: user.walletBalance,
-          description: `Rút về ${bankName} · ${accountNo} · ${accountName} (mock)`,
-          reference,
-        },
-      });
-
-      return {
-        currency: 'VND',
-        balance: user.walletBalance,
-        amount: dto.amount,
-        status: 'COMPLETED_MOCK',
-        payout: {
-          bankBin: user.bankBin,
-          bankCode: user.bankCode,
-          bankName: user.bankName,
-          accountNo: user.bankAccountNo,
-          accountName: user.bankAccountName,
-        },
-        message:
-          'Đã trừ ví (mock). Production sẽ chuyển khoản thật qua cổng payout.',
-      };
-    });
+    return this.wallet.withdraw(userId, dto);
   }
 
-  /** Liên kết STK + gửi OTP email để xác minh trước rút. */
-  async requestBankVerify(
+  requestBankVerify(
     userId: string,
     dto: {
       bankBin: string;
@@ -313,923 +61,170 @@ export class FinanceService {
       accountName: string;
     },
   ) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
-
-    const rate = takeEmailOtpSlot(user);
-    const accountNo = dto.accountNo.replace(/\s|-/g, '').trim();
-    const accountName = dto.accountName.trim().toUpperCase();
-    const bankBin = dto.bankBin.trim();
-    const bankName = dto.bankName.trim();
-    const bankCode = (dto.bankCode ?? '').trim() || null;
-    const code = String(randomInt(100000, 999999));
-    const expiresAt = new Date(Date.now() + BANK_VERIFY_OTP_TTL_MS);
-    const mailReady = this.mail.isConfigured();
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        bankBin,
-        bankCode,
-        bankName,
-        bankAccountNo: accountNo,
-        bankAccountName: accountName,
-        bankVerified: false,
-        bankVerifyOtpCode: code,
-        bankVerifyOtpExpiresAt: expiresAt,
-        emailOtpSendCount: rate.emailOtpSendCount,
-        emailOtpWindowStartedAt: rate.emailOtpWindowStartedAt,
-      },
-    });
-
-    const sent = await this.mail.send({
-      to: user.email,
-      subject: 'Xác minh tài khoản ngân hàng — DichVuOi',
-      text: `Ma xac minh lien ket STK ${accountNo} (${bankName}): ${code}. Het han 10 phut.`,
-      html: `<p>Mã xác minh liên kết STK <strong>${accountNo}</strong> (${bankName}): <strong>${code}</strong></p><p>Hết hạn 10 phút.</p>`,
-    });
-
-    const payout = {
-      bankBin,
-      bankCode,
-      bankName,
-      accountNo,
-      accountName,
-    };
-
-    if (sent.provider === 'gmail') {
-      return {
-        ok: true,
-        channel: 'gmail' as const,
-        expiresAt: expiresAt.toISOString(),
-        payout,
-        message: `Đã gửi mã xác minh STK tới ${user.email}`,
-      };
-    }
-
-    if (mailReady) {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: {
-          bankVerifyOtpCode: null,
-          bankVerifyOtpExpiresAt: null,
-        },
-      });
-      throw new BadRequestException(
-        sent.mockReason ||
-          'Không gửi được email. Kiểm tra Gmail App Password hoặc thử lại sau.',
-      );
-    }
-
-    return {
-      ok: true,
-      channel: 'mock' as const,
-      expiresAt: expiresAt.toISOString(),
-      code,
-      payout,
-      message:
-        sent.mockReason || 'Chưa cấu hình Gmail — dùng mã hiện trên web (dev).',
-    };
+    return this.wallet.requestBankVerify(userId, dto);
   }
 
-  async confirmBankVerify(userId: string, dto: { code: string }) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Không tìm thấy tài khoản');
-    const code = dto.code.trim();
-    if (
-      !user.bankVerifyOtpCode ||
-      !user.bankVerifyOtpExpiresAt ||
-      user.bankVerifyOtpExpiresAt.getTime() < Date.now()
-    ) {
-      throw new BadRequestException('Mã đã hết hạn. Gửi lại mã mới.');
-    }
-    if (user.bankVerifyOtpCode !== code) {
-      throw new BadRequestException('Mã xác minh không đúng.');
-    }
-    if (!user.bankAccountNo || !user.bankBin) {
-      throw new BadRequestException('Chưa có thông tin STK. Gửi lại yêu cầu.');
-    }
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        bankVerified: true,
-        bankVerifyOtpCode: null,
-        bankVerifyOtpExpiresAt: null,
-      },
-    });
-    await this.prisma.partnerProfile.updateMany({
-      where: { userId },
-      data: {
-        bankVerified: true,
-        bankName: user.bankName,
-        bankAccountNo: user.bankAccountNo,
-        bankAccountName: user.bankAccountName,
-        bankVerifyIntentId: null,
-        bankVerifyExpiresAt: null,
-      },
-    });
-
-    return this.getWallet(userId);
+  confirmBankVerify(userId: string, dto: { code: string }) {
+    return this.wallet.confirmBankVerify(userId, dto);
   }
 
-  async topUp(userId: string, amount: number) {
-    this.assertMockPaymentsAllowed();
-    return this.prisma.$transaction(async (tx) => {
-      const user = await tx.user.update({
-        where: { id: userId },
-        data: { walletBalance: { increment: amount } },
-        select: { walletBalance: true },
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId,
-          type: WalletTransactionType.TOP_UP,
-          amount,
-          balanceAfter: user.walletBalance,
-          description: 'Nạp VNĐ vào ví (mô phỏng)',
-          reference: `topup:${userId}:${randomUUID()}`,
-        },
-      });
-      return {
-        currency: 'VND',
-        balance: user.walletBalance,
-      };
-    });
+  topUp(userId: string, amount: number) {
+    return this.wallet.topUp(userId, amount);
   }
 
-  /** Admin cộng/trừ ví (ADMIN_ADJUSTMENT). amount âm = trừ. */
-  async adminAdjustBalance(userId: string, amount: number, reason: string) {
-    if (!Number.isInteger(amount) || amount === 0) {
-      throw new BadRequestException(
-        'Số tiền điều chỉnh phải là số nguyên khác 0',
-      );
-    }
-    const note = reason.trim();
-    if (note.length < 3) {
-      throw new BadRequestException('Ghi chú điều chỉnh tối thiểu 3 ký tự');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      if (amount < 0) {
-        const updated = await tx.user.updateMany({
-          where: { id: userId, walletBalance: { gte: -amount } },
-          data: { walletBalance: { increment: amount } },
-        });
-        if (updated.count === 0) {
-          const exists = await tx.user.findUnique({
-            where: { id: userId },
-            select: { walletBalance: true },
-          });
-          if (!exists) throw new NotFoundException('Không tìm thấy tài khoản');
-          throw new BadRequestException(
-            `Số dư không đủ để trừ ${(-amount).toLocaleString('vi-VN')} VNĐ`,
-          );
-        }
-      } else {
-        const exists = await tx.user.updateMany({
-          where: { id: userId },
-          data: { walletBalance: { increment: amount } },
-        });
-        if (exists.count === 0) {
-          throw new NotFoundException('Không tìm thấy tài khoản');
-        }
-      }
-
-      const user = await tx.user.findUniqueOrThrow({
-        where: { id: userId },
-        select: { walletBalance: true, fullName: true, email: true },
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId,
-          type: WalletTransactionType.ADMIN_ADJUSTMENT,
-          amount,
-          balanceAfter: user.walletBalance,
-          description: `Admin điều chỉnh: ${note}`,
-          reference: `admin-adj:${userId}:${randomUUID()}`,
-        },
-      });
-      return {
-        currency: 'VND',
-        balance: user.walletBalance,
-        amount,
-        user: { id: userId, fullName: user.fullName, email: user.email },
-      };
-    });
+  adminAdjustBalance(userId: string, amount: number, reason: string) {
+    return this.wallet.adminAdjustBalance(userId, amount, reason);
   }
 
-  async createVietQrIntent(userId: string, amount: number) {
-    const expiresAt = new Date(Date.now() + this.vietQrIntentTtlMs);
-    const nonce = randomUUID().slice(0, 8);
-    const payosReady = this.payos.isConfigured();
-    const orderCode = payosReady
-      ? randomInt(1_000_000, 2_000_000_000)
-      : undefined;
-    const intentId = this.signVietQrIntent({
-      u: userId,
-      a: amount,
-      e: expiresAt.getTime(),
-      n: nonce,
-      ...(orderCode ? { o: orderCode } : {}),
-    });
-    const fallbackNote = `DVO ${intentId.slice(0, 18)}`;
+  // ---- VietQR / payOS top-up ----
 
-    if (payosReady && orderCode) {
-      try {
-        const description = 'NAPVI';
-        const link = await this.payos.createPaymentLink({
-          orderCode,
-          amount,
-          description,
-          expiredAt: expiresAt,
-        });
-        await this.prisma.walletTopUpIntent.create({
-          data: {
-            userId,
-            amount,
-            orderCode,
-            intentToken: intentId,
-            paymentLinkId: link.paymentLinkId,
-            provider: 'payos',
-            transferNote: link.description || description,
-            expiresAt,
-          },
-        });
-        return {
-          intentId,
-          amount,
-          currency: 'VND',
-          bankId: link.bin || this.vietQrBankId,
-          accountNo: link.accountNumber || this.vietQrAccountNo,
-          accountName: link.accountName || this.vietQrAccountName,
-          transferNote: link.description || description,
-          qrImageUrl: this.vietQrImageUrl(
-            amount,
-            link.description || description,
-            link.bin || this.vietQrBankId,
-            link.accountNumber || this.vietQrAccountNo,
-            link.accountName || this.vietQrAccountName,
-          ),
-          checkoutUrl: link.checkoutUrl || null,
-          provider: 'payos' as const,
-          expiresAt: expiresAt.toISOString(),
-        };
-      } catch (err) {
-        console.warn(
-          `[payos] create payment failed, fallback VietQR: ${(err as Error).message}`,
-        );
-      }
-    }
-
-    return {
-      intentId,
-      amount,
-      currency: 'VND',
-      bankId: this.vietQrBankId,
-      accountNo: this.vietQrAccountNo,
-      accountName: this.vietQrAccountName,
-      transferNote: fallbackNote,
-      qrImageUrl: this.vietQrImageUrl(amount, fallbackNote),
-      checkoutUrl: null,
-      provider: 'vietqr' as const,
-      expiresAt: expiresAt.toISOString(),
-    };
+  createVietQrIntent(userId: string, amount: number) {
+    return this.topUps.createVietQrIntent(userId, amount);
   }
 
-  async getVietQrIntentStatus(userId: string, intentId: string) {
-    const payload = this.verifyVietQrIntent(intentId);
-    if (payload.u !== userId) {
-      throw new ForbiddenException('Lệnh nạp không thuộc tài khoản hiện tại');
-    }
-    const paidTx = await this.findPaidTopUp(intentId, payload.o);
-    if (!paidTx && payload.o && this.payos.isConfigured()) {
-      await this.syncPayosPayment(payload.o);
-    }
-    const latest = paidTx ?? (await this.findPaidTopUp(intentId, payload.o));
-    return {
-      intentId,
-      amount: payload.a,
-      status: latest ? 'PAID' : 'PENDING',
-      paidAt: latest?.createdAt.toISOString() ?? null,
-      expiresAt: new Date(payload.e).toISOString(),
-      provider: payload.o ? 'payos' : 'vietqr',
-    };
+  getVietQrIntentStatus(userId: string, intentId: string) {
+    return this.topUps.getVietQrIntentStatus(userId, intentId);
   }
 
-  /** Webhook payOS — xác minh chữ ký rồi cộng ví (idempotent). */
-  async handlePayosWebhook(payload: PayosWebhookPayload) {
-    const verified = this.payos.verifyWebhook(payload);
-    if (!verified) {
-      return { ok: false, reason: 'invalid_signature' };
-    }
-    const paidCode = verified.code ?? payload.code;
-    if (paidCode && paidCode !== '00') {
-      return { ok: true, ignored: true };
-    }
-    const credited = await this.syncPayosPayment(
-      verified.orderCode,
-      verified.amount,
-    );
-    return { ok: true, credited };
+  handlePayosWebhook(payload: PayosWebhookPayload) {
+    return this.topUps.handlePayosWebhook(payload);
   }
 
-  /** Local/dev mock: xác nhận đã chuyển khoản VietQR rồi cộng ví (idempotent). */
-  async confirmVietQrIntentMock(userId: string, intentId: string) {
-    this.assertMockPaymentsAllowed();
-    const payload = this.verifyVietQrIntent(intentId);
-    if (payload.u !== userId) {
-      throw new ForbiddenException('Lệnh nạp không thuộc tài khoản hiện tại');
-    }
-    if (payload.e < Date.now()) {
-      throw new BadRequestException('Mã VietQR đã hết hạn');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      const reference = `vietqr:paid:${intentId}`;
-      const existing = await tx.walletTransaction.findUnique({
-        where: { reference },
-      });
-      if (existing) {
-        const current = await tx.user.findUniqueOrThrow({
-          where: { id: userId },
-          select: { walletBalance: true },
-        });
-        return { currency: 'VND', balance: current.walletBalance, amount: 0 };
-      }
-
-      const user = await tx.user.update({
-        where: { id: userId },
-        data: { walletBalance: { increment: payload.a } },
-        select: { walletBalance: true },
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId,
-          type: WalletTransactionType.TOP_UP,
-          amount: payload.a,
-          balanceAfter: user.walletBalance,
-          description: 'Nạp VNĐ qua VietQR (mock xác nhận)',
-          reference,
-        },
-      });
-      await tx.walletTopUpIntent.updateMany({
-        where: { intentToken: intentId, paidAt: null },
-        data: { paidAt: new Date() },
-      });
-      return {
-        currency: 'VND',
-        balance: user.walletBalance,
-        amount: payload.a,
-      };
-    });
+  confirmVietQrIntentMock(userId: string, intentId: string) {
+    return this.topUps.confirmVietQrIntentMock(userId, intentId);
   }
 
-  async listInvoices(userId: string) {
-    return this.prisma.invoice.findMany({
-      where: {
-        OR: [{ customerId: userId }, { partnerId: userId }],
-      },
-      orderBy: { issuedAt: 'desc' },
-      include: {
-        booking: {
-          select: {
-            id: true,
-            status: true,
-            paymentStatus: true,
-          },
-        },
-        customer: { select: { id: true, fullName: true } },
-        partner: { select: { id: true, fullName: true } },
-      },
-    });
+  // ---- Invoices ----
+
+  listInvoices(userId: string) {
+    return this.invoices.listInvoices(userId);
   }
 
-  async getInvoice(invoiceId: string, userId: string, isAdmin = false) {
-    const invoice = await this.prisma.invoice.findUnique({
-      where: { id: invoiceId },
-      include: {
-        booking: {
-          select: {
-            id: true,
-            status: true,
-            paymentStatus: true,
-            scheduledAt: true,
-          },
-        },
-        customer: {
-          select: { id: true, fullName: true, email: true, phone: true },
-        },
-        partner: {
-          select: { id: true, fullName: true, email: true, phone: true },
-        },
-      },
-    });
-    if (!invoice) throw new NotFoundException('Không tìm thấy hóa đơn');
-    if (
-      !isAdmin &&
-      invoice.customerId !== userId &&
-      invoice.partnerId !== userId
-    ) {
-      throw new ForbiddenException('Không xem được hóa đơn này');
-    }
-    return invoice;
+  getInvoice(invoiceId: string, userId: string, isAdmin = false) {
+    return this.invoices.getInvoice(invoiceId, userId, isAdmin);
   }
 
-  async holdBooking(bookingId: string, payerId: string) {
-    return this.prisma.$transaction(async (tx) => {
-      const booking = await tx.booking.findUnique({
-        where: { id: bookingId },
-        include: {
-          service: { select: { name: true } },
-          user: { select: { walletBalance: true } },
-        },
-      });
-      if (!booking) throw new NotFoundException('Không tìm thấy đơn');
-      if (booking.userId !== payerId) {
-        throw new ForbiddenException('Chỉ khách thuê thanh toán đơn này');
-      }
-      if (booking.status === BookingStatus.CANCELLED) {
-        throw new BadRequestException('Đơn đã hủy');
-      }
-      if (booking.paymentStatus !== PaymentStatus.UNPAID) {
-        throw new BadRequestException('Đơn đã đặt cọc hoặc đã xử lý');
-      }
-      if (booking.user.walletBalance < booking.totalPrice) {
-        throw new BadRequestException(
-          `Số dư ví không đủ. Cần thêm ${booking.totalPrice - booking.user.walletBalance} VNĐ`,
-        );
-      }
+  // ---- Escrow ----
 
-      const debited = await tx.user.updateMany({
-        where: {
-          id: booking.userId,
-          walletBalance: { gte: booking.totalPrice },
-        },
-        data: { walletBalance: { decrement: booking.totalPrice } },
-      });
-      if (debited.count !== 1) {
-        throw new BadRequestException('Số dư ví không đủ');
-      }
-
-      const updatedUser = await tx.user.findUniqueOrThrow({
-        where: { id: booking.userId },
-        select: { walletBalance: true },
-      });
-      const held = await tx.booking.updateMany({
-        where: {
-          id: bookingId,
-          paymentStatus: PaymentStatus.UNPAID,
-        },
-        data: {
-          paymentStatus: PaymentStatus.HELD,
-          paidAt: new Date(),
-        },
-      });
-      if (held.count !== 1) {
-        throw new BadRequestException(
-          'Đơn vừa được thanh toán bởi yêu cầu khác',
-        );
-      }
-
-      await tx.walletTransaction.create({
-        data: {
-          userId: booking.userId,
-          bookingId,
-          type: WalletTransactionType.ESCROW_HOLD,
-          amount: -booking.totalPrice,
-          balanceAfter: updatedUser.walletBalance,
-          description: `Đặt cọc đơn ${booking.service.name}`,
-          reference: `hold:${bookingId}`,
-        },
-      });
-
-      await tx.invoice.create({
-        data: {
-          invoiceNumber: this.invoiceNumber(bookingId),
-          bookingId,
-          customerId: booking.userId,
-          partnerId: booking.partnerId,
-          customerName: booking.customerName,
-          serviceName: booking.service.name,
-          subtotal: booking.totalPrice,
-          currency: 'VND',
-          status: InvoiceStatus.PAID,
-        },
-      });
-    });
+  holdBooking(bookingId: string, payerId: string) {
+    return this.escrow.holdBooking(bookingId, payerId);
   }
 
-  async releaseBooking(
+  releaseBooking(
     bookingId: string,
     options: SettlementOptions = {},
   ): Promise<boolean> {
-    return this.prisma.$transaction((tx) =>
-      this.releaseBookingInTransaction(tx, bookingId, options),
-    );
+    return this.escrow.releaseBooking(bookingId, options);
   }
 
-  async releaseBookingInTransaction(
+  releaseBookingInTransaction(
     tx: Prisma.TransactionClient,
     bookingId: string,
     options: SettlementOptions = {},
   ): Promise<boolean> {
-    const booking = await tx.booking.findUnique({
-      where: { id: bookingId },
-    });
-    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
-    if (booking.paymentStatus === PaymentStatus.RELEASED) return false;
-    if (booking.paymentStatus !== PaymentStatus.HELD) {
-      throw new BadRequestException('Cọc không ở trạng thái đang giữ');
-    }
-    if (!booking.partnerId) {
-      throw new BadRequestException('Đơn chưa có người làm để giải ngân');
-    }
-
-    const split = computeEscrowSplit(
-      booking.totalPrice,
-      booking.commissionBps || DEFAULT_COMMISSION_BPS,
-    );
-    const settledAt = new Date();
-    const updated = await tx.booking.updateMany({
-      where: {
-        id: bookingId,
-        paymentStatus: PaymentStatus.HELD,
-        ...(options.expectedStatus ? { status: options.expectedStatus } : {}),
-      },
-      data: {
-        paymentStatus: PaymentStatus.RELEASED,
-        status: options.status,
-        commissionAmount: split.commissionAmount,
-        partnerPayout: split.partnerPayout,
-        releasedAt: settledAt,
-        confirmDeadlineAt: null,
-        disputeResultNote: options.disputeResultNote,
-      },
-    });
-    if (updated.count !== 1) return false;
-
-    const partner = await tx.user.update({
-      where: { id: booking.partnerId },
-      data: { walletBalance: { increment: split.partnerPayout } },
-      select: { walletBalance: true },
-    });
-    await tx.walletTransaction.create({
-      data: {
-        userId: booking.partnerId,
-        bookingId,
-        type: WalletTransactionType.PARTNER_PAYOUT,
-        amount: split.partnerPayout,
-        balanceAfter: partner.walletBalance,
-        description: `Giải ngân đơn ${bookingId}`,
-        reference: `payout:${bookingId}`,
-      },
-    });
-    await tx.invoice.update({
-      where: { bookingId },
-      data: {
-        partnerId: booking.partnerId,
-        commissionAmount: split.commissionAmount,
-        partnerPayout: split.partnerPayout,
-        status: InvoiceStatus.SETTLED,
-        settledAt,
-      },
-    });
-    return true;
+    return this.escrow.releaseBookingInTransaction(tx, bookingId, options);
   }
 
-  async refundBooking(
+  refundBooking(
     bookingId: string,
     options: SettlementOptions = {},
   ): Promise<boolean> {
-    return this.prisma.$transaction((tx) =>
-      this.refundBookingInTransaction(tx, bookingId, options),
-    );
+    return this.escrow.refundBooking(bookingId, options);
   }
 
-  async refundBookingInTransaction(
+  refundBookingInTransaction(
     tx: Prisma.TransactionClient,
     bookingId: string,
     options: SettlementOptions = {},
   ): Promise<boolean> {
-    const booking = await tx.booking.findUnique({
-      where: { id: bookingId },
-    });
-    if (!booking) throw new NotFoundException('Không tìm thấy đơn');
-    if (booking.paymentStatus === PaymentStatus.REFUNDED) return false;
-    if (booking.paymentStatus !== PaymentStatus.HELD) {
-      throw new BadRequestException('Cọc không ở trạng thái đang giữ');
-    }
-
-    const refundedAt = new Date();
-    const updated = await tx.booking.updateMany({
-      where: {
-        id: bookingId,
-        paymentStatus: PaymentStatus.HELD,
-      },
-      data: {
-        paymentStatus: PaymentStatus.REFUNDED,
-        status: options.status,
-        refundedAt,
-        confirmDeadlineAt: null,
-        disputeResultNote: options.disputeResultNote,
-      },
-    });
-    if (updated.count !== 1) return false;
-
-    const customer = await tx.user.update({
-      where: { id: booking.userId },
-      data: { walletBalance: { increment: booking.totalPrice } },
-      select: { walletBalance: true },
-    });
-    await tx.walletTransaction.create({
-      data: {
-        userId: booking.userId,
-        bookingId,
-        type: WalletTransactionType.ESCROW_REFUND,
-        amount: booking.totalPrice,
-        balanceAfter: customer.walletBalance,
-        description: `Hoàn cọc đơn ${bookingId}`,
-        reference: `refund:${bookingId}`,
-      },
-    });
-    await tx.invoice.update({
-      where: { bookingId },
-      data: {
-        status: InvoiceStatus.REFUNDED,
-        refundedAt,
-      },
-    });
-    return true;
+    return this.escrow.refundBookingInTransaction(tx, bookingId, options);
   }
 
-  /**
-   * Giải ngân theo % nghiệm thu đã chốt:
-   * - Trả partner theo grossRelease trừ commission
-   * - Hoàn phần còn lại về ví khách
-   * - paymentStatus vẫn chuyển RELEASED (escrow đã quyết toán xong)
-   */
-  async releaseBookingByPercent(
+  releaseBookingByPercent(
     bookingId: string,
     percent: number,
     options: PercentSettlementOptions = {},
   ): Promise<boolean> {
-    return this.prisma.$transaction((tx) =>
-      this.releaseBookingByPercentInTransaction(
-        tx,
-        bookingId,
-        percent,
-        options,
-      ),
-    );
+    return this.escrow.releaseBookingByPercent(bookingId, percent, options);
   }
 
-  async releaseBookingByPercentInTransaction(
+  releaseBookingByPercentInTransaction(
     tx: Prisma.TransactionClient,
     bookingId: string,
     percent: number,
     options: PercentSettlementOptions = {},
   ): Promise<boolean> {
-    {
-      const booking = await tx.booking.findUnique({
-        where: { id: bookingId },
-      });
-      if (!booking) throw new NotFoundException('Không tìm thấy đơn');
-      if (booking.paymentStatus === PaymentStatus.RELEASED) return false;
-      if (booking.paymentStatus !== PaymentStatus.HELD) {
-        throw new BadRequestException('Cọc không ở trạng thái đang giữ');
-      }
-      if (!booking.partnerId) {
-        throw new BadRequestException('Đơn chưa có người làm để giải ngân');
-      }
-      if (options.expectedStatus && booking.status !== options.expectedStatus) {
-        throw new BadRequestException(
-          'Đơn không ở trạng thái hợp lệ để quyết toán',
-        );
-      }
-      if (!Number.isFinite(percent) || percent < 1 || percent > 100) {
-        throw new BadRequestException(
-          'Phần trăm nghiệm thu phải trong khoảng 1..100',
-        );
-      }
-
-      const grossRelease = Math.round((booking.totalPrice * percent) / 100);
-      const customerRefund = Math.max(0, booking.totalPrice - grossRelease);
-      const split = computeEscrowSplit(
-        grossRelease,
-        booking.commissionBps || DEFAULT_COMMISSION_BPS,
-      );
-      const settledAt = new Date();
-
-      const updated = await tx.booking.updateMany({
-        where: {
-          id: bookingId,
-          paymentStatus: PaymentStatus.HELD,
-          ...(options.expectedStatus ? { status: options.expectedStatus } : {}),
-        },
-        data: {
-          paymentStatus: PaymentStatus.RELEASED,
-          status: BookingStatus.COMPLETED,
-          commissionAmount: split.commissionAmount,
-          partnerPayout: split.partnerPayout,
-          releasedAt: settledAt,
-          refundedAt: customerRefund > 0 ? settledAt : null,
-          confirmDeadlineAt: null,
-          disputeResultNote: options.disputeResultNote,
-        },
-      });
-      if (updated.count !== 1) return false;
-
-      const partner = await tx.user.update({
-        where: { id: booking.partnerId },
-        data: { walletBalance: { increment: split.partnerPayout } },
-        select: { walletBalance: true },
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId: booking.partnerId,
-          bookingId,
-          type: WalletTransactionType.PARTNER_PAYOUT,
-          amount: split.partnerPayout,
-          balanceAfter: partner.walletBalance,
-          description: `Giải ngân ${percent}% đơn ${bookingId}`,
-          reference: `payout:${bookingId}`,
-        },
-      });
-
-      if (customerRefund > 0) {
-        const customer = await tx.user.update({
-          where: { id: booking.userId },
-          data: { walletBalance: { increment: customerRefund } },
-          select: { walletBalance: true },
-        });
-        await tx.walletTransaction.create({
-          data: {
-            userId: booking.userId,
-            bookingId,
-            type: WalletTransactionType.ESCROW_REFUND,
-            amount: customerRefund,
-            balanceAfter: customer.walletBalance,
-            description: `Hoàn phần chưa nghiệm thu ${100 - percent}% đơn ${bookingId}`,
-            reference: `partial-refund:${bookingId}`,
-          },
-        });
-      }
-
-      await tx.invoice.update({
-        where: { bookingId },
-        data: {
-          partnerId: booking.partnerId,
-          commissionAmount: split.commissionAmount,
-          partnerPayout: split.partnerPayout,
-          status: InvoiceStatus.SETTLED,
-          settledAt,
-          refundedAt: customerRefund > 0 ? settledAt : null,
-        },
-      });
-
-      return true;
-    }
+    return this.escrow.releaseBookingByPercentInTransaction(
+      tx,
+      bookingId,
+      percent,
+      options,
+    );
   }
 
-  /** Người làm đặt cọc ứng tuyển (theo applyDepositBps của đơn) — debit ví. */
-  async holdApplyDeposit(
+  // ---- Apply deposits ----
+
+  holdApplyDeposit(
     bookingId: string,
     partnerId: string,
     applicationId: string,
     options: ApplyDepositOptions = {},
   ) {
-    return this.prisma.$transaction(async (tx) => {
-      const booking = await tx.booking.findUnique({
-        where: { id: bookingId },
-        include: { service: { select: { name: true } } },
-      });
-      if (!booking) throw new NotFoundException('Không tìm thấy đơn');
-
-      const amount =
-        options.amount ??
-        computeApplyDeposit(booking.totalPrice, booking.applyDepositBps);
-      if (amount <= 0) {
-        return { amount: 0 };
-      }
-
-      const reference = `apply-hold:${applicationId}`;
-      const existing = await tx.walletTransaction.findUnique({
-        where: { reference },
-      });
-      if (existing) {
-        return { amount: Math.abs(existing.amount) };
-      }
-
-      const debited = await tx.user.updateMany({
-        where: {
-          id: partnerId,
-          walletBalance: { gte: amount },
-        },
-        data: { walletBalance: { decrement: amount } },
-      });
-      if (debited.count !== 1) {
-        throw new BadRequestException(
-          `Số dư ví không đủ để đặt cọc ứng tuyển (${amount.toLocaleString('vi-VN')} VNĐ)`,
-        );
-      }
-
-      const updatedUser = await tx.user.findUniqueOrThrow({
-        where: { id: partnerId },
-        select: { walletBalance: true },
-      });
-
-      await tx.walletTransaction.create({
-        data: {
-          userId: partnerId,
-          bookingId,
-          type: WalletTransactionType.APPLY_DEPOSIT,
-          amount: -amount,
-          balanceAfter: updatedUser.walletBalance,
-          description: `Cọc ứng tuyển đơn ${booking.service.name}`,
-          reference,
-        },
-      });
-
-      return { amount };
-    });
+    return this.applyDeposits.holdApplyDeposit(
+      bookingId,
+      partnerId,
+      applicationId,
+      options,
+    );
   }
 
-  /** Hoàn cọc ứng tuyển cho một hồ sơ (idempotent theo applicationId). */
-  async refundApplyDeposit(
+  refundApplyDeposit(
     bookingId: string,
     partnerId: string,
     applicationId: string,
     amount: number,
   ): Promise<boolean> {
-    return this.prisma.$transaction(async (tx) =>
-      this.refundApplyDepositInTransaction(
-        tx,
-        bookingId,
-        partnerId,
-        applicationId,
-        amount,
-      ),
+    return this.applyDeposits.refundApplyDeposit(
+      bookingId,
+      partnerId,
+      applicationId,
+      amount,
     );
   }
 
-  async refundApplyDepositInTransaction(
+  refundApplyDepositInTransaction(
     tx: Prisma.TransactionClient,
     bookingId: string,
     partnerId: string,
     applicationId: string,
     amount: number,
   ): Promise<boolean> {
-    const reference = `apply-refund:${applicationId}`;
-    const existing = await tx.walletTransaction.findUnique({
-      where: { reference },
-    });
-    if (existing) return false;
-    if (amount <= 0) return false;
-
-    const partner = await tx.user.update({
-      where: { id: partnerId },
-      data: { walletBalance: { increment: amount } },
-      select: { walletBalance: true },
-    });
-    await tx.walletTransaction.create({
-      data: {
-        userId: partnerId,
-        bookingId,
-        type: WalletTransactionType.APPLY_REFUND,
-        amount,
-        balanceAfter: partner.walletBalance,
-        description: `Hoàn cọc ứng tuyển đơn ${bookingId}`,
-        reference,
-      },
-    });
-    return true;
+    return this.applyDeposits.refundApplyDepositInTransaction(
+      tx,
+      bookingId,
+      partnerId,
+      applicationId,
+      amount,
+    );
   }
 
-  /**
-   * Tịch thu cọc ứng tuyển — không hoàn ví (tiền đã debit lúc hold).
-   * Ghi sổ APPLY_FORFEIT amount=0 để audit; depositStatus → RELEASED.
-   */
-  async forfeitApplyDeposit(
+  forfeitApplyDeposit(
     bookingId: string,
     partnerId: string,
     applicationId: string,
     amount: number,
     reason: string,
   ): Promise<boolean> {
-    return this.prisma.$transaction((tx) =>
-      this.forfeitApplyDepositInTransaction(
-        tx,
-        bookingId,
-        partnerId,
-        applicationId,
-        amount,
-        reason,
-      ),
+    return this.applyDeposits.forfeitApplyDeposit(
+      bookingId,
+      partnerId,
+      applicationId,
+      amount,
+      reason,
     );
   }
 
-  async forfeitApplyDepositInTransaction(
+  forfeitApplyDepositInTransaction(
     tx: Prisma.TransactionClient,
     bookingId: string,
     partnerId: string,
@@ -1237,161 +232,13 @@ export class FinanceService {
     amount: number,
     reason: string,
   ): Promise<boolean> {
-    const reference = `apply-forfeit:${applicationId}`;
-    const existing = await tx.walletTransaction.findUnique({
-      where: { reference },
-    });
-    if (existing) return false;
-
-    const partner = await tx.user.findUnique({
-      where: { id: partnerId },
-      select: { walletBalance: true },
-    });
-    if (!partner) throw new NotFoundException('Không tìm thấy người làm');
-
-    await tx.walletTransaction.create({
-      data: {
-        userId: partnerId,
-        bookingId,
-        type: WalletTransactionType.APPLY_FORFEIT,
-        amount: 0,
-        balanceAfter: partner.walletBalance,
-        description: `Tịch thu cọc ứng tuyển ${amount.toLocaleString('vi-VN')} VNĐ — ${reason}`,
-        reference,
-      },
-    });
-    return true;
-  }
-
-  private invoiceNumber(bookingId: string) {
-    const date = new Date();
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `DVO-${y}${m}${d}-${bookingId.slice(-8).toUpperCase()}`;
-  }
-
-  private vietQrImageUrl(
-    amount: number,
-    transferNote: string,
-    bankId = this.vietQrBankId,
-    accountNo = this.vietQrAccountNo,
-    accountName = this.vietQrAccountName,
-  ) {
-    const params = new URLSearchParams({
-      amount: String(amount),
-      addInfo: transferNote,
-      accountName,
-    });
-    return `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?${params.toString()}`;
-  }
-
-  private paidReferences(intentId: string, orderCode?: number) {
-    const refs = [`vietqr:paid:${intentId}`];
-    if (orderCode) refs.push(`payos:paid:${orderCode}`);
-    return refs;
-  }
-
-  private async findPaidTopUp(intentId: string, orderCode?: number) {
-    return this.prisma.walletTransaction.findFirst({
-      where: { reference: { in: this.paidReferences(intentId, orderCode) } },
-      select: { id: true, createdAt: true, amount: true },
-    });
-  }
-
-  private async syncPayosPayment(orderCode: number, webhookAmount?: number) {
-    const intent = await this.prisma.walletTopUpIntent.findUnique({
-      where: { orderCode },
-    });
-    if (!intent) return false;
-    if (intent.expiresAt.getTime() < Date.now() && !intent.paidAt) {
-      return false;
-    }
-
-    let amount = webhookAmount ?? intent.amount;
-    if (webhookAmount == null && this.payos.isConfigured()) {
-      const remote = await this.payos.getPaymentLink(
-        intent.paymentLinkId || orderCode,
-      );
-      if (!remote || remote.status !== 'PAID') return false;
-      amount = remote.amount || intent.amount;
-    }
-    if (amount !== intent.amount) {
-      return false;
-    }
-
-    const reference = `payos:paid:${orderCode}`;
-    await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.walletTransaction.findFirst({
-        where: {
-          reference: {
-            in: this.paidReferences(intent.intentToken, orderCode),
-          },
-        },
-      });
-      if (existing) {
-        if (!intent.paidAt) {
-          await tx.walletTopUpIntent.update({
-            where: { id: intent.id },
-            data: { paidAt: existing.createdAt },
-          });
-        }
-        return;
-      }
-      const user = await tx.user.update({
-        where: { id: intent.userId },
-        data: { walletBalance: { increment: amount } },
-        select: { walletBalance: true },
-      });
-      await tx.walletTransaction.create({
-        data: {
-          userId: intent.userId,
-          type: WalletTransactionType.TOP_UP,
-          amount,
-          balanceAfter: user.walletBalance,
-          description: 'Nạp VNĐ qua VietQR (payOS xác minh)',
-          reference,
-        },
-      });
-      await tx.walletTopUpIntent.update({
-        where: { id: intent.id },
-        data: { paidAt: new Date() },
-      });
-    });
-    return true;
-  }
-
-  private signVietQrIntent(payload: VietQrIntentPayload) {
-    const json = JSON.stringify(payload);
-    const data = Buffer.from(json, 'utf8').toString('base64url');
-    const sig = createHmac('sha256', this.vietQrIntentSecret)
-      .update(data)
-      .digest('base64url');
-    return `${data}.${sig}`;
-  }
-
-  private verifyVietQrIntent(intentId: string): VietQrIntentPayload {
-    const [data, sig] = intentId.split('.');
-    if (!data || !sig) {
-      throw new BadRequestException('Mã VietQR không hợp lệ');
-    }
-    const expect = createHmac('sha256', this.vietQrIntentSecret)
-      .update(data)
-      .digest('base64url');
-    const sigBuf = Buffer.from(sig);
-    const expectBuf = Buffer.from(expect);
-    if (
-      sigBuf.length !== expectBuf.length ||
-      !timingSafeEqual(sigBuf, expectBuf)
-    ) {
-      throw new BadRequestException('Mã VietQR sai chữ ký');
-    }
-    const payload = JSON.parse(
-      Buffer.from(data, 'base64url').toString('utf8'),
-    ) as VietQrIntentPayload;
-    if (!payload?.u || !payload?.a || !payload?.e) {
-      throw new BadRequestException('Mã VietQR không hợp lệ');
-    }
-    return payload;
+    return this.applyDeposits.forfeitApplyDepositInTransaction(
+      tx,
+      bookingId,
+      partnerId,
+      applicationId,
+      amount,
+      reason,
+    );
   }
 }
